@@ -19,6 +19,8 @@ export const stores = pgTable("stores", {
   ownerId: integer("owner_id").references(() => users.id).notNull(),
   address: text("address").notNull(),
   phone: text("phone"),
+  logo: text("logo"), // Store logo URL
+  coverImage: text("cover_image"), // Store cover image URL
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0.00"),
   totalReviews: integer("total_reviews").default(0),
   isActive: boolean("is_active").default(true),
@@ -44,6 +46,10 @@ export const products = pgTable("products", {
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0.00"),
   totalReviews: integer("total_reviews").default(0),
   isActive: boolean("is_active").default(true),
+  isFastSell: boolean("is_fast_sell").default(false), // Fast sell product
+  isOnOffer: boolean("is_on_offer").default(false), // Special offer
+  offerPercentage: integer("offer_percentage").default(0), // Discount percentage
+  offerEndDate: timestamp("offer_end_date"), // When offer expires
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -40,6 +40,10 @@ const productSchema = z.object({
   stock: z.number().min(0, "Stock must be 0 or greater"),
   imageUrl: z.string().url("Please enter a valid image URL").optional(),
   images: z.array(z.string()).default([]),
+  isFastSell: z.boolean().default(false),
+  isOnOffer: z.boolean().default(false),
+  offerPercentage: z.number().min(0).max(100).default(0),
+  offerEndDate: z.string().optional(),
 });
 
 const storeSchema = z.object({
@@ -47,6 +51,8 @@ const storeSchema = z.object({
   description: z.string().optional(),
   address: z.string().min(1, "Address is required"),
   phone: z.string().optional(),
+  logo: z.string().url("Please enter a valid logo URL").optional(),
+  coverImage: z.string().url("Please enter a valid cover image URL").optional(),
 });
 
 type ProductForm = z.infer<typeof productSchema>;
@@ -98,6 +104,10 @@ export default function ShopkeeperDashboard() {
       stock: 0,
       imageUrl: "",
       images: [],
+      isFastSell: false,
+      isOnOffer: false,
+      offerPercentage: 0,
+      offerEndDate: "",
     },
   });
 
@@ -109,6 +119,8 @@ export default function ShopkeeperDashboard() {
       description: "",
       address: "",
       phone: "",
+      logo: "",
+      coverImage: "",
     },
   });
 
@@ -425,6 +437,36 @@ export default function ShopkeeperDashboard() {
                       )}
                     />
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={storeForm.control}
+                        name="logo"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Store Logo URL</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://example.com/logo.png" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={storeForm.control}
+                        name="coverImage"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cover Image URL</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://example.com/cover.jpg" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <Button type="submit" className="btn-primary">
                       Create Store
                     </Button>
@@ -637,6 +679,108 @@ export default function ShopkeeperDashboard() {
                         </FormItem>
                       )}
                     />
+
+                    {/* Special Features Section */}
+                    <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+                      <h3 className="font-medium text-lg flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
+                        Special Features
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="isFastSell"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base font-medium">
+                                  Fast Sell Product
+                                </FormLabel>
+                                <div className="text-sm text-muted-foreground">
+                                  Mark as fast-selling/trending item
+                                </div>
+                              </div>
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="w-4 h-4"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="isOnOffer"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base font-medium">
+                                  Special Offer
+                                </FormLabel>
+                                <div className="text-sm text-muted-foreground">
+                                  Apply discount offer
+                                </div>
+                              </div>
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="w-4 h-4"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {form.watch("isOnOffer") && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                          <FormField
+                            control={form.control}
+                            name="offerPercentage"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Discount Percentage (%)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    placeholder="Enter discount percentage"
+                                    min="0"
+                                    max="100"
+                                    {...field}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="offerEndDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Offer End Date</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="date"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex space-x-4">
                       <Button type="submit" className="btn-primary">
