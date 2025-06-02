@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 241 245 249; /* #f1f5f9 */
+  --foreground: 15 23 42; /* #0f172a */
+  --muted: 241 245 249; /* #f1f5f9 */
+  --muted-foreground: 100 116 139; /* #64748b */
+  --popover: 255 255 255; /* #ffffff */
+  --popover-foreground: 15 23 42; /* #0f172a */
+  --card: 255 255 255; /* #ffffff */
+  --card-foreground: 15 23 42; /* #0f172a */
+  --border: 226 232 240; /* #e2e8f0 */
+  --input: 226 232 240; /* #e2e8f0 */
+  --primary: 59 130 246; /* #3b82f6 - Flipkart blue */
+  --primary-foreground: 255 255 255; /* #ffffff */
+  --secondary: 248 250 252; /* #f8fafc */
+  --secondary-foreground: 15 23 42; /* #0f172a */
+  --accent: 251 146 60; /* #fb923c - Orange accent */
+  --accent-foreground: 255 255 255; /* #ffffff */
+  --destructive: 239 68 68; /* #ef4444 */
+  --destructive-foreground: 255 255 255; /* #ffffff */
+  --ring: 59 130 246; /* #3b82f6 */
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 2 6 23; /* #020617 */
+  --foreground: 248 250 252; /* #f8fafc */
+  --muted: 15 23 42; /* #0f172a */
+  --muted-foreground: 148 163 184; /* #94a3b8 */
+  --popover: 2 6 23; /* #020617 */
+  --popover-foreground: 248 250 252; /* #f8fafc */
+  --card: 2 6 23; /* #020617 */
+  --card-foreground: 248 250 252; /* #f8fafc */
+  --border: 30 41 59; /* #1e293b */
+  --input: 30 41 59; /* #1e293b */
+  --primary: 59 130 246; /* #3b82f6 */
+  --primary-foreground: 255 255 255; /* #ffffff */
+  --secondary: 15 23 42; /* #0f172a */
+  --secondary-foreground: 248 250 252; /* #f8fafc */
+  --accent: 251 146 60; /* #fb923c */
+  --accent-foreground: 255 255 255; /* #ffffff */
+  --destructive: 220 38 38; /* #dc2626 */
+  --destructive-foreground: 255 255 255; /* #ffffff */
+  --ring: 59 130 246; /* #3b82f6 */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg font-medium transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-accent text-accent-foreground hover:bg-accent/90 px-4 py-2 rounded-lg font-medium transition-colors;
+  }
+  
+  .product-card {
+    @apply bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer;
+  }
+  
+  .store-card {
+    @apply bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer p-4;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground));
+}
