@@ -198,7 +198,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProduct(id: number): Promise<boolean> {
     const result = await db.delete(products).where(eq(products.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Order operations
@@ -212,9 +212,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOrdersByStoreId(storeId: number): Promise<Order[]> {
+    // Get unique order IDs for this store
+    const orderIds = await db.select({ orderId: orderItems.orderId })
+      .from(orderItems)
+      .where(eq(orderItems.storeId, storeId));
+    
+    const uniqueOrderIds = [...new Set(orderIds.map(item => item.orderId))];
+    
+    if (uniqueOrderIds.length === 0) return [];
+    
     return await db.select().from(orders)
-      .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
-      .where(eq(orderItems.storeId, storeId))
+      .where(sql`${orders.id} IN ${uniqueOrderIds}`)
       .orderBy(desc(orders.createdAt));
   }
 
@@ -269,12 +277,12 @@ export class DatabaseStorage implements IStorage {
 
   async removeFromCart(id: number): Promise<boolean> {
     const result = await db.delete(cartItems).where(eq(cartItems.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async clearCart(userId: number): Promise<boolean> {
     const result = await db.delete(cartItems).where(eq(cartItems.userId, userId));
-    return result.rowCount >= 0;
+    return (result.rowCount || 0) >= 0;
   }
 
   // Admin operations
