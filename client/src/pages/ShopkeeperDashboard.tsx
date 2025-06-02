@@ -50,6 +50,8 @@ const storeSchema = z.object({
   name: z.string().min(1, "Store name is required"),
   description: z.string().optional(),
   address: z.string().min(1, "Address is required"),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
   phone: z.string().optional(),
   logo: z.string().url("Please enter a valid logo URL").optional(),
   coverImage: z.string().url("Please enter a valid cover image URL").optional(),

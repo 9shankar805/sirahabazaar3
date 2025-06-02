@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
   insertAdminSchema, insertWebsiteVisitSchema, insertNotificationSchema, insertOrderTrackingSchema,
-  insertReturnPolicySchema, insertReturnSchema
+  insertReturnPolicySchema, insertReturnSchema, insertCategorySchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
