@@ -120,7 +120,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const product = await storage.createProduct(productData);
       res.json(product);
     } catch (error) {
-      res.status(400).json({ error: "Invalid product data" });
+      console.error("Product creation error:", error);
+      res.status(400).json({ 
+        error: "Invalid product data", 
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 

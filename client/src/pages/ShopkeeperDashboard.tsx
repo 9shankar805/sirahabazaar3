@@ -28,6 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiPost, apiPut, apiDelete } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
 import type { Product, Order, OrderItem, Store, Category } from "@shared/schema";
 
 const productSchema = z.object({
@@ -37,6 +38,7 @@ const productSchema = z.object({
   originalPrice: z.string().optional(),
   categoryId: z.number().min(1, "Category is required"),
   stock: z.number().min(0, "Stock must be 0 or greater"),
+  imageUrl: z.string().url("Please enter a valid image URL").optional(),
   images: z.array(z.string()).default([]),
 });
 
@@ -86,6 +88,7 @@ export default function ShopkeeperDashboard() {
       originalPrice: "",
       categoryId: 0,
       stock: 0,
+      imageUrl: "",
       images: [],
     },
   });
@@ -105,6 +108,7 @@ export default function ShopkeeperDashboard() {
         storeId: currentStore.id,
         price: data.price,
         originalPrice: data.originalPrice || undefined,
+        images: data.imageUrl ? [data.imageUrl] : [],
       };
 
       if (editingProduct) {
@@ -117,7 +121,9 @@ export default function ShopkeeperDashboard() {
 
       form.reset();
       setEditingProduct(null);
-      // Refresh products query would happen automatically
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products", "store", currentStore.id] });
     } catch (error) {
       toast({
         title: "Error",
@@ -463,6 +469,24 @@ export default function ShopkeeperDashboard() {
                         )}
                       />
                     </div>
+
+                    <FormField
+                      control={form.control}
+                      name="imageUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Product Image URL</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="url"
+                              placeholder="https://example.com/image.jpg"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={form.control}
