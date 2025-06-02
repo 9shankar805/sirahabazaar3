@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, ShoppingCart, User, Menu, X, Store, Heart } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -73,6 +73,10 @@ export default function Navbar() {
             <Link href="/products" className="hover:text-accent transition-colors">
               Products
             </Link>
+            <Link href="/store-maps" className="hover:text-accent transition-colors">
+              <MapPin className="h-4 w-4 inline mr-1" />
+              Store Maps
+            </Link>
 
             {/* Cart */}
             <Link href="/cart" className="relative hover:text-accent transition-colors">
@@ -114,6 +118,13 @@ export default function Navbar() {
                       </DropdownMenuItem>
                     </>
                   )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="cursor-pointer">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                     Logout
@@ -184,6 +195,13 @@ export default function Navbar() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Products
+            </Link>
+            <Link 
+              href="/store-maps" 
+              className="block hover:text-accent transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Store Maps
             </Link>
             <Link 
               href="/cart" 

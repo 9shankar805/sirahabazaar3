@@ -37,6 +37,7 @@ function Router() {
       <Route path="/shopkeeper-dashboard" component={ShopkeeperDashboard} />
       <Route path="/customer-dashboard" component={CustomerDashboard} />
       <Route path="/admin" component={AdminPanel} />
+      <Route path="/store-maps" component={StoreMaps} />
       <Route component={NotFound} />
     </Switch>
   );

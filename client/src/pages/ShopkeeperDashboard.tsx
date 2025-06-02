@@ -79,7 +79,13 @@ export default function ShopkeeperDashboard() {
   const currentStore = stores[0]; // Assuming one store per shopkeeper
 
   const { data: products = [] } = useQuery<Product[]>({
-    queryKey: [`/api/products`, { storeId: currentStore?.id }],
+    queryKey: [`/api/products/store/${currentStore?.id}`],
+    queryFn: async () => {
+      if (!currentStore?.id) return [];
+      const response = await fetch(`/api/products/store/${currentStore.id}`);
+      if (!response.ok) throw new Error('Failed to fetch store products');
+      return response.json();
+    },
     enabled: !!currentStore,
   });
 

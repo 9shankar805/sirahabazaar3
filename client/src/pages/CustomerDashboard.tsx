@@ -26,6 +26,8 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiPut } from "@/lib/api";
+import NotificationCenter from "@/components/NotificationCenter";
+import ReturnPolicy from "@/components/ReturnPolicy";
 import type { Order, OrderItem } from "@shared/schema";
 
 const profileSchema = z.object({
