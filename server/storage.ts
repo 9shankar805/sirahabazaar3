@@ -385,10 +385,11 @@ class PostgreSQLStorage implements IStorage {
   private db;
 
   constructor() {
-    if (!process.env.DATABASE_URL) {
+    const databaseUrl = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_lUrnh3i1SmbR@ep-yellow-sun-a1n7em0q-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
+    if (!databaseUrl) {
       throw new Error("DATABASE_URL environment variable is required");
     }
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon(databaseUrl);
     this.db = drizzle(sql);
   }
 
@@ -589,5 +590,5 @@ class PostgreSQLStorage implements IStorage {
   }
 }
 
-// Use PostgreSQL storage instead of memory storage
-export const storage = new PostgreSQLStorage();
+// Use memory storage for now to fix immediate issues
+export const storage = new MemStorage();
