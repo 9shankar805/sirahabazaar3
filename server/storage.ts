@@ -1,13 +1,16 @@
 import { 
   users, stores, categories, products, orders, orderItems, cartItems,
+  admins, websiteVisits, notifications, orderTracking, returnPolicies, returns,
   type User, type InsertUser, type Store, type InsertStore, 
   type Category, type InsertCategory, type Product, type InsertProduct,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
-  type CartItem, type InsertCartItem
+  type CartItem, type InsertCartItem, type Admin, type InsertAdmin,
+  type WebsiteVisit, type InsertWebsiteVisit, type Notification, type InsertNotification,
+  type OrderTracking, type InsertOrderTracking, type ReturnPolicy, type InsertReturnPolicy,
+  type Return, type InsertReturn
 } from "@shared/schema";
-import { drizzle } from "drizzle-orm/neon-serverless";
-import { eq, and, ilike, or } from "drizzle-orm";
-import { neon } from "@neondatabase/serverless";
+import { db } from "./db";
+import { eq, and, ilike, or, desc, count, sql, gte } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -55,432 +58,127 @@ export interface IStorage {
   updateCartItem(id: number, quantity: number): Promise<CartItem | undefined>;
   removeFromCart(id: number): Promise<boolean>;
   clearCart(userId: number): Promise<boolean>;
+
+  // Admin operations
+  getAdmin(id: number): Promise<Admin | undefined>;
+  getAdminByEmail(email: string): Promise<Admin | undefined>;
+  createAdmin(admin: InsertAdmin): Promise<Admin>;
+
+  // Website visit tracking
+  recordVisit(visit: InsertWebsiteVisit): Promise<WebsiteVisit>;
+  getVisitStats(days?: number): Promise<any>;
+  getPageViews(page?: string): Promise<WebsiteVisit[]>;
+
+  // Notifications
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getUserNotifications(userId: number): Promise<Notification[]>;
+  markNotificationAsRead(id: number): Promise<boolean>;
+  markAllNotificationsAsRead(userId: number): Promise<boolean>;
+
+  // Order tracking
+  createOrderTracking(tracking: InsertOrderTracking): Promise<OrderTracking>;
+  getOrderTracking(orderId: number): Promise<OrderTracking[]>;
+  updateOrderTracking(orderId: number, status: string, description?: string, location?: string): Promise<OrderTracking>;
+
+  // Return policy
+  createReturnPolicy(policy: InsertReturnPolicy): Promise<ReturnPolicy>;
+  getReturnPolicy(storeId: number): Promise<ReturnPolicy | undefined>;
+  updateReturnPolicy(storeId: number, updates: Partial<InsertReturnPolicy>): Promise<ReturnPolicy | undefined>;
+
+  // Returns
+  createReturn(returnItem: InsertReturn): Promise<Return>;
+  getReturn(id: number): Promise<Return | undefined>;
+  getReturnsByCustomer(customerId: number): Promise<Return[]>;
+  getReturnsByStore(storeId: number): Promise<Return[]>;
+  updateReturnStatus(id: number, status: string): Promise<Return | undefined>;
+
+  // Distance calculation between stores and user location
+  calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number;
+  getStoresWithDistance(userLat: number, userLon: number): Promise<(Store & { distance: number })[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User> = new Map();
-  private stores: Map<number, Store> = new Map();
-  private categories: Map<number, Category> = new Map();
-  private products: Map<number, Product> = new Map();
-  private orders: Map<number, Order> = new Map();
-  private orderItems: Map<number, OrderItem> = new Map();
-  private cartItems: Map<number, CartItem> = new Map();
+export class DatabaseStorage implements IStorage {
   
-  private currentUserId = 1;
-  private currentStoreId = 1;
-  private currentCategoryId = 1;
-  private currentProductId = 1;
-  private currentOrderId = 1;
-  private currentOrderItemId = 1;
-  private currentCartItemId = 1;
-
-  constructor() {
-    this.initializeData();
-  }
-
-  private initializeData() {
-    // Create sample categories
-    const categories = [
-      { name: "Groceries", slug: "groceries" },
-      { name: "Clothing", slug: "clothing" },
-      { name: "Electronics", slug: "electronics" },
-      { name: "Home & Kitchen", slug: "home-kitchen" },
-      { name: "Books", slug: "books" },
-      { name: "Sports", slug: "sports" }
-    ];
-
-    categories.forEach(cat => {
-      this.createCategory(cat);
-    });
-
-    // Create sample users
-    const sampleUsers = [
-      { email: "customer@example.com", password: "password123", fullName: "John Doe", phone: "+977-9841234567", role: "customer" },
-      { email: "shopkeeper@example.com", password: "password123", fullName: "Ram Kumar", phone: "+977-9841234568", role: "shopkeeper" },
-      { email: "shopkeeper2@example.com", password: "password123", fullName: "Sita Devi", phone: "+977-9841234569", role: "shopkeeper" }
-    ];
-
-    sampleUsers.forEach(user => {
-      this.createUser(user);
-    });
-
-    // Create sample stores
-    const sampleStores = [
-      { name: "Ram General Store", description: "Your trusted neighborhood store for all daily needs", ownerId: 2, address: "Main Bazaar, Siraha-56600", phone: "+977-9841234568", rating: "4.5", totalReviews: 120 },
-      { name: "Sita Fashion House", description: "Traditional clothing and ethnic wear", ownerId: 3, address: "Fashion Street, Siraha-56600", phone: "+977-9841234569", rating: "4.8", totalReviews: 89 }
-    ];
-
-    sampleStores.forEach(store => {
-      this.createStore(store);
-    });
-
-    // Create sample products
-    const sampleProducts = [
-      { name: "Fresh Red Apples", description: "Fresh, crispy red apples directly from local orchards", price: "120", originalPrice: "150", categoryId: 1, storeId: 1, stock: 50, images: ["https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400"], rating: "4.2", totalReviews: 156 },
-      { name: "Premium Basmati Rice", description: "Long grain aromatic basmati rice", price: "120", originalPrice: "150", categoryId: 1, storeId: 1, stock: 100, images: ["https://images.unsplash.com/photo-1586201375761-83865001e31c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400"], rating: "4.5", totalReviews: 89 },
-      { name: "Handwoven Saree", description: "Beautiful traditional handwoven saree", price: "2500", originalPrice: "3000", categoryId: 2, storeId: 2, stock: 25, images: ["https://images.unsplash.com/photo-1582408921715-18e7806365c1?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400"], rating: "4.8", totalReviews: 45 },
-      { name: "Local Spices Collection", description: "Authentic local spices and seasonings", price: "350", originalPrice: "400", categoryId: 1, storeId: 1, stock: 30, images: ["https://images.unsplash.com/photo-1596040033229-a9821ebd058d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400"], rating: "4.6", totalReviews: 73 },
-      { name: "Fresh Vegetables", description: "Daily fresh vegetables from local farms", price: "200", originalPrice: "250", categoryId: 1, storeId: 1, stock: 40, images: ["https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400"], rating: "4.3", totalReviews: 92 },
-      { name: "Dairy Products", description: "Fresh milk and dairy products", price: "120", originalPrice: "140", categoryId: 1, storeId: 1, stock: 20, images: ["https://images.unsplash.com/photo-1563636619-e9143da7973b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400"], rating: "4.4", totalReviews: 67 }
-    ];
-
-    sampleProducts.forEach(product => {
-      this.createProduct(product);
-    });
-  }
-
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = {
-      ...insertUser,
-      id,
-      createdAt: new Date(),
-    };
-    this.users.set(id, user);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db.insert(users).values(user).returning();
+    return newUser;
+  }
+
   async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
+    const [updatedUser] = await db.update(users).set(updates).where(eq(users.id, id)).returning();
     return updatedUser;
   }
 
   // Store operations
   async getStore(id: number): Promise<Store | undefined> {
-    return this.stores.get(id);
-  }
-
-  async getStoresByOwnerId(ownerId: number): Promise<Store[]> {
-    return Array.from(this.stores.values()).filter(store => store.ownerId === ownerId);
-  }
-
-  async getAllStores(): Promise<Store[]> {
-    return Array.from(this.stores.values()).filter(store => store.isActive);
-  }
-
-  async createStore(insertStore: InsertStore): Promise<Store> {
-    const id = this.currentStoreId++;
-    const store: Store = {
-      ...insertStore,
-      id,
-      description: insertStore.description || null,
-      phone: insertStore.phone || null,
-      logo: insertStore.logo || null,
-      coverImage: insertStore.coverImage || null,
-      rating: "0.00",
-      totalReviews: 0,
-      isActive: true,
-      createdAt: new Date(),
-    };
-    this.stores.set(id, store);
+    const [store] = await db.select().from(stores).where(eq(stores.id, id));
     return store;
   }
 
+  async getStoresByOwnerId(ownerId: number): Promise<Store[]> {
+    return await db.select().from(stores).where(eq(stores.ownerId, ownerId));
+  }
+
+  async getAllStores(): Promise<Store[]> {
+    return await db.select().from(stores);
+  }
+
+  async createStore(store: InsertStore): Promise<Store> {
+    const [newStore] = await db.insert(stores).values(store).returning();
+    return newStore;
+  }
+
   async updateStore(id: number, updates: Partial<InsertStore>): Promise<Store | undefined> {
-    const store = this.stores.get(id);
-    if (!store) return undefined;
-    
-    const updatedStore = { ...store, ...updates };
-    this.stores.set(id, updatedStore);
+    const [updatedStore] = await db.update(stores).set(updates).where(eq(stores.id, id)).returning();
     return updatedStore;
   }
 
   // Category operations
   async getAllCategories(): Promise<Category[]> {
-    return Array.from(this.categories.values());
+    return await db.select().from(categories);
   }
 
   async getCategory(id: number): Promise<Category | undefined> {
-    return this.categories.get(id);
-  }
-
-  async createCategory(insertCategory: InsertCategory): Promise<Category> {
-    const id = this.currentCategoryId++;
-    const category: Category = { ...insertCategory, id };
-    this.categories.set(id, category);
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
     return category;
   }
 
+  async createCategory(category: InsertCategory): Promise<Category> {
+    const [newCategory] = await db.insert(categories).values(category).returning();
+    return newCategory;
+  }
+
   // Product operations
   async getProduct(id: number): Promise<Product | undefined> {
-    return this.products.get(id);
-  }
-
-  async getProductsByStoreId(storeId: number): Promise<Product[]> {
-    return Array.from(this.products.values()).filter(
-      product => product.storeId === storeId && product.isActive
-    );
-  }
-
-  async getAllProducts(): Promise<Product[]> {
-    return Array.from(this.products.values()).filter(product => product.isActive);
-  }
-
-  async getProductsByCategory(categoryId: number): Promise<Product[]> {
-    return Array.from(this.products.values()).filter(
-      product => product.categoryId === categoryId && product.isActive
-    );
-  }
-
-  async searchProducts(query: string): Promise<Product[]> {
-    const lowercaseQuery = query.toLowerCase();
-    return Array.from(this.products.values()).filter(
-      product => 
-        product.isActive && 
-        (product.name.toLowerCase().includes(lowercaseQuery) ||
-         product.description?.toLowerCase().includes(lowercaseQuery))
-    );
-  }
-
-  async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const id = this.currentProductId++;
-    const product: Product = {
-      ...insertProduct,
-      id,
-      description: insertProduct.description || null,
-      originalPrice: insertProduct.originalPrice || null,
-      categoryId: insertProduct.categoryId || null,
-      stock: insertProduct.stock || null,
-      images: insertProduct.images || null,
-      isFastSell: insertProduct.isFastSell || false,
-      isOnOffer: insertProduct.isOnOffer || false,
-      offerPercentage: insertProduct.offerPercentage || 0,
-      offerEndDate: insertProduct.offerEndDate || null,
-      rating: "0.00",
-      totalReviews: 0,
-      isActive: insertProduct.isActive !== undefined ? insertProduct.isActive : true,
-      createdAt: new Date(),
-    };
-    this.products.set(id, product);
+    const [product] = await db.select().from(products).where(eq(products.id, id));
     return product;
   }
 
-  async updateProduct(id: number, updates: Partial<InsertProduct>): Promise<Product | undefined> {
-    const product = this.products.get(id);
-    if (!product) return undefined;
-    
-    const updatedProduct = { ...product, ...updates };
-    this.products.set(id, updatedProduct);
-    return updatedProduct;
-  }
-
-  async deleteProduct(id: number): Promise<boolean> {
-    return this.products.delete(id);
-  }
-
-  // Order operations
-  async getOrder(id: number): Promise<Order | undefined> {
-    return this.orders.get(id);
-  }
-
-  async getOrdersByCustomerId(customerId: number): Promise<Order[]> {
-    return Array.from(this.orders.values()).filter(order => order.customerId === customerId);
-  }
-
-  async getOrdersByStoreId(storeId: number): Promise<Order[]> {
-    const orderItems = Array.from(this.orderItems.values()).filter(item => item.storeId === storeId);
-    const orderIds = [...new Set(orderItems.map(item => item.orderId))];
-    return orderIds.map(id => this.orders.get(id)).filter(Boolean) as Order[];
-  }
-
-  async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    const id = this.currentOrderId++;
-    const order: Order = {
-      ...insertOrder,
-      id,
-      createdAt: new Date(),
-    };
-    this.orders.set(id, order);
-    return order;
-  }
-
-  async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
-    const order = this.orders.get(id);
-    if (!order) return undefined;
-    
-    const updatedOrder = { ...order, status };
-    this.orders.set(id, updatedOrder);
-    return updatedOrder;
-  }
-
-  // Order item operations
-  async getOrderItems(orderId: number): Promise<OrderItem[]> {
-    return Array.from(this.orderItems.values()).filter(item => item.orderId === orderId);
-  }
-
-  async createOrderItem(insertOrderItem: InsertOrderItem): Promise<OrderItem> {
-    const id = this.currentOrderItemId++;
-    const orderItem: OrderItem = { ...insertOrderItem, id };
-    this.orderItems.set(id, orderItem);
-    return orderItem;
-  }
-
-  // Cart operations
-  async getCartItems(userId: number): Promise<CartItem[]> {
-    return Array.from(this.cartItems.values()).filter(item => item.userId === userId);
-  }
-
-  async addToCart(insertCartItem: InsertCartItem): Promise<CartItem> {
-    // Check if item already exists in cart
-    const existingItem = Array.from(this.cartItems.values()).find(
-      item => item.userId === insertCartItem.userId && item.productId === insertCartItem.productId
-    );
-
-    if (existingItem) {
-      // Update quantity
-      const updatedItem = { ...existingItem, quantity: existingItem.quantity + insertCartItem.quantity };
-      this.cartItems.set(existingItem.id, updatedItem);
-      return updatedItem;
-    } else {
-      // Create new cart item
-      const id = this.currentCartItemId++;
-      const cartItem: CartItem = {
-        ...insertCartItem,
-        id,
-        createdAt: new Date(),
-      };
-      this.cartItems.set(id, cartItem);
-      return cartItem;
-    }
-  }
-
-  async updateCartItem(id: number, quantity: number): Promise<CartItem | undefined> {
-    const cartItem = this.cartItems.get(id);
-    if (!cartItem) return undefined;
-    
-    if (quantity <= 0) {
-      this.cartItems.delete(id);
-      return undefined;
-    }
-    
-    const updatedItem = { ...cartItem, quantity };
-    this.cartItems.set(id, updatedItem);
-    return updatedItem;
-  }
-
-  async removeFromCart(id: number): Promise<boolean> {
-    return this.cartItems.delete(id);
-  }
-
-  async clearCart(userId: number): Promise<boolean> {
-    const userCartItems = Array.from(this.cartItems.entries()).filter(
-      ([_, item]) => item.userId === userId
-    );
-    
-    userCartItems.forEach(([id]) => {
-      this.cartItems.delete(id);
-    });
-    
-    return true;
-  }
-}
-
-// PostgreSQL Storage Implementation
-class PostgreSQLStorage implements IStorage {
-  private db;
-
-  constructor() {
-    const databaseUrl = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_lUrnh3i1SmbR@ep-yellow-sun-a1n7em0q-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
-    if (!databaseUrl) {
-      throw new Error("DATABASE_URL environment variable is required");
-    }
-    const sql = neon(databaseUrl);
-    this.db = drizzle(sql);
-  }
-
-  // User operations
-  async getUser(id: number): Promise<User | undefined> {
-    const result = await this.db.select().from(users).where(eq(users.id, id));
-    return result[0];
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await this.db.select().from(users).where(eq(users.email, email));
-    return result[0];
-  }
-
-  async createUser(user: InsertUser): Promise<User> {
-    const result = await this.db.insert(users).values(user).returning();
-    return result[0];
-  }
-
-  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
-    const result = await this.db.update(users).set(updates).where(eq(users.id, id)).returning();
-    return result[0];
-  }
-
-  // Store operations
-  async getStore(id: number): Promise<Store | undefined> {
-    const result = await this.db.select().from(stores).where(eq(stores.id, id));
-    return result[0];
-  }
-
-  async getStoresByOwnerId(ownerId: number): Promise<Store[]> {
-    return await this.db.select().from(stores).where(eq(stores.ownerId, ownerId));
-  }
-
-  async getAllStores(): Promise<Store[]> {
-    return await this.db.select().from(stores);
-  }
-
-  async createStore(store: InsertStore): Promise<Store> {
-    const result = await this.db.insert(stores).values(store).returning();
-    return result[0];
-  }
-
-  async updateStore(id: number, updates: Partial<InsertStore>): Promise<Store | undefined> {
-    const result = await this.db.update(stores).set(updates).where(eq(stores.id, id)).returning();
-    return result[0];
-  }
-
-  // Category operations
-  async getAllCategories(): Promise<Category[]> {
-    return await this.db.select().from(categories);
-  }
-
-  async getCategory(id: number): Promise<Category | undefined> {
-    const result = await this.db.select().from(categories).where(eq(categories.id, id));
-    return result[0];
-  }
-
-  async createCategory(category: InsertCategory): Promise<Category> {
-    const result = await this.db.insert(categories).values(category).returning();
-    return result[0];
-  }
-
-  // Product operations
-  async getProduct(id: number): Promise<Product | undefined> {
-    const result = await this.db.select().from(products).where(eq(products.id, id));
-    return result[0];
-  }
-
   async getProductsByStoreId(storeId: number): Promise<Product[]> {
-    return await this.db.select().from(products).where(eq(products.storeId, storeId));
+    return await db.select().from(products).where(eq(products.storeId, storeId));
   }
 
   async getAllProducts(): Promise<Product[]> {
-    return await this.db.select().from(products);
+    return await db.select().from(products);
   }
 
   async getProductsByCategory(categoryId: number): Promise<Product[]> {
-    return await this.db.select().from(products).where(eq(products.categoryId, categoryId));
+    return await db.select().from(products).where(eq(products.categoryId, categoryId));
   }
 
   async searchProducts(query: string): Promise<Product[]> {
-    return await this.db.select().from(products).where(
+    return await db.select().from(products).where(
       or(
         ilike(products.name, `%${query}%`),
         ilike(products.description, `%${query}%`)
@@ -489,114 +187,266 @@ class PostgreSQLStorage implements IStorage {
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
-    const result = await this.db.insert(products).values(product).returning();
-    return result[0];
+    const [newProduct] = await db.insert(products).values(product).returning();
+    return newProduct;
   }
 
   async updateProduct(id: number, updates: Partial<InsertProduct>): Promise<Product | undefined> {
-    const result = await this.db.update(products).set(updates).where(eq(products.id, id)).returning();
-    return result[0];
+    const [updatedProduct] = await db.update(products).set(updates).where(eq(products.id, id)).returning();
+    return updatedProduct;
   }
 
   async deleteProduct(id: number): Promise<boolean> {
-    const result = await this.db.delete(products).where(eq(products.id, id)).returning();
-    return result.length > 0;
+    const result = await db.delete(products).where(eq(products.id, id));
+    return result.rowCount > 0;
   }
 
   // Order operations
   async getOrder(id: number): Promise<Order | undefined> {
-    const result = await this.db.select().from(orders).where(eq(orders.id, id));
-    return result[0];
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
   }
 
   async getOrdersByCustomerId(customerId: number): Promise<Order[]> {
-    return await this.db.select().from(orders).where(eq(orders.customerId, customerId));
+    return await db.select().from(orders).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt));
   }
 
   async getOrdersByStoreId(storeId: number): Promise<Order[]> {
-    // This requires joining with order items to get orders for a specific store
-    const result = await this.db
-      .select({ 
-        id: orders.id,
-        customerId: orders.customerId,
-        totalAmount: orders.totalAmount,
-        status: orders.status,
-        shippingAddress: orders.shippingAddress,
-        paymentMethod: orders.paymentMethod,
-        phone: orders.phone,
-        customerName: orders.customerName,
-        createdAt: orders.createdAt
-      })
-      .from(orders)
+    return await db.select().from(orders)
       .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
-      .innerJoin(products, eq(orderItems.productId, products.id))
-      .where(eq(products.storeId, storeId));
-    
-    return result;
+      .where(eq(orderItems.storeId, storeId))
+      .orderBy(desc(orders.createdAt));
   }
 
   async createOrder(order: InsertOrder): Promise<Order> {
-    const result = await this.db.insert(orders).values(order).returning();
-    return result[0];
+    const [newOrder] = await db.insert(orders).values(order).returning();
+    return newOrder;
   }
 
   async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
-    const result = await this.db.update(orders).set({ status }).where(eq(orders.id, id)).returning();
-    return result[0];
+    const [updatedOrder] = await db.update(orders).set({ status }).where(eq(orders.id, id)).returning();
+    return updatedOrder;
   }
 
   // Order item operations
   async getOrderItems(orderId: number): Promise<OrderItem[]> {
-    return await this.db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+    return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
   }
 
   async createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem> {
-    const result = await this.db.insert(orderItems).values(orderItem).returning();
-    return result[0];
+    const [newOrderItem] = await db.insert(orderItems).values(orderItem).returning();
+    return newOrderItem;
   }
 
   // Cart operations
   async getCartItems(userId: number): Promise<CartItem[]> {
-    return await this.db.select().from(cartItems).where(eq(cartItems.userId, userId));
+    return await db.select().from(cartItems).where(eq(cartItems.userId, userId));
   }
 
   async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
     // Check if item already exists in cart
-    const existingItem = await this.db
-      .select()
-      .from(cartItems)
+    const existingItem = await db.select().from(cartItems)
       .where(and(eq(cartItems.userId, cartItem.userId), eq(cartItems.productId, cartItem.productId)));
 
     if (existingItem.length > 0) {
-      // Update quantity if item exists
-      const result = await this.db
-        .update(cartItems)
+      // Update quantity
+      const [updatedItem] = await db.update(cartItems)
         .set({ quantity: existingItem[0].quantity + cartItem.quantity })
         .where(eq(cartItems.id, existingItem[0].id))
         .returning();
-      return result[0];
+      return updatedItem;
     } else {
-      // Create new cart item
-      const result = await this.db.insert(cartItems).values(cartItem).returning();
-      return result[0];
+      // Add new item
+      const [newItem] = await db.insert(cartItems).values(cartItem).returning();
+      return newItem;
     }
   }
 
   async updateCartItem(id: number, quantity: number): Promise<CartItem | undefined> {
-    const result = await this.db.update(cartItems).set({ quantity }).where(eq(cartItems.id, id)).returning();
-    return result[0];
+    const [updatedItem] = await db.update(cartItems).set({ quantity }).where(eq(cartItems.id, id)).returning();
+    return updatedItem;
   }
 
   async removeFromCart(id: number): Promise<boolean> {
-    const result = await this.db.delete(cartItems).where(eq(cartItems.id, id)).returning();
-    return result.length > 0;
+    const result = await db.delete(cartItems).where(eq(cartItems.id, id));
+    return result.rowCount > 0;
   }
 
   async clearCart(userId: number): Promise<boolean> {
-    const result = await this.db.delete(cartItems).where(eq(cartItems.userId, userId)).returning();
-    return result.length > 0;
+    const result = await db.delete(cartItems).where(eq(cartItems.userId, userId));
+    return result.rowCount >= 0;
+  }
+
+  // Admin operations
+  async getAdmin(id: number): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.id, id));
+    return admin;
+  }
+
+  async getAdminByEmail(email: string): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.email, email));
+    return admin;
+  }
+
+  async createAdmin(admin: InsertAdmin): Promise<Admin> {
+    const [newAdmin] = await db.insert(admins).values(admin).returning();
+    return newAdmin;
+  }
+
+  // Website visit tracking
+  async recordVisit(visit: InsertWebsiteVisit): Promise<WebsiteVisit> {
+    const [newVisit] = await db.insert(websiteVisits).values(visit).returning();
+    return newVisit;
+  }
+
+  async getVisitStats(days: number = 30): Promise<any> {
+    const dateThreshold = new Date();
+    dateThreshold.setDate(dateThreshold.getDate() - days);
+
+    const totalVisits = await db.select({ count: count() })
+      .from(websiteVisits)
+      .where(gte(websiteVisits.visitedAt, dateThreshold));
+
+    const uniqueVisitors = await db.select({ count: count(websiteVisits.ipAddress) })
+      .from(websiteVisits)
+      .where(gte(websiteVisits.visitedAt, dateThreshold));
+
+    const pageViews = await db.select({
+      page: websiteVisits.page,
+      count: count()
+    })
+    .from(websiteVisits)
+    .where(gte(websiteVisits.visitedAt, dateThreshold))
+    .groupBy(websiteVisits.page)
+    .orderBy(desc(count()));
+
+    return {
+      totalVisits: totalVisits[0]?.count || 0,
+      uniqueVisitors: uniqueVisitors[0]?.count || 0,
+      pageViews
+    };
+  }
+
+  async getPageViews(page?: string): Promise<WebsiteVisit[]> {
+    if (page) {
+      return await db.select().from(websiteVisits).where(eq(websiteVisits.page, page)).orderBy(desc(websiteVisits.visitedAt));
+    }
+    return await db.select().from(websiteVisits).orderBy(desc(websiteVisits.visitedAt));
+  }
+
+  // Notifications
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db.insert(notifications).values(notification).returning();
+    return newNotification;
+  }
+
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    return await db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async markNotificationAsRead(id: number): Promise<boolean> {
+    const result = await db.update(notifications).set({ isRead: true }).where(eq(notifications.id, id));
+    return result.rowCount > 0;
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<boolean> {
+    const result = await db.update(notifications).set({ isRead: true }).where(eq(notifications.userId, userId));
+    return result.rowCount >= 0;
+  }
+
+  // Order tracking
+  async createOrderTracking(tracking: InsertOrderTracking): Promise<OrderTracking> {
+    const [newTracking] = await db.insert(orderTracking).values(tracking).returning();
+    return newTracking;
+  }
+
+  async getOrderTracking(orderId: number): Promise<OrderTracking[]> {
+    return await db.select().from(orderTracking)
+      .where(eq(orderTracking.orderId, orderId))
+      .orderBy(desc(orderTracking.updatedAt));
+  }
+
+  async updateOrderTracking(orderId: number, status: string, description?: string, location?: string): Promise<OrderTracking> {
+    const trackingData: InsertOrderTracking = {
+      orderId,
+      status,
+      description,
+      location
+    };
+    const [newTracking] = await db.insert(orderTracking).values(trackingData).returning();
+    return newTracking;
+  }
+
+  // Return policy
+  async createReturnPolicy(policy: InsertReturnPolicy): Promise<ReturnPolicy> {
+    const [newPolicy] = await db.insert(returnPolicies).values(policy).returning();
+    return newPolicy;
+  }
+
+  async getReturnPolicy(storeId: number): Promise<ReturnPolicy | undefined> {
+    const [policy] = await db.select().from(returnPolicies).where(eq(returnPolicies.storeId, storeId));
+    return policy;
+  }
+
+  async updateReturnPolicy(storeId: number, updates: Partial<InsertReturnPolicy>): Promise<ReturnPolicy | undefined> {
+    const [updatedPolicy] = await db.update(returnPolicies).set(updates).where(eq(returnPolicies.storeId, storeId)).returning();
+    return updatedPolicy;
+  }
+
+  // Returns
+  async createReturn(returnItem: InsertReturn): Promise<Return> {
+    const [newReturn] = await db.insert(returns).values(returnItem).returning();
+    return newReturn;
+  }
+
+  async getReturn(id: number): Promise<Return | undefined> {
+    const [returnItem] = await db.select().from(returns).where(eq(returns.id, id));
+    return returnItem;
+  }
+
+  async getReturnsByCustomer(customerId: number): Promise<Return[]> {
+    return await db.select().from(returns)
+      .where(eq(returns.customerId, customerId))
+      .orderBy(desc(returns.createdAt));
+  }
+
+  async getReturnsByStore(storeId: number): Promise<Return[]> {
+    return await db.select().from(returns)
+      .innerJoin(orderItems, eq(returns.orderItemId, orderItems.id))
+      .where(eq(orderItems.storeId, storeId))
+      .orderBy(desc(returns.createdAt));
+  }
+
+  async updateReturnStatus(id: number, status: string): Promise<Return | undefined> {
+    const [updatedReturn] = await db.update(returns).set({ status }).where(eq(returns.id, id)).returning();
+    return updatedReturn;
+  }
+
+  // Distance calculation between stores and user location
+  calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c; // Distance in kilometers
+    return distance;
+  }
+
+  async getStoresWithDistance(userLat: number, userLon: number): Promise<(Store & { distance: number })[]> {
+    const allStores = await this.getAllStores();
+    return allStores.map(store => {
+      const storeLat = parseFloat(store.latitude || "0");
+      const storeLon = parseFloat(store.longitude || "0");
+      const distance = this.calculateDistance(userLat, userLon, storeLat, storeLon);
+      return { ...store, distance };
+    }).sort((a, b) => a.distance - b.distance);
   }
 }
 
-// Use memory storage for now to fix immediate issues
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

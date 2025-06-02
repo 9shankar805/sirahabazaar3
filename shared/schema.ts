@@ -18,6 +18,8 @@ export const stores = pgTable("stores", {
   description: text("description"),
   ownerId: integer("owner_id").references(() => users.id).notNull(),
   address: text("address").notNull(),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
   phone: text("phone"),
   logo: text("logo"), // Store logo URL
   coverImage: text("cover_image"), // Store cover image URL
@@ -82,6 +84,75 @@ export const cartItems = pgTable("cart_items", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Admin table for tracking and management
+export const admins = pgTable("admins", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  fullName: text("full_name").notNull(),
+  role: text("role").notNull().default("admin"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Website analytics and tracking
+export const websiteVisits = pgTable("website_visits", {
+  id: serial("id").primaryKey(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  page: text("page").notNull(),
+  referrer: text("referrer"),
+  sessionId: text("session_id"),
+  userId: integer("user_id").references(() => users.id),
+  visitedAt: timestamp("visited_at").defaultNow().notNull(),
+});
+
+// Notifications system
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull().default("info"), // info, success, warning, error
+  isRead: boolean("is_read").default(false),
+  orderId: integer("order_id").references(() => orders.id),
+  productId: integer("product_id").references(() => products.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Order tracking system
+export const orderTracking = pgTable("order_tracking", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").references(() => orders.id).notNull(),
+  status: text("status").notNull(),
+  description: text("description"),
+  location: text("location"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Return policy and returns
+export const returnPolicies = pgTable("return_policies", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
+  returnDays: integer("return_days").default(7),
+  returnConditions: text("return_conditions"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const returns = pgTable("returns", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").references(() => orders.id).notNull(),
+  orderItemId: integer("order_item_id").references(() => orderItems.id).notNull(),
+  customerId: integer("customer_id").references(() => users.id).notNull(),
+  reason: text("reason").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("requested"), // requested, approved, rejected, completed
+  refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }),
+  images: text("images").array().default([]),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -120,6 +191,37 @@ export const insertCartItemSchema = createInsertSchema(cartItems).omit({
   createdAt: true,
 });
 
+export const insertAdminSchema = createInsertSchema(admins).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWebsiteVisitSchema = createInsertSchema(websiteVisits).omit({
+  id: true,
+  visitedAt: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertOrderTrackingSchema = createInsertSchema(orderTracking).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertReturnPolicySchema = createInsertSchema(returnPolicies).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReturnSchema = createInsertSchema(returns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -135,3 +237,15 @@ export type OrderItem = typeof orderItems.$inferSelect;
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type CartItem = typeof cartItems.$inferSelect;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
+export type Admin = typeof admins.$inferSelect;
+export type InsertAdmin = z.infer<typeof insertAdminSchema>;
+export type WebsiteVisit = typeof websiteVisits.$inferSelect;
+export type InsertWebsiteVisit = z.infer<typeof insertWebsiteVisitSchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type OrderTracking = typeof orderTracking.$inferSelect;
+export type InsertOrderTracking = z.infer<typeof insertOrderTrackingSchema>;
+export type ReturnPolicy = typeof returnPolicies.$inferSelect;
+export type InsertReturnPolicy = z.infer<typeof insertReturnPolicySchema>;
+export type Return = typeof returns.$inferSelect;
+export type InsertReturn = z.infer<typeof insertReturnSchema>;
