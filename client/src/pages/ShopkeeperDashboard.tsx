@@ -514,6 +514,18 @@ export default function ShopkeeperDashboard() {
                           <p className="text-sm text-muted-foreground">
                             Stock: {product.stock} units
                           </p>
+                          <div className="flex gap-2 mt-2">
+                            {product.isFastSell && (
+                              <Badge variant="destructive" className="text-xs">
+                                🔥 Fast Sell
+                              </Badge>
+                            )}
+                            {product.isOnOffer && (
+                              <Badge variant="secondary" className="text-xs">
+                                🏷️ {product.offerPercentage}% OFF
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Badge variant={product.isActive ? "default" : "secondary"}>

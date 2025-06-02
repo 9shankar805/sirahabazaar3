@@ -273,6 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/orders", async (req, res) => {
     try {
       const { order, items } = req.body;
+      console.log("Order request:", { order, items });
       
       // Create order
       const orderData = insertOrderSchema.parse(order);
@@ -293,6 +294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ order: createdOrder, items: orderItems });
     } catch (error) {
+      console.error("Order creation error:", error);
       res.status(400).json({ error: "Failed to create order" });
     }
   });
