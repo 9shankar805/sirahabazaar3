@@ -55,6 +55,7 @@ const storeSchema = z.object({
   phone: z.string().optional(),
   logo: z.string().url("Please enter a valid logo URL").optional(),
   coverImage: z.string().url("Please enter a valid cover image URL").optional(),
+  googleMapsLink: z.string().optional(),
 });
 
 type ProductForm = z.infer<typeof productSchema>;
@@ -63,6 +64,7 @@ type StoreForm = z.infer<typeof storeSchema>;
 export default function ShopkeeperDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -217,6 +219,8 @@ export default function ShopkeeperDashboard() {
         ownerId: user!.id,
         phone: data.phone || null,
         description: data.description || null,
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
       };
 
       await apiPost("/api/stores", storeData);
@@ -230,6 +234,66 @@ export default function ShopkeeperDashboard() {
         description: error instanceof Error ? error.message : "Failed to create store",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleGetLocation = async () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Error",
+        description: "Geolocation is not supported by this browser",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGettingLocation(true);
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000,
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+      
+      // Update form with coordinates
+      storeForm.setValue("latitude", latitude.toString());
+      storeForm.setValue("longitude", longitude.toString());
+      
+      // Generate Google Maps link
+      const googleMapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
+      storeForm.setValue("googleMapsLink", googleMapsLink);
+
+      // Try to get address from coordinates using reverse geocoding
+      try {
+        const response = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+        );
+        const data = await response.json();
+        
+        if (data.locality || data.city) {
+          const address = `${data.locality || data.city}, ${data.principalSubdivision || ''}, ${data.countryName || ''}`.replace(/,\s*,/g, ',').replace(/,\s*$/, '');
+          storeForm.setValue("address", address);
+        }
+      } catch (geocodeError) {
+        console.log("Reverse geocoding failed, coordinates set without address");
+      }
+
+      toast({
+        title: "Location obtained successfully",
+        description: `Coordinates: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error getting location",
+        description: "Please ensure location access is enabled and try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGettingLocation(false);
     }
   };
 
@@ -436,29 +500,66 @@ export default function ShopkeeperDashboard() {
                       )}
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleGetLocation}
+                          disabled={isGettingLocation}
+                          className="flex items-center gap-2"
+                        >
+                          <MapPin className="h-4 w-4" />
+                          {isGettingLocation ? "Getting Location..." : "Get My Location"}
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          Auto-fill coordinates and address
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={storeForm.control}
+                          name="latitude"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Latitude (Optional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., 26.7271" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={storeForm.control}
+                          name="longitude"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Longitude (Optional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., 87.2751" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
                       <FormField
                         control={storeForm.control}
-                        name="latitude"
+                        name="googleMapsLink"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Latitude (Optional)</FormLabel>
+                            <FormLabel>Google Maps Link (Auto-generated)</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g., 26.7271" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={storeForm.control}
-                        name="longitude"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Longitude (Optional)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., 87.2751" {...field} />
+                              <Input 
+                                placeholder="Will be auto-filled when location is obtained" 
+                                {...field}
+                                readOnly
+                                className="bg-muted"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

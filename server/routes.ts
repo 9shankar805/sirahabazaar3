@@ -94,10 +94,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/stores", async (req, res) => {
     try {
       const storeData = insertStoreSchema.parse(req.body);
+      
+      // Check if user already has a store
+      const existingStores = await storage.getStoresByOwnerId(storeData.ownerId);
+      if (existingStores.length > 0) {
+        return res.status(400).json({ 
+          error: "You can only create one store per account" 
+        });
+      }
+      
+      // Check if store name already exists
+      const allStores = await storage.getAllStores();
+      const nameExists = allStores.some(store => 
+        store.name.toLowerCase() === storeData.name.toLowerCase()
+      );
+      if (nameExists) {
+        return res.status(400).json({ 
+          error: "A store with this name already exists" 
+        });
+      }
+      
       const store = await storage.createStore(storeData);
       res.json(store);
     } catch (error) {
-      res.status(400).json({ error: "Invalid store data" });
+      console.error("Store creation error:", error);
+      res.status(400).json({ 
+        error: "Invalid store data",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
