@@ -13,7 +13,9 @@ import {
   Clock,
   Truck,
   CheckCircle,
-  XCircle
+  XCircle,
+  Bell,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -201,6 +203,30 @@ export default function CustomerDashboard() {
                   >
                     <Heart className="h-4 w-4" />
                     <span>Wishlist</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveTab("notifications")}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-3 ${
+                      activeTab === "notifications" 
+                        ? "bg-primary text-primary-foreground" 
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    <Bell className="h-4 w-4" />
+                    <span>Notifications</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveTab("returns")}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-3 ${
+                      activeTab === "returns" 
+                        ? "bg-primary text-primary-foreground" 
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    <span>Returns</span>
                   </button>
                   
                   <button
@@ -458,6 +484,36 @@ export default function CustomerDashboard() {
                       </Button>
                     </form>
                   </Form>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Notifications */}
+            {activeTab === "notifications" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Bell className="h-5 w-5" />
+                    <span>Notifications</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <NotificationCenter userId={user.id} />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Returns */}
+            {activeTab === "returns" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <RefreshCw className="h-5 w-5" />
+                    <span>Returns & Refunds</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ReturnPolicy customerId={user.id} orderItems={orders.flatMap(order => order.items)} />
                 </CardContent>
               </Card>
             )}
