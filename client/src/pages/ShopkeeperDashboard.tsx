@@ -42,7 +42,15 @@ const productSchema = z.object({
   images: z.array(z.string()).default([]),
 });
 
+const storeSchema = z.object({
+  name: z.string().min(1, "Store name is required"),
+  description: z.string().optional(),
+  address: z.string().min(1, "Address is required"),
+  phone: z.string().optional(),
+});
+
 type ProductForm = z.infer<typeof productSchema>;
+type StoreForm = z.infer<typeof storeSchema>;
 
 export default function ShopkeeperDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -90,6 +98,17 @@ export default function ShopkeeperDashboard() {
       stock: 0,
       imageUrl: "",
       images: [],
+    },
+  });
+
+  // Form for creating stores
+  const storeForm = useForm<StoreForm>({
+    resolver: zodResolver(storeSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      address: "",
+      phone: "",
     },
   });
 
@@ -162,6 +181,29 @@ export default function ShopkeeperDashboard() {
     }
   };
 
+  const handleCreateStore = async (data: StoreForm) => {
+    try {
+      const storeData = {
+        ...data,
+        ownerId: user!.id,
+        phone: data.phone || null,
+        description: data.description || null,
+      };
+
+      await apiPost("/api/stores", storeData);
+      toast({ title: "Store created successfully" });
+      storeForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stores", "owner", user!.id] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create store",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleOrderStatusUpdate = async (orderId: number, status: string) => {
     try {
       await apiPut(`/api/orders/${orderId}/status`, { status });
@@ -201,13 +243,20 @@ export default function ShopkeeperDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className={`grid w-full ${currentStore ? 'grid-cols-4' : 'grid-cols-2'}`}>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="add-product">
-              {editingProduct ? "Edit Product" : "Add Product"}
-            </TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
+            {!currentStore && (
+              <TabsTrigger value="create-store">Create Store</TabsTrigger>
+            )}
+            {currentStore && (
+              <>
+                <TabsTrigger value="products">Products</TabsTrigger>
+                <TabsTrigger value="add-product">
+                  {editingProduct ? "Edit Product" : "Add Product"}
+                </TabsTrigger>
+                <TabsTrigger value="orders">Orders</TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           {/* Overview Tab */}
@@ -298,6 +347,89 @@ export default function ShopkeeperDashboard() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Create Store Tab */}
+          <TabsContent value="create-store" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create Your Store</CardTitle>
+                <p className="text-muted-foreground">
+                  Set up your store to start selling products on Siraha Bazaar
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Form {...storeForm}>
+                  <form onSubmit={storeForm.handleSubmit(handleCreateStore)} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={storeForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Store Name *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter your store name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={storeForm.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter phone number" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={storeForm.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Store Address *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter complete store address" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={storeForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Store Description</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe your store and what you sell"
+                              className="min-h-20"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button type="submit" className="btn-primary">
+                      Create Store
+                    </Button>
+                  </form>
+                </Form>
               </CardContent>
             </Card>
           </TabsContent>
