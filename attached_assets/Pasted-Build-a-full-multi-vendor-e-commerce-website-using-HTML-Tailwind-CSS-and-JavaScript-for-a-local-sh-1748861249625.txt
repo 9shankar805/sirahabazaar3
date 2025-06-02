@@ -1,0 +1,119 @@
+Build a full multi-vendor e-commerce website using HTML, Tailwind CSS, and JavaScript for a local shopping platform called Siraha Bazaar. The website should be mobile-friendly, visually appealing, and user-friendly. Include all essential pages and features found in popular shopping websites like Daraz, Flipkart, or Amazon, customized for a local marketplace. The features should include:
+
+🌐 1. Public Website (Customer View)
+
+    Homepage:
+
+        Beautiful hero banner with welcome message, background image, and “Start Shopping” CTA
+
+        Search bar for products/stores
+
+        Featured Products section (with image, title, price, add to cart)
+
+        Popular Stores section with:
+
+            Store name/logo, distance from customer, and location (map placeholder)
+
+        Flash deals / Sale banner (optional)
+
+        Footer with links: About Us, Contact, Terms, Privacy, Social Media Icons
+
+    Product Listing Page:
+
+        Grid of products
+
+        Filter sidebar (by category, price range)
+
+        Sort by price/popularity/date
+
+    Product Details Page:
+
+        Large image, name, description, price, quantity selector, add to cart button
+
+        Related products carousel
+
+    Store Page:
+
+        Store name, image/logo, map, contact
+
+        List of available products
+
+    Shopping Cart Page:
+
+        List of products added to cart
+
+        Quantity controls, remove buttons, total price, checkout button
+
+    Checkout Page:
+
+        Address form, payment method selector (dummy), order summary
+
+    Order Confirmation Page
+
+🔐 2. Authentication Pages
+
+    Login and Signup Pages
+
+        For both customers and shopkeepers
+
+        Input fields with validation
+
+    Forgot Password Page
+
+🛍️ 3. Shopkeeper (Admin) Dashboard
+
+Accessible after shopkeeper login:
+
+    Dashboard Page:
+
+        Overview cards (e.g., total orders, total products, revenue)
+
+    Add Product Page:
+
+        Form to add product (title, description, price, quantity, image upload)
+
+    Product Management Page:
+
+        Table of all products with edit/delete options
+
+    Order Management Page:
+
+        List of all customer orders with status (Pending, Shipped, Delivered)
+
+    Profile Page:
+
+        Edit store name, image, address, password
+
+    Location Page:
+
+        View/update store location (map placeholder)
+
+        Display approximate distance to customers (use dummy values)
+
+👥 4. Customer Dashboard (optional)
+
+After login:
+
+    View order history
+
+    View saved addresses
+
+    Update profile and password
+
+    Wishlist (optional)
+
+🧰 Other Features to Include
+
+    Navigation Bar with links to all main pages, login/register, and cart icon
+
+    Responsive design for mobile, tablet, and desktop
+
+    Smooth hover effects, modals, alerts
+
+    Dummy product and store data
+
+    Use icons (Font Awesome or HeroIcons)
+
+    Use Tailwind CSS for styling and layout
+
+    Use JavaScript for interactivity (search, cart logic, dynamic UI)
