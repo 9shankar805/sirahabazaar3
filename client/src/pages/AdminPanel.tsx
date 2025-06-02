@@ -26,12 +26,29 @@ interface Analytics {
   pageViews: Array<{ page: string; count: number }>;
 }
 
+const categorySchema = z.object({
+  name: z.string().min(1, "Category name is required"),
+  slug: z.string().min(1, "Slug is required"),
+});
+
+type CategoryForm = z.infer<typeof categorySchema>;
+
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminData, setAdminData] = useState<any>(null);
   const [loginForm, setLoginForm] = useState<AdminAuth>({ email: "", password: "" });
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Category form
+  const categoryForm = useForm<CategoryForm>({
+    resolver: zodResolver(categorySchema),
+    defaultValues: {
+      name: "",
+      slug: "",
+    },
+  });
 
   // Admin authentication mutation
   const loginMutation = useMutation({
@@ -76,6 +93,91 @@ export default function AdminPanel() {
     enabled: isAuthenticated,
   });
 
+  // Categories data
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+    enabled: isAuthenticated,
+  });
+
+  // Category mutations
+  const createCategoryMutation = useMutation({
+    mutationFn: async (categoryData: CategoryForm) => {
+      const response = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(categoryData),
+      });
+      if (!response.ok) throw new Error("Failed to create category");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      categoryForm.reset();
+      toast({
+        title: "Success",
+        description: "Category created successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: CategoryForm }) => {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to update category");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      setEditingCategory(null);
+      categoryForm.reset();
+      toast({
+        title: "Success",
+        description: "Category updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete category");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      toast({
+        title: "Success",
+        description: "Category deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     loginMutation.mutate(loginForm);
@@ -85,6 +187,32 @@ export default function AdminPanel() {
     setIsAuthenticated(false);
     setAdminData(null);
     setLoginForm({ email: "", password: "" });
+  };
+
+  const handleCategorySubmit = (data: CategoryForm) => {
+    if (editingCategory) {
+      updateCategoryMutation.mutate({ id: editingCategory.id, data });
+    } else {
+      createCategoryMutation.mutate(data);
+    }
+  };
+
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    categoryForm.setValue("name", category.name);
+    categoryForm.setValue("slug", category.slug);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCategory(null);
+    categoryForm.reset();
+  };
+
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
   };
 
   if (!isAuthenticated) {
@@ -215,7 +343,7 @@ export default function AdminPanel() {
                   <CardDescription>Most visited pages</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {analytics?.pageViews && analytics.pageViews.length > 0 ? (
+                  {analytics?.pageViews && Array.isArray(analytics.pageViews) && analytics.pageViews.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={analytics.pageViews.slice(0, 5)}>
                         <CartesianGrid strokeDasharray="3 3" />
@@ -283,6 +411,121 @@ export default function AdminPanel() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="categories" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Add Category Form */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    {editingCategory ? "Edit Category" : "Add New Category"}
+                  </CardTitle>
+                  <CardDescription>
+                    Create and manage product categories
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...categoryForm}>
+                    <form onSubmit={categoryForm.handleSubmit(handleCategorySubmit)} className="space-y-4">
+                      <FormField
+                        control={categoryForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Category Name</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter category name" 
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  if (!editingCategory) {
+                                    categoryForm.setValue("slug", generateSlug(e.target.value));
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={categoryForm.control}
+                        name="slug"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Slug</FormLabel>
+                            <FormControl>
+                              <Input placeholder="category-slug" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex gap-2">
+                        <Button 
+                          type="submit" 
+                          disabled={createCategoryMutation.isPending || updateCategoryMutation.isPending}
+                        >
+                          {editingCategory ? "Update Category" : "Add Category"}
+                        </Button>
+                        {editingCategory && (
+                          <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+
+              {/* Categories List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Existing Categories</CardTitle>
+                  <CardDescription>
+                    Manage all product categories
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {categories.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="text-muted-foreground">No categories found</div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {categories.map((category) => (
+                        <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div>
+                            <h4 className="font-medium">{category.name}</h4>
+                            <p className="text-sm text-muted-foreground">{category.slug}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditCategory(category)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deleteCategoryMutation.mutate(category.id)}
+                              disabled={deleteCategoryMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-6">

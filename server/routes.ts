@@ -193,6 +193,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/categories", async (req, res) => {
+    try {
+      const categoryData = insertCategorySchema.parse(req.body);
+      const category = await storage.createCategory(categoryData);
+      res.json(category);
+    } catch (error) {
+      console.error("Category creation error:", error);
+      res.status(400).json({ 
+        error: "Invalid category data", 
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  app.put("/api/categories/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const category = await storage.updateCategory(id, updates);
+      
+      if (!category) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+      
+      res.json(category);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update category" });
+    }
+  });
+
+  app.delete("/api/categories/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteCategory(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete category" });
+    }
+  });
+
   // Cart routes
   app.get("/api/cart/:userId", async (req, res) => {
     try {

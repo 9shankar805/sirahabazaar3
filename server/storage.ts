@@ -30,6 +30,8 @@ export interface IStorage {
   getAllCategories(): Promise<Category[]>;
   getCategory(id: number): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
+  updateCategory(id: number, updates: Partial<InsertCategory>): Promise<Category | undefined>;
+  deleteCategory(id: number): Promise<boolean>;
 
   // Product operations
   getProduct(id: number): Promise<Product | undefined>;
