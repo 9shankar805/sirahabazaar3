@@ -436,6 +436,36 @@ export default function ShopkeeperDashboard() {
                       )}
                     />
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={storeForm.control}
+                        name="latitude"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Latitude (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., 26.7271" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={storeForm.control}
+                        name="longitude"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Longitude (Optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., 87.2751" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <FormField
                       control={storeForm.control}
                       name="description"
