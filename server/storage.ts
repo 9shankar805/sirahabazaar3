@@ -5,6 +5,9 @@ import {
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
   type CartItem, type InsertCartItem
 } from "@shared/schema";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { eq, and, ilike, or } from "drizzle-orm";
+import { neon } from "@neondatabase/serverless";
 
 export interface IStorage {
   // User operations
@@ -377,4 +380,214 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// PostgreSQL Storage Implementation
+class PostgreSQLStorage implements IStorage {
+  private db;
+
+  constructor() {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL environment variable is required");
+    }
+    const sql = neon(process.env.DATABASE_URL);
+    this.db = drizzle(sql);
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.id, id));
+    return result[0];
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.email, email));
+    return result[0];
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const result = await this.db.insert(users).values(user).returning();
+    return result[0];
+  }
+
+  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const result = await this.db.update(users).set(updates).where(eq(users.id, id)).returning();
+    return result[0];
+  }
+
+  // Store operations
+  async getStore(id: number): Promise<Store | undefined> {
+    const result = await this.db.select().from(stores).where(eq(stores.id, id));
+    return result[0];
+  }
+
+  async getStoresByOwnerId(ownerId: number): Promise<Store[]> {
+    return await this.db.select().from(stores).where(eq(stores.ownerId, ownerId));
+  }
+
+  async getAllStores(): Promise<Store[]> {
+    return await this.db.select().from(stores);
+  }
+
+  async createStore(store: InsertStore): Promise<Store> {
+    const result = await this.db.insert(stores).values(store).returning();
+    return result[0];
+  }
+
+  async updateStore(id: number, updates: Partial<InsertStore>): Promise<Store | undefined> {
+    const result = await this.db.update(stores).set(updates).where(eq(stores.id, id)).returning();
+    return result[0];
+  }
+
+  // Category operations
+  async getAllCategories(): Promise<Category[]> {
+    return await this.db.select().from(categories);
+  }
+
+  async getCategory(id: number): Promise<Category | undefined> {
+    const result = await this.db.select().from(categories).where(eq(categories.id, id));
+    return result[0];
+  }
+
+  async createCategory(category: InsertCategory): Promise<Category> {
+    const result = await this.db.insert(categories).values(category).returning();
+    return result[0];
+  }
+
+  // Product operations
+  async getProduct(id: number): Promise<Product | undefined> {
+    const result = await this.db.select().from(products).where(eq(products.id, id));
+    return result[0];
+  }
+
+  async getProductsByStoreId(storeId: number): Promise<Product[]> {
+    return await this.db.select().from(products).where(eq(products.storeId, storeId));
+  }
+
+  async getAllProducts(): Promise<Product[]> {
+    return await this.db.select().from(products);
+  }
+
+  async getProductsByCategory(categoryId: number): Promise<Product[]> {
+    return await this.db.select().from(products).where(eq(products.categoryId, categoryId));
+  }
+
+  async searchProducts(query: string): Promise<Product[]> {
+    return await this.db.select().from(products).where(
+      or(
+        ilike(products.name, `%${query}%`),
+        ilike(products.description, `%${query}%`)
+      )
+    );
+  }
+
+  async createProduct(product: InsertProduct): Promise<Product> {
+    const result = await this.db.insert(products).values(product).returning();
+    return result[0];
+  }
+
+  async updateProduct(id: number, updates: Partial<InsertProduct>): Promise<Product | undefined> {
+    const result = await this.db.update(products).set(updates).where(eq(products.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteProduct(id: number): Promise<boolean> {
+    const result = await this.db.delete(products).where(eq(products.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Order operations
+  async getOrder(id: number): Promise<Order | undefined> {
+    const result = await this.db.select().from(orders).where(eq(orders.id, id));
+    return result[0];
+  }
+
+  async getOrdersByCustomerId(customerId: number): Promise<Order[]> {
+    return await this.db.select().from(orders).where(eq(orders.customerId, customerId));
+  }
+
+  async getOrdersByStoreId(storeId: number): Promise<Order[]> {
+    // This requires joining with order items to get orders for a specific store
+    const result = await this.db
+      .select({ 
+        id: orders.id,
+        customerId: orders.customerId,
+        totalAmount: orders.totalAmount,
+        status: orders.status,
+        shippingAddress: orders.shippingAddress,
+        paymentMethod: orders.paymentMethod,
+        phone: orders.phone,
+        customerName: orders.customerName,
+        createdAt: orders.createdAt
+      })
+      .from(orders)
+      .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
+      .innerJoin(products, eq(orderItems.productId, products.id))
+      .where(eq(products.storeId, storeId));
+    
+    return result;
+  }
+
+  async createOrder(order: InsertOrder): Promise<Order> {
+    const result = await this.db.insert(orders).values(order).returning();
+    return result[0];
+  }
+
+  async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
+    const result = await this.db.update(orders).set({ status }).where(eq(orders.id, id)).returning();
+    return result[0];
+  }
+
+  // Order item operations
+  async getOrderItems(orderId: number): Promise<OrderItem[]> {
+    return await this.db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  }
+
+  async createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem> {
+    const result = await this.db.insert(orderItems).values(orderItem).returning();
+    return result[0];
+  }
+
+  // Cart operations
+  async getCartItems(userId: number): Promise<CartItem[]> {
+    return await this.db.select().from(cartItems).where(eq(cartItems.userId, userId));
+  }
+
+  async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
+    // Check if item already exists in cart
+    const existingItem = await this.db
+      .select()
+      .from(cartItems)
+      .where(and(eq(cartItems.userId, cartItem.userId), eq(cartItems.productId, cartItem.productId)));
+
+    if (existingItem.length > 0) {
+      // Update quantity if item exists
+      const result = await this.db
+        .update(cartItems)
+        .set({ quantity: existingItem[0].quantity + cartItem.quantity })
+        .where(eq(cartItems.id, existingItem[0].id))
+        .returning();
+      return result[0];
+    } else {
+      // Create new cart item
+      const result = await this.db.insert(cartItems).values(cartItem).returning();
+      return result[0];
+    }
+  }
+
+  async updateCartItem(id: number, quantity: number): Promise<CartItem | undefined> {
+    const result = await this.db.update(cartItems).set({ quantity }).where(eq(cartItems.id, id)).returning();
+    return result[0];
+  }
+
+  async removeFromCart(id: number): Promise<boolean> {
+    const result = await this.db.delete(cartItems).where(eq(cartItems.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async clearCart(userId: number): Promise<boolean> {
+    const result = await this.db.delete(cartItems).where(eq(cartItems.userId, userId)).returning();
+    return result.length > 0;
+  }
+}
+
+// Use PostgreSQL storage instead of memory storage
+export const storage = new PostgreSQLStorage();
