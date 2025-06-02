@@ -19,6 +19,8 @@ import Register from "@/pages/Register";
 import StoreDetail from "@/pages/StoreDetail";
 import ShopkeeperDashboard from "@/pages/ShopkeeperDashboard";
 import CustomerDashboard from "@/pages/CustomerDashboard";
+import AdminPanel from "@/pages/AdminPanel";
+import StoreMaps from "@/pages/StoreMaps";
 
 function Router() {
   return (
@@ -34,6 +36,7 @@ function Router() {
       <Route path="/stores/:id" component={StoreDetail} />
       <Route path="/shopkeeper-dashboard" component={ShopkeeperDashboard} />
       <Route path="/customer-dashboard" component={CustomerDashboard} />
+      <Route path="/admin" component={AdminPanel} />
       <Route component={NotFound} />
     </Switch>
   );
