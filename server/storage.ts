@@ -176,9 +176,13 @@ export class MemStorage implements IStorage {
     const store: Store = {
       ...insertStore,
       id,
-      rating: insertStore.rating || "0.00",
-      totalReviews: insertStore.totalReviews || 0,
-      isActive: insertStore.isActive !== undefined ? insertStore.isActive : true,
+      description: insertStore.description || null,
+      phone: insertStore.phone || null,
+      logo: insertStore.logo || null,
+      coverImage: insertStore.coverImage || null,
+      rating: "0.00",
+      totalReviews: 0,
+      isActive: true,
       createdAt: new Date(),
     };
     this.stores.set(id, store);
@@ -251,6 +255,10 @@ export class MemStorage implements IStorage {
       categoryId: insertProduct.categoryId || null,
       stock: insertProduct.stock || null,
       images: insertProduct.images || null,
+      isFastSell: insertProduct.isFastSell || false,
+      isOnOffer: insertProduct.isOnOffer || false,
+      offerPercentage: insertProduct.offerPercentage || 0,
+      offerEndDate: insertProduct.offerEndDate || null,
       rating: "0.00",
       totalReviews: 0,
       isActive: insertProduct.isActive !== undefined ? insertProduct.isActive : true,

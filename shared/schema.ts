@@ -49,7 +49,7 @@ export const products = pgTable("products", {
   isFastSell: boolean("is_fast_sell").default(false), // Fast sell product
   isOnOffer: boolean("is_on_offer").default(false), // Special offer
   offerPercentage: integer("offer_percentage").default(0), // Discount percentage
-  offerEndDate: timestamp("offer_end_date"), // When offer expires
+  offerEndDate: text("offer_end_date"), // When offer expires (stored as string)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

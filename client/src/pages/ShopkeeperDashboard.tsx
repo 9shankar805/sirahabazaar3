@@ -140,6 +140,10 @@ export default function ShopkeeperDashboard() {
         price: data.price,
         originalPrice: data.originalPrice || undefined,
         images: data.imageUrl ? [data.imageUrl] : [],
+        isFastSell: data.isFastSell || false,
+        isOnOffer: data.isOnOffer || false,
+        offerPercentage: data.offerPercentage || 0,
+        offerEndDate: data.offerEndDate || undefined,
       };
 
       if (editingProduct) {
@@ -173,7 +177,12 @@ export default function ShopkeeperDashboard() {
       originalPrice: product.originalPrice || "",
       categoryId: product.categoryId || 0,
       stock: product.stock || 0,
+      imageUrl: product.images?.[0] || "",
       images: product.images || [],
+      isFastSell: product.isFastSell || false,
+      isOnOffer: product.isOnOffer || false,
+      offerPercentage: product.offerPercentage || 0,
+      offerEndDate: product.offerEndDate || "",
     });
     setActiveTab("add-product");
   };
