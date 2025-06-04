@@ -25,6 +25,7 @@ import ShopkeeperDashboard from "@/pages/ShopkeeperDashboard";
 import CustomerDashboard from "@/pages/CustomerDashboard";
 import AdminPanel from "@/pages/AdminPanel";
 import StoreMaps from "@/pages/StoreMaps";
+import Wishlist from "@/pages/Wishlist";
 
 function Router() {
   return (
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/customer-dashboard" component={CustomerDashboard} />
       <Route path="/admin" component={AdminPanel} />
       <Route path="/store-maps" component={StoreMaps} />
+      <Route path="/wishlist" component={Wishlist} />
       <Route component={NotFound} />
     </Switch>
   );

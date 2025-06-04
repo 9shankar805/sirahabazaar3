@@ -69,6 +69,22 @@ export default function ProductCard({ product }: ProductCardProps) {
               {discount}% OFF
             </Badge>
           )}
+          
+          {/* Wishlist Heart Icon */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/80 hover:bg-white"
+            onClick={handleWishlistToggle}
+          >
+            <Heart 
+              className={`h-4 w-4 ${
+                isInWishlist(product.id) 
+                  ? "fill-red-500 text-red-500" 
+                  : "text-gray-600"
+              }`}
+            />
+          </Button>
         </div>
         
         <div className="p-4">

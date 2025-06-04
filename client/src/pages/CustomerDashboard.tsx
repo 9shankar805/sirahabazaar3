@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
+import { useWishlist } from "@/hooks/useWishlist";
 import { useToast } from "@/hooks/use-toast";
 import { apiPut } from "@/lib/api";
 import NotificationCenter from "@/components/NotificationCenter";
@@ -52,6 +53,7 @@ type AddressForm = z.infer<typeof addressSchema>;
 export default function CustomerDashboard() {
   const [activeTab, setActiveTab] = useState("orders");
   const { user, logout } = useAuth();
+  const { wishlistItems } = useWishlist();
   const { toast } = useToast();
 
   // Queries
@@ -389,17 +391,53 @@ export default function CustomerDashboard() {
             {activeTab === "wishlist" && (
               <Card>
                 <CardHeader>
-                  <CardTitle>My Wishlist</CardTitle>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>My Wishlist</span>
+                    <Badge variant="secondary">{wishlistItems.length} items</Badge>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12">
-                    <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Your wishlist is empty</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Save items you love to your wishlist and shop them later.
-                    </p>
-                    <Button>Start Shopping</Button>
-                  </div>
+                  {wishlistItems.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Your wishlist is empty</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Save items you love to your wishlist and shop them later.
+                      </p>
+                      <Button>Start Shopping</Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {wishlistItems.slice(0, 6).map((item) => (
+                        <div key={item.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <img
+                            src={item.product?.images?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300"}
+                            alt={item.product?.name || "Product"}
+                            className="w-full h-32 object-cover rounded mb-3"
+                          />
+                          <h4 className="font-medium text-sm mb-2 line-clamp-2">
+                            {item.product?.name || "Product Name"}
+                          </h4>
+                          <p className="text-lg font-bold text-primary mb-3">
+                            ₹{item.product?.price || "0"}
+                          </p>
+                          <div className="flex gap-2">
+                            <Button size="sm" className="flex-1">
+                              Add to Cart
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <Heart className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {wishlistItems.length > 6 && (
+                    <div className="mt-6 text-center">
+                      <Button variant="outline">View All Wishlist Items</Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
