@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import StoreCard from "@/components/StoreCard";
 import type { Product, Store } from "@shared/schema";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 export default function Homepage() {
   const { data: products } = useQuery<Product[]>({
@@ -20,46 +25,107 @@ export default function Homepage() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative h-80 md:h-96 hero-gradient overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/10"></div>
-        <div className="relative max-w-7xl mx-auto px-4 h-full flex items-center">
-          <div className="max-w-2xl">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
-              Siraha Bazaar
-            </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
-              Discover fresh products from local vendors in your neighborhood
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/products">
-                <Button className="btn-primary text-lg">
-                  Start Shopping
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/stores">
-                <Button variant="outline" className="text-lg border-primary text-primary hover:bg-primary hover:text-white">
-                  Browse Stores
-                </Button>
-              </Link>
+      {/* Hero Slider Section */}
+      <section className="relative h-[80vh] md:h-screen overflow-hidden">
+        <Swiper
+          modules={[Navigation, Pagination, Autoplay]}
+          spaceBetween={0}
+          slidesPerView={1}
+          navigation
+          pagination={{ clickable: true }}
+          autoplay={{ delay: 4000, disableOnInteraction: false }}
+          className="h-full"
+        >
+          {/* Slide 1 - Fast Delivery */}
+          <SwiperSlide>
+            <div className="relative h-full bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-800 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/20"></div>
+              <div className="relative text-center text-white px-4 max-w-4xl mx-auto">
+                <h1 className="text-4xl md:text-7xl font-bold mb-6 leading-tight">
+                  From Click to Doorstep — In Just One Hour
+                </h1>
+                <p className="text-xl md:text-3xl mb-8 font-medium opacity-90">
+                  Shop fast. Get it faster.
+                </p>
+                <Link href="/products">
+                  <Button size="lg" className="bg-white text-black hover:bg-gray-100 text-lg px-8 py-4 rounded-full font-semibold">
+                    Shop Now
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
             </div>
-          </div>
-        </div>
+          </SwiperSlide>
+
+          {/* Slide 2 - Food Delivery */}
+          <SwiperSlide>
+            <div className="relative h-full bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/25"></div>
+              <div className="relative text-center text-white px-4 max-w-4xl mx-auto">
+                <h1 className="text-4xl md:text-7xl font-bold mb-6 leading-tight">
+                  Hot & Fresh – Tasty Food at Your Doorstep
+                </h1>
+                <p className="text-xl md:text-3xl mb-8 font-medium opacity-90">
+                  Delicious meals delivered within the hour.
+                </p>
+                <Link href="/products?category=1">
+                  <Button size="lg" className="bg-white text-black hover:bg-gray-100 text-lg px-8 py-4 rounded-full font-semibold">
+                    Order Now
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </SwiperSlide>
+
+          {/* Slide 3 - Limited Offers */}
+          <SwiperSlide>
+            <div className="relative h-full bg-gradient-to-br from-green-500 via-emerald-600 to-teal-700 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/20"></div>
+              <div className="relative text-center text-white px-4 max-w-4xl mx-auto">
+                <h1 className="text-4xl md:text-7xl font-bold mb-6 leading-tight">
+                  Grab the Offer Fast – Limited Time Only!
+                </h1>
+                <p className="text-xl md:text-3xl mb-8 font-medium opacity-90">
+                  Deals you can't miss.
+                </p>
+                <Link href="/products">
+                  <Button size="lg" className="bg-white text-black hover:bg-gray-100 text-lg px-8 py-4 rounded-full font-semibold">
+                    Grab Deal
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </SwiperSlide>
+        </Swiper>
       </section>
 
       {/* Categories */}
       <section className="py-16 bg-background">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-foreground mb-10 text-center">Shop by Category</h2>
+          <div className="flex justify-between items-center mb-10">
+            <h2 className="text-3xl font-bold text-foreground">Shop by Category</h2>
+            <Link href="/categories">
+              <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
+                View All Categories
+              </Button>
+            </Link>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {[
               { name: "Food", icon: "🍎", href: "/products?category=1" },
-              { name: "Clothing", icon: "👕", href: "/products?category=2" },
-              { name: "Electronics", icon: "📱", href: "/products?category=3" },
-              { name: "Home & Kitchen", icon: "🏠", href: "/products?category=4" },
-              { name: "Books", icon: "📚", href: "/products?category=5" },
-              { name: "Sports", icon: "⚽", href: "/products?category=6" },
+              { name: "Groceries", icon: "🛒", href: "/products?category=2" },
+              { name: "Fancy Items", icon: "💎", href: "/products?category=3" },
+              { name: "Electronics", icon: "📱", href: "/products?category=4" },
+              { name: "Clothing", icon: "👕", href: "/products?category=5" },
+              { name: "Books", icon: "📚", href: "/products?category=6" },
+              { name: "Sports", icon: "⚽", href: "/products?category=7" },
+              { name: "Beauty", icon: "💄", href: "/products?category=8" },
+              { name: "Toys", icon: "🧸", href: "/products?category=9" },
+              { name: "Health", icon: "🏥", href: "/products?category=10" },
+              { name: "Automotive", icon: "🚗", href: "/products?category=11" },
+              { name: "Garden", icon: "🌱", href: "/products?category=12" },
             ].map((category) => (
               <Link key={category.name} href={category.href}>
                 <div className="category-card text-center">
