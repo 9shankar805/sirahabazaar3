@@ -26,7 +26,7 @@ export default function Homepage() {
   return (
     <div className="min-h-screen">
       {/* Hero Slider Section */}
-      <section className="relative h-[80vh] md:h-screen overflow-hidden">
+      <section className="relative h-[50vh] md:h-[60vh] overflow-hidden">
         <Swiper
           modules={[Navigation, Pagination, Autoplay]}
           spaceBetween={0}
@@ -41,10 +41,10 @@ export default function Homepage() {
             <div className="relative h-full bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-800 flex items-center justify-center">
               <div className="absolute inset-0 bg-black/20"></div>
               <div className="relative text-center text-white px-4 max-w-4xl mx-auto">
-                <h1 className="text-4xl md:text-7xl font-bold mb-6 leading-tight">
+                <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
                   From Click to Doorstep — In Just One Hour
                 </h1>
-                <p className="text-xl md:text-3xl mb-8 font-medium opacity-90">
+                <p className="text-lg md:text-xl mb-6 font-medium opacity-90">
                   Shop fast. Get it faster.
                 </p>
                 <Link href="/products">
@@ -112,20 +112,12 @@ export default function Homepage() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               { name: "Food", icon: "🍎", href: "/products?category=1" },
               { name: "Groceries", icon: "🛒", href: "/products?category=2" },
-              { name: "Fancy Items", icon: "💎", href: "/products?category=3" },
               { name: "Electronics", icon: "📱", href: "/products?category=4" },
               { name: "Clothing", icon: "👕", href: "/products?category=5" },
-              { name: "Books", icon: "📚", href: "/products?category=6" },
-              { name: "Sports", icon: "⚽", href: "/products?category=7" },
-              { name: "Beauty", icon: "💄", href: "/products?category=8" },
-              { name: "Toys", icon: "🧸", href: "/products?category=9" },
-              { name: "Health", icon: "🏥", href: "/products?category=10" },
-              { name: "Automotive", icon: "🚗", href: "/products?category=11" },
-              { name: "Garden", icon: "🌱", href: "/products?category=12" },
             ].map((category) => (
               <Link key={category.name} href={category.href}>
                 <div className="category-card text-center">
@@ -149,7 +141,7 @@ export default function Homepage() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

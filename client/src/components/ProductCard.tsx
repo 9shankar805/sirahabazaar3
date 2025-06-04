@@ -62,7 +62,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <img
             src={product.images?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300"}
             alt={product.name}
-            className="w-full h-48 object-cover"
+            className="w-full h-32 md:h-48 object-cover"
           />
           {discount > 0 && (
             <Badge className="absolute top-2 left-2 bg-red-500 text-white">
@@ -87,8 +87,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           </Button>
         </div>
         
-        <div className="p-4">
-          <h3 className="font-medium text-foreground text-sm mb-2 line-clamp-2">
+        <div className="p-2 md:p-4">
+          <h3 className="font-medium text-foreground text-xs md:text-sm mb-1 md:mb-2 line-clamp-2">
             {product.name}
           </h3>
           
