@@ -15,7 +15,6 @@ import {
 
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [, setLocation] = useLocation();
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
@@ -168,14 +167,52 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            className="md:hidden text-white"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </Button>
+          {/* Mobile Action Icons */}
+          <div className="md:hidden flex items-center space-x-3">
+            {/* Cart */}
+            <Link href="/cart" className="relative hover:text-accent transition-colors p-1">
+              <ShoppingCart className="h-5 w-5" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                  {cartItemCount}
+                </span>
+              )}
+            </Link>
+
+            {/* Wishlist */}
+            <Link href="/wishlist" className="hover:text-accent transition-colors p-1">
+              <Heart className="h-5 w-5" />
+            </Link>
+
+            {user ? (
+              <>
+                {/* Seller Dashboard */}
+                {user.role === "shopkeeper" && (
+                  <Link href="/shopkeeper-dashboard" className="hover:text-accent transition-colors p-1">
+                    <Store className="h-5 w-5" />
+                  </Link>
+                )}
+
+                {/* Admin Panel */}
+                <Link href="/admin" className="hover:text-accent transition-colors p-1">
+                  <Shield className="h-5 w-5" />
+                </Link>
+
+                {/* Logout */}
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-accent p-1"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </>
+            ) : (
+              <Link href="/login" className="hover:text-accent transition-colors p-1">
+                <User className="h-5 w-5" />
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* Mobile Search */}
@@ -199,80 +236,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu - Only action buttons and user menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-white/20">
-          <div className="px-4 py-3 space-y-3">
-            {/* Action Buttons */}
-            <div className="space-y-3 border-b border-white/20 pb-3">
-              <Link 
-                href="/cart" 
-                className="flex items-center space-x-2 hover:text-accent transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <ShoppingCart className="h-4 w-4" />
-                <span>Cart ({cartItemCount})</span>
-              </Link>
-              <Link 
-                href="/wishlist" 
-                className="flex items-center space-x-2 hover:text-accent transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <Heart className="h-4 w-4" />
-                <span>Wishlist</span>
-              </Link>
-            </div>
-            
-            {/* User Menu */}
-            {user ? (
-              <div className="space-y-3">
-                {user.role === "shopkeeper" && (
-                  <Link 
-                    href="/shopkeeper-dashboard" 
-                    className="flex items-center space-x-2 hover:text-accent transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Store className="h-4 w-4" />
-                    <span>Seller Dashboard</span>
-                  </Link>
-                )}
-                <Link 
-                  href="/admin" 
-                  className="flex items-center space-x-2 hover:text-accent transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Shield className="h-4 w-4" />
-                  <span>Admin Panel</span>
-                </Link>
-                <button 
-                  onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                  className="flex items-center space-x-2 w-full text-left hover:text-accent transition-colors"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <Link 
-                  href="/login" 
-                  className="block hover:text-accent transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Login
-                </Link>
-                <Link 
-                  href="/register" 
-                  className="block hover:text-accent transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Sign Up
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+
     </nav>
   );
 }

@@ -1,8 +1,10 @@
 import { Link } from "wouter";
-import { Star, ShoppingCart } from "lucide-react";
+import { Star, ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import type { Product } from "@shared/schema";
 
@@ -12,6 +14,8 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -22,6 +26,28 @@ export default function ProductCard({ product }: ProductCardProps) {
     toast({
       title: "Added to cart",
       description: `${product.name} has been added to your cart.`,
+    });
+  };
+
+  const handleWishlistToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please login to add items to your wishlist.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const wasInWishlist = isInWishlist(product.id);
+    await toggleWishlist(product.id);
+    
+    toast({
+      title: wasInWishlist ? "Removed from wishlist" : "Added to wishlist",
+      description: `${product.name} has been ${wasInWishlist ? "removed from" : "added to"} your wishlist.`,
     });
   };
 

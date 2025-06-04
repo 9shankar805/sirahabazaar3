@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./hooks/useAuth";
 import { CartProvider } from "./hooks/useCart";
+import { WishlistProvider } from "./hooks/useWishlist";
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/Navbar";
 import BottomNavbar from "@/components/BottomNavbar";
@@ -53,17 +54,19 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CartProvider>
-          <TooltipProvider>
-            <div className="min-h-screen flex flex-col">
-              <Navbar />
-              <main className="flex-1 pb-16 md:pb-0">
-                <Router />
-              </main>
-              <Footer />
-              <BottomNavbar />
-            </div>
-            <Toaster />
-          </TooltipProvider>
+          <WishlistProvider>
+            <TooltipProvider>
+              <div className="min-h-screen flex flex-col">
+                <Navbar />
+                <main className="flex-1 pb-16 md:pb-0">
+                  <Router />
+                </main>
+                <Footer />
+                <BottomNavbar />
+              </div>
+              <Toaster />
+            </TooltipProvider>
+          </WishlistProvider>
         </CartProvider>
       </AuthProvider>
     </QueryClientProvider>
