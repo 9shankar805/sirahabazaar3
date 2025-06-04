@@ -103,6 +103,8 @@ export default function ShopkeeperDashboard() {
       return response.json();
     },
     enabled: !!currentStore,
+    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchOnWindowFocus: true,
   });
 
   const { data: categories = [] } = useQuery<Category[]>({

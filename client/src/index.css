@@ -3,37 +3,38 @@
 @tailwind utilities;
 
 :root {
-  --background: 250 252 254;
+  --background: ;
+
   /* #fafcfe - Softer white background */
-  --foreground: 17 24 39;
+  --foreground: ;
   /* #111827 - Deep charcoal text */
-  --muted: 243 244 246;
+  --muted: ;
   /* #f3f4f6 - Light gray for muted areas */
-  --muted-foreground: 107 114 128;
+  --muted-foreground: ;
   /* #6b7280 - Medium gray text */
-  --popover: 255 255 255;
+  --popover: ;
   /* #ffffff */
-  --popover-foreground: 17 24 39;
+  --popover-foreground: ;
   /* #111827 */
-  --card: 255 255 255;
+  --card: white;
   /* #ffffff */
   --card-foreground: 17 24 39;
   /* #111827 */
   --border: 229 231 235;
   /* #e5e7eb - Softer border */
-  --input: 229 231 235;
+  --input: #ff0a0a;
   /* #e5e7eb */
-  --primary: 16 185 129;
+  --primary: 16 18 12;
   /* #10b981 - Modern emerald green */
   --primary-foreground: 255 255 255;
   /* #ffffff */
-  --secondary: 249 250 251;
+  --secondary: 255 255 255;
   /* #f9fafb - Very light gray */
-  --secondary-foreground: 55 65 81;
+  --secondary-foreground: 255 255 255;
   /* #374151 */
-  --accent: 245 101 101;
+  --accent: 255 0 0;
   /* #f56565 - Warm coral accent */
-  --accent-foreground: 255 255 255;
+  --accent-foreground: ;
   /* #ffffff */
   --destructive: 239 68 68;
   /* #ef4444 */
