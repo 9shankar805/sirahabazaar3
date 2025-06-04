@@ -89,6 +89,13 @@ export const cartItems = pgTable("cart_items", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const wishlistItems = pgTable("wishlist_items", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Admin table for tracking and management
 export const admins = pgTable("admins", {
   id: serial("id").primaryKey(),
@@ -203,6 +210,11 @@ export const insertCartItemSchema = createInsertSchema(cartItems).omit({
   createdAt: true,
 });
 
+export const insertWishlistItemSchema = createInsertSchema(wishlistItems).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertAdminSchema = createInsertSchema(admins).omit({
   id: true,
   createdAt: true,
@@ -249,6 +261,8 @@ export type OrderItem = typeof orderItems.$inferSelect;
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type CartItem = typeof cartItems.$inferSelect;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
+export type WishlistItem = typeof wishlistItems.$inferSelect;
+export type InsertWishlistItem = z.infer<typeof insertWishlistItemSchema>;
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
 export type WebsiteVisit = typeof websiteVisits.$inferSelect;

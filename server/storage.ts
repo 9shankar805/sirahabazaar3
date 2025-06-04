@@ -1,13 +1,13 @@
 import { 
-  users, stores, categories, products, orders, orderItems, cartItems,
+  users, stores, categories, products, orders, orderItems, cartItems, wishlistItems,
   admins, websiteVisits, notifications, orderTracking, returnPolicies, returns,
   type User, type InsertUser, type Store, type InsertStore, 
   type Category, type InsertCategory, type Product, type InsertProduct,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
-  type CartItem, type InsertCartItem, type Admin, type InsertAdmin,
-  type WebsiteVisit, type InsertWebsiteVisit, type Notification, type InsertNotification,
-  type OrderTracking, type InsertOrderTracking, type ReturnPolicy, type InsertReturnPolicy,
-  type Return, type InsertReturn
+  type CartItem, type InsertCartItem, type WishlistItem, type InsertWishlistItem,
+  type Admin, type InsertAdmin, type WebsiteVisit, type InsertWebsiteVisit,
+  type Notification, type InsertNotification, type OrderTracking, type InsertOrderTracking,
+  type ReturnPolicy, type InsertReturnPolicy, type Return, type InsertReturn
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, ilike, or, desc, count, sql, gte } from "drizzle-orm";
@@ -60,6 +60,12 @@ export interface IStorage {
   updateCartItem(id: number, quantity: number): Promise<CartItem | undefined>;
   removeFromCart(id: number): Promise<boolean>;
   clearCart(userId: number): Promise<boolean>;
+
+  // Wishlist operations
+  getWishlistItems(userId: number): Promise<WishlistItem[]>;
+  addToWishlist(wishlistItem: InsertWishlistItem): Promise<WishlistItem>;
+  removeFromWishlist(id: number): Promise<boolean>;
+  isInWishlist(userId: number, productId: number): Promise<boolean>;
 
   // Admin operations
   getAdmin(id: number): Promise<Admin | undefined>;
