@@ -111,7 +111,7 @@ export default function ShopkeeperDashboard() {
       description: "",
       price: "",
       originalPrice: "",
-      categoryId: 0,
+      categoryId: 1,
       stock: 0,
       imageUrl: "",
       images: [],
