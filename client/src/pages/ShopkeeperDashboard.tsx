@@ -96,6 +96,12 @@ export default function ShopkeeperDashboard() {
 
   const { data: orders = [] } = useQuery<(Order & { items: OrderItem[] })[]>({
     queryKey: [`/api/orders/store/${currentStore?.id}`],
+    queryFn: async () => {
+      if (!currentStore?.id) return [];
+      const response = await fetch(`/api/orders/store/${currentStore.id}`);
+      if (!response.ok) throw new Error('Failed to fetch store orders');
+      return response.json();
+    },
     enabled: !!currentStore,
   });
 
@@ -168,8 +174,8 @@ export default function ShopkeeperDashboard() {
       form.reset();
       setEditingProduct(null);
       // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/products/store/${currentStore.id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/products", "store", currentStore.id] });
     } catch (error) {
       toast({
         title: "Error",
@@ -204,6 +210,11 @@ export default function ShopkeeperDashboard() {
     try {
       await apiDelete(`/api/products/${productId}`);
       toast({ title: "Product deleted successfully" });
+      // Invalidate queries to refresh data
+      if (currentStore) {
+        queryClient.invalidateQueries({ queryKey: [`/api/products/store/${currentStore.id}`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      }
     } catch (error) {
       toast({
         title: "Error",
