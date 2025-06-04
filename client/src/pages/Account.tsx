@@ -150,7 +150,7 @@ export default function Account() {
                     </div>
                   ))}
                 </div>
-              ) : orders && orders.length > 0 ? (
+              ) : orders && Array.isArray(orders) && orders.length > 0 ? (
                 <div className="space-y-4">
                   {orders.slice(0, 5).map((order: Order) => (
                     <div key={order.id} className="border rounded-lg p-4">
@@ -211,7 +211,7 @@ export default function Account() {
                     <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                     <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                   </div>
-                ) : stores && stores.length > 0 ? (
+                ) : stores && Array.isArray(stores) && stores.length > 0 ? (
                   <div className="space-y-4">
                     {stores.map((store: any) => (
                       <div key={store.id} className="border rounded-lg p-4">

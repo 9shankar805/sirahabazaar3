@@ -91,6 +91,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/stores/owner/:ownerId", async (req, res) => {
+    try {
+      const ownerId = parseInt(req.params.ownerId);
+      const stores = await storage.getStoresByOwnerId(ownerId);
+      res.json(stores);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch stores for owner" });
+    }
+  });
+
   app.post("/api/stores", async (req, res) => {
     try {
       const storeData = insertStoreSchema.parse(req.body);

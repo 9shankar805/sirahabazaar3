@@ -18,6 +18,8 @@ import OrderConfirmation from "@/pages/OrderConfirmation";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import StoreDetail from "@/pages/StoreDetail";
+import Stores from "@/pages/Stores";
+import Account from "@/pages/Account";
 import ShopkeeperDashboard from "@/pages/ShopkeeperDashboard";
 import CustomerDashboard from "@/pages/CustomerDashboard";
 import AdminPanel from "@/pages/AdminPanel";
@@ -34,7 +36,9 @@ function Router() {
       <Route path="/order-confirmation" component={OrderConfirmation} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/stores" component={Stores} />
       <Route path="/stores/:id" component={StoreDetail} />
+      <Route path="/account" component={Account} />
       <Route path="/shopkeeper-dashboard" component={ShopkeeperDashboard} />
       <Route path="/customer-dashboard" component={CustomerDashboard} />
       <Route path="/admin" component={AdminPanel} />

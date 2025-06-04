@@ -22,10 +22,12 @@ export const stores = pgTable("stores", {
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
   phone: text("phone"),
+  website: text("website"),
   logo: text("logo"), // Store logo URL
   coverImage: text("cover_image"), // Store cover image URL
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0.00"),
   totalReviews: integer("total_reviews").default(0),
+  featured: boolean("featured").default(false),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
