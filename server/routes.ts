@@ -3,8 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
-  insertAdminSchema, insertWebsiteVisitSchema, insertNotificationSchema, insertOrderTrackingSchema,
-  insertReturnPolicySchema, insertReturnSchema, insertCategorySchema
+  insertWishlistItemSchema, insertAdminSchema, insertWebsiteVisitSchema, insertNotificationSchema, 
+  insertOrderTrackingSchema, insertReturnPolicySchema, insertReturnSchema, insertCategorySchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -345,6 +345,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to clear cart" });
+    }
+  });
+
+  // Wishlist routes
+  app.get("/api/wishlist/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const wishlistItems = await storage.getWishlistItems(userId);
+      res.json(wishlistItems);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch wishlist items" });
+    }
+  });
+
+  app.post("/api/wishlist", async (req, res) => {
+    try {
+      const validatedData = insertWishlistItemSchema.parse(req.body);
+      const wishlistItem = await storage.addToWishlist(validatedData);
+      res.status(201).json(wishlistItem);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid wishlist item data" });
+    }
+  });
+
+  app.delete("/api/wishlist/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.removeFromWishlist(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Wishlist item not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to remove wishlist item" });
+    }
+  });
+
+  app.get("/api/wishlist/:userId/check/:productId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const productId = parseInt(req.params.productId);
+      const isInWishlist = await storage.isInWishlist(userId, productId);
+      res.json({ isInWishlist });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to check wishlist status" });
     }
   });
 

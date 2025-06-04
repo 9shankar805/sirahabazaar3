@@ -310,6 +310,36 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) >= 0;
   }
 
+  // Wishlist operations
+  async getWishlistItems(userId: number): Promise<WishlistItem[]> {
+    return await db.select().from(wishlistItems).where(eq(wishlistItems.userId, userId));
+  }
+
+  async addToWishlist(wishlistItem: InsertWishlistItem): Promise<WishlistItem> {
+    // Check if item already exists in wishlist
+    const existingItem = await db.select().from(wishlistItems)
+      .where(and(eq(wishlistItems.userId, wishlistItem.userId), eq(wishlistItems.productId, wishlistItem.productId)));
+
+    if (existingItem.length > 0) {
+      return existingItem[0];
+    } else {
+      const [newItem] = await db.insert(wishlistItems).values(wishlistItem).returning();
+      return newItem;
+    }
+  }
+
+  async removeFromWishlist(id: number): Promise<boolean> {
+    const result = await db.delete(wishlistItems).where(eq(wishlistItems.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async isInWishlist(userId: number, productId: number): Promise<boolean> {
+    const result = await db.select().from(wishlistItems)
+      .where(and(eq(wishlistItems.userId, userId), eq(wishlistItems.productId, productId)))
+      .limit(1);
+    return result.length > 0;
+  }
+
   // Admin operations
   async getAdmin(id: number): Promise<Admin | undefined> {
     const [admin] = await db.select().from(admins).where(eq(admins.id, id));
