@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield, Home, Package, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,12 +45,38 @@ export default function Navbar() {
             <span className="text-xl font-bold">Siraha Bazaar</span>
           </Link>
 
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">
+            <Link href="/" className="flex items-center space-x-1 hover:text-accent transition-colors">
+              <Home className="h-4 w-4" />
+              <span>Home</span>
+            </Link>
+            <Link href="/products" className="flex items-center space-x-1 hover:text-accent transition-colors">
+              <Package className="h-4 w-4" />
+              <span>Products</span>
+            </Link>
+            <Link href="/stores" className="flex items-center space-x-1 hover:text-accent transition-colors">
+              <Store className="h-4 w-4" />
+              <span>Store</span>
+            </Link>
+            <Link href="/store-maps" className="flex items-center space-x-1 hover:text-accent transition-colors">
+              <MapPin className="h-4 w-4" />
+              <span>Store Map</span>
+            </Link>
+            {user && (
+              <Link href="/customer-dashboard" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                <User className="h-4 w-4" />
+                <span>Account</span>
+              </Link>
+            )}
+          </div>
+
           {/* Search Bar (Desktop) */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
+          <div className="hidden md:flex max-w-sm mx-4">
             <form onSubmit={handleSearch} className="relative w-full">
               <Input
                 type="text"
-                placeholder="Search for products, stores and more"
+                placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-4 pr-12 py-2 bg-white text-gray-900 border-none focus:ring-2 focus:ring-white"
@@ -65,72 +91,67 @@ export default function Navbar() {
             </form>
           </div>
 
-          {/* Navigation Links (Desktop) */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link href="/" className="hover:text-accent transition-colors">
-              Home
-            </Link>
-            <Link href="/products" className="hover:text-accent transition-colors">
-              Products
-            </Link>
-            <Link href="/store-maps" className="hover:text-accent transition-colors">
-              <MapPin className="h-4 w-4 inline mr-1" />
-              Store Maps
-            </Link>
-
+          {/* Top Action Buttons (Desktop) */}
+          <div className="hidden md:flex items-center space-x-4">
             {/* Cart */}
-            <Link href="/cart" className="relative hover:text-accent transition-colors">
+            <Link href="/cart" className="relative hover:text-accent transition-colors p-2">
               <ShoppingCart className="h-5 w-5" />
               {cartItemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-accent text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   {cartItemCount}
                 </span>
               )}
             </Link>
 
-            {/* User Menu */}
+            {/* Wishlist */}
+            <Link href="/wishlist" className="hover:text-accent transition-colors p-2">
+              <Heart className="h-5 w-5" />
+            </Link>
+
+            {/* User Menu or Auth Buttons */}
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-white hover:text-accent">
-                    <User className="h-5 w-5 mr-1" />
-                    <span className="hidden lg:inline">{user.fullName}</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem asChild>
-                    <Link href="/customer-dashboard" className="cursor-pointer">
-                      My Account
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Heart className="h-4 w-4 mr-2" />
-                    Wishlist
-                  </DropdownMenuItem>
-                  {user.role === "shopkeeper" && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/shopkeeper-dashboard" className="cursor-pointer">
-                          <Store className="h-4 w-4 mr-2" />
-                          Seller Dashboard
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin" className="cursor-pointer">
-                      <Shield className="h-4 w-4 mr-2" />
-                      Admin Panel
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center space-x-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="text-white hover:text-accent p-2">
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem asChild>
+                      <Link href="/customer-dashboard" className="cursor-pointer">
+                        <User className="h-4 w-4 mr-2" />
+                        My Account
+                      </Link>
+                    </DropdownMenuItem>
+                    {user.role === "shopkeeper" && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href="/shopkeeper-dashboard" className="cursor-pointer">
+                            <Store className="h-4 w-4 mr-2" />
+                            Seller Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="cursor-pointer">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:text-accent p-2"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </div>
             ) : (
               <div className="flex items-center space-x-3">
                 <Link href="/login">
@@ -178,67 +199,61 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Only action buttons and user menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-white/20">
           <div className="px-4 py-3 space-y-3">
-            <Link 
-              href="/" 
-              className="block hover:text-accent transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Home
-            </Link>
-            <Link 
-              href="/products" 
-              className="block hover:text-accent transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Products
-            </Link>
-            <Link 
-              href="/store-maps" 
-              className="block hover:text-accent transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Store Maps
-            </Link>
-            <Link 
-              href="/cart" 
-              className="flex items-center space-x-2 hover:text-accent transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <ShoppingCart className="h-5 w-5" />
-              <span>Cart ({cartItemCount})</span>
-            </Link>
+            {/* Action Buttons */}
+            <div className="space-y-3 border-b border-white/20 pb-3">
+              <Link 
+                href="/cart" 
+                className="flex items-center space-x-2 hover:text-accent transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <ShoppingCart className="h-4 w-4" />
+                <span>Cart ({cartItemCount})</span>
+              </Link>
+              <Link 
+                href="/wishlist" 
+                className="flex items-center space-x-2 hover:text-accent transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Heart className="h-4 w-4" />
+                <span>Wishlist</span>
+              </Link>
+            </div>
             
+            {/* User Menu */}
             {user ? (
-              <>
-                <Link 
-                  href="/customer-dashboard" 
-                  className="block hover:text-accent transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  My Account
-                </Link>
+              <div className="space-y-3">
                 {user.role === "shopkeeper" && (
                   <Link 
                     href="/shopkeeper-dashboard" 
-                    className="block hover:text-accent transition-colors"
+                    className="flex items-center space-x-2 hover:text-accent transition-colors"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Seller Dashboard
+                    <Store className="h-4 w-4" />
+                    <span>Seller Dashboard</span>
                   </Link>
                 )}
+                <Link 
+                  href="/admin" 
+                  className="flex items-center space-x-2 hover:text-accent transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Shield className="h-4 w-4" />
+                  <span>Admin Panel</span>
+                </Link>
                 <button 
                   onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                  className="block w-full text-left hover:text-accent transition-colors"
+                  className="flex items-center space-x-2 w-full text-left hover:text-accent transition-colors"
                 >
-                  Logout
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
                 </button>
-              </>
+              </div>
             ) : (
-              <>
+              <div className="space-y-3">
                 <Link 
                   href="/login" 
                   className="block hover:text-accent transition-colors"
@@ -253,7 +268,7 @@ export default function Navbar() {
                 >
                   Sign Up
                 </Link>
-              </>
+              </div>
             )}
           </div>
         </div>

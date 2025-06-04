@@ -7,6 +7,7 @@ import { AuthProvider } from "./hooks/useAuth";
 import { CartProvider } from "./hooks/useCart";
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/Navbar";
+import BottomNavbar from "@/components/BottomNavbar";
 import Footer from "@/components/Footer";
 import Homepage from "@/pages/Homepage";
 import Products from "@/pages/Products";
@@ -51,10 +52,11 @@ function App() {
           <TooltipProvider>
             <div className="min-h-screen flex flex-col">
               <Navbar />
-              <main className="flex-1">
+              <main className="flex-1 pb-16 md:pb-0">
                 <Router />
               </main>
               <Footer />
+              <BottomNavbar />
             </div>
             <Toaster />
           </TooltipProvider>
