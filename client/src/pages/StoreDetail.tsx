@@ -44,16 +44,33 @@ export default function StoreDetail() {
   return (
     <div className="min-h-screen bg-muted">
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Store Cover Image */}
+        {store.coverImage && (
+          <div className="w-full h-48 md:h-64 bg-gray-200 rounded-lg mb-6 overflow-hidden">
+            <img
+              src={store.coverImage}
+              alt={`${store.name} cover`}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop&crop=center";
+              }}
+            />
+          </div>
+        )}
+
         {/* Store Header */}
         <Card className="mb-8">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
-              {/* Store Image */}
+              {/* Store Logo */}
               <div className="w-32 h-32 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                 <img
-                  src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"
+                  src={store.logo || "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"}
                   alt={store.name}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200";
+                  }}
                 />
               </div>
 
@@ -95,10 +112,12 @@ export default function StoreDetail() {
                       <span>{store.phone}</span>
                     </div>
                   )}
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-2 text-red-500" />
-                    <span>1.2 km away</span>
-                  </div>
+                  {store.latitude && store.longitude && (
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-2 text-blue-500" />
+                      <span>Location available</span>
+                    </div>
+                  )}
                 </div>
 
                 {store.description && (
@@ -108,13 +127,32 @@ export default function StoreDetail() {
 
               {/* Action Buttons */}
               <div className="flex flex-col space-y-3 w-full md:w-auto">
-                <Button className="btn-primary">
-                  <Phone className="h-4 w-4 mr-2" />
-                  Call Store
-                </Button>
+                {store.phone && (
+                  <Button 
+                    className="btn-primary"
+                    onClick={() => window.open(`tel:${store.phone}`, '_self')}
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    Call Store
+                  </Button>
+                )}
+                
+                {store.latitude && store.longitude && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`;
+                      window.open(mapsUrl, '_blank');
+                    }}
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Get Directions
+                  </Button>
+                )}
+                
                 <Button variant="outline">
-                  <ArrowRight className="h-4 w-4 mr-2" />
-                  Get ArrowRight
+                  <Star className="h-4 w-4 mr-2" />
+                  Rate Store
                 </Button>
               </div>
             </div>

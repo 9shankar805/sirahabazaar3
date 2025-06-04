@@ -13,9 +13,12 @@ export default function StoreCard({ store }: StoreCardProps) {
         <div className="flex items-center space-x-3 mb-3">
           <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
             <img
-              src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80"
+              src={store.logo || "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80"}
               alt={store.name}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80";
+              }}
             />
           </div>
           <div className="flex-1">
