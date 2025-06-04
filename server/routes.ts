@@ -367,19 +367,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { order, items } = req.body;
       console.log("Order request:", { order, items });
       
-      // Create order
+      // Create order with location data
       const orderData = insertOrderSchema.parse(order);
       const createdOrder = await storage.createOrder(orderData);
       
-      // Create order items
+      // Create order items and collect store owners for notifications
+      const storeOwners = new Set<number>();
       const orderItems = await Promise.all(
-        items.map((item: any) => 
-          storage.createOrderItem({
+        items.map(async (item: any) => {
+          const orderItem = await storage.createOrderItem({
             ...item,
             orderId: createdOrder.id
-          })
-        )
+          });
+          
+          // Get store info for notifications
+          const store = await storage.getStore(item.storeId);
+          if (store) {
+            storeOwners.add(store.ownerId);
+          }
+          
+          return orderItem;
+        })
       );
+      
+      // Create order tracking
+      await storage.createOrderTracking({
+        orderId: createdOrder.id,
+        status: "pending",
+        description: "Order placed successfully"
+      });
+      
+      // Send notifications to store owners with customer location details
+      for (const ownerId of storeOwners) {
+        const locationInfo = orderData.latitude && orderData.longitude 
+          ? `Customer Location: ${orderData.latitude}, ${orderData.longitude}` 
+          : "Location not provided";
+          
+        await storage.createNotification({
+          userId: ownerId,
+          title: "New Order Received",
+          message: `New order #${createdOrder.id} from ${orderData.customerName}. Address: ${orderData.shippingAddress}. ${locationInfo}. Phone: ${orderData.phone}`,
+          type: "success"
+        });
+      }
+      
+      // Send confirmation notification to customer
+      await storage.createNotification({
+        userId: orderData.customerId,
+        title: "Order Confirmed",
+        message: `Your order #${createdOrder.id} has been confirmed and is being processed`,
+        type: "success"
+      });
       
       // Clear user's cart
       await storage.clearCart(order.customerId);

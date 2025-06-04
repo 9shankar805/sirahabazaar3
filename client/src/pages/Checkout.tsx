@@ -72,18 +72,22 @@ export default function Checkout() {
       form.setValue("latitude", latitude);
       form.setValue("longitude", longitude);
 
-      // Reverse geocoding to get address
+      // Use Nominatim (OpenStreetMap) for reverse geocoding - free and reliable
       try {
         const response = await fetch(
-          `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_API_KEY&language=en&pretty=1`
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
         );
         
         if (response.ok) {
           const data = await response.json();
-          if (data.results && data.results.length > 0) {
-            const address = data.results[0].formatted;
-            form.setValue("shippingAddress", address);
+          if (data.display_name) {
+            form.setValue("shippingAddress", data.display_name);
+          } else {
+            // Fallback: use coordinates as address
+            form.setValue("shippingAddress", `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`);
           }
+        } else {
+          form.setValue("shippingAddress", `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`);
         }
       } catch (geocodeError) {
         // Fallback: use coordinates as address if geocoding fails
