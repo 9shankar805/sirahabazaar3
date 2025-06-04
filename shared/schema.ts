@@ -185,6 +185,13 @@ export const insertProductSchema = createInsertSchema(products).omit({
 export const insertOrderSchema = createInsertSchema(orders).omit({
   id: true,
   createdAt: true,
+}).extend({
+  latitude: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val !== undefined ? String(val) : undefined
+  ),
+  longitude: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val !== undefined ? String(val) : undefined
+  ),
 });
 
 export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
