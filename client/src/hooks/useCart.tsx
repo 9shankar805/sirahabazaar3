@@ -100,10 +100,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = async () => {
     if (!user) return;
 
-    // Remove all items one by one
-    await Promise.all(
-      cartItems.map(item => removeFromCart(item.id))
-    );
+    const response = await fetch(`/api/cart/user/${user.id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to clear cart");
+    }
+
+    await refreshCart();
   };
 
   const totalAmount = cartItems.reduce((sum, item) => {

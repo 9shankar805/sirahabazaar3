@@ -333,6 +333,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/cart/user/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const cleared = await storage.clearCart(userId);
+      
+      if (!cleared) {
+        return res.status(404).json({ error: "Failed to clear cart" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to clear cart" });
+    }
+  });
+
   // Order routes
   app.get("/api/orders/customer/:customerId", async (req, res) => {
     try {
