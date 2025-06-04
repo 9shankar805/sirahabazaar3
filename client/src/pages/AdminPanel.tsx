@@ -99,6 +99,12 @@ export default function AdminPanel() {
     enabled: isAuthenticated,
   });
 
+  // Stores data
+  const { data: stores = [] } = useQuery({
+    queryKey: ["/api/stores"],
+    enabled: isAuthenticated,
+  });
+
   // Category mutations
   const createCategoryMutation = useMutation({
     mutationFn: async (categoryData: CategoryForm) => {
@@ -232,8 +238,8 @@ export default function AdminPanel() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@sirahaBazaar.com"
-                  value={loginForm.email}
+                  placeholder="admin@sirahbazaar.com"
+                  value={loginForm.email || ""}
                   onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                   required
                 />
@@ -244,7 +250,7 @@ export default function AdminPanel() {
                   id="password"
                   type="password"
                   placeholder="Enter admin password"
-                  value={loginForm.password}
+                  value={loginForm.password || ""}
                   onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                   required
                 />
@@ -319,7 +325,7 @@ export default function AdminPanel() {
                   <Store className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">0</div>
+                  <div className="text-2xl font-bold">{stores?.length || 0}</div>
                   <p className="text-xs text-muted-foreground">Currently active</p>
                 </CardContent>
               </Card>

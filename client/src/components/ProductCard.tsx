@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Star, ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/hooks/useAuth";
@@ -71,20 +72,27 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
           
           {/* Wishlist Heart Icon */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/80 hover:bg-white"
-            onClick={handleWishlistToggle}
-          >
-            <Heart 
-              className={`h-4 w-4 ${
-                isInWishlist(product.id) 
-                  ? "fill-red-500 text-red-500" 
-                  : "text-gray-600"
-              }`}
-            />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/80 hover:bg-white"
+                onClick={handleWishlistToggle}
+              >
+                <Heart 
+                  className={`h-4 w-4 transition-colors ${
+                    isInWishlist(product.id) 
+                      ? "fill-red-500 text-red-500" 
+                      : "text-gray-600 hover:text-red-400"
+                  }`}
+                />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
         
         <div className="p-2 md:p-4">
@@ -119,15 +127,22 @@ export default function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
           
-          <Button
-            onClick={handleAddToCart}
-            className="w-full btn-secondary text-xs md:text-sm"
-            size="sm"
-          >
-            <ShoppingCart className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            <span className="hidden md:inline">Add to Cart</span>
-            <span className="md:hidden">Add</span>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleAddToCart}
+                className="w-full btn-secondary text-xs md:text-sm"
+                size="sm"
+              >
+                <ShoppingCart className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                <span className="hidden md:inline">Add to Cart</span>
+                <span className="md:hidden">Add</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Add {product.name} to cart</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </Link>
