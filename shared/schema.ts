@@ -64,6 +64,8 @@ export const orders = pgTable("orders", {
   paymentMethod: text("payment_method").notNull(),
   phone: text("phone").notNull(),
   customerName: text("customer_name").notNull(),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }), // Customer location latitude
+  longitude: decimal("longitude", { precision: 11, scale: 8 }), // Customer location longitude
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
