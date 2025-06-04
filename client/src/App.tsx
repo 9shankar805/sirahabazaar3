@@ -26,11 +26,13 @@ import CustomerDashboard from "@/pages/CustomerDashboard";
 import AdminPanel from "@/pages/AdminPanel";
 import StoreMaps from "@/pages/StoreMaps";
 import Wishlist from "@/pages/Wishlist";
+import Categories from "@/pages/Categories";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Homepage} />
+      <Route path="/categories" component={Categories} />
       <Route path="/products" component={Products} />
       <Route path="/products/:id" component={ProductDetail} />
       <Route path="/cart" component={Cart} />

@@ -108,12 +108,12 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
           
-          <div className="flex items-center space-x-2 mb-3">
-            <span className="text-lg font-bold text-foreground">
+          <div className="flex items-center space-x-1 md:space-x-2 mb-2 md:mb-3">
+            <span className="text-sm md:text-lg font-bold text-foreground">
               ₹{Number(product.price).toLocaleString()}
             </span>
             {product.originalPrice && (
-              <span className="text-sm text-muted-foreground line-through">
+              <span className="text-xs md:text-sm text-muted-foreground line-through">
                 ₹{Number(product.originalPrice).toLocaleString()}
               </span>
             )}
@@ -121,11 +121,12 @@ export default function ProductCard({ product }: ProductCardProps) {
           
           <Button
             onClick={handleAddToCart}
-            className="w-full btn-secondary"
+            className="w-full btn-secondary text-xs md:text-sm"
             size="sm"
           >
-            <ShoppingCart className="h-4 w-4 mr-1" />
-            Add to Cart
+            <ShoppingCart className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+            <span className="hidden md:inline">Add to Cart</span>
+            <span className="md:hidden">Add</span>
           </Button>
         </div>
       </div>
