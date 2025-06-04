@@ -33,10 +33,10 @@ export default function BottomNavbar() {
       active: location === "/store-maps"
     },
     {
-      href: user ? "/customer-dashboard" : "/login",
+      href: user ? "/account" : "/login",
       icon: User,
       label: "Account",
-      active: location.startsWith("/customer-dashboard") || location.startsWith("/shopkeeper-dashboard")
+      active: location.startsWith("/account") || location.startsWith("/customer-dashboard") || location.startsWith("/shopkeeper-dashboard")
     }
   ];
 
