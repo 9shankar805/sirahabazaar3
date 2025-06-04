@@ -24,14 +24,14 @@ export default function Stores() {
     // Search functionality could be implemented here
   };
 
-  const filteredStores = stores?.filter((store: Store) => {
+  const filteredStores = Array.isArray(stores) ? stores.filter((store: Store) => {
     const matchesSearch = searchQuery === "" || 
       store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       store.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       store.address?.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesSearch;
-  }) || [];
+  }) : [];
 
   const getStoreHours = () => {
     const currentHour = new Date().getHours();
@@ -81,7 +81,7 @@ export default function Stores() {
               </div>
               <div>
                 <p className="text-sm font-medium">Total Stores</p>
-                <p className="text-2xl font-bold">{stores?.length || 0}</p>
+                <p className="text-2xl font-bold">{Array.isArray(stores) ? stores.length : 0}</p>
               </div>
             </div>
           </CardContent>
@@ -96,7 +96,7 @@ export default function Stores() {
               <div>
                 <p className="text-sm font-medium">Open Now</p>
                 <p className="text-2xl font-bold">
-                  {stores?.filter(() => getStoreHours().status === "Open").length || 0}
+                  {Array.isArray(stores) ? stores.filter(() => getStoreHours().status === "Open").length : 0}
                 </p>
               </div>
             </div>
@@ -112,7 +112,7 @@ export default function Stores() {
               <div>
                 <p className="text-sm font-medium">Featured</p>
                 <p className="text-2xl font-bold">
-                  {stores?.filter((store: Store) => store.featured).length || 0}
+                  {Array.isArray(stores) ? stores.filter((store: Store) => store.featured).length : 0}
                 </p>
               </div>
             </div>
