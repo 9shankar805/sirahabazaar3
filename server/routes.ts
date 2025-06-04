@@ -16,7 +16,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('User-Agent'),
         page: req.path,
         referrer: req.get('Referrer'),
-        sessionId: req.sessionID || 'anonymous',
+        sessionId: (req as any).sessionID || 'anonymous',
         userId: req.body?.userId || null
       };
       
@@ -398,7 +398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Send notifications to store owners with customer location details
-      for (const ownerId of storeOwners) {
+      for (const ownerId of Array.from(storeOwners)) {
         const locationInfo = orderData.latitude && orderData.longitude 
           ? `Customer Location: ${orderData.latitude}, ${orderData.longitude}` 
           : "Location not provided";
@@ -767,7 +767,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Send notifications to store owners
-      for (const ownerId of storeOwners) {
+      for (const ownerId of Array.from(storeOwners)) {
         await storage.createNotification({
           userId: ownerId,
           title: "New Order Received",

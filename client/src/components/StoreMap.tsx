@@ -249,24 +249,47 @@ export default function StoreMap() {
             <Card>
               <CardHeader>
                 <CardTitle>{selectedStore.name}</CardTitle>
-                <CardDescription>Store details and location</CardDescription>
+                <CardDescription>Store details and interactive map</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
                   {selectedStore.latitude && selectedStore.longitude ? (
-                    <div className="text-center">
-                      <MapPin className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">
-                        Location: {selectedStore.latitude}, {selectedStore.longitude}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Google Maps integration requires API key configuration
-                      </p>
-                    </div>
+                    <MapContainer
+                      center={[parseFloat(selectedStore.latitude), parseFloat(selectedStore.longitude)]}
+                      zoom={15}
+                      style={{ height: '100%', width: '100%' }}
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <Marker
+                        position={[parseFloat(selectedStore.latitude), parseFloat(selectedStore.longitude)]}
+                        icon={storeIcon}
+                      >
+                        <Popup>
+                          <div className="text-center">
+                            <h3 className="font-semibold">{selectedStore.name}</h3>
+                            <p className="text-sm text-gray-600">{selectedStore.address}</p>
+                            <p className="text-sm">Rating: {selectedStore.rating} ⭐</p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                      {userLocation && (
+                        <Marker
+                          position={[userLocation.latitude, userLocation.longitude]}
+                          icon={userIcon}
+                        >
+                          <Popup>Your Location</Popup>
+                        </Marker>
+                      )}
+                    </MapContainer>
                   ) : (
-                    <div className="text-center text-gray-500">
-                      <MapPin className="h-12 w-12 mx-auto mb-2" />
-                      <p>Location coordinates not available</p>
+                    <div className="flex items-center justify-center h-full text-center text-gray-500">
+                      <div>
+                        <MapPin className="h-12 w-12 mx-auto mb-2" />
+                        <p>Location coordinates not available</p>
+                      </div>
                     </div>
                   )}
                 </div>
