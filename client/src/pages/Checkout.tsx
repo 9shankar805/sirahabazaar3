@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CreditCard, Truck, MapPin } from "lucide-react";
+import { CreditCard, Truck, MapPin, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -22,12 +22,15 @@ const checkoutSchema = z.object({
   phone: z.string().min(10, "Valid phone number is required"),
   shippingAddress: z.string().min(10, "Address is required"),
   paymentMethod: z.enum(["cod", "card", "upi"]),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 type CheckoutForm = z.infer<typeof checkoutSchema>;
 
 export default function Checkout() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [, setLocation] = useLocation();
   const { cartItems, totalAmount, clearCart } = useCart();
   const { user } = useAuth();
@@ -40,8 +43,67 @@ export default function Checkout() {
       phone: user?.phone || "",
       shippingAddress: "",
       paymentMethod: "cod",
+      latitude: undefined,
+      longitude: undefined,
     },
   });
+
+  const handleGetLocation = async () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Location not supported",
+        description: "Your browser doesn't support location services.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGettingLocation(true);
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000,
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+      form.setValue("latitude", latitude);
+      form.setValue("longitude", longitude);
+
+      // Reverse geocoding to get address
+      try {
+        const response = await fetch(
+          `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_API_KEY&language=en&pretty=1`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.results && data.results.length > 0) {
+            const address = data.results[0].formatted;
+            form.setValue("shippingAddress", address);
+          }
+        }
+      } catch (geocodeError) {
+        // Fallback: use coordinates as address if geocoding fails
+        form.setValue("shippingAddress", `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`);
+      }
+
+      toast({
+        title: "Location captured",
+        description: "Your location has been automatically filled.",
+      });
+    } catch (error) {
+      toast({
+        title: "Location access denied",
+        description: "Please enter your address manually or enable location permissions.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
 
   const onSubmit = async (data: CheckoutForm) => {
     if (!user || cartItems.length === 0) return;
@@ -151,13 +213,30 @@ export default function Checkout() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Complete Address</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Enter your complete delivery address"
-                              className="min-h-20"
-                              {...field} 
-                            />
-                          </FormControl>
+                          <div className="space-y-3">
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleGetLocation}
+                                disabled={isGettingLocation}
+                                className="flex items-center gap-2"
+                              >
+                                <Navigation className="h-4 w-4" />
+                                {isGettingLocation ? "Getting Location..." : "Get My Location"}
+                              </Button>
+                              <span className="text-sm text-muted-foreground flex items-center">
+                                Auto-fill your current address
+                              </span>
+                            </div>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Enter your complete delivery address or use 'Get My Location'"
+                                className="min-h-20"
+                                {...field} 
+                              />
+                            </FormControl>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
