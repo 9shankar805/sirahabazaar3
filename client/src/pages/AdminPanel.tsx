@@ -100,7 +100,7 @@ export default function AdminPanel() {
   });
 
   // Stores data
-  const { data: stores = [] } = useQuery({
+  const { data: stores = [] } = useQuery<any[]>({
     queryKey: ["/api/stores"],
     enabled: isAuthenticated,
   });
@@ -374,7 +374,7 @@ export default function AdminPanel() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {visits && visits.slice(0, 5).map((visit: any, index: number) => (
+                    {visits && Array.isArray(visits) && visits.slice(0, 5).map((visit: any, index: number) => (
                       <div key={index} className="flex items-center space-x-4">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         <div className="flex-1">
@@ -555,9 +555,36 @@ export default function AdminPanel() {
                 <CardDescription>Manage stores and their locations</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center text-gray-500 py-8">
-                  No stores registered yet
-                </div>
+                {stores && stores.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {stores.map((store: any) => (
+                      <Card key={store.id} className="p-4">
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-lg">{store.name}</h3>
+                            <p className="text-sm text-gray-600 mb-2">{store.description}</p>
+                            <div className="flex items-center text-sm text-gray-500 mb-1">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {store.address}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              Phone: {store.phone || 'Not provided'}
+                            </div>
+                            <div className="mt-2">
+                              <Badge variant={store.isActive ? "default" : "secondary"}>
+                                {store.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-500 py-8">
+                    No stores registered yet
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
