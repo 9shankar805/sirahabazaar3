@@ -228,18 +228,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOrdersByStoreId(storeId: number): Promise<Order[]> {
-    // Get unique order IDs for this store
-    const orderIds = await db.select({ orderId: orderItems.orderId })
-      .from(orderItems)
-      .where(eq(orderItems.storeId, storeId));
+    // Use a simple approach - get all orders and filter on the backend for now
+    const allOrders = await db.select().from(orders).orderBy(desc(orders.createdAt));
     
-    const uniqueOrderIds = [...new Set(orderIds.map(item => item.orderId))];
+    // Filter orders that have items from this store
+    const storeOrders = [];
+    for (const order of allOrders) {
+      const orderItemsForStore = await db.select().from(orderItems)
+        .where(and(eq(orderItems.orderId, order.id), eq(orderItems.storeId, storeId)));
+      
+      if (orderItemsForStore.length > 0) {
+        storeOrders.push(order);
+      }
+    }
     
-    if (uniqueOrderIds.length === 0) return [];
-    
-    return await db.select().from(orders)
-      .where(sql`${orders.id} IN ${uniqueOrderIds}`)
-      .orderBy(desc(orders.createdAt));
+    return storeOrders;
   }
 
   async createOrder(order: InsertOrder): Promise<Order> {
