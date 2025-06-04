@@ -4,7 +4,7 @@ import { ArrowRight, Star, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import StoreCard from "@/components/StoreCard";
-import type { Product, Store, Category } from "@shared/schema";
+import type { Product, Store } from "@shared/schema";
 
 export default function Homepage() {
   const { data: products } = useQuery<Product[]>({
@@ -15,31 +15,8 @@ export default function Homepage() {
     queryKey: ["/api/stores"],
   });
 
-  const { data: categories } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-  });
-
   const featuredProducts = products?.slice(0, 6) || [];
   const popularStores = stores?.slice(0, 4) || [];
-
-  // Food category icons mapping
-  const getCategoryIcon = (categoryName: string) => {
-    const iconMap: { [key: string]: string } = {
-      "Fruits & Vegetables": "🍎",
-      "Dairy & Eggs": "🥛",
-      "Meat & Seafood": "🍖",
-      "Bakery & Bread": "🍞",
-      "Grains & Cereals": "🌾",
-      "Spices & Condiments": "🌶️",
-      "Beverages": "☕",
-      "Snacks & Sweets": "🍪",
-      "Cooking Oil & Ghee": "🫒",
-      "Frozen Foods": "🧊",
-      "Ready to Cook": "🍜",
-      "Organic Foods": "🌱"
-    };
-    return iconMap[categoryName] || "🛒";
-  };
 
   return (
     <div className="min-h-screen">
@@ -76,10 +53,17 @@ export default function Homepage() {
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-foreground mb-10 text-center">Shop by Category</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {categories?.map((category) => (
-              <Link key={category.id} href={`/products?category=${category.id}`}>
-                <div className="category-card text-center hover:transform hover:scale-105 transition-transform duration-200 p-4 rounded-lg bg-white dark:bg-gray-800 shadow-md hover:shadow-lg border border-gray-200 dark:border-gray-700">
-                  <div className="text-4xl mb-3">{getCategoryIcon(category.name)}</div>
+            {[
+              { name: "Food", icon: "🍎", href: "/products?category=1" },
+              { name: "Clothing", icon: "👕", href: "/products?category=2" },
+              { name: "Electronics", icon: "📱", href: "/products?category=3" },
+              { name: "Home & Kitchen", icon: "🏠", href: "/products?category=4" },
+              { name: "Books", icon: "📚", href: "/products?category=5" },
+              { name: "Sports", icon: "⚽", href: "/products?category=6" },
+            ].map((category) => (
+              <Link key={category.name} href={category.href}>
+                <div className="category-card text-center">
+                  <div className="text-3xl mb-3">{category.icon}</div>
                   <div className="text-sm font-semibold text-foreground">{category.name}</div>
                 </div>
               </Link>
