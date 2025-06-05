@@ -110,10 +110,10 @@ export default function StoreMap() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-4 py-6 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
             <MapPin className="h-5 w-5" />
             Store Locations & Directions
           </CardTitle>
@@ -122,26 +122,26 @@ export default function StoreMap() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button onClick={getUserLocation} className="flex items-center gap-2">
+          <div className="flex flex-col gap-4">
+            <Button onClick={getUserLocation} className="flex items-center gap-2 w-full sm:w-auto">
               <Navigation className="h-4 w-4" />
               Get My Location
             </Button>
             
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 placeholder="Latitude"
                 value={manualLocation.lat}
                 onChange={(e) => setManualLocation({ ...manualLocation, lat: e.target.value })}
-                className="w-32"
+                className="flex-1 min-w-0"
               />
               <Input
                 placeholder="Longitude"
                 value={manualLocation.lon}
                 onChange={(e) => setManualLocation({ ...manualLocation, lon: e.target.value })}
-                className="w-32"
+                className="flex-1 min-w-0"
               />
-              <Button onClick={setManualLocationHandler} variant="outline">
+              <Button onClick={setManualLocationHandler} variant="outline" className="w-full sm:w-auto">
                 Set Location
               </Button>
             </div>
@@ -158,7 +158,7 @@ export default function StoreMap() {
       </Card>
 
       {userLocation && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Nearby Stores</CardTitle>
@@ -170,7 +170,7 @@ export default function StoreMap() {
               {isLoading ? (
                 <div className="text-center py-8">Loading nearby stores...</div>
               ) : nearbyStores && nearbyStores.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-96 overflow-y-auto">
                   {nearbyStores.map((store) => (
                     <div
                       key={store.id}
@@ -181,29 +181,29 @@ export default function StoreMap() {
                       }`}
                       onClick={() => setSelectedStore(store)}
                     >
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
                         <h3 className="font-semibold text-lg">{store.name}</h3>
-                        <Badge variant="secondary">
+                        <Badge variant="secondary" className="self-start">
                           {store.distance.toFixed(1)} km away
                         </Badge>
                       </div>
                       
                       <p className="text-gray-600 text-sm mb-2">{store.description}</p>
                       
-                      <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500 mb-3">
                         <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          <span>{store.address}</span>
+                          <MapPin className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{store.address}</span>
                         </div>
                         {store.phone && (
                           <div className="flex items-center gap-1">
-                            <Phone className="h-4 w-4" />
+                            <Phone className="h-4 w-4 flex-shrink-0" />
                             <span>{store.phone}</span>
                           </div>
                         )}
                       </div>
                       
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                           <span className="text-sm">
@@ -219,6 +219,7 @@ export default function StoreMap() {
                               e.stopPropagation();
                               window.open(getDirectionsUrl(store), "_blank");
                             }}
+                            className="flex-1 sm:flex-none"
                           >
                             <Navigation className="h-4 w-4 mr-1" />
                             Directions
@@ -229,6 +230,7 @@ export default function StoreMap() {
                               e.stopPropagation();
                               setSelectedStore(store);
                             }}
+                            className="flex-1 sm:flex-none"
                           >
                             View Details
                           </Button>
@@ -252,12 +254,13 @@ export default function StoreMap() {
                 <CardDescription>Store details and interactive map</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                <div className="h-64 md:h-80 lg:h-96 bg-gray-100 rounded-lg overflow-hidden">
                   {selectedStore.latitude && selectedStore.longitude ? (
                     <MapContainer
                       center={[parseFloat(selectedStore.latitude), parseFloat(selectedStore.longitude)]}
                       zoom={15}
                       style={{ height: '100%', width: '100%' }}
+                      className="z-0"
                     >
                       <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
