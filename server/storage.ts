@@ -1,13 +1,17 @@
 import { 
   users, stores, categories, products, orders, orderItems, cartItems, wishlistItems,
   admins, websiteVisits, notifications, orderTracking, returnPolicies, returns,
+  promotions, advertisements, productReviews, settlements, storeAnalytics, inventoryLogs,
   type User, type InsertUser, type Store, type InsertStore, 
   type Category, type InsertCategory, type Product, type InsertProduct,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
   type CartItem, type InsertCartItem, type WishlistItem, type InsertWishlistItem,
   type Admin, type InsertAdmin, type WebsiteVisit, type InsertWebsiteVisit,
   type Notification, type InsertNotification, type OrderTracking, type InsertOrderTracking,
-  type ReturnPolicy, type InsertReturnPolicy, type Return, type InsertReturn
+  type ReturnPolicy, type InsertReturnPolicy, type Return, type InsertReturn,
+  type Promotion, type InsertPromotion, type Advertisement, type InsertAdvertisement,
+  type ProductReview, type InsertProductReview, type Settlement, type InsertSettlement,
+  type StoreAnalytics, type InsertStoreAnalytics, type InventoryLog, type InsertInventoryLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, ilike, or, desc, count, sql, gte } from "drizzle-orm";
@@ -103,6 +107,46 @@ export interface IStorage {
   // Distance calculation between stores and user location
   calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number;
   getStoresWithDistance(userLat: number, userLon: number): Promise<(Store & { distance: number })[]>;
+
+  // Seller hub analytics
+  getSellerDashboardStats(storeId: number): Promise<{
+    totalProducts: number;
+    totalOrders: number;
+    totalRevenue: number;
+    pendingOrders: number;
+    averageRating: number;
+    totalReviews: number;
+  }>;
+  getStoreAnalytics(storeId: number, days?: number): Promise<StoreAnalytics[]>;
+  updateStoreAnalytics(data: InsertStoreAnalytics): Promise<StoreAnalytics>;
+
+  // Promotions
+  getStorePromotions(storeId: number): Promise<Promotion[]>;
+  createPromotion(promotion: InsertPromotion): Promise<Promotion>;
+  updatePromotion(id: number, updates: Partial<InsertPromotion>): Promise<Promotion | undefined>;
+  deletePromotion(id: number): Promise<boolean>;
+
+  // Advertisements
+  getStoreAdvertisements(storeId: number): Promise<Advertisement[]>;
+  createAdvertisement(ad: InsertAdvertisement): Promise<Advertisement>;
+  updateAdvertisement(id: number, updates: Partial<InsertAdvertisement>): Promise<Advertisement | undefined>;
+  deleteAdvertisement(id: number): Promise<boolean>;
+
+  // Product reviews
+  getProductReviews(productId: number): Promise<ProductReview[]>;
+  getStoreReviews(storeId: number): Promise<ProductReview[]>;
+  createProductReview(review: InsertProductReview): Promise<ProductReview>;
+  updateProductReview(id: number, updates: Partial<InsertProductReview>): Promise<ProductReview | undefined>;
+
+  // Settlements
+  getStoreSettlements(storeId: number): Promise<Settlement[]>;
+  createSettlement(settlement: InsertSettlement): Promise<Settlement>;
+  updateSettlement(id: number, updates: Partial<InsertSettlement>): Promise<Settlement | undefined>;
+
+  // Inventory management
+  getInventoryLogs(storeId: number, productId?: number): Promise<InventoryLog[]>;
+  createInventoryLog(log: InsertInventoryLog): Promise<InventoryLog>;
+  updateProductStock(productId: number, quantity: number, type: string, reason?: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -509,6 +553,263 @@ export class DatabaseStorage implements IStorage {
       const distance = this.calculateDistance(userLat, userLon, storeLat, storeLon);
       return { ...store, distance };
     }).sort((a, b) => a.distance - b.distance);
+  }
+
+  // Seller hub analytics
+  async getSellerDashboardStats(storeId: number) {
+    const [productCount] = await db
+      .select({ count: count() })
+      .from(products)
+      .where(eq(products.storeId, storeId));
+
+    const [orderStats] = await db
+      .select({ 
+        totalOrders: count(),
+        totalRevenue: sql<number>`COALESCE(SUM(CAST(${orders.totalAmount} AS DECIMAL)), 0)`
+      })
+      .from(orders)
+      .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+      .where(eq(orderItems.storeId, storeId));
+
+    const [pendingOrders] = await db
+      .select({ count: count() })
+      .from(orders)
+      .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+      .where(and(
+        eq(orderItems.storeId, storeId),
+        eq(orders.status, "pending")
+      ));
+
+    const [ratingStats] = await db
+      .select({
+        avgRating: sql<number>`COALESCE(AVG(${products.rating}), 0)`,
+        totalReviews: sql<number>`COALESCE(SUM(${products.totalReviews}), 0)`
+      })
+      .from(products)
+      .where(eq(products.storeId, storeId));
+
+    return {
+      totalProducts: productCount?.count || 0,
+      totalOrders: orderStats?.totalOrders || 0,
+      totalRevenue: orderStats?.totalRevenue || 0,
+      pendingOrders: pendingOrders?.count || 0,
+      averageRating: ratingStats?.avgRating || 0,
+      totalReviews: ratingStats?.totalReviews || 0,
+    };
+  }
+
+  async getStoreAnalytics(storeId: number, days: number = 30): Promise<StoreAnalytics[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const dateStr = startDate.toISOString().split('T')[0];
+
+    return await db
+      .select()
+      .from(storeAnalytics)
+      .where(and(
+        eq(storeAnalytics.storeId, storeId),
+        gte(storeAnalytics.date, dateStr)
+      ))
+      .orderBy(desc(storeAnalytics.date));
+  }
+
+  async updateStoreAnalytics(data: InsertStoreAnalytics): Promise<StoreAnalytics> {
+    const [analytics] = await db
+      .insert(storeAnalytics)
+      .values(data)
+      .onConflictDoUpdate({
+        target: [storeAnalytics.storeId, storeAnalytics.date],
+        set: data
+      })
+      .returning();
+    return analytics;
+  }
+
+  // Promotions
+  async getStorePromotions(storeId: number): Promise<Promotion[]> {
+    return await db
+      .select()
+      .from(promotions)
+      .where(eq(promotions.storeId, storeId))
+      .orderBy(desc(promotions.createdAt));
+  }
+
+  async createPromotion(promotion: InsertPromotion): Promise<Promotion> {
+    const [newPromotion] = await db
+      .insert(promotions)
+      .values(promotion)
+      .returning();
+    return newPromotion;
+  }
+
+  async updatePromotion(id: number, updates: Partial<InsertPromotion>): Promise<Promotion | undefined> {
+    const [updated] = await db
+      .update(promotions)
+      .set(updates)
+      .where(eq(promotions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePromotion(id: number): Promise<boolean> {
+    const result = await db
+      .delete(promotions)
+      .where(eq(promotions.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Advertisements
+  async getStoreAdvertisements(storeId: number): Promise<Advertisement[]> {
+    return await db
+      .select()
+      .from(advertisements)
+      .where(eq(advertisements.storeId, storeId))
+      .orderBy(desc(advertisements.createdAt));
+  }
+
+  async createAdvertisement(ad: InsertAdvertisement): Promise<Advertisement> {
+    const [newAd] = await db
+      .insert(advertisements)
+      .values(ad)
+      .returning();
+    return newAd;
+  }
+
+  async updateAdvertisement(id: number, updates: Partial<InsertAdvertisement>): Promise<Advertisement | undefined> {
+    const [updated] = await db
+      .update(advertisements)
+      .set(updates)
+      .where(eq(advertisements.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteAdvertisement(id: number): Promise<boolean> {
+    const result = await db
+      .delete(advertisements)
+      .where(eq(advertisements.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Product reviews
+  async getProductReviews(productId: number): Promise<ProductReview[]> {
+    return await db
+      .select()
+      .from(productReviews)
+      .where(eq(productReviews.productId, productId))
+      .orderBy(desc(productReviews.createdAt));
+  }
+
+  async getStoreReviews(storeId: number): Promise<ProductReview[]> {
+    return await db
+      .select()
+      .from(productReviews)
+      .innerJoin(products, eq(products.id, productReviews.productId))
+      .where(eq(products.storeId, storeId))
+      .orderBy(desc(productReviews.createdAt));
+  }
+
+  async createProductReview(review: InsertProductReview): Promise<ProductReview> {
+    const [newReview] = await db
+      .insert(productReviews)
+      .values(review)
+      .returning();
+    return newReview;
+  }
+
+  async updateProductReview(id: number, updates: Partial<InsertProductReview>): Promise<ProductReview | undefined> {
+    const [updated] = await db
+      .update(productReviews)
+      .set(updates)
+      .where(eq(productReviews.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Settlements
+  async getStoreSettlements(storeId: number): Promise<Settlement[]> {
+    return await db
+      .select()
+      .from(settlements)
+      .where(eq(settlements.storeId, storeId))
+      .orderBy(desc(settlements.createdAt));
+  }
+
+  async createSettlement(settlement: InsertSettlement): Promise<Settlement> {
+    const [newSettlement] = await db
+      .insert(settlements)
+      .values(settlement)
+      .returning();
+    return newSettlement;
+  }
+
+  async updateSettlement(id: number, updates: Partial<InsertSettlement>): Promise<Settlement | undefined> {
+    const [updated] = await db
+      .update(settlements)
+      .set(updates)
+      .where(eq(settlements.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Inventory management
+  async getInventoryLogs(storeId: number, productId?: number): Promise<InventoryLog[]> {
+    const conditions = [eq(inventoryLogs.storeId, storeId)];
+    if (productId) {
+      conditions.push(eq(inventoryLogs.productId, productId));
+    }
+
+    return await db
+      .select()
+      .from(inventoryLogs)
+      .where(and(...conditions))
+      .orderBy(desc(inventoryLogs.createdAt));
+  }
+
+  async createInventoryLog(log: InsertInventoryLog): Promise<InventoryLog> {
+    const [newLog] = await db
+      .insert(inventoryLogs)
+      .values(log)
+      .returning();
+    return newLog;
+  }
+
+  async updateProductStock(productId: number, quantity: number, type: string, reason?: string): Promise<boolean> {
+    const product = await this.getProduct(productId);
+    if (!product) return false;
+
+    const previousStock = product.stock || 0;
+    let newStock = previousStock;
+
+    switch (type) {
+      case 'stock_in':
+        newStock = previousStock + quantity;
+        break;
+      case 'stock_out':
+        newStock = Math.max(0, previousStock - quantity);
+        break;
+      case 'adjustment':
+        newStock = quantity;
+        break;
+      default:
+        return false;
+    }
+
+    // Update product stock
+    await this.updateProduct(productId, { stock: newStock });
+
+    // Log the inventory change
+    await this.createInventoryLog({
+      productId,
+      storeId: product.storeId,
+      type,
+      quantity: type === 'adjustment' ? newStock - previousStock : quantity,
+      previousStock,
+      newStock,
+      reason
+    });
+
+    return true;
   }
 }
 

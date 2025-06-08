@@ -165,6 +165,105 @@ export const returns = pgTable("returns", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Seller promotions and advertisements
+export const promotions = pgTable("promotions", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  discountType: text("discount_type").notNull(), // percentage, fixed_amount
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  minOrderAmount: decimal("min_order_amount", { precision: 10, scale: 2 }),
+  maxDiscountAmount: decimal("max_discount_amount", { precision: 10, scale: 2 }),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  isActive: boolean("is_active").default(true),
+  usageLimit: integer("usage_limit"),
+  usedCount: integer("used_count").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Store advertisements/banners
+export const advertisements = pgTable("advertisements", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url").notNull(),
+  targetUrl: text("target_url"),
+  position: text("position").notNull(), // homepage_banner, category_sidebar, product_listing
+  priority: integer("priority").default(0),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  isActive: boolean("is_active").default(true),
+  impressions: integer("impressions").default(0),
+  clicks: integer("clicks").default(0),
+  budget: decimal("budget", { precision: 10, scale: 2 }),
+  costPerClick: decimal("cost_per_click", { precision: 5, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Product reviews and ratings
+export const productReviews = pgTable("product_reviews", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  customerId: integer("customer_id").references(() => users.id).notNull(),
+  orderId: integer("order_id").references(() => orders.id),
+  rating: integer("rating").notNull(), // 1-5 stars
+  title: text("title"),
+  comment: text("comment"),
+  images: text("images").array().default([]),
+  isVerifiedPurchase: boolean("is_verified_purchase").default(false),
+  isApproved: boolean("is_approved").default(true),
+  helpfulCount: integer("helpful_count").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Store settlements and payouts
+export const settlements = pgTable("settlements", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
+  orderId: integer("order_id").references(() => orders.id).notNull(),
+  grossAmount: decimal("gross_amount", { precision: 10, scale: 2 }).notNull(),
+  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }).notNull(),
+  paymentGatewayFee: decimal("payment_gateway_fee", { precision: 10, scale: 2 }).notNull(),
+  netAmount: decimal("net_amount", { precision: 10, scale: 2 }).notNull(),
+  status: text("status").notNull().default("pending"), // pending, processing, completed, failed
+  settlementDate: timestamp("settlement_date"),
+  bankAccount: text("bank_account"),
+  transactionId: text("transaction_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Store analytics tracking
+export const storeAnalytics = pgTable("store_analytics", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
+  date: text("date").notNull(), // YYYY-MM-DD format
+  pageViews: integer("page_views").default(0),
+  uniqueVisitors: integer("unique_visitors").default(0),
+  productViews: integer("product_views").default(0),
+  addToCartCount: integer("add_to_cart_count").default(0),
+  checkoutCount: integer("checkout_count").default(0),
+  ordersCount: integer("orders_count").default(0),
+  revenue: decimal("revenue", { precision: 10, scale: 2 }).default("0.00"),
+  conversionRate: decimal("conversion_rate", { precision: 5, scale: 2 }).default("0.00"),
+});
+
+// Inventory management
+export const inventoryLogs = pgTable("inventory_logs", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
+  type: text("type").notNull(), // stock_in, stock_out, adjustment, return
+  quantity: integer("quantity").notNull(),
+  previousStock: integer("previous_stock").notNull(),
+  newStock: integer("new_stock").notNull(),
+  reason: text("reason"),
+  orderId: integer("order_id").references(() => orders.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -246,6 +345,39 @@ export const insertReturnSchema = createInsertSchema(returns).omit({
   updatedAt: true,
 });
 
+export const insertPromotionSchema = createInsertSchema(promotions).omit({
+  id: true,
+  createdAt: true,
+  usedCount: true,
+});
+
+export const insertAdvertisementSchema = createInsertSchema(advertisements).omit({
+  id: true,
+  createdAt: true,
+  impressions: true,
+  clicks: true,
+});
+
+export const insertProductReviewSchema = createInsertSchema(productReviews).omit({
+  id: true,
+  createdAt: true,
+  helpfulCount: true,
+});
+
+export const insertSettlementSchema = createInsertSchema(settlements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertStoreAnalyticsSchema = createInsertSchema(storeAnalytics).omit({
+  id: true,
+});
+
+export const insertInventoryLogSchema = createInsertSchema(inventoryLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -275,3 +407,15 @@ export type ReturnPolicy = typeof returnPolicies.$inferSelect;
 export type InsertReturnPolicy = z.infer<typeof insertReturnPolicySchema>;
 export type Return = typeof returns.$inferSelect;
 export type InsertReturn = z.infer<typeof insertReturnSchema>;
+export type Promotion = typeof promotions.$inferSelect;
+export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
+export type Advertisement = typeof advertisements.$inferSelect;
+export type InsertAdvertisement = z.infer<typeof insertAdvertisementSchema>;
+export type ProductReview = typeof productReviews.$inferSelect;
+export type InsertProductReview = z.infer<typeof insertProductReviewSchema>;
+export type Settlement = typeof settlements.$inferSelect;
+export type InsertSettlement = z.infer<typeof insertSettlementSchema>;
+export type StoreAnalytics = typeof storeAnalytics.$inferSelect;
+export type InsertStoreAnalytics = z.infer<typeof insertStoreAnalyticsSchema>;
+export type InventoryLog = typeof inventoryLogs.$inferSelect;
+export type InsertInventoryLog = z.infer<typeof insertInventoryLogSchema>;
