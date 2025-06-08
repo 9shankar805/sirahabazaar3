@@ -15,7 +15,7 @@ interface SearchSuggestionsProps {
 
 interface SearchSuggestions {
   products: Product[];
-  stores: StoreType[];
+  stores: Store[];
 }
 
 export default function SearchWithSuggestions({ 
@@ -145,7 +145,7 @@ export default function SearchWithSuggestions({
                     onClick={() => handleSuggestionClick('store', store.id)}
                     className="w-full flex items-center space-x-3 px-2 py-2 hover:bg-gray-100 rounded-md text-left transition-colors"
                   >
-                    <Store className="h-4 w-4 text-purple-500 flex-shrink-0" />
+                    <StoreIcon className="h-4 w-4 text-purple-500 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-gray-900 truncate">
                         {store.name}

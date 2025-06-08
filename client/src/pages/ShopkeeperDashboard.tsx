@@ -30,6 +30,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiPost, apiPut, apiDelete } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
+import ImageUpload from "@/components/ImageUpload";
 import type { Product, Order, OrderItem, Store, Category } from "@shared/schema";
 
 const productSchema = z.object({

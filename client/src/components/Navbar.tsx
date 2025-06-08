@@ -14,20 +14,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function Navbar() {
-  const [searchQuery, setSearchQuery] = useState("");
   const [, setLocation] = useLocation();
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
 
   const cartItemCount = cartItems?.length || 0;
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      setLocation(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery("");
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -72,22 +63,7 @@ export default function Navbar() {
 
           {/* Search Bar (Desktop) */}
           <div className="hidden md:flex max-w-sm mx-4">
-            <form onSubmit={handleSearch} className="relative w-full">
-              <Input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-12 py-2 bg-white text-gray-900 border-none focus:ring-2 focus:ring-white"
-              />
-              <Button
-                type="submit"
-                size="sm"
-                className="absolute right-0 top-0 h-full bg-accent hover:bg-accent/90 border-none rounded-l-none"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </form>
+            <SearchWithSuggestions placeholder="Search products and stores..." />
           </div>
 
           {/* Top Action Buttons (Desktop) */}
@@ -217,22 +193,7 @@ export default function Navbar() {
 
         {/* Mobile Search */}
         <div className="md:hidden pb-3">
-          <form onSubmit={handleSearch} className="relative">
-            <Input
-              type="text"
-              placeholder="Search products, stores..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-4 pr-12 py-2 bg-white text-gray-900"
-            />
-            <Button
-              type="submit"
-              size="sm"
-              className="absolute right-0 top-0 h-full bg-accent hover:bg-accent/90 rounded-l-none"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-          </form>
+          <SearchWithSuggestions placeholder="Search products, stores..." />
         </div>
       </div>
 
