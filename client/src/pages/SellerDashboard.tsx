@@ -443,7 +443,7 @@ const { user } = useAuth();
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {products?.slice(0, 5).map((product: any, index: number) => (
+                  {Array.isArray(products) ? products.slice(0, 5).map((product: any, index: number) => (
                     <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -462,7 +462,9 @@ const { user } = useAuth();
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-muted-foreground">No products available</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -476,7 +478,7 @@ const { user } = useAuth();
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {orders?.slice(0, 5).map((order: any) => (
+              {Array.isArray(orders) ? orders.slice(0, 5).map((order: any) => (
                 <div key={order.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
@@ -494,7 +496,9 @@ const { user } = useAuth();
                     </Badge>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <p className="text-muted-foreground">No recent orders</p>
+              )}
             </div>
           </CardContent>
         </Card>
