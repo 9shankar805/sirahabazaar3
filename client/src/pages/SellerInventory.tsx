@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 
 const stockUpdateSchema = z.object({
   productId: z.number(),
@@ -29,13 +29,11 @@ const stockUpdateSchema = z.object({
 export default function SellerInventory() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [stockFilter, setStockFilter] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
-
-  // Mock store ID - in real app this would come from auth context
-  const storeId = 1;
 
   const form = useForm<z.infer<typeof stockUpdateSchema>>({
     resolver: zodResolver(stockUpdateSchema),
@@ -48,14 +46,16 @@ export default function SellerInventory() {
 
   // Products query
   const { data: products = [], isLoading: productsLoading } = useQuery({
-    queryKey: ['/api/products/store', storeId],
-    enabled: !!storeId,
+    queryKey: ['/api/products/store', user?.id],
+    queryFn: () => fetch(`/api/products/store?userId=${user?.id}`).then(res => res.json()),
+    enabled: !!user?.id,
   });
 
   // Inventory logs query
   const { data: inventoryLogs = [], isLoading: logsLoading } = useQuery({
-    queryKey: ['/api/seller/inventory', storeId],
-    enabled: !!storeId,
+    queryKey: ['/api/seller/inventory', user?.id],
+    queryFn: () => fetch(`/api/seller/inventory?userId=${user?.id}`).then(res => res.json()),
+    enabled: !!user?.id,
   });
 
   // Stock update mutation
@@ -76,8 +76,8 @@ export default function SellerInventory() {
         title: "Stock Updated",
         description: "Product inventory has been updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/products/store', storeId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/seller/inventory', storeId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/products/store', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/seller/inventory', user?.id] });
       setIsUpdateDialogOpen(false);
       form.reset();
     },
@@ -153,7 +153,7 @@ export default function SellerInventory() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{products?.length || 0}</div>
+              <div className="text-2xl font-bold">{Array.isArray(products) ? products.length : 0}</div>
             </CardContent>
           </Card>
 
@@ -317,7 +317,7 @@ export default function SellerInventory() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {inventoryLogs?.slice(0, 10).map((log: any) => (
+              {Array.isArray(inventoryLogs) ? inventoryLogs.slice(0, 10).map((log: any) => (
                 <div key={log.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
@@ -354,7 +354,7 @@ export default function SellerInventory() {
                     </p>
                   </div>
                 </div>
-              ))}
+              )) : null}
             </div>
           </CardContent>
         </Card>
