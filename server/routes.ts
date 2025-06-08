@@ -155,6 +155,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get stores by owner (for shopkeeper dashboard)
+  app.get("/api/stores/owner", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      
+      const stores = await storage.getStoresByOwnerId(parseInt(userId as string));
+      res.json(stores);
+    } catch (error) {
+      console.error("Error fetching stores by owner:", error);
+      res.status(500).json({ error: "Failed to fetch store" });
+    }
+  });
+
   app.get("/api/stores/nearby", async (req, res) => {
     try {
       const { lat, lon } = req.query;
@@ -291,6 +307,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete product" });
+    }
+  });
+
+  // Get products by store for current user (shopkeeper)
+  app.get("/api/products/store", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      
+      // First get the stores owned by this user
+      const stores = await storage.getStoresByOwnerId(parseInt(userId as string));
+      if (stores.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get products from all stores owned by this user
+      const allProducts = [];
+      for (const store of stores) {
+        const products = await storage.getProductsByStoreId(store.id);
+        allProducts.push(...products);
+      }
+      
+      res.json(allProducts);
+    } catch (error) {
+      console.error("Error fetching store products:", error);
+      res.status(500).json({ error: "Failed to fetch products" });
     }
   });
 
@@ -879,7 +923,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Seller hub routes
-  // Dashboard analytics
+  // Dashboard analytics for current user's store
+  app.get("/api/seller/dashboard", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      
+      // Get the user's store first
+      const stores = await storage.getStoresByOwnerId(parseInt(userId as string));
+      if (stores.length === 0) {
+        return res.json({
+          totalProducts: 0,
+          totalOrders: 0,
+          totalRevenue: 0,
+          pendingOrders: 0,
+          averageRating: 0,
+          totalReviews: 0
+        });
+      }
+      
+      const storeId = stores[0].id;
+      const stats = await storage.getSellerDashboardStats(storeId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Dashboard stats error:", error);
+      res.status(500).json({ error: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  app.get("/api/seller/analytics", async (req, res) => {
+    try {
+      const { userId, days } = req.query;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      
+      // Get the user's store first
+      const stores = await storage.getStoresByOwnerId(parseInt(userId as string));
+      if (stores.length === 0) {
+        return res.json([]);
+      }
+      
+      const storeId = stores[0].id;
+      const analytics = await storage.getStoreAnalytics(storeId, parseInt(days as string) || 30);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Analytics error:", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  // Dashboard analytics with storeId (existing routes)
   app.get("/api/seller/dashboard/:storeId", async (req, res) => {
     try {
       const storeId = parseInt(req.params.storeId);
@@ -1027,7 +1123,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Inventory management
+  // Inventory management for current user's store
+  app.get("/api/seller/inventory", async (req, res) => {
+    try {
+      const { userId, productId } = req.query;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      
+      // Get the user's store first
+      const stores = await storage.getStoresByOwnerId(parseInt(userId as string));
+      if (stores.length === 0) {
+        return res.json([]);
+      }
+      
+      const storeId = stores[0].id;
+      const logs = await storage.getInventoryLogs(storeId, productId ? parseInt(productId as string) : undefined);
+      res.json(logs);
+    } catch (error) {
+      console.error("Inventory logs error:", error);
+      res.status(500).json({ error: "Failed to fetch inventory logs" });
+    }
+  });
+
+  // Inventory management with storeId (existing route)
   app.get("/api/seller/inventory/:storeId", async (req, res) => {
     try {
       const storeId = parseInt(req.params.storeId);

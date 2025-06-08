@@ -358,6 +358,9 @@ export default function SellerInventory() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Update Stock - {selectedProduct?.name}</DialogTitle>
+            <DialogDescription>
+              Adjust the inventory quantity for this product. Choose whether to add, remove, or adjust stock.
+            </DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleStockUpdate)} className="space-y-4">
