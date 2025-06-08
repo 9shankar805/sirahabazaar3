@@ -4,7 +4,9 @@ import { storage } from "./storage";
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
   insertWishlistItemSchema, insertAdminSchema, insertWebsiteVisitSchema, insertNotificationSchema, 
-  insertOrderTrackingSchema, insertReturnPolicySchema, insertReturnSchema, insertCategorySchema
+  insertOrderTrackingSchema, insertReturnPolicySchema, insertReturnSchema, insertCategorySchema,
+  insertPromotionSchema, insertAdvertisementSchema, insertProductReviewSchema, insertSettlementSchema,
+  insertStoreAnalyticsSchema, insertInventoryLogSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -858,6 +860,177 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(storesWithDistance);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch nearby stores" });
+    }
+  });
+
+  // Seller hub routes
+  // Dashboard analytics
+  app.get("/api/seller/dashboard/:storeId", async (req, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const stats = await storage.getSellerDashboardStats(storeId);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  app.get("/api/seller/analytics/:storeId", async (req, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const days = parseInt(req.query.days as string) || 30;
+      const analytics = await storage.getStoreAnalytics(storeId, days);
+      res.json(analytics);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  app.post("/api/seller/analytics", async (req, res) => {
+    try {
+      const analyticsData = insertStoreAnalyticsSchema.parse(req.body);
+      const analytics = await storage.updateStoreAnalytics(analyticsData);
+      res.json(analytics);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update analytics" });
+    }
+  });
+
+  // Promotions management
+  app.get("/api/seller/promotions/:storeId", async (req, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const promotions = await storage.getStorePromotions(storeId);
+      res.json(promotions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch promotions" });
+    }
+  });
+
+  app.post("/api/seller/promotions", async (req, res) => {
+    try {
+      const promotionData = insertPromotionSchema.parse(req.body);
+      const promotion = await storage.createPromotion(promotionData);
+      res.json(promotion);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create promotion" });
+    }
+  });
+
+  app.put("/api/seller/promotions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const promotion = await storage.updatePromotion(id, updates);
+      res.json(promotion);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update promotion" });
+    }
+  });
+
+  app.delete("/api/seller/promotions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deletePromotion(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to delete promotion" });
+    }
+  });
+
+  // Advertisements management
+  app.get("/api/seller/advertisements/:storeId", async (req, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const ads = await storage.getStoreAdvertisements(storeId);
+      res.json(ads);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch advertisements" });
+    }
+  });
+
+  app.post("/api/seller/advertisements", async (req, res) => {
+    try {
+      const adData = insertAdvertisementSchema.parse(req.body);
+      const ad = await storage.createAdvertisement(adData);
+      res.json(ad);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create advertisement" });
+    }
+  });
+
+  app.put("/api/seller/advertisements/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const ad = await storage.updateAdvertisement(id, updates);
+      res.json(ad);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update advertisement" });
+    }
+  });
+
+  app.delete("/api/seller/advertisements/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteAdvertisement(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to delete advertisement" });
+    }
+  });
+
+  // Product reviews
+  app.get("/api/seller/reviews/:storeId", async (req, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const reviews = await storage.getStoreReviews(storeId);
+      res.json(reviews);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch reviews" });
+    }
+  });
+
+  // Settlements
+  app.get("/api/seller/settlements/:storeId", async (req, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const settlements = await storage.getStoreSettlements(storeId);
+      res.json(settlements);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch settlements" });
+    }
+  });
+
+  app.post("/api/seller/settlements", async (req, res) => {
+    try {
+      const settlementData = insertSettlementSchema.parse(req.body);
+      const settlement = await storage.createSettlement(settlementData);
+      res.json(settlement);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create settlement" });
+    }
+  });
+
+  // Inventory management
+  app.get("/api/seller/inventory/:storeId", async (req, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const productId = req.query.productId ? parseInt(req.query.productId as string) : undefined;
+      const logs = await storage.getInventoryLogs(storeId, productId);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch inventory logs" });
+    }
+  });
+
+  app.post("/api/seller/inventory/update", async (req, res) => {
+    try {
+      const { productId, quantity, type, reason } = req.body;
+      const success = await storage.updateProductStock(productId, quantity, type, reason);
+      res.json({ success });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update inventory" });
     }
   });
 

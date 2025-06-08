@@ -27,6 +27,9 @@ import AdminPanel from "@/pages/AdminPanel";
 import StoreMaps from "@/pages/StoreMaps";
 import Wishlist from "@/pages/Wishlist";
 import Categories from "@/pages/Categories";
+import SellerDashboard from "@/pages/SellerDashboard";
+import SellerInventory from "@/pages/SellerInventory";
+import SellerPromotions from "@/pages/SellerPromotions";
 
 function Router() {
   return (
@@ -48,6 +51,11 @@ function Router() {
       <Route path="/admin" component={AdminPanel} />
       <Route path="/store-maps" component={StoreMaps} />
       <Route path="/wishlist" component={Wishlist} />
+      
+      {/* Seller Hub Routes */}
+      <Route path="/seller/dashboard" component={SellerDashboard} />
+      <Route path="/seller/inventory" component={SellerInventory} />
+      <Route path="/seller/promotions" component={SellerPromotions} />
       <Route component={NotFound} />
     </Switch>
   );
