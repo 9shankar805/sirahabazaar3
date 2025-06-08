@@ -536,6 +536,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get orders for store owner (for shopkeeper dashboard)
+  app.get("/api/orders/store", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      
+      // Get the user's stores first
+      const stores = await storage.getStoresByOwnerId(parseInt(userId as string));
+      if (stores.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get orders for all stores owned by this user
+      const allOrders = [];
+      for (const store of stores) {
+        const orders = await storage.getOrdersByStoreId(store.id);
+        // Get order items for each order
+        for (const order of orders) {
+          const items = await storage.getOrderItems(order.id);
+          allOrders.push({ ...order, items });
+        }
+      }
+      
+      res.json(allOrders);
+    } catch (error) {
+      console.error("Error fetching store orders:", error);
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
   app.get("/api/orders/store/:storeId", async (req, res) => {
     try {
       const storeId = parseInt(req.params.storeId);

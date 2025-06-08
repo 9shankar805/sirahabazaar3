@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Store, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown,
   Users, Star, Eye, BarChart3, PieChart, Activity, Settings,
@@ -62,48 +63,40 @@ export default function SellerDashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userStore, setUserStore] = useState<Store | null>(null);
 
-  // Mock current user - in real app this would come from auth context
-  useEffect(() => {
-    // For demo purposes, using a mock shopkeeper user
-    const mockUser: User = {
-      id: 1,
-      role: "shopkeeper",
-      fullName: "Demo Seller",
-      email: "seller@demo.com"
-    };
-    setCurrentUser(mockUser);
+const { user } = useAuth();
 
-    // Mock store for the user
-    const mockStore: Store = {
-      id: 1,
-      name: "Demo Electronics Store",
-      ownerId: 1
-    };
-    setUserStore(mockStore);
-  }, []);
+  useEffect(() => {
+    if (user) {
+      setCurrentUser(user);
+    }
+  }, [user]);
 
   // Dashboard stats query
   const { data: dashboardStats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ['/api/seller/dashboard', userStore?.id],
-    enabled: !!userStore?.id,
+    queryKey: ['/api/seller/dashboard', currentUser?.id],
+    queryFn: () => fetch(`/api/seller/dashboard?userId=${currentUser?.id}`).then(res => res.json()),
+    enabled: !!currentUser?.id,
   });
 
   // Analytics query
   const { data: analytics, isLoading: analyticsLoading } = useQuery<StoreAnalytics[]>({
-    queryKey: ['/api/seller/analytics', userStore?.id, selectedPeriod],
-    enabled: !!userStore?.id,
+    queryKey: ['/api/seller/analytics', currentUser?.id, selectedPeriod],
+    queryFn: () => fetch(`/api/seller/analytics?userId=${currentUser?.id}&days=${selectedPeriod}`).then(res => res.json()),
+    enabled: !!currentUser?.id,
   });
 
   // Products query
-  const { data: products, isLoading: productsLoading } = useQuery({
-    queryKey: ['/api/products/store', userStore?.id],
-    enabled: !!userStore?.id,
+  const { data: products = [], isLoading: productsLoading } = useQuery({
+    queryKey: ['/api/products/store', currentUser?.id],
+    queryFn: () => fetch(`/api/products/store?userId=${currentUser?.id}`).then(res => res.json()),
+    enabled: !!currentUser?.id,
   });
 
   // Orders query
-  const { data: orders, isLoading: ordersLoading } = useQuery({
-    queryKey: ['/api/orders/store', userStore?.id],
-    enabled: !!userStore?.id,
+  const { data: orders = [], isLoading: ordersLoading } = useQuery({
+    queryKey: ['/api/orders/store', currentUser?.id],
+    queryFn: () => fetch(`/api/orders/store?userId=${currentUser?.id}`).then(res => res.json()),
+    enabled: !!currentUser?.id,
   });
 
   if (!currentUser || currentUser.role !== 'shopkeeper') {
