@@ -354,7 +354,9 @@ export default function SellerInventory() {
                     </p>
                   </div>
                 </div>
-              )) : null}
+              )) : (
+                <p className="text-center text-muted-foreground">No inventory changes yet</p>
+              )}
             </div>
           </CardContent>
         </Card>
