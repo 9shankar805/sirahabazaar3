@@ -130,18 +130,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get stores by owner (for sellers)
+  // Get stores by owner
   app.get("/api/stores/owner", async (req, res) => {
     try {
-      const ownerId = parseInt(req.query.ownerId as string);
-      if (!ownerId) {
-        return res.status(400).json({ error: "Owner ID is required" });
+      const { ownerId, userId } = req.query;
+      const id = ownerId || userId;
+      
+      if (!id) {
+        return res.status(400).json({ error: "Owner ID or User ID is required" });
       }
-      const stores = await storage.getStoresByOwnerId(ownerId);
+      
+      const parsedId = parseInt(id as string);
+      if (isNaN(parsedId)) {
+        return res.status(400).json({ error: "Invalid owner ID" });
+      }
+      
+      const stores = await storage.getStoresByOwnerId(parsedId);
       res.json(stores);
     } catch (error) {
-      console.error("Store owner fetch error:", error);
-      res.status(500).json({ error: "Failed to fetch store" });
+      console.error("Error fetching stores by owner:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch store",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
@@ -152,22 +163,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stores);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch stores for owner" });
-    }
-  });
-
-  // Get stores by owner (for shopkeeper dashboard)
-  app.get("/api/stores/owner", async (req, res) => {
-    try {
-      const { userId } = req.query;
-      if (!userId) {
-        return res.status(400).json({ error: "User ID is required" });
-      }
-      
-      const stores = await storage.getStoresByOwnerId(parseInt(userId as string));
-      res.json(stores);
-    } catch (error) {
-      console.error("Error fetching stores by owner:", error);
-      res.status(500).json({ error: "Failed to fetch store" });
     }
   });
 
