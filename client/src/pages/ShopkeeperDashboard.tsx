@@ -352,13 +352,14 @@ export default function ShopkeeperDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className={`grid w-full ${currentStore ? 'grid-cols-4' : 'grid-cols-2'}`}>
+          <TabsList className={`grid w-full ${currentStore ? 'grid-cols-5' : 'grid-cols-2'}`}>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             {!currentStore && (
               <TabsTrigger value="create-store">Create Store</TabsTrigger>
             )}
             {currentStore && (
               <>
+                <TabsTrigger value="inventory">Inventory</TabsTrigger>
                 <TabsTrigger value="products">Products</TabsTrigger>
                 <TabsTrigger value="add-product">
                   {editingProduct ? "Edit Product" : "Add Product"}
