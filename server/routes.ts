@@ -310,6 +310,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get products by store ID
+  app.get("/api/products/store/:storeId", async (req, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      if (isNaN(storeId)) {
+        return res.status(400).json({ error: "Invalid store ID" });
+      }
+      
+      const products = await storage.getProductsByStoreId(storeId);
+      res.json(products);
+    } catch (error) {
+      console.error("Error fetching store products:", error);
+      res.status(500).json({ error: "Failed to fetch product" });
+    }
+  });
+
   // Get products by store for current user (shopkeeper)
   app.get("/api/products/store", async (req, res) => {
     try {

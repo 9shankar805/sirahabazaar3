@@ -47,22 +47,29 @@ export default function SellerInventory() {
   });
 
   // Products query
-  const { data: products, isLoading: productsLoading } = useQuery({
+  const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ['/api/products/store', storeId],
+    enabled: !!storeId,
   });
 
   // Inventory logs query
-  const { data: inventoryLogs, isLoading: logsLoading } = useQuery({
+  const { data: inventoryLogs = [], isLoading: logsLoading } = useQuery({
     queryKey: ['/api/seller/inventory', storeId],
+    enabled: !!storeId,
   });
 
   // Stock update mutation
   const updateStockMutation = useMutation({
     mutationFn: async (data: z.infer<typeof stockUpdateSchema>) => {
-      return await apiRequest('/api/seller/inventory/update', {
+      const response = await fetch('/api/seller/inventory/update', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(data)
       });
+      if (!response.ok) throw new Error('Failed to update stock');
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -94,7 +101,7 @@ export default function SellerInventory() {
   };
 
   // Filter products based on search and stock level
-  const filteredProducts = products?.filter((product: any) => {
+  const filteredProducts = Array.isArray(products) ? products.filter((product: any) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStock = stockFilter === 'all' || 
       (stockFilter === 'low' && (product.stock || 0) < 10) ||
@@ -102,11 +109,11 @@ export default function SellerInventory() {
       (stockFilter === 'available' && (product.stock || 0) > 0);
     
     return matchesSearch && matchesStock;
-  }) || [];
+  }) : [];
 
-  const lowStockCount = products?.filter((p: any) => (p.stock || 0) < 10).length || 0;
-  const outOfStockCount = products?.filter((p: any) => (p.stock || 0) === 0).length || 0;
-  const totalValue = products?.reduce((sum: number, p: any) => sum + ((p.stock || 0) * parseFloat(p.price)), 0) || 0;
+  const lowStockCount = Array.isArray(products) ? products.filter((p: any) => (p.stock || 0) < 10).length : 0;
+  const outOfStockCount = Array.isArray(products) ? products.filter((p: any) => (p.stock || 0) === 0).length : 0;
+  const totalValue = Array.isArray(products) ? products.reduce((sum: number, p: any) => sum + ((p.stock || 0) * parseFloat(p.price)), 0) : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
