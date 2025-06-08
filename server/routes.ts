@@ -130,6 +130,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get stores by owner (for sellers)
+  app.get("/api/stores/owner", async (req, res) => {
+    try {
+      const ownerId = parseInt(req.query.ownerId as string);
+      if (!ownerId) {
+        return res.status(400).json({ error: "Owner ID is required" });
+      }
+      const stores = await storage.getStoresByOwnerId(ownerId);
+      res.json(stores);
+    } catch (error) {
+      console.error("Store owner fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch store" });
+    }
+  });
+
   app.get("/api/stores/owner/:ownerId", async (req, res) => {
     try {
       const ownerId = parseInt(req.params.ownerId);

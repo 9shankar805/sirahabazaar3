@@ -44,6 +44,10 @@ export default function Navbar() {
                   <Home className="h-4 w-4" />
                   <span>Dashboard</span>
                 </Link>
+                <Link href="/seller/store" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                  <Store className="h-4 w-4" />
+                  <span>Store</span>
+                </Link>
                 <Link href="/seller/orders" className="flex items-center space-x-1 hover:text-accent transition-colors">
                   <ShoppingCart className="h-4 w-4" />
                   <span>Orders</span>

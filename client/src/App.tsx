@@ -31,6 +31,7 @@ import SellerDashboard from "@/pages/SellerDashboard";
 import SellerInventory from "@/pages/SellerInventory";
 import SellerPromotions from "@/pages/SellerPromotions";
 import SellerOrders from "@/pages/SellerOrders";
+import SellerStore from "@/pages/SellerStore";
 
 function Router() {
   return (
@@ -55,6 +56,7 @@ function Router() {
       
       {/* Seller Hub Routes */}
       <Route path="/seller/dashboard" component={SellerDashboard} />
+      <Route path="/seller/store" component={SellerStore} />
       <Route path="/seller/inventory" component={SellerInventory} />
       <Route path="/seller/promotions" component={SellerPromotions} />
       <Route path="/seller/orders" component={SellerOrders} />

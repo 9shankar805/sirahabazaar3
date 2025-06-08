@@ -16,6 +16,12 @@ export default function BottomNavbar() {
       active: location.startsWith("/seller/dashboard")
     },
     {
+      href: "/seller/store",
+      icon: Store,
+      label: "Store",
+      active: location.startsWith("/seller/store")
+    },
+    {
       href: "/seller/orders",
       icon: ShoppingCart,
       label: "Orders",
@@ -26,12 +32,6 @@ export default function BottomNavbar() {
       icon: Package,
       label: "Inventory",
       active: location.startsWith("/seller/inventory")
-    },
-    {
-      href: "/seller/promotions",
-      icon: Tag,
-      label: "Promotions",
-      active: location.startsWith("/seller/promotions")
     },
     {
       href: "/account",
