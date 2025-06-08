@@ -65,6 +65,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search suggestions route
+  app.get("/api/search/suggestions", async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== 'string' || q.length < 2) {
+        return res.json({ products: [], stores: [] });
+      }
+
+      const query = q.toLowerCase();
+      
+      // Get products and stores that match the query
+      const [allProducts, allStores] = await Promise.all([
+        storage.getAllProducts(),
+        storage.getAllStores()
+      ]);
+
+      const products = allProducts
+        .filter(product => 
+          product.name.toLowerCase().includes(query) ||
+          product.description?.toLowerCase().includes(query)
+        )
+        .slice(0, 5); // Limit to 5 suggestions
+
+      const stores = allStores
+        .filter(store => 
+          store.name.toLowerCase().includes(query) ||
+          store.description?.toLowerCase().includes(query)
+        )
+        .slice(0, 5); // Limit to 5 suggestions
+
+      res.json({ products, stores });
+    } catch (error) {
+      console.error("Search suggestions error:", error);
+      res.status(500).json({ error: "Failed to fetch suggestions" });
+    }
+  });
+
   // Store routes
   app.get("/api/stores", async (req, res) => {
     try {

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield, Home, Package, LogOut } from "lucide-react";
+import { ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield, Home, Package, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
+import SearchWithSuggestions from "@/components/SearchWithSuggestions";
 import {
   DropdownMenu,
   DropdownMenuContent,
