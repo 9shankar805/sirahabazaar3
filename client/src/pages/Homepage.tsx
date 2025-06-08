@@ -1,17 +1,28 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { ArrowRight, Star, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import StoreCard from "@/components/StoreCard";
+import { useAuth } from "@/hooks/useAuth";
 import type { Product, Store } from "@shared/schema";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import { useEffect } from "react";
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
 export default function Homepage() {
+  const [, setLocation] = useLocation();
+  const { user, isLoading } = useAuth();
+
+  // Redirect sellers to their dashboard
+  useEffect(() => {
+    if (!isLoading && user?.role === "shopkeeper") {
+      setLocation("/seller/dashboard");
+    }
+  }, [user, isLoading, setLocation]);
   const { data: products } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Package, Store, User, MapPin } from "lucide-react";
+import { Home, Package, Store, User, MapPin, ShoppingCart, Tag } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
@@ -7,7 +7,41 @@ export default function BottomNavbar() {
   const [location] = useLocation();
   const { user } = useAuth();
 
-  const navItems = [
+  // Role-based navigation items
+  const sellerNavItems = [
+    {
+      href: "/seller/dashboard",
+      icon: Home,
+      label: "Dashboard",
+      active: location.startsWith("/seller/dashboard")
+    },
+    {
+      href: "/seller/orders",
+      icon: ShoppingCart,
+      label: "Orders",
+      active: location.startsWith("/seller/orders")
+    },
+    {
+      href: "/seller/inventory",
+      icon: Package,
+      label: "Inventory",
+      active: location.startsWith("/seller/inventory")
+    },
+    {
+      href: "/seller/promotions",
+      icon: Tag,
+      label: "Promotions",
+      active: location.startsWith("/seller/promotions")
+    },
+    {
+      href: "/account",
+      icon: User,
+      label: "Account",
+      active: location.startsWith("/account")
+    }
+  ];
+
+  const customerNavItems = [
     {
       href: "/",
       icon: Home,
@@ -36,9 +70,11 @@ export default function BottomNavbar() {
       href: user ? "/account" : "/login",
       icon: User,
       label: "Account",
-      active: location.startsWith("/account") || location.startsWith("/customer-dashboard") || location.startsWith("/shopkeeper-dashboard")
+      active: location.startsWith("/account") || location.startsWith("/customer-dashboard")
     }
   ];
+
+  const navItems = user?.role === "shopkeeper" ? sellerNavItems : customerNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-50 md:hidden">

@@ -37,51 +37,89 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">
-            <Link href="/" className="flex items-center space-x-1 hover:text-accent transition-colors">
-              <Home className="h-4 w-4" />
-              <span>Home</span>
-            </Link>
-            <Link href="/products" className="flex items-center space-x-1 hover:text-accent transition-colors">
-              <Package className="h-4 w-4" />
-              <span>Products</span>
-            </Link>
-            <Link href="/stores" className="flex items-center space-x-1 hover:text-accent transition-colors">
-              <Store className="h-4 w-4" />
-              <span>Store</span>
-            </Link>
-            <Link href="/store-maps" className="flex items-center space-x-1 hover:text-accent transition-colors">
-              <MapPin className="h-4 w-4" />
-              <span>Store Map</span>
-            </Link>
-            {user && (
-              <Link href="/customer-dashboard" className="flex items-center space-x-1 hover:text-accent transition-colors">
-                <User className="h-4 w-4" />
-                <span>Account</span>
-              </Link>
+            {/* Seller Navigation */}
+            {user?.role === "shopkeeper" ? (
+              <>
+                <Link href="/seller/dashboard" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                  <Home className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </Link>
+                <Link href="/seller/orders" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                  <ShoppingCart className="h-4 w-4" />
+                  <span>Orders</span>
+                </Link>
+                <Link href="/seller/inventory" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                  <Package className="h-4 w-4" />
+                  <span>Inventory</span>
+                </Link>
+                <Link href="/seller/promotions" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                  <Tag className="h-4 w-4" />
+                  <span>Promotions</span>
+                </Link>
+                <Link href="/account" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                  <User className="h-4 w-4" />
+                  <span>Account</span>
+                </Link>
+              </>
+            ) : (
+              /* Customer Navigation */
+              <>
+                <Link href="/" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                  <Home className="h-4 w-4" />
+                  <span>Home</span>
+                </Link>
+                <Link href="/products" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                  <Package className="h-4 w-4" />
+                  <span>Products</span>
+                </Link>
+                <Link href="/stores" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                  <Store className="h-4 w-4" />
+                  <span>Store</span>
+                </Link>
+                <Link href="/store-maps" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                  <MapPin className="h-4 w-4" />
+                  <span>Store Map</span>
+                </Link>
+                {user && (
+                  <Link href="/customer-dashboard" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                    <User className="h-4 w-4" />
+                    <span>Account</span>
+                  </Link>
+                )}
+              </>
             )}
           </div>
 
           {/* Search Bar (Desktop) */}
           <div className="hidden md:flex max-w-sm mx-4">
-            <SearchWithSuggestions placeholder="Search products and stores..." />
+            {user?.role === "shopkeeper" ? (
+              <SearchWithSuggestions placeholder="Search your products, orders..." />
+            ) : (
+              <SearchWithSuggestions placeholder="Search products and stores..." />
+            )}
           </div>
 
           {/* Top Action Buttons (Desktop) */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* Cart */}
-            <Link href="/cart" className="relative hover:text-accent transition-colors p-2">
-              <ShoppingCart className="h-5 w-5" />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartItemCount}
-                </span>
-              )}
-            </Link>
+            {/* Customer Actions (Cart & Wishlist) */}
+            {user?.role !== "shopkeeper" && (
+              <>
+                {/* Cart */}
+                <Link href="/cart" className="relative hover:text-accent transition-colors p-2">
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartItemCount}
+                    </span>
+                  )}
+                </Link>
 
-            {/* Wishlist */}
-            <Link href="/wishlist" className="hover:text-accent transition-colors p-2">
-              <Heart className="h-5 w-5" />
-            </Link>
+                {/* Wishlist */}
+                <Link href="/wishlist" className="hover:text-accent transition-colors p-2">
+                  <Heart className="h-5 w-5" />
+                </Link>
+              </>
+            )}
 
             {/* User Menu or Auth Buttons */}
             {user ? (
