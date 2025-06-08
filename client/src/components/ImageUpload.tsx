@@ -6,20 +6,52 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
-// Image compression utility
-const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promise<string> => {
+// Image compression utility targeting ~200KB
+const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
     
     img.onload = () => {
-      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
-      canvas.width = img.width * ratio;
-      canvas.height = img.height * ratio;
+      // Calculate dimensions to keep file around 200KB
+      let { width, height } = img;
+      const targetSize = 200 * 1024; // 200KB in bytes
       
-      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      // Estimate compression needed based on original size
+      const ratio = Math.sqrt(targetSize / file.size);
+      
+      // Set maximum dimensions based on compression ratio
+      const maxDimension = Math.min(800, Math.max(400, Math.floor(Math.max(width, height) * ratio)));
+      
+      if (width > height) {
+        if (width > maxDimension) {
+          height = (height * maxDimension) / width;
+          width = maxDimension;
+        }
+      } else {
+        if (height > maxDimension) {
+          width = (width * maxDimension) / height;
+          height = maxDimension;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      ctx?.drawImage(img, 0, 0, width, height);
+      
+      // Start with quality based on file size
+      let quality = Math.min(0.8, Math.max(0.3, targetSize / file.size));
+      let compressedData = canvas.toDataURL('image/jpeg', quality);
+      
+      // Iteratively reduce quality if still too large
+      while (compressedData.length * 0.75 > targetSize && quality > 0.1) {
+        quality -= 0.1;
+        compressedData = canvas.toDataURL('image/jpeg', quality);
+      }
+      
+      resolve(compressedData);
     };
     
     img.src = URL.createObjectURL(file);
@@ -83,11 +115,11 @@ export default function ImageUpload({
           continue;
         }
 
-        // Validate file size (2MB limit for better performance)
-        if (file.size > 2 * 1024 * 1024) {
+        // Validate file size (10MB limit - will be compressed to ~200KB)
+        if (file.size > 10 * 1024 * 1024) {
           toast({
             title: "File too large",
-            description: "Please select images smaller than 2MB for better performance",
+            description: "Please select images smaller than 10MB",
             variant: "destructive"
           });
           continue;
@@ -202,7 +234,7 @@ export default function ImageUpload({
                   Click to select images from your device
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Supports JPG, PNG, GIF up to 2MB each
+                  Auto-compressed to ~200KB for optimal performance
                 </p>
               </div>
               <input
