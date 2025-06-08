@@ -30,6 +30,7 @@ import Categories from "@/pages/Categories";
 import SellerDashboard from "@/pages/SellerDashboard";
 import SellerInventory from "@/pages/SellerInventory";
 import SellerPromotions from "@/pages/SellerPromotions";
+import SellerOrders from "@/pages/SellerOrders";
 
 function Router() {
   return (
@@ -56,6 +57,7 @@ function Router() {
       <Route path="/seller/dashboard" component={SellerDashboard} />
       <Route path="/seller/inventory" component={SellerInventory} />
       <Route path="/seller/promotions" component={SellerPromotions} />
+      <Route path="/seller/orders" component={SellerOrders} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield, Home, Package, LogOut } from "lucide-react";
+import { ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield, Home, Package, LogOut, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
@@ -103,9 +103,21 @@ export default function Navbar() {
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
-                          <Link href="/shopkeeper-dashboard" className="cursor-pointer">
+                          <Link href="/seller/dashboard" className="cursor-pointer">
                             <Store className="h-4 w-4 mr-2" />
-                            Seller Dashboard
+                            Seller Hub
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/seller/inventory" className="cursor-pointer">
+                            <Package className="h-4 w-4 mr-2" />
+                            Inventory
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/seller/promotions" className="cursor-pointer">
+                            <Tag className="h-4 w-4 mr-2" />
+                            Promotions
                           </Link>
                         </DropdownMenuItem>
                       </>
