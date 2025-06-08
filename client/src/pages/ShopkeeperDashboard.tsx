@@ -52,12 +52,10 @@ const storeSchema = z.object({
   name: z.string().min(1, "Store name is required"),
   description: z.string().optional(),
   address: z.string().min(1, "Address is required"),
-  latitude: z.string().optional(),
-  longitude: z.string().optional(),
-  phone: z.string().optional(),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  website: z.string().url().optional().or(z.literal("")),
   logo: z.string().optional(),
-  coverImage: z.string().optional(),
-  googleMapsLink: z.string().optional(),
+  coverImage: z.string().optional()
 });
 
 type ProductForm = z.infer<typeof productSchema>;
@@ -66,7 +64,6 @@ type StoreForm = z.infer<typeof storeSchema>;
 export default function ShopkeeperDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -139,8 +136,9 @@ export default function ShopkeeperDashboard() {
       description: "",
       address: "",
       phone: "",
+      website: "",
       logo: "",
-      coverImage: "",
+      coverImage: ""
     },
   });
 
@@ -235,8 +233,7 @@ export default function ShopkeeperDashboard() {
         ownerId: user!.id,
         phone: data.phone || null,
         description: data.description || null,
-        latitude: data.latitude || null,
-        longitude: data.longitude || null,
+        website: data.website || null,
       };
 
       await apiPost("/api/stores", storeData);
@@ -253,65 +250,7 @@ export default function ShopkeeperDashboard() {
     }
   };
 
-  const handleGetLocation = async () => {
-    if (!navigator.geolocation) {
-      toast({
-        title: "Error",
-        description: "Geolocation is not supported by this browser",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    setIsGettingLocation(true);
-    try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000,
-        });
-      });
-
-      const { latitude, longitude } = position.coords;
-      
-      // Update form with coordinates
-      storeForm.setValue("latitude", latitude.toString());
-      storeForm.setValue("longitude", longitude.toString());
-      
-      // Generate Google Maps link
-      const googleMapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
-      storeForm.setValue("googleMapsLink", googleMapsLink);
-
-      // Try to get address from coordinates using reverse geocoding
-      try {
-        const response = await fetch(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-        );
-        const data = await response.json();
-        
-        if (data.locality || data.city) {
-          const address = `${data.locality || data.city}, ${data.principalSubdivision || ''}, ${data.countryName || ''}`.replace(/,\s*,/g, ',').replace(/,\s*$/, '');
-          storeForm.setValue("address", address);
-        }
-      } catch (geocodeError) {
-        console.log("Reverse geocoding failed, coordinates set without address");
-      }
-
-      toast({
-        title: "Location obtained successfully",
-        description: `Coordinates: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error getting location",
-        description: "Please ensure location access is enabled and try again",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGettingLocation(false);
-    }
-  };
 
   const handleOrderStatusUpdate = async (orderId: number, status: string) => {
     try {
@@ -632,15 +571,15 @@ export default function ShopkeeperDashboard() {
               <CardContent>
                 <Form {...storeForm}>
                   <form onSubmit={storeForm.handleSubmit(handleCreateStore)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={storeForm.control}
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Store Name *</FormLabel>
+                            <FormLabel>Store Name</FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter your store name" {...field} />
+                              <Input placeholder="My Awesome Store" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -654,88 +593,7 @@ export default function ShopkeeperDashboard() {
                           <FormItem>
                             <FormLabel>Phone Number</FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter phone number" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={storeForm.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Store Address *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter complete store address" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleGetLocation}
-                          disabled={isGettingLocation}
-                          className="flex items-center gap-2"
-                        >
-                          <MapPin className="h-4 w-4" />
-                          {isGettingLocation ? "Getting Location..." : "Get My Location"}
-                        </Button>
-                        <span className="text-sm text-muted-foreground">
-                          Auto-fill coordinates and address
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={storeForm.control}
-                          name="latitude"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Latitude (Optional)</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g., 26.7271" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={storeForm.control}
-                          name="longitude"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Longitude (Optional)</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g., 87.2751" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={storeForm.control}
-                        name="googleMapsLink"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Google Maps Link (Auto-generated)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Will be auto-filled when location is obtained" 
-                                {...field}
-                                readOnly
-                                className="bg-muted"
-                              />
+                              <Input placeholder="+1234567890" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -748,13 +606,37 @@ export default function ShopkeeperDashboard() {
                       name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Store Description</FormLabel>
+                          <FormLabel>Description</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Describe your store and what you sell"
-                              className="min-h-20"
-                              {...field} 
-                            />
+                            <Textarea placeholder="Tell customers about your store..." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={storeForm.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Store Address</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Complete store address" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={storeForm.control}
+                      name="website"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://mystore.com" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -799,7 +681,7 @@ export default function ShopkeeperDashboard() {
                       />
                     </div>
 
-                    <Button type="submit" className="btn-primary">
+                    <Button type="submit" className="w-full">
                       Create Store
                     </Button>
                   </form>
