@@ -179,7 +179,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getStoresByOwnerId(ownerId: number): Promise<Store[]> {
-    return await db.select().from(stores).where(eq(stores.ownerId, ownerId));
+    try {
+      const result = await db.select().from(stores).where(eq(stores.ownerId, ownerId));
+      return result;
+    } catch (error) {
+      console.error("Database error in getStoresByOwnerId:", error);
+      throw error;
+    }
   }
 
   async getAllStores(): Promise<Store[]> {
