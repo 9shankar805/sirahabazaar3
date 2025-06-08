@@ -6,6 +6,26 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
+// Image compression utility
+const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promise<string> => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+      
+      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    
+    img.src = URL.createObjectURL(file);
+  });
+};
+
 interface ImageUploadProps {
   maxImages?: number;
   minImages?: number;
@@ -63,24 +83,19 @@ export default function ImageUpload({
           continue;
         }
 
-        // Validate file size (5MB limit)
-        if (file.size > 5 * 1024 * 1024) {
+        // Validate file size (2MB limit for better performance)
+        if (file.size > 2 * 1024 * 1024) {
           toast({
             title: "File too large",
-            description: "Please select images smaller than 5MB",
+            description: "Please select images smaller than 2MB for better performance",
             variant: "destructive"
           });
           continue;
         }
 
-        // Convert to base64 for local storage
-        const reader = new FileReader();
-        const base64 = await new Promise<string>((resolve) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        });
-
-        newImages.push(base64);
+        // Compress and convert to base64
+        const compressedImage = await compressImage(file);
+        newImages.push(compressedImage);
       }
 
       const updatedImages = single ? newImages : [...images, ...newImages];
@@ -187,7 +202,7 @@ export default function ImageUpload({
                   Click to select images from your device
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Supports JPG, PNG, GIF up to 5MB each
+                  Supports JPG, PNG, GIF up to 2MB each
                 </p>
               </div>
               <input
