@@ -40,8 +40,8 @@ const productSchema = z.object({
   originalPrice: z.string().optional(),
   categoryId: z.number().min(1, "Category is required"),
   stock: z.number().min(0, "Stock must be 0 or greater"),
-  imageUrl: z.string().url("Please enter a valid image URL").optional(),
-  images: z.array(z.string()).default([]),
+  imageUrl: z.string().optional(),
+  images: z.array(z.string()).min(1, "At least 1 image is required").max(6, "Maximum 6 images allowed"),
   isFastSell: z.boolean().default(false),
   isOnOffer: z.boolean().default(false),
   offerPercentage: z.number().min(0).max(100).default(0),
@@ -55,8 +55,8 @@ const storeSchema = z.object({
   latitude: z.string().optional(),
   longitude: z.string().optional(),
   phone: z.string().optional(),
-  logo: z.string().url("Please enter a valid logo URL").optional(),
-  coverImage: z.string().url("Please enter a valid cover image URL").optional(),
+  logo: z.string().optional(),
+  coverImage: z.string().optional(),
   googleMapsLink: z.string().optional(),
 });
 
@@ -159,7 +159,8 @@ export default function ShopkeeperDashboard() {
         storeId: currentStore.id,
         price: data.price,
         originalPrice: data.originalPrice || undefined,
-        images: data.imageUrl ? [data.imageUrl] : [],
+        images: data.images || [],
+        imageUrl: data.images?.[0] || undefined,
         isFastSell: data.isFastSell || false,
         isOnOffer: data.isOnOffer || false,
         offerPercentage: data.offerPercentage || 0,
@@ -600,16 +601,20 @@ export default function ShopkeeperDashboard() {
                       )}
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={storeForm.control}
                         name="logo"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Store Logo URL</FormLabel>
-                            <FormControl>
-                              <Input placeholder="https://example.com/logo.png" {...field} />
-                            </FormControl>
+                            <ImageUpload
+                              label="Store Logo"
+                              single={true}
+                              maxImages={1}
+                              minImages={0}
+                              onImagesChange={(images) => field.onChange(images[0] || "")}
+                              initialImages={field.value ? [field.value] : []}
+                            />
                             <FormMessage />
                           </FormItem>
                         )}
@@ -620,10 +625,14 @@ export default function ShopkeeperDashboard() {
                         name="coverImage"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Cover Image URL</FormLabel>
-                            <FormControl>
-                              <Input placeholder="https://example.com/cover.jpg" {...field} />
-                            </FormControl>
+                            <ImageUpload
+                              label="Store Cover Image"
+                              single={true}
+                              maxImages={1}
+                              minImages={0}
+                              onImagesChange={(images) => field.onChange(images[0] || "")}
+                              initialImages={field.value ? [field.value] : []}
+                            />
                             <FormMessage />
                           </FormItem>
                         )}
@@ -821,17 +830,17 @@ export default function ShopkeeperDashboard() {
 
                     <FormField
                       control={form.control}
-                      name="imageUrl"
+                      name="images"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Product Image URL</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="url"
-                              placeholder="https://example.com/image.jpg"
-                              {...field} 
-                            />
-                          </FormControl>
+                          <ImageUpload
+                            label="Product Images"
+                            maxImages={6}
+                            minImages={1}
+                            onImagesChange={field.onChange}
+                            initialImages={field.value || []}
+                            className="col-span-full"
+                          />
                           <FormMessage />
                         </FormItem>
                       )}
