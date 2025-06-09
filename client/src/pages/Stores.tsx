@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MapPin, Filter } from "lucide-react";
+import { useLocation } from "wouter";
+import { Search, MapPin, Filter, Utensils, Store } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,8 +31,11 @@ interface Store {
 }
 
 export default function Stores() {
+  const [location] = useLocation();
+  const isRestaurantPage = location.includes('/restaurants');
+  
   const [searchQuery, setSearchQuery] = useState("");
-  const [storeTypeFilter, setStoreTypeFilter] = useState("all");
+  const [storeTypeFilter, setStoreTypeFilter] = useState(isRestaurantPage ? "restaurant" : "all");
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationEnabled, setLocationEnabled] = useState(false);
   const { toast } = useToast();
@@ -98,11 +102,24 @@ export default function Stores() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">
-            Discover Local Stores
+          <h1 className="text-4xl font-bold text-foreground mb-2 flex items-center justify-center gap-3">
+            {isRestaurantPage ? (
+              <>
+                <Utensils className="h-10 w-10 text-red-600" />
+                Discover Local Restaurants
+              </>
+            ) : (
+              <>
+                <Store className="h-10 w-10 text-blue-600" />
+                Discover Local Stores
+              </>
+            )}
           </h1>
           <p className="text-muted-foreground text-lg">
-            Find the best stores and restaurants in your area
+            {isRestaurantPage 
+              ? "Find the best restaurants and food delivery options in your area"
+              : "Find the best stores and shopping destinations in your area"
+            }
           </p>
         </div>
 
@@ -114,7 +131,7 @@ export default function Stores() {
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Search stores, restaurants, or products..."
+                  placeholder={isRestaurantPage ? "Search restaurants, cuisines, or food items..." : "Search stores, products, or brands..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -122,17 +139,19 @@ export default function Stores() {
               </div>
 
               {/* Store Type Filter */}
-              <Select value={storeTypeFilter} onValueChange={setStoreTypeFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Stores</SelectItem>
-                  <SelectItem value="retail">Retail Stores</SelectItem>
-                  <SelectItem value="restaurant">Restaurants & Food</SelectItem>
-                </SelectContent>
-              </Select>
+              {!isRestaurantPage && (
+                <Select value={storeTypeFilter} onValueChange={setStoreTypeFilter}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Stores</SelectItem>
+                    <SelectItem value="retail">Retail Stores</SelectItem>
+                    <SelectItem value="restaurant">Restaurants & Food</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
 
               {/* Location Button */}
               {!locationEnabled && (
@@ -160,23 +179,15 @@ export default function Stores() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Stores
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stores.length}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Restaurants
+                {isRestaurantPage ? "Total Restaurants" : "Total Stores"}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stores.filter(s => s.storeType === 'restaurant').length}
+                {isRestaurantPage 
+                  ? stores.filter(s => s.storeType === 'restaurant').length
+                  : stores.length
+                }
               </div>
             </CardContent>
           </Card>
@@ -184,12 +195,31 @@ export default function Stores() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Retail Stores
+                {isRestaurantPage ? "Cuisines Available" : "Restaurants"}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stores.filter(s => s.storeType === 'retail').length}
+                {isRestaurantPage 
+                  ? new Set(stores.filter(s => s.storeType === 'restaurant' && s.cuisineType).map(s => s.cuisineType)).size
+                  : stores.filter(s => s.storeType === 'restaurant').length
+                }
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {isRestaurantPage ? "Delivery Available" : "Retail Stores"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isRestaurantPage 
+                  ? stores.filter(s => s.storeType === 'restaurant' && s.isDeliveryAvailable).length
+                  : stores.filter(s => s.storeType === 'retail').length
+                }
               </div>
             </CardContent>
           </Card>
@@ -211,12 +241,16 @@ export default function Stores() {
             <CardContent className="pt-6 text-center">
               <div className="text-muted-foreground mb-4">
                 <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">No stores found</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  {isRestaurantPage ? "No restaurants found" : "No stores found"}
+                </h3>
                 <p>Try adjusting your search criteria or filters</p>
               </div>
               <Button variant="outline" onClick={() => {
                 setSearchQuery("");
-                setStoreTypeFilter("all");
+                if (!isRestaurantPage) {
+                  setStoreTypeFilter("all");
+                }
               }}>
                 Clear Filters
               </Button>
