@@ -16,7 +16,7 @@ export default function StoreDetail() {
   });
 
   const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
-    queryKey: [`/api/products`, { storeId: id }],
+    queryKey: [`/api/products/store/${id}`],
     enabled: !!id,
   });
 
