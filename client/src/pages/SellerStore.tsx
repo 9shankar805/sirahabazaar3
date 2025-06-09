@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import ImageUpload from "@/components/ImageUpload";
 import { LocationPicker } from "@/components/LocationPicker";
+import { useAuth } from "@/hooks/useAuth";
 
 const storeSchema = z.object({
   name: z.string().min(1, "Store name is required"),
@@ -39,7 +40,7 @@ const storeSchema = z.object({
   openingHours: z.string().optional()
 });
 
-interface Store {
+interface StoreData {
   id: number;
   name: string;
   description: string;
@@ -55,14 +56,14 @@ interface Store {
   totalReviews: number;
   featured: boolean;
   isActive: boolean;
+  storeType: string;
+  cuisineType?: string;
+  deliveryTime?: string;
+  minimumOrder?: number;
+  deliveryFee?: number;
+  isDeliveryAvailable: boolean;
+  openingHours?: string;
   createdAt: string;
-}
-
-interface User {
-  id: number;
-  role: string;
-  fullName: string;
-  email: string;
 }
 
 export default function SellerStore() {
@@ -70,18 +71,7 @@ export default function SellerStore() {
   const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  // Mock current user - in real app this would come from auth context
-  useEffect(() => {
-    const mockUser: User = {
-      id: 1,
-      role: "shopkeeper",
-      fullName: "Demo Seller",
-      email: "seller@demo.com"
-    };
-    setCurrentUser(mockUser);
-  }, []);
+  const { user: currentUser } = useAuth();
 
   const form = useForm<z.infer<typeof storeSchema>>({
     resolver: zodResolver(storeSchema),
@@ -106,7 +96,7 @@ export default function SellerStore() {
   });
 
   // Store query
-  const { data: stores, isLoading: storesLoading } = useQuery<Store[]>({
+  const { data: stores, isLoading: storesLoading } = useQuery<StoreData[]>({
     queryKey: ['/api/stores/owner', currentUser?.id],
     enabled: !!currentUser?.id,
   });
@@ -191,10 +181,19 @@ export default function SellerStore() {
         name: userStore.name,
         description: userStore.description || "",
         address: userStore.address,
+        latitude: userStore.latitude || "",
+        longitude: userStore.longitude || "",
         phone: userStore.phone || "",
         website: userStore.website || "",
         logo: userStore.logo || "",
-        coverImage: userStore.coverImage || ""
+        coverImage: userStore.coverImage || "",
+        storeType: userStore.storeType || "retail",
+        cuisineType: userStore.cuisineType || "",
+        deliveryTime: userStore.deliveryTime || "",
+        minimumOrder: userStore.minimumOrder?.toString() || "",
+        deliveryFee: userStore.deliveryFee?.toString() || "",
+        isDeliveryAvailable: userStore.isDeliveryAvailable || false,
+        openingHours: userStore.openingHours || ""
       });
       setIsEditDialogOpen(true);
     }
