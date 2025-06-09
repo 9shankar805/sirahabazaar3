@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { pool } from "./db";
+
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
   insertWishlistItemSchema, insertAdminSchema, insertWebsiteVisitSchema, insertNotificationSchema, 
@@ -322,14 +324,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid user ID" });
       }
       
-      // Direct SQL query to avoid schema issues
-      const result = await db.execute(sql`
+      // Direct query using raw SQL to bypass schema issues
+      const query = `
         SELECT p.* FROM products p 
         JOIN stores s ON s.id = p.store_id 
-        WHERE s.owner_id = ${parsedId}
+        WHERE s.owner_id = $1
         ORDER BY p.created_at DESC
-      `);
+      `;
       
+      const result = await storage.pool.query(query, [parsedId]);
       res.json(result.rows);
     } catch (error) {
       console.error("Error fetching store products:", error);
