@@ -55,7 +55,14 @@ const storeSchema = z.object({
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
   website: z.string().url().optional().or(z.literal("")),
   logo: z.string().optional(),
-  coverImage: z.string().optional()
+  coverImage: z.string().optional(),
+  storeType: z.enum(["retail", "restaurant"]).default("retail"),
+  cuisineType: z.string().optional(),
+  deliveryTime: z.string().optional(),
+  minimumOrder: z.string().optional(),
+  deliveryFee: z.string().optional(),
+  isDeliveryAvailable: z.boolean().default(false),
+  openingHours: z.string().optional()
 });
 
 type ProductForm = z.infer<typeof productSchema>;
@@ -138,7 +145,14 @@ export default function ShopkeeperDashboard() {
       phone: "",
       website: "",
       logo: "",
-      coverImage: ""
+      coverImage: "",
+      storeType: "retail",
+      cuisineType: "",
+      deliveryTime: "",
+      minimumOrder: "",
+      deliveryFee: "",
+      isDeliveryAvailable: false,
+      openingHours: ""
     },
   });
 
@@ -163,6 +177,7 @@ export default function ShopkeeperDashboard() {
         isOnOffer: data.isOnOffer || false,
         offerPercentage: data.offerPercentage || 0,
         offerEndDate: data.offerEndDate || undefined,
+        productType: currentStore.storeType === 'restaurant' ? 'food' : 'retail', // Auto-set based on store type
       };
 
       if (editingProduct) {
@@ -234,6 +249,15 @@ export default function ShopkeeperDashboard() {
         phone: data.phone || null,
         description: data.description || null,
         website: data.website || null,
+        logo: data.logo || null,
+        coverImage: data.coverImage || null,
+        storeType: data.storeType,
+        cuisineType: data.storeType === 'restaurant' ? data.cuisineType || null : null,
+        deliveryTime: data.storeType === 'restaurant' ? data.deliveryTime || null : null,
+        minimumOrder: data.storeType === 'restaurant' && data.minimumOrder ? parseFloat(data.minimumOrder) : null,
+        deliveryFee: data.storeType === 'restaurant' && data.deliveryFee ? parseFloat(data.deliveryFee) : null,
+        isDeliveryAvailable: data.storeType === 'restaurant' ? data.isDeliveryAvailable : false,
+        openingHours: data.storeType === 'restaurant' ? data.openingHours || null : null,
       };
 
       await apiPost("/api/stores", storeData);
@@ -642,6 +666,147 @@ export default function ShopkeeperDashboard() {
                         </FormItem>
                       )}
                     />
+
+                    <FormField
+                      control={storeForm.control}
+                      name="storeType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Store Type</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select store type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="retail">Retail Store</SelectItem>
+                              <SelectItem value="restaurant">Restaurant</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {storeForm.watch("storeType") === "restaurant" && (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={storeForm.control}
+                            name="cuisineType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Cuisine Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select cuisine type" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="indian">Indian</SelectItem>
+                                    <SelectItem value="chinese">Chinese</SelectItem>
+                                    <SelectItem value="fast-food">Fast Food</SelectItem>
+                                    <SelectItem value="italian">Italian</SelectItem>
+                                    <SelectItem value="mexican">Mexican</SelectItem>
+                                    <SelectItem value="continental">Continental</SelectItem>
+                                    <SelectItem value="desserts">Desserts & Sweets</SelectItem>
+                                    <SelectItem value="beverages">Beverages</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={storeForm.control}
+                            name="deliveryTime"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Delivery Time</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., 25-35 mins" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={storeForm.control}
+                            name="minimumOrder"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Minimum Order Amount (₹)</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., 200" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={storeForm.control}
+                            name="deliveryFee"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Delivery Fee (₹)</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., 40 (0 for free)" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={storeForm.control}
+                            name="isDeliveryAvailable"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">
+                                    Delivery Available
+                                  </FormLabel>
+                                  <div className="text-sm text-muted-foreground">
+                                    Enable home delivery for your restaurant
+                                  </div>
+                                </div>
+                                <FormControl>
+                                  <input
+                                    type="checkbox"
+                                    checked={field.value}
+                                    onChange={field.onChange}
+                                    className="rounded"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={storeForm.control}
+                            name="openingHours"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Opening Hours</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., 9:00 AM - 11:00 PM" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
