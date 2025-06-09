@@ -88,7 +88,12 @@ const { user } = useAuth();
   // Products query
   const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ['/api/products/store', currentUser?.id],
-    queryFn: () => fetch(`/api/products/store?userId=${currentUser?.id}`).then(res => res.json()),
+    queryFn: async () => {
+      if (!currentUser?.id) return [];
+      const response = await fetch(`/api/products/store?userId=${currentUser.id}`);
+      if (!response.ok) throw new Error('Failed to fetch products');
+      return response.json();
+    },
     enabled: !!currentUser?.id,
   });
 
@@ -246,7 +251,7 @@ const { user } = useAuth();
             </CardHeader>
             <CardContent>
               <div className="flex items-center space-x-4">
-                <div className="text-3xl font-bold">{dashboardStats?.averageRating.toFixed(1) || '0.0'}</div>
+                <div className="text-3xl font-bold">{dashboardStats?.averageRating ? Number(dashboardStats.averageRating).toFixed(1) : '0.0'}</div>
                 <div className="flex-1">
                   <div className="flex items-center space-x-1 mb-2">
                     {[1, 2, 3, 4, 5].map((star) => (

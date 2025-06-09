@@ -324,13 +324,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get products by store for current user (shopkeeper)
   app.get("/api/products/store", async (req, res) => {
     try {
-      const { userId } = req.query;
-      if (!userId) {
-        return res.status(400).json({ error: "User ID is required" });
+      const { userId, ownerId } = req.query;
+      const id = userId || ownerId;
+      
+      if (!id) {
+        return res.status(400).json({ error: "User ID or Owner ID is required" });
+      }
+      
+      const parsedId = parseInt(id as string);
+      if (isNaN(parsedId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
       }
       
       // First get the stores owned by this user
-      const stores = await storage.getStoresByOwnerId(parseInt(userId as string));
+      const stores = await storage.getStoresByOwnerId(parsedId);
       if (stores.length === 0) {
         return res.json([]);
       }
@@ -345,7 +352,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(allProducts);
     } catch (error) {
       console.error("Error fetching store products:", error);
-      res.status(500).json({ error: "Failed to fetch products" });
+      res.status(500).json({ 
+        error: "Failed to fetch products",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
