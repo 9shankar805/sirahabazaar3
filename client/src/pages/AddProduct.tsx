@@ -296,17 +296,17 @@ export default function AddProduct() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className={`grid gap-6 ${showPreview ? 'lg:grid-cols-2' : 'lg:grid-cols-1'}`}>
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div className={`grid gap-4 sm:gap-6 ${showPreview ? 'lg:grid-cols-2' : 'lg:grid-cols-1'}`}>
           {/* Product Form */}
           <Card className="order-2 lg:order-1">
-            <CardHeader>
-              <CardTitle className="flex items-center">
+            <CardHeader className="pb-4 sm:pb-6">
+              <CardTitle className="flex items-center text-lg sm:text-xl">
                 <Package className="h-5 w-5 mr-2" />
                 Product Details
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   {/* Basic Information */}
@@ -345,16 +345,16 @@ export default function AddProduct() {
                       )}
                     />
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
                       <FormField
                         control={form.control}
                         name="categoryId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Category</FormLabel>
+                            <FormLabel className="text-sm font-medium">Category</FormLabel>
                             <Select onValueChange={(value) => field.onChange(parseInt(value))}>
                               <FormControl>
-                                <SelectTrigger>
+                                <SelectTrigger className="h-11 sm:h-10">
                                   <SelectValue placeholder="Select category" />
                                 </SelectTrigger>
                               </FormControl>
@@ -376,10 +376,10 @@ export default function AddProduct() {
                         name="productType"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Product Type</FormLabel>
+                            <FormLabel className="text-sm font-medium">Product Type</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger>
+                                <SelectTrigger className="h-11 sm:h-10">
                                   <SelectValue />
                                 </SelectTrigger>
                               </FormControl>
@@ -399,15 +399,21 @@ export default function AddProduct() {
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">Pricing & Stock</h3>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
                       <FormField
                         control={form.control}
                         name="price"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Price ($)</FormLabel>
+                            <FormLabel className="text-sm font-medium">Price ($)</FormLabel>
                             <FormControl>
-                              <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                              <Input 
+                                type="number" 
+                                step="0.01" 
+                                placeholder="0.00" 
+                                className="h-11 sm:h-10 text-base" 
+                                {...field} 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -419,9 +425,15 @@ export default function AddProduct() {
                         name="originalPrice"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Original Price ($)</FormLabel>
+                            <FormLabel className="text-sm font-medium">Original Price ($)</FormLabel>
                             <FormControl>
-                              <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                              <Input 
+                                type="number" 
+                                step="0.01" 
+                                placeholder="0.00" 
+                                className="h-11 sm:h-10 text-base" 
+                                {...field} 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -433,11 +445,12 @@ export default function AddProduct() {
                         name="stock"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Stock Quantity</FormLabel>
+                            <FormLabel className="text-sm font-medium">Stock Quantity</FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 
                                 placeholder="0" 
+                                className="h-11 sm:h-10 text-base" 
                                 {...field}
                                 onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                               />
@@ -770,17 +783,17 @@ export default function AddProduct() {
                   </div>
 
                   {/* Submit Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-3 pt-6">
+                  <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
                     <Button 
                       type="submit" 
                       disabled={isSubmitting}
-                      className="flex-1 sm:flex-none"
+                      className="flex-1 sm:flex-none h-12 sm:h-10 text-base font-medium"
                     >
                       <Save className="h-4 w-4 mr-2" />
                       {isSubmitting ? "Adding Product..." : "Add Product"}
                     </Button>
                     <Link href="/seller/inventory" className="flex-1 sm:flex-none">
-                      <Button type="button" variant="outline" className="w-full">
+                      <Button type="button" variant="outline" className="w-full h-12 sm:h-10 text-base">
                         Cancel
                       </Button>
                     </Link>
