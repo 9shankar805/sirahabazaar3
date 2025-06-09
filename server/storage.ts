@@ -22,6 +22,17 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined>;
+  
+  // Admin user operations
+  getAdminUser(id: number): Promise<AdminUser | undefined>;
+  getAdminUserByEmail(email: string): Promise<AdminUser | undefined>;
+  createAdminUser(adminUser: InsertAdminUser): Promise<AdminUser>;
+  
+  // User approval operations
+  getPendingUsers(): Promise<User[]>;
+  approveUser(userId: number, adminId: number): Promise<User | undefined>;
+  rejectUser(userId: number, adminId: number): Promise<User | undefined>;
+  getAllUsersWithStatus(): Promise<User[]>;
 
   // Store operations
   getStore(id: number): Promise<Store | undefined>;
@@ -170,6 +181,57 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
     const [updatedUser] = await db.update(users).set(updates).where(eq(users.id, id)).returning();
     return updatedUser;
+  }
+
+  // Admin user operations
+  async getAdminUser(id: number): Promise<AdminUser | undefined> {
+    const [adminUser] = await db.select().from(adminUsers).where(eq(adminUsers.id, id));
+    return adminUser;
+  }
+
+  async getAdminUserByEmail(email: string): Promise<AdminUser | undefined> {
+    const [adminUser] = await db.select().from(adminUsers).where(eq(adminUsers.email, email));
+    return adminUser;
+  }
+
+  async createAdminUser(adminUser: InsertAdminUser): Promise<AdminUser> {
+    const [newAdminUser] = await db.insert(adminUsers).values(adminUser).returning();
+    return newAdminUser;
+  }
+
+  // User approval operations
+  async getPendingUsers(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.status, 'pending'));
+  }
+
+  async approveUser(userId: number, adminId: number): Promise<User | undefined> {
+    const [approvedUser] = await db
+      .update(users)
+      .set({
+        status: 'active',
+        approvalDate: new Date(),
+        approvedBy: adminId
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return approvedUser;
+  }
+
+  async rejectUser(userId: number, adminId: number): Promise<User | undefined> {
+    const [rejectedUser] = await db
+      .update(users)
+      .set({
+        status: 'rejected',
+        approvalDate: new Date(),
+        approvedBy: adminId
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return rejectedUser;
+  }
+
+  async getAllUsersWithStatus(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
   // Store operations

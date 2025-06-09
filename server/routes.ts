@@ -695,7 +695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      const admin = await storage.getAdminByEmail(email);
+      const admin = await storage.getAdminUserByEmail(email);
       
       if (!admin || admin.password !== password) {
         return res.status(401).json({ error: "Invalid admin credentials" });
@@ -708,15 +708,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/create", async (req, res) => {
+  // Admin user management routes
+  app.get("/api/admin/users", async (req, res) => {
     try {
-      const adminData = insertAdminSchema.parse(req.body);
-      const admin = await storage.createAdmin(adminData);
-      
-      const { password, ...adminWithoutPassword } = admin;
-      res.json({ admin: adminWithoutPassword });
+      const users = await storage.getAllUsersWithStatus();
+      res.json(users);
     } catch (error) {
-      res.status(400).json({ error: "Failed to create admin" });
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.get("/api/admin/users/pending", async (req, res) => {
+    try {
+      const pendingUsers = await storage.getPendingUsers();
+      res.json(pendingUsers);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch pending users" });
+    }
+  });
+
+  app.post("/api/admin/users/:userId/approve", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { adminId } = req.body;
+      
+      if (!adminId) {
+        return res.status(400).json({ error: "Admin ID is required" });
+      }
+      
+      const approvedUser = await storage.approveUser(userId, adminId);
+      
+      if (!approvedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Send notification to approved user
+      await storage.createNotification({
+        userId: userId,
+        title: "Account Approved",
+        message: "Your shopkeeper account has been approved! You can now start creating your store and adding products.",
+        type: "success"
+      });
+      
+      res.json(approvedUser);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to approve user" });
+    }
+  });
+
+  app.post("/api/admin/users/:userId/reject", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { adminId, reason } = req.body;
+      
+      if (!adminId) {
+        return res.status(400).json({ error: "Admin ID is required" });
+      }
+      
+      const rejectedUser = await storage.rejectUser(userId, adminId);
+      
+      if (!rejectedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Send notification to rejected user
+      const message = reason 
+        ? `Your shopkeeper account application has been rejected. Reason: ${reason}`
+        : "Your shopkeeper account application has been rejected. Please contact support for more information.";
+        
+      await storage.createNotification({
+        userId: userId,
+        title: "Account Rejected",
+        message: message,
+        type: "error"
+      });
+      
+      res.json(rejectedUser);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to reject user" });
     }
   });
 

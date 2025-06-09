@@ -52,14 +52,28 @@ export default function Register() {
     setIsLoading(true);
     try {
       const { confirmPassword, ...registerData } = data;
-      await register(registerData);
       
-      toast({
-        title: "Account created successfully!",
-        description: "Welcome to Siraha Bazaar. You are now logged in.",
-      });
+      // Set shopkeeper accounts as pending for admin approval
+      const userData = {
+        ...registerData,
+        status: registerData.role === 'shopkeeper' ? 'pending' : 'active'
+      };
       
-      setLocation("/");
+      await register(userData);
+      
+      if (registerData.role === 'shopkeeper') {
+        toast({
+          title: "Application submitted!",
+          description: "Your shopkeeper account is pending admin approval. You'll be notified once approved.",
+        });
+        setLocation("/login");
+      } else {
+        toast({
+          title: "Account created successfully!",
+          description: "Welcome to Siraha Bazaar. You are now logged in.",
+        });
+        setLocation("/");
+      }
     } catch (error) {
       toast({
         title: "Registration failed",

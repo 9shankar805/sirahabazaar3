@@ -1,589 +1,384 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLocation } from "wouter";
+import { 
+  Users, 
+  UserCheck, 
+  UserX, 
+  Clock, 
+  Shield, 
+  Store, 
+  Eye,
+  CheckCircle,
+  XCircle,
+  AlertCircle
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Users, ShoppingBag, Store, TrendingUp, MapPin, Bell, Plus, Edit, Trash2 } from "lucide-react";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import type { Category, InsertCategory } from "@shared/schema";
-
-interface AdminAuth {
-  email: string;
-  password: string;
-}
-
-interface Analytics {
-  totalVisits: number;
-  uniqueVisitors: number;
-  pageViews: Array<{ page: string; count: number }>;
-}
-
-const categorySchema = z.object({
-  name: z.string().min(1, "Category name is required"),
-  slug: z.string().min(1, "Slug is required"),
-});
-
-type CategoryForm = z.infer<typeof categorySchema>;
+import type { User } from "@shared/schema";
 
 export default function AdminPanel() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [adminData, setAdminData] = useState<any>(null);
-  const [loginForm, setLoginForm] = useState<AdminAuth>({ email: "", password: "" });
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [adminUser, setAdminUser] = useState<any>(null);
 
-  // Category form
-  const categoryForm = useForm<CategoryForm>({
-    resolver: zodResolver(categorySchema),
-    defaultValues: {
-      name: "",
-      slug: "",
-    },
+  useEffect(() => {
+    const storedAdmin = localStorage.getItem("adminUser");
+    if (!storedAdmin) {
+      setLocation("/admin/login");
+      return;
+    }
+    setAdminUser(JSON.parse(storedAdmin));
+  }, [setLocation]);
+
+  const { data: allUsers = [], isLoading: usersLoading } = useQuery({
+    queryKey: ["/api/admin/users"],
+    enabled: !!adminUser,
   });
 
-  // Admin authentication mutation
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: AdminAuth) => {
-      const response = await fetch("/api/admin/login", {
+  const { data: pendingUsers = [], isLoading: pendingLoading } = useQuery({
+    queryKey: ["/api/admin/users/pending"],
+    enabled: !!adminUser,
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      return await apiRequest(`/api/admin/users/${userId}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-      });
-      if (!response.ok) {
-        throw new Error("Invalid admin credentials");
-      }
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setIsAuthenticated(true);
-      setAdminData(data.admin);
-      toast({
-        title: "Success",
-        description: "Admin login successful",
-        variant: "default",
+        body: JSON.stringify({ adminId: adminUser.id }),
       });
     },
-    onError: (error) => {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/pending"] });
       toast({
-        title: "Error",
-        description: error.message,
+        title: "User approved",
+        description: "The shopkeeper account has been approved successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Approval failed",
+        description: "Failed to approve user. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  // Analytics data
-  const { data: analytics } = useQuery<Analytics>({
-    queryKey: ["/api/admin/analytics/stats"],
-    enabled: isAuthenticated,
-  });
-
-  // Website visits data
-  const { data: visits } = useQuery({
-    queryKey: ["/api/admin/analytics/visits"],
-    enabled: isAuthenticated,
-  });
-
-  // Categories data
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-    enabled: isAuthenticated,
-  });
-
-  // Stores data
-  const { data: stores = [] } = useQuery<any[]>({
-    queryKey: ["/api/stores"],
-    enabled: isAuthenticated,
-  });
-
-  // Category mutations
-  const createCategoryMutation = useMutation({
-    mutationFn: async (categoryData: CategoryForm) => {
-      const response = await fetch("/api/categories", {
+  const rejectMutation = useMutation({
+    mutationFn: async ({ userId, reason }: { userId: number; reason: string }) => {
+      return await apiRequest(`/api/admin/users/${userId}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(categoryData),
+        body: JSON.stringify({ adminId: adminUser.id, reason }),
       });
-      if (!response.ok) throw new Error("Failed to create category");
-      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
-      categoryForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/pending"] });
+      setSelectedUser(null);
+      setRejectReason("");
       toast({
-        title: "Success",
-        description: "Category created successfully",
+        title: "User rejected",
+        description: "The shopkeeper application has been rejected.",
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Rejection failed",
+        description: "Failed to reject user. Please try again.",
         variant: "destructive",
       });
     },
   });
-
-  const updateCategoryMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: CategoryForm }) => {
-      const response = await fetch(`/api/categories/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error("Failed to update category");
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
-      setEditingCategory(null);
-      categoryForm.reset();
-      toast({
-        title: "Success",
-        description: "Category updated successfully",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteCategoryMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await fetch(`/api/categories/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete category");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
-      toast({
-        title: "Success",
-        description: "Category deleted successfully",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    loginMutation.mutate(loginForm);
-  };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    setAdminData(null);
-    setLoginForm({ email: "", password: "" });
+    localStorage.removeItem("adminUser");
+    setLocation("/admin/login");
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully.",
+    });
   };
 
-  const handleCategorySubmit = (data: CategoryForm) => {
-    if (editingCategory) {
-      updateCategoryMutation.mutate({ id: editingCategory.id, data });
-    } else {
-      createCategoryMutation.mutate(data);
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Active</Badge>;
+      case "pending":
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
+      case "rejected":
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const handleEditCategory = (category: Category) => {
-    setEditingCategory(category);
-    categoryForm.setValue("name", category.name);
-    categoryForm.setValue("slug", category.slug);
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
-  const handleCancelEdit = () => {
-    setEditingCategory(null);
-    categoryForm.reset();
-  };
-
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
-  };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Admin Panel</CardTitle>
-            <CardDescription className="text-center">
-              Enter your admin credentials to access the dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@sirahbazaar.com"
-                  value={loginForm.email || ""}
-                  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter admin password"
-                  value={loginForm.password || ""}
-                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={loginMutation.isPending}
-              >
-                {loginMutation.isPending ? "Logging in..." : "Login"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!adminUser) {
+    return null;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Siraha Bazaar Admin</h1>
-              <p className="text-sm text-gray-600">Welcome, {adminData?.fullName}</p>
+            <div className="flex items-center">
+              <Shield className="h-8 w-8 text-blue-600 mr-3" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
+                <p className="text-sm text-gray-500">Siraha Bazaar Administration</p>
+              </div>
             </div>
-            <Button onClick={handleLogout} variant="outline">
-              Logout
-            </Button>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">Welcome, {adminUser.fullName}</span>
+              <Button variant="outline" onClick={handleLogout}>
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="stores">Stores</TabsTrigger>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <Users className="h-8 w-8 text-blue-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Users</p>
+                  <p className="text-2xl font-bold text-gray-900">{allUsers.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <Clock className="h-8 w-8 text-yellow-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Pending Approval</p>
+                  <p className="text-2xl font-bold text-gray-900">{pendingUsers.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <UserCheck className="h-8 w-8 text-green-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Active Shopkeepers</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {allUsers.filter(u => u.role === 'shopkeeper' && u.status === 'active').length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <Store className="h-8 w-8 text-purple-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Customers</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {allUsers.filter(u => u.role === 'customer').length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Pending Approvals Alert */}
+        {pendingUsers.length > 0 && (
+          <Alert className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              You have {pendingUsers.length} pending shopkeeper application{pendingUsers.length > 1 ? 's' : ''} waiting for approval.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Tabs */}
+        <Tabs defaultValue="pending" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="pending">
+              Pending Approvals ({pendingUsers.length})
+            </TabsTrigger>
+            <TabsTrigger value="all">
+              All Users ({allUsers.length})
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Visits</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{analytics?.totalVisits || 0}</div>
-                  <p className="text-xs text-muted-foreground">Last 30 days</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Unique Visitors</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{analytics?.uniqueVisitors || 0}</div>
-                  <p className="text-xs text-muted-foreground">Last 30 days</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Stores</CardTitle>
-                  <Store className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stores?.length || 0}</div>
-                  <p className="text-xs text-muted-foreground">Currently active</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                  <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">0</div>
-                  <p className="text-xs text-muted-foreground">All time</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Page Views</CardTitle>
-                  <CardDescription>Most visited pages</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {analytics?.pageViews && Array.isArray(analytics.pageViews) && analytics.pageViews.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={analytics.pageViews.slice(0, 5)}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="page" />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="count" fill="#8884d8" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="text-center text-gray-500 py-8">
-                      No page view data available
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Latest website activities</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {visits && Array.isArray(visits) && visits.slice(0, 5).map((visit: any, index: number) => (
-                      <div key={index} className="flex items-center space-x-4">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{visit.page}</p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(visit.visitedAt).toLocaleString()}
-                          </p>
-                        </div>
-                        <Badge variant="secondary">{visit.ipAddress}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-6">
+          <TabsContent value="pending">
             <Card>
               <CardHeader>
-                <CardTitle>Website Analytics</CardTitle>
-                <CardDescription>Detailed analytics and visitor information</CardDescription>
+                <CardTitle>Pending Shopkeeper Applications</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{analytics?.totalVisits || 0}</div>
-                      <div className="text-sm text-gray-600">Total Visits</div>
-                    </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{analytics?.uniqueVisitors || 0}</div>
-                      <div className="text-sm text-gray-600">Unique Visitors</div>
-                    </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">{analytics?.pageViews?.length || 0}</div>
-                      <div className="text-sm text-gray-600">Page Types</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="categories" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Add Category Form */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    {editingCategory ? "Edit Category" : "Add New Category"}
-                  </CardTitle>
-                  <CardDescription>
-                    Create and manage product categories
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...categoryForm}>
-                    <form onSubmit={categoryForm.handleSubmit(handleCategorySubmit)} className="space-y-4">
-                      <FormField
-                        control={categoryForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Category Name</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Enter category name" 
-                                {...field}
-                                onChange={(e) => {
-                                  field.onChange(e);
-                                  if (!editingCategory) {
-                                    categoryForm.setValue("slug", generateSlug(e.target.value));
-                                  }
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={categoryForm.control}
-                        name="slug"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Slug</FormLabel>
-                            <FormControl>
-                              <Input placeholder="category-slug" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="flex gap-2">
-                        <Button 
-                          type="submit" 
-                          disabled={createCategoryMutation.isPending || updateCategoryMutation.isPending}
-                        >
-                          {editingCategory ? "Update Category" : "Add Category"}
-                        </Button>
-                        {editingCategory && (
-                          <Button type="button" variant="outline" onClick={handleCancelEdit}>
-                            Cancel
-                          </Button>
-                        )}
-                      </div>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-
-              {/* Categories List */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Existing Categories</CardTitle>
-                  <CardDescription>
-                    Manage all product categories
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {categories.length === 0 ? (
-                    <div className="text-center py-8">
-                      <div className="text-muted-foreground">No categories found</div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {categories.map((category) => (
-                        <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div>
-                            <h4 className="font-medium">{category.name}</h4>
-                            <p className="text-sm text-muted-foreground">{category.slug}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditCategory(category)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => deleteCategoryMutation.mutate(category.id)}
-                              disabled={deleteCategoryMutation.isPending}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="orders" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Order Management</CardTitle>
-                <CardDescription>Track and manage all orders</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center text-gray-500 py-8">
-                  No orders available yet
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="stores" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Store Management</CardTitle>
-                <CardDescription>Manage stores and their locations</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {stores && stores.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {stores.map((store: any) => (
-                      <Card key={store.id} className="p-4">
-                        <div className="flex items-start space-x-4">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg">{store.name}</h3>
-                            <p className="text-sm text-gray-600 mb-2">{store.description}</p>
-                            <div className="flex items-center text-sm text-gray-500 mb-1">
-                              <MapPin className="h-4 w-4 mr-1" />
-                              {store.address}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              Phone: {store.phone || 'Not provided'}
-                            </div>
-                            <div className="mt-2">
-                              <Badge variant={store.isActive ? "default" : "secondary"}>
-                                {store.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
+                {pendingLoading ? (
+                  <div className="text-center py-8">Loading...</div>
+                ) : pendingUsers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No pending applications
                   </div>
                 ) : (
-                  <div className="text-center text-gray-500 py-8">
-                    No stores registered yet
-                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Applied Date</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingUsers.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.fullName}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>{user.phone}</TableCell>
+                          <TableCell>{formatDate(user.createdAt)}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                size="sm"
+                                onClick={() => approveMutation.mutate(user.id)}
+                                disabled={approveMutation.isPending}
+                              >
+                                <UserCheck className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => setSelectedUser(user)}
+                                  >
+                                    <UserX className="h-4 w-4 mr-1" />
+                                    Reject
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Reject Application</DialogTitle>
+                                    <DialogDescription>
+                                      Are you sure you want to reject {user.fullName}'s shopkeeper application?
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div>
+                                    <Textarea
+                                      placeholder="Enter reason for rejection (optional)"
+                                      value={rejectReason}
+                                      onChange={(e) => setRejectReason(e.target.value)}
+                                    />
+                                  </div>
+                                  <DialogFooter>
+                                    <Button variant="outline" onClick={() => {
+                                      setSelectedUser(null);
+                                      setRejectReason("");
+                                    }}>
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      onClick={() => rejectMutation.mutate({
+                                        userId: user.id,
+                                        reason: rejectReason
+                                      })}
+                                      disabled={rejectMutation.isPending}
+                                    >
+                                      Reject Application
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="all">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Users</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {usersLoading ? (
+                  <div className="text-center py-8">Loading...</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Joined Date</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allUsers.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.fullName}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={user.role === 'shopkeeper' ? 'default' : 'secondary'}>
+                              {user.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(user.status)}</TableCell>
+                          <TableCell>{formatDate(user.createdAt)}</TableCell>
+                          <TableCell>
+                            <Button size="sm" variant="outline">
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 )}
               </CardContent>
             </Card>
