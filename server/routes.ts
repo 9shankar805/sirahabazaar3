@@ -322,23 +322,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid user ID" });
       }
       
-      // First get the stores owned by this user
-      const stores = await storage.getStoresByOwnerId(parsedId);
-      if (stores.length === 0) {
-        return res.json([]);
-      }
+      // Direct SQL query to avoid schema issues
+      const result = await db.execute(sql`
+        SELECT p.* FROM products p 
+        JOIN stores s ON s.id = p.store_id 
+        WHERE s.owner_id = ${parsedId}
+        ORDER BY p.created_at DESC
+      `);
       
-      // Get products from all stores owned by this user
-      const allProducts = [];
-      for (const store of stores) {
-        const products = await storage.getProductsByStoreId(store.id);
-        allProducts.push(...products);
-      }
-      
-      res.json(allProducts);
+      res.json(result.rows);
     } catch (error) {
       console.error("Error fetching store products:", error);
-      console.error("Error details:", error instanceof Error ? error.message : error);
       res.status(500).json({ error: "Failed to fetch products", details: error instanceof Error ? error.message : "Unknown error" });
     }
   });
