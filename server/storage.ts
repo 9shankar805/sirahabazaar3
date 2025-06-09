@@ -552,22 +552,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getStoresWithDistance(userLat: number, userLon: number, storeType?: string): Promise<(Store & { distance: number })[]> {
-    const allStores = await this.getAllStores();
-    
-    // Filter stores by type if specified
-    const filteredStores = storeType 
-      ? allStores.filter(store => store.storeType === storeType)
-      : allStores;
-    
-    return filteredStores
-      .filter(store => store.latitude && store.longitude) // Only include stores with coordinates
-      .map(store => {
-        const storeLat = parseFloat(store.latitude!);
-        const storeLon = parseFloat(store.longitude!);
-        const distance = this.calculateDistance(userLat, userLon, storeLat, storeLon);
-        return { ...store, distance };
-      })
-      .sort((a, b) => a.distance - b.distance);
+    try {
+      const allStores = await this.getAllStores();
+      
+      // Filter stores by type if specified
+      const filteredStores = storeType 
+        ? allStores.filter(store => store.storeType === storeType)
+        : allStores;
+      
+      return filteredStores
+        .filter(store => store.latitude && store.longitude) // Only include stores with coordinates
+        .map(store => {
+          const storeLat = parseFloat(store.latitude!);
+          const storeLon = parseFloat(store.longitude!);
+          const distance = this.calculateDistance(userLat, userLon, storeLat, storeLon);
+          return { ...store, distance };
+        })
+        .sort((a, b) => a.distance - b.distance);
+    } catch (error) {
+      console.error("Error in getStoresWithDistance:", error);
+      throw error;
+    }
   }
 
   // Seller hub analytics

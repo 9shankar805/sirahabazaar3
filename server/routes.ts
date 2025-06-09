@@ -115,21 +115,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/stores/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const store = await storage.getStore(id);
-      
-      if (!store) {
-        return res.status(404).json({ error: "Store not found" });
-      }
-      
-      res.json(store);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch store" });
-    }
-  });
-
   // Get stores by owner
   app.get("/api/stores/owner", async (req, res) => {
     try {
@@ -956,6 +941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(storesWithDistance);
     } catch (error) {
       console.error("Nearby stores fetch error:", error);
+      console.error("Error stack:", error instanceof Error ? error.stack : error);
       res.status(500).json({ error: "Failed to fetch nearby stores" });
     }
   });
