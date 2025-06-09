@@ -23,13 +23,19 @@ export default function Homepage() {
       setLocation("/seller/dashboard");
     }
   }, [user, isLoading, setLocation]);
-  const { data: products } = useQuery<Product[]>({
+  const { data: products, isLoading: productsLoading, error: productsError } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
 
-  const { data: stores } = useQuery<Store[]>({
+  const { data: stores, isLoading: storesLoading, error: storesError } = useQuery<Store[]>({
     queryKey: ["/api/stores"],
   });
+
+  // Debug logging
+  if (productsError) console.error("Products error:", productsError);
+  if (storesError) console.error("Stores error:", storesError);
+  if (products) console.log("Products loaded:", products.length);
+  if (stores) console.log("Stores loaded:", stores.length);
 
   const featuredProducts = products?.slice(0, 6) || [];
   const popularStores = stores?.slice(0, 4) || [];
