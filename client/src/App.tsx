@@ -28,6 +28,7 @@ import ShopkeeperDashboard from "@/pages/ShopkeeperDashboard";
 import CustomerDashboard from "@/pages/CustomerDashboard";
 import AdminPanel from "@/pages/AdminPanel";
 import StoreMaps from "@/pages/StoreMaps";
+import RestaurantMaps from "@/pages/RestaurantMaps";
 import Wishlist from "@/pages/Wishlist";
 import Categories from "@/pages/Categories";
 import SellerDashboard from "@/pages/SellerDashboard";
@@ -62,7 +63,7 @@ function AppRouter() {
         <Route path="/customer-dashboard" component={CustomerDashboard} />
         <Route path="/admin" component={AdminPanel} />
         <Route path="/store-maps" component={StoreMaps} />
-        <Route path="/restaurant-maps" component={StoreMaps} />
+        <Route path="/restaurant-maps" component={RestaurantMaps} />
         <Route path="/wishlist" component={Wishlist} />
         
         {/* Seller Hub Routes */}

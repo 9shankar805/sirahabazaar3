@@ -130,7 +130,7 @@ export default function Stores() {
                 <SelectContent>
                   <SelectItem value="all">All Stores</SelectItem>
                   <SelectItem value="retail">Retail Stores</SelectItem>
-                  <SelectItem value="restaurant">Restaurants</SelectItem>
+                  <SelectItem value="restaurant">Restaurants & Food</SelectItem>
                 </SelectContent>
               </Select>
 

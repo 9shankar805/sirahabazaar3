@@ -21,7 +21,7 @@ export default function StoreMaps() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <StoreMap />
+          <StoreMap storeType="retail" />
         </div>
         
         <div className="space-y-6">
