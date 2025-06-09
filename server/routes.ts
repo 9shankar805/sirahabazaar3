@@ -526,11 +526,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const customerId = parseInt(req.params.customerId);
       const orders = await storage.getOrdersByCustomerId(customerId);
       
-      // Get order items for each order
+      // Get order items with product details for each order
       const ordersWithItems = await Promise.all(
         orders.map(async (order) => {
           const items = await storage.getOrderItems(order.id);
-          return { ...order, items };
+          
+          // Get product details for each item
+          const itemsWithProducts = await Promise.all(
+            items.map(async (item) => {
+              const product = await storage.getProduct(item.productId);
+              return { ...item, product };
+            })
+          );
+          
+          return { ...order, items: itemsWithProducts };
         })
       );
       

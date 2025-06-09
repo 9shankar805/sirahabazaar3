@@ -296,6 +296,32 @@ export default function CustomerDashboard() {
                           <Separator className="my-4" />
 
                           <div className="space-y-3">
+                            {/* Order Items */}
+                            <div>
+                              <h4 className="font-medium mb-2">Order Items</h4>
+                              <div className="space-y-2">
+                                {order.items && order.items.length > 0 ? (
+                                  order.items.map((item: any, index: number) => (
+                                    <div key={index} className="flex justify-between items-center p-2 bg-muted rounded-md">
+                                      <div className="flex-1">
+                                        <p className="font-medium text-sm">
+                                          {item.product?.name || `Product ID: ${item.productId}`}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Quantity: {item.quantity} × ₹{parseFloat(item.price).toFixed(2)}
+                                        </p>
+                                      </div>
+                                      <p className="font-medium text-sm">
+                                        ₹{(parseFloat(item.price) * item.quantity).toFixed(2)}
+                                      </p>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">No items found</p>
+                                )}
+                              </div>
+                            </div>
+                            
                             <div>
                               <h4 className="font-medium mb-2">Delivery Address</h4>
                               <p className="text-sm text-muted-foreground">{order.shippingAddress}</p>
