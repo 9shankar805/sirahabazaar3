@@ -187,7 +187,7 @@ export default function SellerStore() {
         website: userStore.website || "",
         logo: userStore.logo || "",
         coverImage: userStore.coverImage || "",
-        storeType: userStore.storeType || "retail",
+        storeType: userStore.storeType === "restaurant" ? "restaurant" : "retail",
         cuisineType: userStore.cuisineType || "",
         deliveryTime: userStore.deliveryTime || "",
         minimumOrder: userStore.minimumOrder?.toString() || "",
