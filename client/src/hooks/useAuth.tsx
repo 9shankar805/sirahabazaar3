@@ -90,19 +90,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("user", JSON.stringify(user));
   };
 
-  const refreshUserData = async (userId: number) => {
-    try {
-      const response = await fetch(`/api/auth/refresh?userId=${userId}`);
-      if (response.ok) {
-        const { user: updatedUser } = await response.json();
-        setUser(updatedUser);
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-      }
-    } catch (error) {
-      console.error("Failed to refresh user data:", error);
-    }
-  };
-
   const refreshUser = async () => {
     if (user?.id) {
       await refreshUserData(user.id);
