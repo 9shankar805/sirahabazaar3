@@ -18,11 +18,14 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import ImageUpload from "@/components/ImageUpload";
+import { LocationPicker } from "@/components/LocationPicker";
 
 const storeSchema = z.object({
   name: z.string().min(1, "Store name is required"),
   description: z.string().optional(),
   address: z.string().min(1, "Address is required"),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
   website: z.string().url().optional().or(z.literal("")),
   logo: z.string().optional(),
@@ -86,6 +89,8 @@ export default function SellerStore() {
       name: "",
       description: "",
       address: "",
+      latitude: "",
+      longitude: "",
       phone: "",
       website: "",
       logo: "",
@@ -606,18 +611,15 @@ export default function SellerStore() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Store Address</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Complete store address" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              <LocationPicker
+                address={form.watch("address")}
+                latitude={form.watch("latitude")}
+                longitude={form.watch("longitude")}
+                onLocationChange={(data) => {
+                  form.setValue("address", data.address);
+                  form.setValue("latitude", data.latitude);
+                  form.setValue("longitude", data.longitude);
+                }}
               />
 
               <FormField
