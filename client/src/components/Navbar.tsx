@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield, Home, Package, LogOut, Tag } from "lucide-react";
+import { ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield, Home, Package, LogOut, Tag, UtensilsCrossed, ChefHat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
+import { useAppMode } from "@/hooks/useAppMode";
 import SearchWithSuggestions from "@/components/SearchWithSuggestions";
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ export default function Navbar() {
   const [, setLocation] = useLocation();
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
+  const { mode } = useAppMode();
 
   const cartItemCount = cartItems?.length || 0;
 
@@ -66,24 +68,45 @@ export default function Navbar() {
                 </Link>
               </>
             ) : (
-              /* Customer Navigation */
+              /* Customer Navigation - Dynamic based on mode */
               <>
                 <Link href="/" className="flex items-center space-x-1 hover:text-accent transition-colors">
                   <Home className="h-4 w-4" />
                   <span>Home</span>
                 </Link>
-                <Link href="/products" className="flex items-center space-x-1 hover:text-accent transition-colors">
-                  <Package className="h-4 w-4" />
-                  <span>Products</span>
-                </Link>
-                <Link href="/stores" className="flex items-center space-x-1 hover:text-accent transition-colors">
-                  <Store className="h-4 w-4" />
-                  <span>Store</span>
-                </Link>
-                <Link href="/store-maps" className="flex items-center space-x-1 hover:text-accent transition-colors">
-                  <MapPin className="h-4 w-4" />
-                  <span>Store Map</span>
-                </Link>
+                
+                {mode === 'shopping' ? (
+                  <>
+                    <Link href="/products" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                      <Package className="h-4 w-4" />
+                      <span>Products</span>
+                    </Link>
+                    <Link href="/stores" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                      <Store className="h-4 w-4" />
+                      <span>Stores</span>
+                    </Link>
+                    <Link href="/store-maps" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                      <MapPin className="h-4 w-4" />
+                      <span>Store Map</span>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/food-categories" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                      <UtensilsCrossed className="h-4 w-4" />
+                      <span>Menu</span>
+                    </Link>
+                    <Link href="/restaurants" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                      <ChefHat className="h-4 w-4" />
+                      <span>Restaurants</span>
+                    </Link>
+                    <Link href="/restaurant-maps" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                      <MapPin className="h-4 w-4" />
+                      <span>Restaurant Map</span>
+                    </Link>
+                  </>
+                )}
+                
                 {user && (
                   <Link href="/customer-dashboard" className="flex items-center space-x-1 hover:text-accent transition-colors">
                     <User className="h-4 w-4" />
@@ -99,7 +122,9 @@ export default function Navbar() {
             {user?.role === "shopkeeper" ? (
               <SearchWithSuggestions placeholder="Search your products, orders..." />
             ) : (
-              <SearchWithSuggestions placeholder="Search products and stores..." />
+              <SearchWithSuggestions 
+                placeholder={mode === 'shopping' ? "Search products and stores..." : "Search food and restaurants..."} 
+              />
             )}
           </div>
 
