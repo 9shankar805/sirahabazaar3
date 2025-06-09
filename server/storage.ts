@@ -1308,6 +1308,72 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  // Admin authentication methods
+  async createDefaultAdmin(): Promise<void> {
+    try {
+      // Check if admin already exists
+      const existingAdmin = await db.select().from(adminUsers).where(eq(adminUsers.email, 'admin@sirahbazaar.com')).limit(1);
+      
+      if (existingAdmin.length === 0) {
+        // Create default admin account
+        await db.insert(adminUsers).values({
+          email: 'admin@sirahbazaar.com',
+          password: 'admin123', // In production, this should be hashed
+          fullName: 'System Administrator',
+          role: 'super_admin',
+          isActive: true
+        });
+        console.log('Default admin account created: admin@sirahbazaar.com / admin123');
+      }
+    } catch (error) {
+      console.error('Error creating default admin:', error);
+    }
+  }
+
+  async authenticateAdmin(email: string, password: string): Promise<any> {
+    try {
+      const [admin] = await db.select()
+        .from(adminUsers)
+        .where(and(
+          eq(adminUsers.email, email),
+          eq(adminUsers.password, password), // In production, use bcrypt to compare hashed passwords
+          eq(adminUsers.isActive, true)
+        ))
+        .limit(1);
+
+      if (admin) {
+        return {
+          id: admin.id,
+          email: admin.email,
+          name: admin.fullName,
+          role: admin.role
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Admin authentication error:', error);
+      return null;
+    }
+  }
+
+  async getAllAdmins(): Promise<any[]> {
+    try {
+      const admins = await db.select({
+        id: adminUsers.id,
+        email: adminUsers.email,
+        name: adminUsers.fullName,
+        role: adminUsers.role,
+        isActive: adminUsers.isActive,
+        createdAt: adminUsers.createdAt
+      }).from(adminUsers);
+      
+      return admins;
+    } catch {
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
