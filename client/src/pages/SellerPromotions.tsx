@@ -169,9 +169,7 @@ export default function SellerPromotions() {
   // Delete promotion mutation
   const deletePromotionMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/seller/promotions/${id}`, {
-        method: 'DELETE'
-      });
+      return await apiRequest('DELETE', `/api/seller/promotions/${id}`);
     },
     onSuccess: () => {
       toast({

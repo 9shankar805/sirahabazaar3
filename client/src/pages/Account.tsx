@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { User, Mail, Phone, MapPin, Calendar, ShoppingBag, Store, Settings, Edit } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, ShoppingBag, Store, Settings, Edit, Clock, AlertCircle, Check } from "lucide-react";
 import { Link } from "wouter";
 import type { Order } from "@shared/schema";
 
@@ -69,9 +69,41 @@ export default function Account() {
               </Avatar>
               <CardTitle className="text-xl">{user.fullName}</CardTitle>
               <CardDescription>
-                <Badge variant="secondary" className="capitalize">
-                  {user.role}
-                </Badge>
+                <div className="flex flex-col items-center space-y-2">
+                  <Badge variant="secondary" className="capitalize">
+                    {user.role}
+                  </Badge>
+                  {user.role === 'shopkeeper' && (user as any).status && (
+                    <div className="flex items-center space-x-2">
+                      {(user as any).status === 'active' ? (
+                        <Badge variant="default" className="bg-green-100 text-green-800">
+                          <Check className="h-3 w-3 mr-1" />
+                          Approved
+                        </Badge>
+                      ) : (user as any).status === 'pending' ? (
+                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Pending Approval
+                        </Badge>
+                      ) : (user as any).status === 'suspended' ? (
+                        <Badge variant="destructive" className="bg-red-100 text-red-800">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Suspended
+                        </Badge>
+                      ) : (user as any).status === 'rejected' ? (
+                        <Badge variant="destructive" className="bg-red-100 text-red-800">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Rejected
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Under Review
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
