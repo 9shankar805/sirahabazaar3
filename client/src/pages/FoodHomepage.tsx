@@ -26,8 +26,8 @@ export default function FoodHomepage() {
   });
 
   const featuredFood = foodItems?.filter(item => item.isOnOffer || item.isFastSell).slice(0, 8) || [];
-  const popularRestaurants = restaurants?.filter(restaurant => restaurant.featured || parseFloat(restaurant.rating) >= 4.0).slice(0, 6) || [];
-  const quickBites = foodItems?.filter(item => item.preparationTime && parseInt(item.preparationTime) <= 20).slice(0, 6) || [];
+  const popularRestaurants = restaurants?.filter(restaurant => restaurant.featured || parseFloat(restaurant.rating ?? "0") >= 4.0).slice(0, 6) || [];
+  const quickBites = foodItems?.filter(item => item.preparationTime && parseInt(item.preparationTime ?? "0") <= 20).slice(0, 6) || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800">

@@ -131,7 +131,7 @@ export default function FoodCard({ food }: FoodCardProps) {
                   <span
                     key={i}
                     className={`text-sm ${
-                      i < Math.floor(parseFloat(food.rating || "0"))
+                      i < Math.floor(parseFloat(food.rating ?? "0"))
                         ? 'text-yellow-400'
                         : 'text-gray-300'
                     }`}
