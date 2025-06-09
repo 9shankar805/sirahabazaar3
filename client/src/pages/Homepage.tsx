@@ -85,8 +85,13 @@ export default function Homepage() {
         >
           {/* Slide 1 - Fast Delivery */}
           <SwiperSlide>
-            <div className="relative h-full bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-800 flex items-center justify-center">
-              <div className="absolute inset-0 bg-black/20"></div>
+            <div className="relative h-full flex items-center justify-center" style={{
+              backgroundImage: `url(/attached_assets/slider2_1749495663488.jpg)`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}>
+              <div className="absolute inset-0 bg-black/40"></div>
               <div className="relative text-center text-white px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
                   From Click to Doorstep — In Just One Hour
