@@ -146,11 +146,11 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-gradient-to-r from-primary to-green-600 text-primary-foreground hover:from-primary/90 hover:to-green-600/90 px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md;
+    @apply bg-gradient-to-r from-primary to-green-600 text-primary-foreground hover:from-primary/90 hover:to-green-600/90 px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm sm:text-base;
   }
 
   .btn-secondary {
-    @apply bg-gradient-to-r from-accent to-red-400 text-accent-foreground hover:from-accent/90 hover:to-red-400/90 px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md;
+    @apply bg-gradient-to-r from-accent to-red-400 text-accent-foreground hover:from-accent/90 hover:to-red-400/90 px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md text-sm sm:text-base;
   }
 
   .product-card {
@@ -158,7 +158,7 @@
   }
 
   .store-card {
-    @apply bg-gradient-to-br from-card to-secondary border border-border rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-1 p-6 overflow-hidden;
+    @apply bg-gradient-to-br from-card to-secondary border border-border rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-1 p-4 sm:p-6 overflow-hidden;
   }
 
   .hero-gradient {
@@ -166,7 +166,21 @@
   }
 
   .category-card {
-    @apply bg-gradient-to-br from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 rounded-xl p-4 transition-all duration-200 hover:scale-105;
+    @apply bg-gradient-to-br from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 rounded-xl p-3 sm:p-4 transition-all duration-200 hover:scale-105;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }
 

@@ -81,19 +81,19 @@ export default function ProductDetail() {
   return (
     <div className="min-h-screen bg-muted">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-card rounded-lg p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-card rounded-lg p-4 sm:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
             {/* Product Images */}
             <div>
               <div className="mb-4">
                 <img
                   src={images[selectedImage]}
                   alt={product.name}
-                  className="w-full h-96 object-cover rounded-lg shadow-lg"
+                  className="w-full h-64 sm:h-80 lg:h-96 object-cover rounded-lg shadow-lg"
                 />
               </div>
               {images.length > 1 && (
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {images.map((image, index) => (
                     <img
                       key={index}

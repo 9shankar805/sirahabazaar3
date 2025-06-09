@@ -84,7 +84,7 @@ export default function Stores() {
       </div>
 
       {/* Store Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -134,10 +134,10 @@ export default function Stores() {
 
       {/* Stores Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {[...Array(6)].map((_, i) => (
             <Card key={i}>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <Skeleton className="h-6 w-3/4 mb-2" />
                 <Skeleton className="h-4 w-full mb-4" />
                 <Skeleton className="h-4 w-2/3 mb-2" />
@@ -147,7 +147,7 @@ export default function Stores() {
           ))}
         </div>
       ) : filteredStores.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredStores.map((store: Store) => {
             const hours = getStoreHours();
             return (
