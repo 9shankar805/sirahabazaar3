@@ -5,7 +5,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { 
   Store, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown,
   Users, Star, Eye, BarChart3, PieChart, Activity, Settings,
-  Plus, Edit, Trash2, Search, Filter, Download, Calendar, UtensilsCrossed
+  Plus, Edit, Trash2, Search, Filter, Download, Calendar, UtensilsCrossed,
+  ChefHat, Clock, Coffee, Utensils, MapPin, Phone, Mail, Globe,
+  CheckCircle, XCircle, AlertCircle, Timer, Receipt, Truck
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,13 +51,19 @@ const productSchema = z.object({
 
 type ProductForm = z.infer<typeof productSchema>;
 
-interface DashboardStats {
-  totalProducts: number;
-  totalOrders: number;
-  totalRevenue: number;
+interface RestaurantStats {
+  totalMenuItems: number;
+  todayOrders: number;
+  todayRevenue: number;
   pendingOrders: number;
+  preparingOrders: number;
+  readyOrders: number;
   averageRating: number;
   totalReviews: number;
+  averagePreparationTime: number;
+  tablesOccupied: number;
+  totalTables: number;
+  staffOnDuty: number;
 }
 
 interface StoreAnalytics {
@@ -99,6 +107,11 @@ export default function SellerDashboard() {
 
   const { user } = useAuth();
 
+  // Check if this is a restaurant or retail store
+  const isRestaurant = userStore?.storeType === 'restaurant';
+  const dashboardTitle = isRestaurant ? 'Restaurant Dashboard' : 'Store Dashboard';
+  const dashboardIcon = isRestaurant ? ChefHat : Store;
+
   // Form for adding/editing products
   const productForm = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
@@ -132,7 +145,7 @@ export default function SellerDashboard() {
   }, [user]);
 
   // Dashboard stats query
-  const { data: dashboardStats, isLoading: statsLoading } = useQuery<DashboardStats>({
+  const { data: dashboardStats, isLoading: statsLoading } = useQuery<RestaurantStats>({
     queryKey: ['/api/seller/dashboard', currentUser?.id],
     queryFn: () => fetch(`/api/seller/dashboard?userId=${currentUser?.id}`).then(res => res.json()),
     enabled: !!currentUser?.id,

@@ -23,6 +23,15 @@ const productSchema = z.object({
   stock: z.number().min(0, "Stock cannot be negative"),
   images: z.array(z.string()).default([]),
   imageUrl: z.string().optional(),
+  productType: z.enum(["retail", "food"]).default("retail"),
+  // Food-specific fields
+  preparationTime: z.string().optional(),
+  ingredients: z.array(z.string()).default([]),
+  allergens: z.array(z.string()).default([]),
+  spiceLevel: z.string().optional(),
+  isVegetarian: z.boolean().default(false),
+  isVegan: z.boolean().default(false),
+  nutritionInfo: z.string().optional(),
 });
 
 type ProductForm = z.infer<typeof productSchema>;
@@ -45,6 +54,10 @@ export default function AddProduct() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [ingredients, setIngredients] = useState<string[]>([]);
+  const [allergens, setAllergens] = useState<string[]>([]);
+  const [newIngredient, setNewIngredient] = useState("");
+  const [newAllergen, setNewAllergen] = useState("");
 
   // Categories query
   const { data: categories = [] } = useQuery<Category[]>({
@@ -64,6 +77,8 @@ export default function AddProduct() {
   });
 
   const currentStore = stores[0]; // Assuming one store per shopkeeper
+  const isRestaurant = currentStore?.storeType === 'restaurant';
+  const defaultProductType = isRestaurant ? 'food' : 'retail';
 
   const form = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
@@ -76,6 +91,14 @@ export default function AddProduct() {
       stock: 0,
       images: [],
       imageUrl: "",
+      productType: defaultProductType,
+      preparationTime: "",
+      ingredients: [],
+      allergens: [],
+      spiceLevel: "",
+      isVegetarian: false,
+      isVegan: false,
+      nutritionInfo: "",
     },
   });
 
