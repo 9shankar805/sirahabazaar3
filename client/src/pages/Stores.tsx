@@ -66,8 +66,17 @@ export default function Stores() {
     .map(store => store.cuisineType)
   )).filter(Boolean) as string[];
 
-  // Filter stores based on all criteria
+  // Filter stores based on all criteria and page context
   const filteredStores = stores.filter((store) => {
+    // Page-specific filtering: restaurants only on restaurant page, retail stores only on stores page
+    if (isRestaurantPage) {
+      // On restaurant page, only show restaurants
+      if (store.storeType !== "restaurant") return false;
+    } else {
+      // On stores page, exclude restaurants (only show retail stores)
+      if (store.storeType === "restaurant") return false;
+    }
+
     const matchesSearch = store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          store.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          store.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -170,7 +179,6 @@ export default function Stores() {
                     <SelectContent>
                       <SelectItem value="all">All Stores</SelectItem>
                       <SelectItem value="retail">Retail Stores</SelectItem>
-                      <SelectItem value="restaurant">Restaurants & Food</SelectItem>
                     </SelectContent>
                   </Select>
                 )}

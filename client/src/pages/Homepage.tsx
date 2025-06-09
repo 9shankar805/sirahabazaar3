@@ -55,8 +55,8 @@ export default function Homepage() {
   if (products) console.log("Products loaded:", products.length);
   if (stores) console.log("Stores loaded:", stores.length);
 
-  const featuredProducts = products?.slice(0, 6) || [];
-  const popularStores = stores?.slice(0, 4) || [];
+  const featuredProducts = products?.filter(product => mode === 'shopping' ? product.productType !== 'food' : product.productType === 'food').slice(0, 6) || [];
+  const popularStores = stores?.filter(store => mode === 'shopping' ? store.storeType !== 'restaurant' : store.storeType === 'restaurant').slice(0, 4) || [];
 
   return (
     <div className="min-h-screen">
