@@ -593,6 +593,11 @@ export const insertProductSchema = createInsertSchema(products).omit({
   createdAt: true,
   rating: true,
   totalReviews: true,
+}).extend({
+  price: z.union([z.string(), z.number()]).transform((val) => String(val)),
+  originalPrice: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val !== undefined ? String(val) : undefined
+  ),
 });
 
 export const insertOrderSchema = createInsertSchema(orders).omit({
