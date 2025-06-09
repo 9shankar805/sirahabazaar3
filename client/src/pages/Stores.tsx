@@ -36,6 +36,9 @@ export default function Stores() {
   
   const [searchQuery, setSearchQuery] = useState("");
   const [storeTypeFilter, setStoreTypeFilter] = useState(isRestaurantPage ? "restaurant" : "all");
+  const [cuisineFilter, setCuisineFilter] = useState("all");
+  const [deliveryFilter, setDeliveryFilter] = useState("all");
+  const [ratingFilter, setRatingFilter] = useState("all");
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationEnabled, setLocationEnabled] = useState(false);
   const { toast } = useToast();
@@ -57,15 +60,32 @@ export default function Stores() {
       });
   }, []);
 
-  // Filter stores based on search and type
+  // Get unique cuisines for filter options
+  const availableCuisines = Array.from(new Set(stores
+    .filter(store => store.storeType === 'restaurant' && store.cuisineType)
+    .map(store => store.cuisineType)
+  )).filter(Boolean) as string[];
+
+  // Filter stores based on all criteria
   const filteredStores = stores.filter((store) => {
     const matchesSearch = store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          store.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         store.address.toLowerCase().includes(searchQuery.toLowerCase());
+                         store.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         store.cuisineType?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesType = storeTypeFilter === "all" || store.storeType === storeTypeFilter;
     
-    return matchesSearch && matchesType;
+    const matchesCuisine = cuisineFilter === "all" || store.cuisineType === cuisineFilter;
+    
+    const matchesDelivery = deliveryFilter === "all" || 
+                           (deliveryFilter === "delivery" && store.isDeliveryAvailable) ||
+                           (deliveryFilter === "pickup" && !store.isDeliveryAvailable);
+    
+    const matchesRating = ratingFilter === "all" || 
+                         (ratingFilter === "4+" && parseFloat(store.rating) >= 4.0) ||
+                         (ratingFilter === "3+" && parseFloat(store.rating) >= 3.0);
+    
+    return matchesSearch && matchesType && matchesCuisine && matchesDelivery && matchesRating;
   });
 
   const handleGetLocation = async () => {
@@ -126,51 +146,178 @@ export default function Stores() {
         {/* Search and Filters */}
         <Card className="mb-8">
           <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              {/* Search */}
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder={isRestaurantPage ? "Search restaurants, cuisines, or food items..." : "Search stores, products, or brands..."}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+            <div className="space-y-4">
+              {/* Primary Search and Type Filter */}
+              <div className="flex flex-col md:flex-row gap-4">
+                {/* Search */}
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder={isRestaurantPage ? "Search restaurants, cuisines, or food items..." : "Search stores, products, or brands..."}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Store Type Filter */}
+                {!isRestaurantPage && (
+                  <Select value={storeTypeFilter} onValueChange={setStoreTypeFilter}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Filter by type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Stores</SelectItem>
+                      <SelectItem value="retail">Retail Stores</SelectItem>
+                      <SelectItem value="restaurant">Restaurants & Food</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {/* Location Button */}
+                {!locationEnabled && (
+                  <Button variant="outline" onClick={handleGetLocation}>
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Enable Location
+                  </Button>
+                )}
               </div>
 
-              {/* Store Type Filter */}
-              {!isRestaurantPage && (
-                <Select value={storeTypeFilter} onValueChange={setStoreTypeFilter}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter by type" />
+              {/* Advanced Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Cuisine Filter (for restaurants) */}
+                {(isRestaurantPage || storeTypeFilter === "restaurant") && availableCuisines.length > 0 && (
+                  <Select value={cuisineFilter} onValueChange={setCuisineFilter}>
+                    <SelectTrigger>
+                      <Utensils className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="All Cuisines" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Cuisines</SelectItem>
+                      {availableCuisines.map((cuisine) => (
+                        <SelectItem key={cuisine} value={cuisine!}>
+                          {cuisine}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {/* Delivery Filter */}
+                <Select value={deliveryFilter} onValueChange={setDeliveryFilter}>
+                  <SelectTrigger>
+                    <MapPin className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Delivery Options" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Stores</SelectItem>
-                    <SelectItem value="retail">Retail Stores</SelectItem>
-                    <SelectItem value="restaurant">Restaurants & Food</SelectItem>
+                    <SelectItem value="all">All Options</SelectItem>
+                    <SelectItem value="delivery">Delivery Available</SelectItem>
+                    <SelectItem value="pickup">Pickup Only</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {/* Rating Filter */}
+                <Select value={ratingFilter} onValueChange={setRatingFilter}>
+                  <SelectTrigger>
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Minimum Rating" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Ratings</SelectItem>
+                    <SelectItem value="4+">4.0+ Stars</SelectItem>
+                    <SelectItem value="3+">3.0+ Stars</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Active Filters Display */}
+              {(searchQuery || storeTypeFilter !== (isRestaurantPage ? "restaurant" : "all") || 
+                cuisineFilter !== "all" || deliveryFilter !== "all" || ratingFilter !== "all") && (
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-sm text-muted-foreground">Active filters:</span>
+                  {searchQuery && (
+                    <Badge variant="secondary">
+                      Search: {searchQuery}
+                      <button 
+                        onClick={() => setSearchQuery("")} 
+                        className="ml-1 hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
+                  {storeTypeFilter !== (isRestaurantPage ? "restaurant" : "all") && (
+                    <Badge variant="secondary">
+                      Type: {storeTypeFilter}
+                      <button 
+                        onClick={() => setStoreTypeFilter(isRestaurantPage ? "restaurant" : "all")} 
+                        className="ml-1 hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
+                  {cuisineFilter !== "all" && (
+                    <Badge variant="secondary">
+                      Cuisine: {cuisineFilter}
+                      <button 
+                        onClick={() => setCuisineFilter("all")} 
+                        className="ml-1 hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
+                  {deliveryFilter !== "all" && (
+                    <Badge variant="secondary">
+                      {deliveryFilter === "delivery" ? "Delivery Available" : "Pickup Only"}
+                      <button 
+                        onClick={() => setDeliveryFilter("all")} 
+                        className="ml-1 hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
+                  {ratingFilter !== "all" && (
+                    <Badge variant="secondary">
+                      Rating: {ratingFilter}
+                      <button 
+                        onClick={() => setRatingFilter("all")} 
+                        className="ml-1 hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      setSearchQuery("");
+                      setStoreTypeFilter(isRestaurantPage ? "restaurant" : "all");
+                      setCuisineFilter("all");
+                      setDeliveryFilter("all");
+                      setRatingFilter("all");
+                    }}
+                    className="text-xs"
+                  >
+                    Clear All
+                  </Button>
+                </div>
               )}
 
-              {/* Location Button */}
-              {!locationEnabled && (
-                <Button variant="outline" onClick={handleGetLocation}>
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Enable Location
-                </Button>
+              {/* Location Status */}
+              {locationEnabled && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-muted-foreground">
+                    Location enabled - showing distances
+                  </span>
+                </div>
               )}
             </div>
-
-            {/* Location Status */}
-            {locationEnabled && (
-              <div className="mt-4 flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-muted-foreground">
-                  Location enabled - showing distances
-                </span>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -225,6 +372,24 @@ export default function Stores() {
           </Card>
         </div>
 
+        {/* Results Counter */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold">
+            {filteredStores.length > 0 ? (
+              <>
+                {filteredStores.length} {isRestaurantPage ? "restaurant" : "store"}{filteredStores.length !== 1 ? "s" : ""} found
+                {stores.length !== filteredStores.length && (
+                  <span className="text-muted-foreground ml-2">
+                    (filtered from {stores.length} total)
+                  </span>
+                )}
+              </>
+            ) : (
+              "No results found"
+            )}
+          </h2>
+        </div>
+
         {/* Stores Grid */}
         {filteredStores.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -244,15 +409,16 @@ export default function Stores() {
                 <h3 className="text-lg font-semibold mb-2">
                   {isRestaurantPage ? "No restaurants found" : "No stores found"}
                 </h3>
-                <p>Try adjusting your search criteria or filters</p>
+                <p>Try adjusting your search criteria or filters to find what you're looking for</p>
               </div>
               <Button variant="outline" onClick={() => {
                 setSearchQuery("");
-                if (!isRestaurantPage) {
-                  setStoreTypeFilter("all");
-                }
+                setStoreTypeFilter(isRestaurantPage ? "restaurant" : "all");
+                setCuisineFilter("all");
+                setDeliveryFilter("all");
+                setRatingFilter("all");
               }}>
-                Clear Filters
+                Clear All Filters
               </Button>
             </CardContent>
           </Card>
