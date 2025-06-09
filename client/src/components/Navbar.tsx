@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield, Home, Package, LogOut, Tag, UtensilsCrossed, ChefHat } from "lucide-react";
+import { ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield, Home, Package, LogOut, Tag, UtensilsCrossed, ChefHat, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
@@ -18,7 +18,7 @@ export default function Navbar() {
   const [, setLocation] = useLocation();
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
-  const { mode } = useAppMode();
+  const { mode, setMode } = useAppMode();
 
   const cartItemCount = cartItems?.length || 0;
 
@@ -31,11 +31,43 @@ export default function Navbar() {
     <nav className="bg-primary text-white shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <Store className="h-6 w-6" />
-            <span className="text-xl font-bold">Siraha Bazaar</span>
-          </Link>
+          {/* Logo and Mode Swiper */}
+          <div className="flex items-center space-x-4">
+            <Link href="/" className="flex items-center space-x-2">
+              <Store className="h-6 w-6" />
+              <span className="text-xl font-bold">Siraha Bazaar</span>
+            </Link>
+            
+            {/* Compact Mode Swiper */}
+            {user?.role !== "shopkeeper" && (
+              <div className="relative bg-white/10 backdrop-blur-sm rounded-lg p-1 border border-white/20">
+                <div className="flex">
+                  <button
+                    onClick={() => setMode('shopping')}
+                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+                      mode === 'shopping' 
+                        ? 'bg-white text-primary shadow-sm' 
+                        : 'text-white/80 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <ShoppingBag className="h-3.5 w-3.5" />
+                    <span>Shop</span>
+                  </button>
+                  <button
+                    onClick={() => setMode('food')}
+                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+                      mode === 'food' 
+                        ? 'bg-white text-primary shadow-sm' 
+                        : 'text-white/80 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <UtensilsCrossed className="h-3.5 w-3.5" />
+                    <span>Food</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">

@@ -290,6 +290,13 @@ export const insertStoreSchema = createInsertSchema(stores).omit({
   createdAt: true,
   rating: true,
   totalReviews: true,
+}).extend({
+  minimumOrder: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val !== undefined && val !== null && val !== "" ? String(val) : undefined
+  ),
+  deliveryFee: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val !== undefined && val !== null && val !== "" ? String(val) : undefined
+  ),
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({

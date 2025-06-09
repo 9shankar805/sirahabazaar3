@@ -15,7 +15,8 @@ import {
   TrendingUp,
   Users,
   Clock,
-  MapPin
+  MapPin,
+  UtensilsCrossed
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -277,8 +278,8 @@ export default function ShopkeeperDashboard() {
         storeType: data.storeType,
         cuisineType: data.storeType === 'restaurant' ? data.cuisineType || null : null,
         deliveryTime: data.storeType === 'restaurant' ? data.deliveryTime || null : null,
-        minimumOrder: data.storeType === 'restaurant' && data.minimumOrder ? parseFloat(data.minimumOrder) : null,
-        deliveryFee: data.storeType === 'restaurant' && data.deliveryFee ? parseFloat(data.deliveryFee) : null,
+        minimumOrder: data.storeType === 'restaurant' && data.minimumOrder ? data.minimumOrder : null,
+        deliveryFee: data.storeType === 'restaurant' && data.deliveryFee ? data.deliveryFee : null,
         isDeliveryAvailable: data.storeType === 'restaurant' ? data.isDeliveryAvailable : false,
         openingHours: data.storeType === 'restaurant' ? data.openingHours || null : null,
       };

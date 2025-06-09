@@ -37,15 +37,10 @@ import SellerOrders from "@/pages/SellerOrders";
 import SellerStore from "@/pages/SellerStore";
 
 function AppRouter() {
-  const { mode, setMode } = useAppMode();
+  const { mode } = useAppMode();
   
   return (
     <div className="relative">
-      <ModeSwiper 
-        currentMode={mode}
-        onModeChange={setMode}
-      />
-      
       <Switch>
         <Route path="/" component={mode === 'shopping' ? Homepage : FoodHomepage} />
         <Route path="/categories" component={Categories} />
