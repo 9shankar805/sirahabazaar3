@@ -6,6 +6,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (userData: any) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -15,12 +16,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const refreshUserData = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/auth/refresh?userId=${userId}`);
+      if (response.ok) {
+        const { user: updatedUser } = await response.json();
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      }
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
+    }
+  };
+
   useEffect(() => {
     // Check if user is logged in on app start
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
+        
+        // If user is a shopkeeper with pending status, check for updates periodically
+        if (userData.role === 'shopkeeper' && userData.status !== 'active') {
+          const interval = setInterval(async () => {
+            try {
+              await refreshUserData(userData.id);
+            } catch (error) {
+              // Silently fail to avoid disrupting user experience
+            }
+          }, 30000); // Check every 30 seconds
+          
+          return () => clearInterval(interval);
+        }
       } catch (error) {
         localStorage.removeItem("user");
       }
@@ -62,13 +90,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("user", JSON.stringify(user));
   };
 
+  const refreshUserData = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/auth/refresh?userId=${userId}`);
+      if (response.ok) {
+        const { user: updatedUser } = await response.json();
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      }
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
+    }
+  };
+
+  const refreshUser = async () => {
+    if (user?.id) {
+      await refreshUserData(user.id);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, refreshUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
