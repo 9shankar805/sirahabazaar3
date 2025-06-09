@@ -108,17 +108,14 @@ export default function SellerOrders() {
   // Update order status mutation
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
-      return await apiRequest(`/api/orders/${orderId}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status })
-      });
+      return await apiRequest('PUT', `/api/orders/${orderId}/status`, { status });
     },
     onSuccess: () => {
       toast({
         title: "Order Updated",
         description: "Order status has been updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/orders/store', storeId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders/store', user?.id] });
     },
     onError: () => {
       toast({
