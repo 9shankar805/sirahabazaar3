@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import StoreCard from "@/components/StoreCard";
 import { useAuth } from "@/hooks/useAuth";
+import { useAppMode } from "@/hooks/useAppMode";
 import type { Product, Store } from "@shared/schema";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
@@ -16,6 +17,7 @@ import 'swiper/css/pagination';
 export default function Homepage() {
   const [, setLocation] = useLocation();
   const { user, isLoading } = useAuth();
+  const { mode } = useAppMode();
 
   // Redirect sellers to their dashboard
   useEffect(() => {
@@ -23,6 +25,22 @@ export default function Homepage() {
       setLocation("/seller/dashboard");
     }
   }, [user, isLoading, setLocation]);
+
+  const shoppingCategories = [
+    { name: "Electronics", icon: "📱", href: "/products?category=4" },
+    { name: "Clothing", icon: "👕", href: "/products?category=5" },
+    { name: "Home & Garden", icon: "🏠", href: "/products?category=3" },
+    { name: "Books", icon: "📚", href: "/products?category=6" },
+  ];
+
+  const foodCategories = [
+    { name: "Indian Cuisine", icon: "🍛", href: "/products?category=food&cuisine=indian" },
+    { name: "Fast Food", icon: "🍔", href: "/products?category=food&cuisine=fast-food" },
+    { name: "Pizza", icon: "🍕", href: "/products?category=food&type=pizza" },
+    { name: "Desserts", icon: "🍰", href: "/products?category=food&cuisine=desserts" },
+  ];
+
+  const categories = mode === 'shopping' ? shoppingCategories : foodCategories;
   const { data: products, isLoading: productsLoading, error: productsError } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
@@ -118,24 +136,21 @@ export default function Homepage() {
         </Swiper>
       </section>
 
-      {/* Categories */}
+      {/* Categories/Menu */}
       <section className="py-8 sm:py-12 lg:py-16 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Shop by Category</h2>
-            <Link href="/categories">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+              {mode === 'shopping' ? 'Shop by Category' : 'Browse Menu'}
+            </h2>
+            <Link href={mode === 'shopping' ? "/categories" : "/food-categories"}>
               <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto">
-                View All Categories
+                {mode === 'shopping' ? 'View All Categories' : 'View Full Menu'}
               </Button>
             </Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
-            {[
-              { name: "Electronics", icon: "📱", href: "/products?category=1" },
-              { name: "Clothing", icon: "👕", href: "/products?category=2" },
-              { name: "Home & Garden", icon: "🏠", href: "/products?category=3" },
-              { name: "Books", icon: "📚", href: "/products?category=4" },
-            ].map((category) => (
+            {categories.map((category) => (
               <Link key={category.name} href={category.href}>
                 <div className="category-card text-center p-4 sm:p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
                   <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">{category.icon}</div>

@@ -1,12 +1,12 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { useAppMode } from "@/hooks/useAppMode";
 
 export default function Categories() {
-  const categories = [
-    { name: "Food", icon: "🍎", href: "/products?category=1" },
-    { name: "Groceries", icon: "🛒", href: "/products?category=2" },
-    { name: "Fancy Items", icon: "💎", href: "/products?category=3" },
+  const { mode } = useAppMode();
+
+  const shoppingCategories = [
     { name: "Electronics", icon: "📱", href: "/products?category=4" },
     { name: "Clothing", icon: "👕", href: "/products?category=5" },
     { name: "Books", icon: "📚", href: "/products?category=6" },
@@ -16,7 +16,27 @@ export default function Categories() {
     { name: "Health", icon: "🏥", href: "/products?category=10" },
     { name: "Automotive", icon: "🚗", href: "/products?category=11" },
     { name: "Garden", icon: "🌱", href: "/products?category=12" },
+    { name: "Groceries", icon: "🛒", href: "/products?category=2" },
+    { name: "Fancy Items", icon: "💎", href: "/products?category=3" },
   ];
+
+  const foodCategories = [
+    { name: "Indian Cuisine", icon: "🍛", href: "/products?category=food&cuisine=indian" },
+    { name: "Chinese", icon: "🥢", href: "/products?category=food&cuisine=chinese" },
+    { name: "Fast Food", icon: "🍔", href: "/products?category=food&cuisine=fast-food" },
+    { name: "Italian", icon: "🍝", href: "/products?category=food&cuisine=italian" },
+    { name: "Mexican", icon: "🌮", href: "/products?category=food&cuisine=mexican" },
+    { name: "Continental", icon: "🍽️", href: "/products?category=food&cuisine=continental" },
+    { name: "Desserts & Sweets", icon: "🍰", href: "/products?category=food&cuisine=desserts" },
+    { name: "Beverages", icon: "🥤", href: "/products?category=food&cuisine=beverages" },
+    { name: "Pizza", icon: "🍕", href: "/products?category=food&type=pizza" },
+    { name: "Biryani", icon: "🍚", href: "/products?category=food&type=biryani" },
+    { name: "Snacks", icon: "🍿", href: "/products?category=food&type=snacks" },
+    { name: "Healthy Food", icon: "🥗", href: "/products?category=food&type=healthy" },
+  ];
+
+  const categories = mode === 'shopping' ? shoppingCategories : foodCategories;
+  const pageTitle = mode === 'shopping' ? 'All Categories' : 'Food Menu';
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,7 +48,7 @@ export default function Categories() {
               Back to Home
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold text-foreground">All Categories</h1>
+          <h1 className="text-3xl font-bold text-foreground">{pageTitle}</h1>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
