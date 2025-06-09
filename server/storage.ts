@@ -106,7 +106,7 @@ export interface IStorage {
 
   // Distance calculation between stores and user location
   calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number;
-  getStoresWithDistance(userLat: number, userLon: number): Promise<(Store & { distance: number })[]>;
+  getStoresWithDistance(userLat: number, userLon: number, storeType?: string): Promise<(Store & { distance: number })[]>;
 
   // Seller hub analytics
   getSellerDashboardStats(storeId: number): Promise<{

@@ -957,20 +957,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Store distance calculation routes
+  // Store distance calculation routes with filtering
   app.get("/api/stores/nearby", async (req, res) => {
     try {
-      const { lat, lon } = req.query;
+      const { lat, lon, storeType } = req.query;
+      
       if (!lat || !lon) {
         return res.status(400).json({ error: "Latitude and longitude are required" });
       }
       
       const userLat = parseFloat(lat as string);
       const userLon = parseFloat(lon as string);
-      const storesWithDistance = await storage.getStoresWithDistance(userLat, userLon);
       
+      if (isNaN(userLat) || isNaN(userLon)) {
+        return res.status(400).json({ error: "Invalid coordinates" });
+      }
+      
+      const storesWithDistance = await storage.getStoresWithDistance(userLat, userLon, storeType as string);
       res.json(storesWithDistance);
     } catch (error) {
+      console.error("Nearby stores fetch error:", error);
       res.status(500).json({ error: "Failed to fetch nearby stores" });
     }
   });
