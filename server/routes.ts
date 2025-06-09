@@ -946,6 +946,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get single store by ID (must come after /api/stores/nearby to avoid conflicts)
+  app.get("/api/stores/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const store = await storage.getStore(id);
+      
+      if (!store) {
+        return res.status(404).json({ error: "Store not found" });
+      }
+      
+      res.json(store);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch store" });
+    }
+  });
+
   // Seller hub routes
   // Dashboard analytics for current user's store
   app.get("/api/seller/dashboard", async (req, res) => {
