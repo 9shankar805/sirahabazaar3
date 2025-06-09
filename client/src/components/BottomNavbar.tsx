@@ -1,11 +1,13 @@
 import { Link, useLocation } from "wouter";
-import { Home, Package, Store, User, MapPin, ShoppingCart, Tag } from "lucide-react";
+import { Home, Package, Store, User, MapPin, ShoppingCart, Tag, UtensilsCrossed, ChefHat } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAppMode } from "@/hooks/useAppMode";
 import { cn } from "@/lib/utils";
 
 export default function BottomNavbar() {
   const [location] = useLocation();
   const { user } = useAuth();
+  const { mode } = useAppMode();
 
   // Role-based navigation items
   const sellerNavItems = [
@@ -48,24 +50,45 @@ export default function BottomNavbar() {
       label: "Home",
       active: location === "/"
     },
-    {
-      href: "/products",
-      icon: Package,
-      label: "Products",
-      active: location.startsWith("/products")
-    },
-    {
-      href: "/stores",
-      icon: Store,
-      label: "Store",
-      active: location.startsWith("/stores")
-    },
-    {
-      href: "/store-maps",
-      icon: MapPin,
-      label: "Store Map",
-      active: location === "/store-maps"
-    },
+    ...(mode === 'shopping' ? [
+      {
+        href: "/products",
+        icon: Package,
+        label: "Products",
+        active: location.startsWith("/products")
+      },
+      {
+        href: "/stores",
+        icon: Store,
+        label: "Stores",
+        active: location.startsWith("/stores")
+      },
+      {
+        href: "/store-maps",
+        icon: MapPin,
+        label: "Map",
+        active: location === "/store-maps"
+      }
+    ] : [
+      {
+        href: "/food-categories",
+        icon: UtensilsCrossed,
+        label: "Menu",
+        active: location.startsWith("/food-categories") || location.startsWith("/categories")
+      },
+      {
+        href: "/restaurants",
+        icon: ChefHat,
+        label: "Restaurants",
+        active: location.startsWith("/restaurants")
+      },
+      {
+        href: "/restaurant-maps",
+        icon: MapPin,
+        label: "Map",
+        active: location === "/restaurant-maps"
+      }
+    ]),
     {
       href: user ? "/account" : "/login",
       icon: User,
@@ -86,13 +109,13 @@ export default function BottomNavbar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center space-y-1 py-2 px-3 rounded-lg transition-colors min-w-0 flex-1",
+                "flex flex-col items-center justify-center space-y-1 py-2 px-1 sm:px-3 rounded-lg transition-colors min-w-0 flex-1",
                 item.active
                   ? "text-primary bg-primary/10"
                   : "text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/5"
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="text-xs font-medium truncate">{item.label}</span>
             </Link>
           );

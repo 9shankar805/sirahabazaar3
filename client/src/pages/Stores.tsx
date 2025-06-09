@@ -9,14 +9,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, MapPin, Star, Clock, Phone, Globe, Filter } from "lucide-react";
 import { Link } from "wouter";
 import StoreCard from "@/components/StoreCard";
+import RestaurantCard from "@/components/RestaurantCard";
+import { useAppMode } from "@/hooks/useAppMode";
 import type { Store } from "@shared/schema";
 
 export default function Stores() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const { mode } = useAppMode();
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ["/api/stores"],
+    select: (data) => data?.filter((store: Store) => 
+      mode === 'shopping' ? store.storeType !== 'restaurant' : store.storeType === 'restaurant'
+    ) || []
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -45,9 +51,14 @@ export default function Stores() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">All Stores</h1>
+        <h1 className="text-3xl font-bold mb-2">
+          {mode === 'shopping' ? 'All Stores' : 'All Restaurants'}
+        </h1>
         <p className="text-muted-foreground">
-          Discover local stores and businesses in your area
+          {mode === 'shopping' 
+            ? 'Discover local stores and businesses in your area'
+            : 'Find amazing restaurants and order delicious food'
+          }
         </p>
       </div>
 

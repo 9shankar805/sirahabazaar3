@@ -22,7 +22,7 @@ export default function ModeSwiper({ currentMode, onModeChange }: ModeSwiperProp
   };
 
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4">
       <div className="relative bg-white dark:bg-gray-800 rounded-full p-1 shadow-lg border border-gray-200 dark:border-gray-700">
         {/* Background slider */}
         <motion.div
@@ -37,29 +37,29 @@ export default function ModeSwiper({ currentMode, onModeChange }: ModeSwiperProp
         {/* Shopping Button */}
         <button
           onClick={() => handleSwipe('shopping')}
-          className={`relative z-10 flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-200 ${
+          className={`relative z-10 flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-full transition-all duration-200 ${
             currentMode === 'shopping' 
               ? 'text-white' 
               : 'text-gray-600 dark:text-gray-300 hover:text-orange-500'
           }`}
           disabled={isAnimating}
         >
-          <ShoppingBag className="h-5 w-5" />
-          <span className="font-medium">Shopping</span>
+          <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="font-medium text-sm sm:text-base">Shopping</span>
         </button>
         
         {/* Food Delivery Button */}
         <button
           onClick={() => handleSwipe('food')}
-          className={`relative z-10 flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-200 ${
+          className={`relative z-10 flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-full transition-all duration-200 ${
             currentMode === 'food' 
               ? 'text-white' 
               : 'text-gray-600 dark:text-gray-300 hover:text-red-500'
           }`}
           disabled={isAnimating}
         >
-          <UtensilsCrossed className="h-5 w-5" />
-          <span className="font-medium">Food</span>
+          <UtensilsCrossed className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="font-medium text-sm sm:text-base">Food</span>
         </button>
       </div>
       
