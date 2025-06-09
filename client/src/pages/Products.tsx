@@ -9,10 +9,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import ProductCard from "@/components/ProductCard";
+import { useAppMode } from "@/hooks/useAppMode";
 import type { Product, Category } from "@shared/schema";
 
 export default function Products() {
   const [location] = useLocation();
+  const { mode } = useAppMode();
   const [searchParams, setSearchParams] = useState(new URLSearchParams(location.split('?')[1] || ''));
   const [sortBy, setSortBy] = useState("popularity");
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
@@ -51,6 +53,10 @@ export default function Products() {
   // Filter and sort products
   const filteredProducts = products
     .filter(product => {
+      // Filter by product type based on mode
+      if (mode === 'shopping' && product.productType === 'food') return false;
+      if (mode === 'food' && product.productType !== 'food') return false;
+      
       if (selectedCategories.length > 0 && !selectedCategories.includes(product.categoryId || 0)) {
         return false;
       }

@@ -56,7 +56,19 @@ export default function Homepage() {
   if (stores) console.log("Stores loaded:", stores.length);
 
   const featuredProducts = products?.filter(product => mode === 'shopping' ? product.productType !== 'food' : product.productType === 'food').slice(0, 6) || [];
-  const popularStores = stores?.filter(store => mode === 'shopping' ? store.storeType !== 'restaurant' : store.storeType === 'restaurant').slice(0, 4) || [];
+  const popularStores = stores?.filter(store => mode === 'shopping' ? store.storeType !== 'restaurant' : store.storeType === 'restaurant').slice(0, 4).map(store => ({
+    ...store,
+    description: store.description ?? undefined,
+    latitude: store.latitude ?? undefined,
+    longitude: store.longitude ?? undefined,
+    phone: store.phone ?? undefined,
+    website: store.website ?? undefined,
+    logo: store.logo ?? undefined,
+    coverImage: store.coverImage ?? undefined,
+    cuisineType: store.cuisineType ?? undefined,
+    deliveryTime: store.deliveryTime ?? undefined,
+    isDeliveryAvailable: store.isDeliveryAvailable ?? undefined,
+  })) || [];
 
   return (
     <div className="min-h-screen">
