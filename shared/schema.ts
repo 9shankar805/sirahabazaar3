@@ -29,6 +29,13 @@ export const stores = pgTable("stores", {
   totalReviews: integer("total_reviews").default(0),
   featured: boolean("featured").default(false),
   isActive: boolean("is_active").default(true),
+  storeType: text("store_type").notNull().default("retail"), // retail, restaurant
+  cuisineType: text("cuisine_type"), // For restaurants: indian, chinese, fast-food, etc.
+  deliveryTime: text("delivery_time"), // For restaurants: "25-35 mins"
+  minimumOrder: decimal("minimum_order", { precision: 10, scale: 2 }), // For restaurants
+  deliveryFee: decimal("delivery_fee", { precision: 10, scale: 2 }), // For restaurants
+  isDeliveryAvailable: boolean("is_delivery_available").default(false),
+  openingHours: text("opening_hours"), // JSON string for business hours
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -55,6 +62,14 @@ export const products = pgTable("products", {
   isOnOffer: boolean("is_on_offer").default(false), // Special offer
   offerPercentage: integer("offer_percentage").default(0), // Discount percentage
   offerEndDate: text("offer_end_date"), // When offer expires (stored as string)
+  productType: text("product_type").notNull().default("retail"), // retail, food
+  preparationTime: text("preparation_time"), // For food items: "15-20 mins"
+  ingredients: text("ingredients").array().default([]), // For food items
+  allergens: text("allergens").array().default([]), // For food items
+  spiceLevel: text("spice_level"), // For food items: mild, medium, hot
+  isVegetarian: boolean("is_vegetarian").default(false),
+  isVegan: boolean("is_vegan").default(false),
+  nutritionInfo: text("nutrition_info"), // JSON string for calories, protein, etc.
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
