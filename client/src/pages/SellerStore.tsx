@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { 
-  Store, Edit, MapPin, Phone, Globe, Star, Plus, Camera, Save, UtensilsCrossed
+  Store, Edit, MapPin, Phone, Globe, Star, Plus, Camera, Save, UtensilsCrossed, Clock
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

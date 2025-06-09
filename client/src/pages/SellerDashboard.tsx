@@ -317,6 +317,72 @@ export default function SellerDashboard() {
     );
   }
 
+  // Check if shopkeeper is approved by admin
+  if (currentUser.role === 'shopkeeper' && currentUser.status !== 'active') {
+    const getStatusMessage = () => {
+      switch (currentUser.status) {
+        case 'pending':
+          return {
+            title: 'Pending Admin Approval',
+            message: 'Your seller account is pending approval from our admin team. You will receive an email notification once your account is approved.',
+            color: 'text-yellow-600'
+          };
+        case 'suspended':
+          return {
+            title: 'Account Suspended',
+            message: 'Your seller account has been suspended. Please contact support for assistance.',
+            color: 'text-red-600'
+          };
+        case 'rejected':
+          return {
+            title: 'Account Rejected',
+            message: 'Your seller account application was rejected. Please contact support for more information.',
+            color: 'text-red-600'
+          };
+        default:
+          return {
+            title: 'Account Under Review',
+            message: 'Your seller account is currently under review. Please check back later.',
+            color: 'text-gray-600'
+          };
+      }
+    };
+
+    const statusInfo = getStatusMessage();
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Card className="w-full max-w-lg">
+          <CardHeader>
+            <CardTitle className={`text-center ${statusInfo.color}`}>
+              {statusInfo.title}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <div className="mx-auto w-16 h-16 rounded-full bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
+              <Clock className="h-8 w-8 text-yellow-600" />
+            </div>
+            <p className="text-muted-foreground">
+              {statusInfo.message}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/">
+                <Button variant="outline">
+                  Go to Homepage
+                </Button>
+              </Link>
+              <Link href="/account">
+                <Button variant="default">
+                  View Account Status
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
