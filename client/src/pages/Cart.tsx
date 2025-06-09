@@ -93,7 +93,7 @@ export default function Cart() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-foreground mb-8">Shopping Cart</h1>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2">
             <Card>
@@ -102,54 +102,72 @@ export default function Cart() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-4 p-4 border rounded-lg">
-                    <img
-                      src={item.product?.images?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100"}
-                      alt={item.product?.name || "Product"}
-                      className="w-20 h-20 object-cover rounded-lg"
-                    />
-                    
-                    <div className="flex-1">
-                      <h3 className="font-medium text-foreground">
-                        {item.product?.name || "Unknown Product"}
-                      </h3>
-                      <p className="text-primary font-semibold">
-                        ₹{item.product ? Number(item.product.price).toLocaleString() : 0}
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                        disabled={item.quantity <= 1}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="w-8 text-center">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                        disabled={item.quantity >= (item.product?.stock || 0)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        ₹{item.product ? (Number(item.product.price) * item.quantity).toLocaleString() : 0}
-                      </p>
+                  <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg">
+                    <div className="flex items-center space-x-3 w-full sm:w-auto">
+                      <img
+                        src={item.product?.images?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100"}
+                        alt={item.product?.name || "Product"}
+                        className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0"
+                      />
+                      
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-foreground text-sm sm:text-base line-clamp-2">
+                          {item.product?.name || "Unknown Product"}
+                        </h3>
+                        <p className="text-primary font-semibold text-sm sm:text-base">
+                          ₹{item.product ? Number(item.product.price).toLocaleString() : 0}
+                        </p>
+                      </div>
+                      
+                      {/* Mobile Remove Button */}
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleRemoveItem(item.id)}
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-destructive sm:hidden"
                       >
                         <X className="h-4 w-4" />
                       </Button>
+                    </div>
+                    
+                    <div className="flex items-center justify-between w-full sm:w-auto sm:justify-end sm:space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                          disabled={item.quantity >= (item.product?.stock || 0)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <p className="font-semibold text-sm sm:text-base">
+                          ₹{item.product ? (Number(item.product.price) * item.quantity).toLocaleString() : 0}
+                        </p>
+                        
+                        {/* Desktop Remove Button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveItem(item.id)}
+                          className="text-destructive hover:text-destructive hidden sm:flex"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
