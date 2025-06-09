@@ -39,6 +39,7 @@ import SellerInventory from "@/pages/SellerInventory";
 import SellerPromotions from "@/pages/SellerPromotions";
 import SellerOrders from "@/pages/SellerOrders";
 import SellerStore from "@/pages/SellerStore";
+import AddProduct from "@/pages/AddProduct";
 
 function AppRouter() {
   const { mode } = useAppMode();
@@ -78,6 +79,7 @@ function AppRouter() {
         <Route path="/seller/inventory" component={SellerInventory} />
         <Route path="/seller/promotions" component={SellerPromotions} />
         <Route path="/seller/orders" component={SellerOrders} />
+        <Route path="/seller/products/add" component={AddProduct} />
         <Route component={NotFound} />
       </Switch>
     </div>
