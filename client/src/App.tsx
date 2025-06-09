@@ -27,6 +27,7 @@ import Account from "@/pages/Account";
 import ShopkeeperDashboard from "@/pages/ShopkeeperDashboard";
 import CustomerDashboard from "@/pages/CustomerDashboard";
 import AdminPanel from "@/pages/AdminPanel";
+import AdminLogin from "@/pages/AdminLogin";
 import StoreMaps from "@/pages/StoreMaps";
 import RestaurantMaps from "@/pages/RestaurantMaps";
 import Wishlist from "@/pages/Wishlist";
@@ -62,6 +63,7 @@ function AppRouter() {
         <Route path="/shopkeeper-dashboard" component={ShopkeeperDashboard} />
         <Route path="/customer-dashboard" component={CustomerDashboard} />
         <Route path="/admin" component={AdminPanel} />
+        <Route path="/admin/login" component={AdminLogin} />
         <Route path="/store-maps" component={StoreMaps} />
         <Route path="/restaurant-maps" component={RestaurantMaps} />
         <Route path="/wishlist" component={Wishlist} />
