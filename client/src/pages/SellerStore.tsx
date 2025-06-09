@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { 
-  Store, Edit, MapPin, Phone, Globe, Star, Plus, Camera, Save
+  Store, Edit, MapPin, Phone, Globe, Star, Plus, Camera, Save, UtensilsCrossed
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -25,7 +26,14 @@ const storeSchema = z.object({
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
   website: z.string().url().optional().or(z.literal("")),
   logo: z.string().optional(),
-  coverImage: z.string().optional()
+  coverImage: z.string().optional(),
+  storeType: z.enum(["retail", "restaurant"]).default("retail"),
+  cuisineType: z.string().optional(),
+  deliveryTime: z.string().optional(),
+  minimumOrder: z.string().optional(),
+  deliveryFee: z.string().optional(),
+  isDeliveryAvailable: z.boolean().default(false),
+  openingHours: z.string().optional()
 });
 
 interface Store {
@@ -81,7 +89,14 @@ export default function SellerStore() {
       phone: "",
       website: "",
       logo: "",
-      coverImage: ""
+      coverImage: "",
+      storeType: "retail",
+      cuisineType: "",
+      deliveryTime: "",
+      minimumOrder: "",
+      deliveryFee: "",
+      isDeliveryAvailable: false,
+      openingHours: ""
     }
   });
 
@@ -96,13 +111,18 @@ export default function SellerStore() {
   // Create store mutation
   const createStoreMutation = useMutation({
     mutationFn: async (data: z.infer<typeof storeSchema>) => {
-      return await apiRequest('/api/stores', {
+      const response = await fetch('/api/stores', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           ...data,
           ownerId: currentUser?.id
         })
       });
+      if (!response.ok) throw new Error('Failed to create store');
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -125,10 +145,15 @@ export default function SellerStore() {
   // Update store mutation
   const updateStoreMutation = useMutation({
     mutationFn: async (data: z.infer<typeof storeSchema>) => {
-      return await apiRequest(`/api/stores/${userStore?.id}`, {
+      const response = await fetch(`/api/stores/${userStore?.id}`, {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(data)
       });
+      if (!response.ok) throw new Error('Failed to update store');
+      return response.json();
     },
     onSuccess: () => {
       toast({
