@@ -16,7 +16,8 @@ import {
   Users,
   Clock,
   MapPin,
-  UtensilsCrossed
+  UtensilsCrossed,
+  Navigation
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,6 +81,8 @@ type StoreForm = z.infer<typeof storeSchema>;
 export default function ShopkeeperDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [storeLocation, setStoreLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
