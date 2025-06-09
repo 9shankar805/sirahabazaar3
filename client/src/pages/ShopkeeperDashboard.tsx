@@ -154,6 +154,42 @@ export default function ShopkeeperDashboard() {
     },
   });
 
+  // Get user's current location for store
+  const getMyLocation = () => {
+    if (navigator.geolocation) {
+      setLocationLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          setStoreLocation(location);
+          setLocationLoading(false);
+          toast({ 
+            title: "Location captured successfully",
+            description: `Lat: ${location.latitude.toFixed(6)}, Lon: ${location.longitude.toFixed(6)}`
+          });
+        },
+        (error) => {
+          setLocationLoading(false);
+          toast({ 
+            title: "Location access denied",
+            description: "Please enable location access or enter coordinates manually",
+            variant: "destructive"
+          });
+          console.error("Error getting location:", error);
+        }
+      );
+    } else {
+      toast({ 
+        title: "Location not supported",
+        description: "Your browser doesn't support geolocation",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Form for creating stores
   const storeForm = useForm<StoreForm>({
     resolver: zodResolver(storeSchema),
