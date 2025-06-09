@@ -444,18 +444,15 @@ export default function SellerStore() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Store Address</FormLabel>
-                          <FormControl>
-                            <Textarea placeholder="Complete store address" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    <LocationPicker
+                      address={form.watch("address")}
+                      latitude={form.watch("latitude")}
+                      longitude={form.watch("longitude")}
+                      onLocationChange={(data) => {
+                        form.setValue("address", data.address);
+                        form.setValue("latitude", data.latitude);
+                        form.setValue("longitude", data.longitude);
+                      }}
                     />
 
                     <FormField
