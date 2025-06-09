@@ -18,12 +18,13 @@ export default function Stores() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const { mode } = useAppMode();
 
-  const { data: stores, isLoading } = useQuery({
+  const { data: stores, isLoading } = useQuery<Store[]>({
     queryKey: ["/api/stores"],
-    select: (data) => data?.filter((store: Store) => 
-      mode === 'shopping' ? store.storeType !== 'restaurant' : store.storeType === 'restaurant'
-    ) || []
   });
+
+  const filteredStoresByMode = stores?.filter((store: Store) => 
+    mode === 'shopping' ? store.storeType !== 'restaurant' : store.storeType === 'restaurant'
+  ) || [];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
