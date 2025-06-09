@@ -94,7 +94,9 @@ export default function SellerOrders() {
 
   // Orders query
   const { data: orders, isLoading: ordersLoading } = useQuery<Order[]>({
-    queryKey: ['/api/orders/store', storeId],
+    queryKey: ['/api/orders/store', user?.id],
+    queryFn: () => fetch(`/api/orders/store?userId=${user?.id}`).then(res => res.json()),
+    enabled: !!user?.id,
   });
 
   // Order items query
