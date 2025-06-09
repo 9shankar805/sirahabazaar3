@@ -18,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, apiPost, apiPut, apiDelete } from "@/lib/api";
 
 const promotionSchema = z.object({
   storeId: z.number(),
@@ -123,7 +123,7 @@ export default function SellerPromotions() {
   // Create promotion mutation
   const createPromotionMutation = useMutation({
     mutationFn: async (data: z.infer<typeof promotionSchema>) => {
-      return await apiRequest('POST', '/api/seller/promotions', data);
+      return await apiPost('/api/seller/promotions', data);
     },
     onSuccess: () => {
       toast({
@@ -146,7 +146,7 @@ export default function SellerPromotions() {
   // Update promotion mutation
   const updatePromotionMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<z.infer<typeof promotionSchema>> }) => {
-      return await apiRequest('PUT', `/api/seller/promotions/${id}`, data);
+      return await apiPut(`/api/seller/promotions/${id}`, data);
     },
     onSuccess: () => {
       toast({
@@ -169,7 +169,7 @@ export default function SellerPromotions() {
   // Delete promotion mutation
   const deletePromotionMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest('DELETE', `/api/seller/promotions/${id}`);
+      return await apiDelete(`/api/seller/promotions/${id}`);
     },
     onSuccess: () => {
       toast({
