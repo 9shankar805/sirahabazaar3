@@ -1077,6 +1077,237 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to update setting");
     }
   }
+
+  // Enhanced admin features implementation
+  async getDashboardStats(): Promise<any> {
+    try {
+      const totalUsers = await db.select({ count: sql`count(*)` }).from(users);
+      const activeStores = await db.select({ count: sql`count(*)` }).from(stores).where(eq(stores.isActive, true));
+      const totalProducts = await db.select({ count: sql`count(*)` }).from(products);
+      const totalOrders = await db.select({ count: sql`count(*)` }).from(orders);
+      
+      const revenueResult = await db.select({ 
+        total: sql`sum(${orders.totalAmount})` 
+      }).from(orders).where(eq(orders.status, 'delivered'));
+
+      return {
+        totalUsers: totalUsers[0]?.count || 0,
+        activeStores: activeStores[0]?.count || 0,
+        totalProducts: totalProducts[0]?.count || 0,
+        totalOrders: totalOrders[0]?.count || 0,
+        totalRevenue: revenueResult[0]?.total || 0,
+      };
+    } catch {
+      return {
+        totalUsers: 0,
+        activeStores: 0,
+        totalProducts: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+      };
+    }
+  }
+
+  async getAllVendorVerifications(): Promise<VendorVerification[]> {
+    try {
+      return await db.select().from(vendorVerifications).orderBy(vendorVerifications.createdAt);
+    } catch {
+      return [];
+    }
+  }
+
+  async updateVendorVerification(id: number, updates: Partial<InsertVendorVerification>): Promise<VendorVerification | undefined> {
+    try {
+      const [updated] = await db.update(vendorVerifications)
+        .set({
+          ...updates,
+          reviewedAt: updates.status ? new Date() : undefined
+        })
+        .where(eq(vendorVerifications.id, id))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getAllFraudAlerts(): Promise<FraudAlert[]> {
+    try {
+      return await db.select().from(fraudAlerts).orderBy(fraudAlerts.createdAt);
+    } catch {
+      return [];
+    }
+  }
+
+  async createFraudAlert(alert: InsertFraudAlert): Promise<FraudAlert> {
+    const [newAlert] = await db.insert(fraudAlerts).values(alert).returning();
+    return newAlert;
+  }
+
+  async updateFraudAlert(id: number, updates: Partial<InsertFraudAlert>): Promise<FraudAlert | undefined> {
+    try {
+      const [updated] = await db.update(fraudAlerts).set(updates).where(eq(fraudAlerts.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getAllCommissions(): Promise<Commission[]> {
+    try {
+      return await db.select().from(commissions).orderBy(commissions.createdAt);
+    } catch {
+      return [];
+    }
+  }
+
+  async createCommission(commission: InsertCommission): Promise<Commission> {
+    const [newCommission] = await db.insert(commissions).values(commission).returning();
+    return newCommission;
+  }
+
+  async updateCommission(id: number, updates: Partial<InsertCommission>): Promise<Commission | undefined> {
+    try {
+      const [updated] = await db.update(commissions).set(updates).where(eq(commissions.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getProductAttributes(productId: number): Promise<ProductAttribute[]> {
+    try {
+      return await db.select().from(productAttributes).where(eq(productAttributes.productId, productId));
+    } catch {
+      return [];
+    }
+  }
+
+  async createProductAttribute(attribute: InsertProductAttribute): Promise<ProductAttribute> {
+    const [newAttribute] = await db.insert(productAttributes).values(attribute).returning();
+    return newAttribute;
+  }
+
+  async deleteProductAttribute(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(productAttributes).where(eq(productAttributes.id, id));
+      return result.rowCount > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  async logAdminAction(log: InsertAdminLog): Promise<AdminLog> {
+    const [newLog] = await db.insert(adminLogs).values(log).returning();
+    return newLog;
+  }
+
+  async getAdminLogs(adminId?: number): Promise<AdminLog[]> {
+    try {
+      if (adminId) {
+        return await db.select().from(adminLogs).where(eq(adminLogs.adminId, adminId)).orderBy(adminLogs.createdAt);
+      }
+      return await db.select().from(adminLogs).orderBy(adminLogs.createdAt);
+    } catch {
+      return [];
+    }
+  }
+
+  async bulkUpdateProductStatus(productIds: number[], status: boolean): Promise<boolean> {
+    try {
+      const result = await db.update(products)
+        .set({ isActive: status })
+        .where(inArray(products.id, productIds));
+      return result.rowCount > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  async getOrdersWithDetails(): Promise<any[]> {
+    try {
+      return await db.select({
+        orders,
+        customer: {
+          id: users.id,
+          fullName: users.fullName,
+          email: users.email
+        }
+      })
+      .from(orders)
+      .leftJoin(users, eq(orders.customerId, users.id))
+      .orderBy(orders.createdAt);
+    } catch {
+      return [];
+    }
+  }
+
+  async getRevenueAnalytics(days: number = 30): Promise<any> {
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const result = await db.select({
+        date: sql`DATE(${orders.createdAt})`,
+        revenue: sql`sum(${orders.totalAmount})`,
+        orderCount: sql`count(*)`
+      })
+      .from(orders)
+      .where(and(
+        gte(orders.createdAt, startDate.toISOString()),
+        eq(orders.status, 'delivered')
+      ))
+      .groupBy(sql`DATE(${orders.createdAt})`)
+      .orderBy(sql`DATE(${orders.createdAt})`);
+
+      return result;
+    } catch {
+      return [];
+    }
+  }
+
+  async getUsersAnalytics(): Promise<any> {
+    try {
+      const totalUsers = await db.select({ count: sql`count(*)` }).from(users);
+      const activeUsers = await db.select({ count: sql`count(*)` }).from(users).where(eq(users.status, 'active'));
+      const shopkeepers = await db.select({ count: sql`count(*)` }).from(users).where(eq(users.role, 'shopkeeper'));
+
+      return {
+        total: totalUsers[0]?.count || 0,
+        active: activeUsers[0]?.count || 0,
+        shopkeepers: shopkeepers[0]?.count || 0,
+      };
+    } catch {
+      return {
+        total: 0,
+        active: 0,
+        shopkeepers: 0,
+      };
+    }
+  }
+
+  async getInventoryAlerts(): Promise<any[]> {
+    try {
+      const lowStockProducts = await db.select({
+        product: products,
+        store: {
+          id: stores.id,
+          name: stores.name
+        }
+      })
+      .from(products)
+      .leftJoin(stores, eq(products.storeId, stores.id))
+      .where(and(
+        lt(products.stock, 10),
+        eq(products.isActive, true)
+      ))
+      .orderBy(products.stock);
+
+      return lowStockProducts;
+    } catch {
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

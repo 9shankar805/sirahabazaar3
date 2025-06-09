@@ -29,6 +29,7 @@ import CustomerDashboard from "@/pages/CustomerDashboard";
 import AdminPanel from "@/pages/AdminPanel";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
+import EnhancedAdminDashboard from "@/pages/EnhancedAdminDashboard";
 import StoreMaps from "@/pages/StoreMaps";
 import RestaurantMaps from "@/pages/RestaurantMaps";
 import Wishlist from "@/pages/Wishlist";

@@ -6,7 +6,9 @@ import {
   insertWishlistItemSchema, insertAdminSchema, insertWebsiteVisitSchema, insertNotificationSchema, 
   insertOrderTrackingSchema, insertReturnPolicySchema, insertReturnSchema, insertCategorySchema,
   insertPromotionSchema, insertAdvertisementSchema, insertProductReviewSchema, insertSettlementSchema,
-  insertStoreAnalyticsSchema, insertInventoryLogSchema
+  insertStoreAnalyticsSchema, insertInventoryLogSchema, insertCouponSchema, insertBannerSchema,
+  insertSupportTicketSchema, insertSiteSettingSchema, insertFraudAlertSchema, insertCommissionSchema,
+  insertProductAttributeSchema, insertVendorVerificationSchema, insertAdminLogSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -997,8 +999,278 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced Admin Panel API Routes
+  
+  // Dashboard stats
+  app.get("/api/admin/dashboard/stats", async (req, res) => {
+    try {
+      const stats = await storage.getDashboardStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  // Enhanced User Management
+  app.patch("/api/admin/users/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      const user = await storage.updateUser(id, { status });
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update user status" });
+    }
+  });
+
+  // Product Management - Enhanced
+  app.get("/api/admin/products", async (req, res) => {
+    try {
+      const products = await storage.getAllProducts();
+      res.json(products);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch products" });
+    }
+  });
+
+  app.patch("/api/admin/products/bulk-status", async (req, res) => {
+    try {
+      const { productIds, status } = req.body;
+      const success = await storage.bulkUpdateProductStatus(productIds, status);
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update product status" });
+    }
+  });
+
+  // Product Attributes Management
+  app.get("/api/admin/products/:productId/attributes", async (req, res) => {
+    try {
+      const productId = parseInt(req.params.productId);
+      const attributes = await storage.getProductAttributes(productId);
+      res.json(attributes);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch product attributes" });
+    }
+  });
+
+  app.post("/api/admin/products/:productId/attributes", async (req, res) => {
+    try {
+      const productId = parseInt(req.params.productId);
+      const attributeData = { ...req.body, productId };
+      const attribute = await storage.createProductAttribute(attributeData);
+      res.json(attribute);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create product attribute" });
+    }
+  });
+
+  app.delete("/api/admin/product-attributes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteProductAttribute(id);
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete product attribute" });
+    }
+  });
+
+  // Enhanced Order Management
+  app.get("/api/admin/orders", async (req, res) => {
+    try {
+      const orders = await storage.getOrdersWithDetails();
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
+  app.patch("/api/admin/orders/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      const order = await storage.updateOrderStatus(id, status);
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update order status" });
+    }
+  });
+
+  // Payment & Transactions Management
+  app.get("/api/admin/transactions", async (req, res) => {
+    try {
+      const transactions = await storage.getAllTransactions();
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+
+  // Vendor/Seller Management
+  app.get("/api/admin/vendor-verifications", async (req, res) => {
+    try {
+      const verifications = await storage.getAllVendorVerifications();
+      res.json(verifications);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch vendor verifications" });
+    }
+  });
+
+  app.patch("/api/admin/vendor-verifications/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const verification = await storage.updateVendorVerification(id, updates);
+      res.json(verification);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update vendor verification" });
+    }
+  });
+
+  // Commission Management
+  app.get("/api/admin/commissions", async (req, res) => {
+    try {
+      const commissions = await storage.getAllCommissions();
+      res.json(commissions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch commissions" });
+    }
+  });
+
+  app.post("/api/admin/commissions", async (req, res) => {
+    try {
+      const commissionData = req.body;
+      const commission = await storage.createCommission(commissionData);
+      res.json(commission);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create commission" });
+    }
+  });
+
+  app.patch("/api/admin/commissions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const commission = await storage.updateCommission(id, updates);
+      res.json(commission);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update commission" });
+    }
+  });
+
+  // Security & Fraud Management
+  app.get("/api/admin/fraud-alerts", async (req, res) => {
+    try {
+      const alerts = await storage.getAllFraudAlerts();
+      res.json(alerts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch fraud alerts" });
+    }
+  });
+
+  app.post("/api/admin/fraud-alerts", async (req, res) => {
+    try {
+      const alertData = req.body;
+      const alert = await storage.createFraudAlert(alertData);
+      res.json(alert);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create fraud alert" });
+    }
+  });
+
+  app.patch("/api/admin/fraud-alerts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const alert = await storage.updateFraudAlert(id, updates);
+      res.json(alert);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update fraud alert" });
+    }
+  });
+
+  // Admin Activity Logs
+  app.get("/api/admin/logs", async (req, res) => {
+    try {
+      const adminId = req.query.adminId ? parseInt(req.query.adminId as string) : undefined;
+      const logs = await storage.getAdminLogs(adminId);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch admin logs" });
+    }
+  });
+
+  app.post("/api/admin/logs", async (req, res) => {
+    try {
+      const logData = req.body;
+      const log = await storage.logAdminAction(logData);
+      res.json(log);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create admin log" });
+    }
+  });
+
+  // Enhanced Analytics
+  app.get("/api/admin/analytics", async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const [revenue, users, inventory] = await Promise.all([
+        storage.getRevenueAnalytics(days),
+        storage.getUsersAnalytics(),
+        storage.getInventoryAlerts()
+      ]);
+      
+      res.json({
+        revenue,
+        users,
+        inventory
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  app.get("/api/admin/analytics/revenue", async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const revenue = await storage.getRevenueAnalytics(days);
+      res.json(revenue);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch revenue analytics" });
+    }
+  });
+
+  app.get("/api/admin/analytics/users", async (req, res) => {
+    try {
+      const users = await storage.getUsersAnalytics();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user analytics" });
+    }
+  });
+
+  // Inventory Alerts
+  app.get("/api/admin/inventory/alerts", async (req, res) => {
+    try {
+      const alerts = await storage.getInventoryAlerts();
+      res.json(alerts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch inventory alerts" });
+    }
+  });
+
+  // Store Management
+  app.get("/api/admin/stores", async (req, res) => {
+    try {
+      const stores = await storage.getAllStores();
+      res.json(stores);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch stores" });
+    }
+  });
+
   // Site settings management
-  app.get("/api/admin/settings", async (req, res) => {
+  app.get("/api/admin/site-settings", async (req, res) => {
     try {
       const settings = await storage.getAllSiteSettings();
       res.json(settings);
@@ -1007,7 +1279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admin/settings/:key", async (req, res) => {
+  app.put("/api/admin/site-settings/:key", async (req, res) => {
     try {
       const key = req.params.key;
       const { value } = req.body;
