@@ -381,7 +381,7 @@ export default function SellerStore() {
           </div>
         ) : (
           /* No Store - Create Store */
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <Card>
               <CardHeader className="text-center">
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -389,146 +389,99 @@ export default function SellerStore() {
                 </div>
                 <CardTitle className="text-2xl">Create Your Store</CardTitle>
                 <p className="text-muted-foreground">
-                  You need to create your store before you can start adding products and managing orders.
+                  Set up your store to start selling products on Siraha Bazaar
                 </p>
               </CardHeader>
-              <CardContent className="text-center">
-                <Button onClick={openCreateDialog} size="lg" className="w-full sm:w-auto">
-                  <Plus className="h-5 w-5 mr-2" />
-                  Create Store
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(handleCreateStore)} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Store Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="My Awesome Store" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-      {/* Create Store Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create Your Store</DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleCreateStore)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Store Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="My Awesome Store" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+1234567890" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="+1234567890" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Tell customers about your store..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Store Address</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Complete store address" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="website"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Website (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://mystore.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="storeType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Store Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select store type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="retail">Retail Store</SelectItem>
-                        <SelectItem value="restaurant">Restaurant</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {form.watch("storeType") === "restaurant" && (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="cuisineType"
+                      name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Cuisine Type</FormLabel>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Tell customers about your store..." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Store Address</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Complete store address" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="website"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://mystore.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="storeType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Store Type</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select cuisine type" />
+                                <SelectValue placeholder="Select store type" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="indian">Indian</SelectItem>
-                              <SelectItem value="chinese">Chinese</SelectItem>
-                              <SelectItem value="fast-food">Fast Food</SelectItem>
-                              <SelectItem value="italian">Italian</SelectItem>
-                              <SelectItem value="mexican">Mexican</SelectItem>
-                              <SelectItem value="continental">Continental</SelectItem>
-                              <SelectItem value="desserts">Desserts & Sweets</SelectItem>
-                              <SelectItem value="beverages">Beverages</SelectItem>
+                              <SelectItem value="retail">Retail Store</SelectItem>
+                              <SelectItem value="restaurant">Restaurant</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -536,105 +489,70 @@ export default function SellerStore() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="deliveryTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Delivery Time</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., 25-35 mins" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="logo"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Store Logo</FormLabel>
+                            <FormControl>
+                              <ImageUpload
+                                label="Store Logo"
+                                maxImages={1}
+                                minImages={0}
+                                onImagesChange={(images) => field.onChange(images[0] || "")}
+                                initialImages={field.value ? [field.value] : []}
+                                className="w-full"
+                              />
+                            </FormControl>
+                            <div className="text-sm text-muted-foreground">
+                              Auto-compressed to ~200KB for optimal performance
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="minimumOrder"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Minimum Order Amount (₹)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., 200" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name="coverImage"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Store Cover Image</FormLabel>
+                            <FormControl>
+                              <ImageUpload
+                                label="Store Cover Image"
+                                maxImages={1}
+                                minImages={0}
+                                onImagesChange={(images) => field.onChange(images[0] || "")}
+                                initialImages={field.value ? [field.value] : []}
+                                className="w-full"
+                              />
+                            </FormControl>
+                            <div className="text-sm text-muted-foreground">
+                              Auto-compressed to ~200KB for optimal performance
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                    <FormField
-                      control={form.control}
-                      name="deliveryFee"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Delivery Fee (₹)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., 40 (0 for free)" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                    <div className="flex justify-center">
+                      <Button type="submit" disabled={createStoreMutation.isPending} size="lg" className="w-full sm:w-auto px-8">
+                        {createStoreMutation.isPending ? 'Creating...' : 'Create Store'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
 
-                  <FormField
-                    control={form.control}
-                    name="openingHours"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Opening Hours</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., 9 AM - 10 PM" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
-                  <FormField
-                    control={form.control}
-                    name="isDeliveryAvailable"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">
-                            Delivery Available
-                          </FormLabel>
-                          <div className="text-sm text-muted-foreground">
-                            Enable home delivery for your restaurant
-                          </div>
-                        </div>
-                        <FormControl>
-                          <input
-                            type="checkbox"
-                            checked={field.value}
-                            onChange={field.onChange}
-                            className="rounded"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </>
-              )}
-
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createStoreMutation.isPending}>
-                  {createStoreMutation.isPending ? 'Creating...' : 'Create Store'}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Store Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

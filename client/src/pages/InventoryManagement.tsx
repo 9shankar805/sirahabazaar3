@@ -402,7 +402,7 @@ export default function InventoryManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Stock</SelectItem>
-                  <SelectItem value="available">Available (>5)</SelectItem>
+                  <SelectItem value="available">Available ({">"}5)</SelectItem>
                   <SelectItem value="low">Low Stock (≤5)</SelectItem>
                   <SelectItem value="out">Out of Stock</SelectItem>
                 </SelectContent>
