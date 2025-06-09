@@ -83,6 +83,7 @@ interface Store {
   id: number;
   name: string;
   ownerId: number;
+  storeType?: string;
 }
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00'];
@@ -96,7 +97,7 @@ export default function SellerDashboard() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
-const { user } = useAuth();
+  const { user } = useAuth();
 
   // Form for adding/editing products
   const productForm = useForm<ProductForm>({
@@ -303,28 +304,6 @@ const { user } = useAuth();
     );
   }
 
-  // Prepare chart data
-  const revenueData = analytics?.map(item => ({
-    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    revenue: parseFloat(item.revenue),
-    orders: item.ordersCount,
-    visitors: item.uniqueVisitors
-  })) || [];
-
-  const conversionData = analytics?.map(item => ({
-    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    rate: parseFloat(item.conversionRate),
-    views: item.pageViews,
-    addToCart: item.addToCartCount
-  })) || [];
-
-  const trafficSources = [
-    { name: 'Direct', value: 35, color: '#8884d8' },
-    { name: 'Search', value: 25, color: '#82ca9d' },
-    { name: 'Social', value: 20, color: '#ffc658' },
-    { name: 'Referral', value: 20, color: '#ff7300' },
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -359,331 +338,414 @@ const { user } = useAuth();
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardStats?.totalProducts || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                <TrendingUp className="h-3 w-3 inline mr-1" />
-                +2 from last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardStats?.totalOrders || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                <TrendingUp className="h-3 w-3 inline mr-1" />
-                +12% from last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₹{dashboardStats?.totalRevenue.toLocaleString() || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                <TrendingUp className="h-3 w-3 inline mr-1" />
-                +8% from last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardStats?.pendingOrders || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                {(dashboardStats?.pendingOrders || 0) > 0 ? 'Needs attention' : 'All caught up!'}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Rating & Reviews */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Star className="h-5 w-5 mr-2 text-yellow-500" />
-                Store Rating
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-4">
-                <div className="text-3xl font-bold">{dashboardStats?.averageRating ? Number(dashboardStats.averageRating).toFixed(1) : '0.0'}</div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-1 mb-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`h-4 w-4 ${
-                          star <= (dashboardStats?.averageRating || 0)
-                            ? 'text-yellow-400 fill-current'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Based on {dashboardStats?.totalReviews || 0} reviews
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Eye className="h-5 w-5 mr-2" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                <Link href="/seller/products/add">
-                  <Button className="w-full" size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Product
-                  </Button>
-                </Link>
-                <Link href="/seller/orders">
-                  <Button variant="outline" className="w-full" size="sm">
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    View Orders
-                  </Button>
-                </Link>
-                <Link href="/seller/promotions">
-                  <Button variant="outline" className="w-full" size="sm">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Promotions
-                  </Button>
-                </Link>
-                <Link href="/seller/settings">
-                  <Button variant="outline" className="w-full" size="sm">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Analytics Charts */}
-        <Tabs defaultValue="revenue" className="space-y-6">
+        {/* Tab Navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="revenue">Revenue Analytics</TabsTrigger>
-            <TabsTrigger value="traffic">Traffic Analytics</TabsTrigger>
-            <TabsTrigger value="conversion">Conversion Rate</TabsTrigger>
-            <TabsTrigger value="products">Product Performance</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="add-product">
+              {editingProduct ? "Edit Product" : "Add Product"}
+            </TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="revenue" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue & Orders Trend</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip />
-                    <Legend />
-                    <Area
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="revenue"
-                      stackId="1"
-                      stroke="#8884d8"
-                      fill="#8884d8"
-                      fillOpacity={0.6}
-                      name="Revenue (₹)"
-                    />
-                    <Line
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="orders"
-                      stroke="#82ca9d"
-                      strokeWidth={2}
-                      name="Orders"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="traffic" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <Card>
-                <CardHeader>
-                  <CardTitle>Traffic Sources</CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <RechartsPieChart>
-                      <Pie
-                        data={trafficSources}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {trafficSources.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
+                  <div className="text-2xl font-bold">{dashboardStats?.totalProducts || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    <TrendingUp className="h-3 w-3 inline mr-1" />
+                    +2 from last month
+                  </p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Visitor Trends</CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <LineChart data={revenueData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line
-                        type="monotone"
-                        dataKey="visitors"
-                        stroke="#8884d8"
-                        strokeWidth={2}
-                        name="Unique Visitors"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <div className="text-2xl font-bold">{dashboardStats?.totalOrders || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    <TrendingUp className="h-3 w-3 inline mr-1" />
+                    +12% from last month
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">₹{dashboardStats?.totalRevenue?.toLocaleString() || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    <TrendingUp className="h-3 w-3 inline mr-1" />
+                    +8% from last month
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Store Rating</CardTitle>
+                  <Star className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{dashboardStats?.averageRating ? Number(dashboardStats.averageRating).toFixed(1) : '0.0'}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Based on {dashboardStats?.totalReviews || 0} reviews
+                  </p>
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
 
-          <TabsContent value="conversion" className="space-y-4">
+            {/* Quick Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>Conversion Funnel</CardTitle>
+                <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={conversionData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip />
-                    <Legend />
-                    <Bar yAxisId="left" dataKey="views" fill="#8884d8" name="Page Views" />
-                    <Bar yAxisId="left" dataKey="addToCart" fill="#82ca9d" name="Add to Cart" />
-                    <Line
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="rate"
-                      stroke="#ff7300"
-                      strokeWidth={2}
-                      name="Conversion Rate (%)"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Button onClick={() => setActiveTab("add-product")} className="w-full">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Product
+                  </Button>
+                  <Button onClick={() => setActiveTab("products")} variant="outline" className="w-full">
+                    <Package className="h-4 w-4 mr-2" />
+                    View Products
+                  </Button>
+                  <Button onClick={() => setActiveTab("analytics")} variant="outline" className="w-full">
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    View Analytics
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* Products Tab */}
           <TabsContent value="products" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Top Performing Products</CardTitle>
+                <CardTitle>Your Products</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Array.isArray(products) ? products.slice(0, 5).map((product: any, index: number) => (
-                    <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <span className="text-primary font-semibold">#{index + 1}</span>
+                  {Array.isArray(products) ? products.map((product: any) => (
+                    <div key={product.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                          {product.images?.[0] ? (
+                            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="h-6 w-6 text-gray-400" />
+                            </div>
+                          )}
                         </div>
                         <div>
-                          <p className="font-medium">{product.name}</p>
+                          <h3 className="font-medium">{product.name}</h3>
                           <p className="text-sm text-muted-foreground">₹{product.price}</p>
+                          <p className="text-sm text-muted-foreground">Stock: {product.stock || 0}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">Stock: {product.stock || 0}</p>
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                          <span className="text-sm">{product.rating || '0.0'}</span>
-                        </div>
+                      <div className="flex items-center space-x-2">
+                        <Button onClick={() => handleEditProduct(product)} variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button onClick={() => handleDeleteProduct(product.id)} variant="destructive" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   )) : (
-                    <p className="text-muted-foreground">No products available</p>
+                    <p className="text-muted-foreground text-center py-8">No products available</p>
                   )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
 
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {Array.isArray(orders) ? orders.slice(0, 5).map((order: any) => (
-                <div key={order.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                      <ShoppingCart className="h-5 w-5 text-green-600 dark:text-green-400" />
+          {/* Add Product Tab */}
+          <TabsContent value="add-product" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  {editingProduct ? "Edit Product" : "Add New Product"}
+                </CardTitle>
+                <p className="text-muted-foreground">
+                  {editingProduct ? "Update product information" : "Add products to your store inventory"}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Form {...productForm}>
+                  <form onSubmit={productForm.handleSubmit(handleAddProduct)} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={productForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Product Name *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter product name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={productForm.control}
+                        name="categoryId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Category *</FormLabel>
+                            <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Array.isArray(categories) && categories.map((category: any) => (
+                                  <SelectItem key={category.id} value={category.id.toString()}>
+                                    {category.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                    <div>
-                      <p className="font-medium">Order #{order.id}</p>
-                      <p className="text-sm text-muted-foreground">{order.customerName}</p>
+
+                    <FormField
+                      control={productForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Enter product description"
+                              className="min-h-24"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <FormField
+                        control={productForm.control}
+                        name="price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Price *</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                placeholder="0.00"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={productForm.control}
+                        name="originalPrice"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Original Price</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                placeholder="0.00"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={productForm.control}
+                        name="stock"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stock Quantity *</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                placeholder="Enter quantity"
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">₹{order.totalAmount}</p>
-                    <Badge variant={order.status === 'pending' ? 'secondary' : 'default'}>
-                      {order.status}
-                    </Badge>
-                  </div>
-                </div>
-              )) : (
-                <p className="text-muted-foreground">No recent orders</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+
+                    <FormField
+                      control={productForm.control}
+                      name="images"
+                      render={({ field }) => (
+                        <FormItem>
+                          <ImageUpload
+                            label="Product Images"
+                            maxImages={6}
+                            minImages={1}
+                            onImagesChange={field.onChange}
+                            initialImages={field.value || []}
+                            className="col-span-full"
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {currentStore?.storeType === "restaurant" && (
+                      <>
+                        <div className="border-t pt-6">
+                          <h3 className="text-lg font-medium mb-4 flex items-center">
+                            <UtensilsCrossed className="h-5 w-5 mr-2" />
+                            Food-Specific Information
+                          </h3>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField
+                              control={productForm.control}
+                              name="preparationTime"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Preparation Time</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="e.g., 15-20 minutes" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={productForm.control}
+                              name="spiceLevel"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Spice Level</FormLabel>
+                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select spice level" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="mild">Mild</SelectItem>
+                                      <SelectItem value="medium">Medium</SelectItem>
+                                      <SelectItem value="hot">Hot</SelectItem>
+                                      <SelectItem value="very-hot">Very Hot</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                            <FormField
+                              control={productForm.control}
+                              name="isVegetarian"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                  <div className="space-y-0.5">
+                                    <FormLabel className="text-base">Vegetarian</FormLabel>
+                                    <div className="text-sm text-muted-foreground">
+                                      Mark if this item is vegetarian
+                                    </div>
+                                  </div>
+                                  <FormControl>
+                                    <input
+                                      type="checkbox"
+                                      checked={field.value}
+                                      onChange={field.onChange}
+                                      className="rounded"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={productForm.control}
+                              name="isVegan"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                  <div className="space-y-0.5">
+                                    <FormLabel className="text-base">Vegan</FormLabel>
+                                    <div className="text-sm text-muted-foreground">
+                                      Mark if this item is vegan
+                                    </div>
+                                  </div>
+                                  <FormControl>
+                                    <input
+                                      type="checkbox"
+                                      checked={field.value}
+                                      onChange={field.onChange}
+                                      className="rounded"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    <Button type="submit" className="w-full">
+                      <Plus className="h-4 w-4 mr-2" />
+                      {editingProduct ? "Update Product" : "Add Product"}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Store Analytics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Analytics data will be displayed here when available.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
