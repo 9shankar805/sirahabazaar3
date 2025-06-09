@@ -332,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ORDER BY p.created_at DESC
       `;
       
-      const result = await storage.pool.query(query, [parsedId]);
+      const result = await pool.query(query, [parsedId]);
       res.json(result.rows);
     } catch (error) {
       console.error("Error fetching store products:", error);
