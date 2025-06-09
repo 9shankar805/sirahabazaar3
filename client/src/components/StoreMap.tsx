@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Navigation, Phone, Star } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MapPin, Navigation, Phone, Star, Loader2, Target, Map } from "lucide-react";
 import type { Store } from "@shared/schema";
 import "leaflet/dist/leaflet.css";
 
@@ -49,22 +50,51 @@ export default function StoreMap() {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [selectedStore, setSelectedStore] = useState<StoreWithDistance | null>(null);
   const [manualLocation, setManualLocation] = useState({ lat: "", lon: "" });
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [showNearbyStores, setShowNearbyStores] = useState(false);
 
   // Get user's current location
   const getUserLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-        }
-      );
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by this browser");
+      return;
     }
+
+    setIsGettingLocation(true);
+    setLocationError(null);
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setShowNearbyStores(true);
+        setIsGettingLocation(false);
+      },
+      (error) => {
+        let errorMessage = "Failed to get your location";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied. Please enable location services.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out.";
+            break;
+        }
+        setLocationError(errorMessage);
+        setIsGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
   };
 
   // Set manual location
@@ -74,6 +104,19 @@ export default function StoreMap() {
     
     if (!isNaN(lat) && !isNaN(lon)) {
       setUserLocation({ latitude: lat, longitude: lon });
+      setShowNearbyStores(true);
+      setLocationError(null);
+    } else {
+      setLocationError("Please enter valid latitude and longitude values");
+    }
+  };
+
+  // Find nearby stores manually
+  const findNearbyStores = () => {
+    if (userLocation) {
+      setShowNearbyStores(true);
+    } else {
+      getUserLocation();
     }
   };
 
@@ -122,12 +165,43 @@ export default function StoreMap() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col gap-4">
-            <Button onClick={getUserLocation} className="flex items-center gap-2 w-full sm:w-auto">
-              <Navigation className="h-4 w-4" />
-              Get My Location
+          {/* Prominent Find Nearby Stores Button */}
+          <div className="text-center">
+            <Button 
+              onClick={findNearbyStores} 
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg font-semibold shadow-lg"
+              disabled={isGettingLocation}
+            >
+              {isGettingLocation ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Getting Location...
+                </>
+              ) : (
+                <>
+                  <Target className="h-5 w-5 mr-2" />
+                  Find Nearby Stores
+                </>
+              )}
             </Button>
-            
+            <p className="text-sm text-gray-600 mt-2">
+              Click to track your location and discover stores near you
+            </p>
+          </div>
+
+          {/* Error Alert */}
+          {locationError && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertDescription className="text-red-700">
+                {locationError}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Manual Location Input */}
+          <div className="border-t pt-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Or enter coordinates manually:</h3>
             <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 placeholder="Latitude"
@@ -142,50 +216,89 @@ export default function StoreMap() {
                 className="flex-1 min-w-0"
               />
               <Button onClick={setManualLocationHandler} variant="outline" className="w-full sm:w-auto">
+                <Map className="h-4 w-4 mr-2" />
                 Set Location
               </Button>
             </div>
           </div>
 
+          {/* Location Status */}
           {userLocation && (
-            <div className="p-3 bg-green-50 rounded-lg">
-              <p className="text-sm text-green-700">
-                Your location: {userLocation.latitude.toFixed(6)}, {userLocation.longitude.toFixed(6)}
-              </p>
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-green-600" />
+                <p className="text-sm text-green-700 font-medium">
+                  Location Found: {userLocation.latitude.toFixed(4)}, {userLocation.longitude.toFixed(4)}
+                </p>
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {userLocation && (
+      {userLocation && showNearbyStores && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Nearby Stores</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-blue-600" />
+                Nearby Stores
+                {nearbyStores && nearbyStores.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {nearbyStores.length} found
+                  </Badge>
+                )}
+              </CardTitle>
               <CardDescription>
-                Stores sorted by distance from your location
+                Stores sorted by distance from closest to farthest
               </CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="text-center py-8">Loading nearby stores...</div>
+                <div className="text-center py-8">
+                  <Loader2 className="h-8 w-8 mx-auto animate-spin text-blue-600" />
+                  <p className="mt-2 text-gray-600">Finding nearby stores...</p>
+                </div>
               ) : nearbyStores && nearbyStores.length > 0 ? (
                 <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {nearbyStores.map((store) => (
+                  {nearbyStores.map((store, index) => (
                     <div
                       key={store.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                      className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
                         selectedStore?.id === store.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          ? "border-blue-500 bg-blue-50 shadow-md"
+                          : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                       }`}
                       onClick={() => setSelectedStore(store)}
                     >
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
-                        <h3 className="font-semibold text-lg">{store.name}</h3>
-                        <Badge variant="secondary" className="self-start">
-                          {store.distance.toFixed(1)} km away
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={index < 3 ? "default" : "secondary"} 
+                            className={`text-xs px-2 py-1 ${
+                              index === 0 ? "bg-green-600" : 
+                              index === 1 ? "bg-blue-600" : 
+                              index === 2 ? "bg-orange-600" : ""
+                            }`}
+                          >
+                            #{index + 1}
+                          </Badge>
+                          <h3 className="font-semibold text-lg">{store.name}</h3>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge 
+                            variant={store.distance < 1 ? "destructive" : store.distance < 5 ? "default" : "secondary"} 
+                            className={`self-start ${
+                              store.distance < 1 ? "bg-green-600" : 
+                              store.distance < 5 ? "bg-blue-600" : ""
+                            }`}
+                          >
+                            {store.distance.toFixed(1)} km away
+                          </Badge>
+                          {store.distance < 1 && (
+                            <span className="text-xs text-green-600 font-medium">Very Close!</span>
+                          )}
+                        </div>
                       </div>
                       
                       <p className="text-gray-600 text-sm mb-2">{store.description}</p>
