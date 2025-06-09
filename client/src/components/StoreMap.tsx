@@ -46,7 +46,11 @@ interface UserLocation {
   longitude: number;
 }
 
-export default function StoreMap() {
+interface StoreMapProps {
+  storeType?: 'retail' | 'restaurant';
+}
+
+export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [selectedStore, setSelectedStore] = useState<StoreWithDistance | null>(null);
   const [manualLocation, setManualLocation] = useState({ lat: "", lon: "" });
@@ -122,17 +126,16 @@ export default function StoreMap() {
 
   // Fetch nearby stores when user location is available
   const { data: nearbyStores, isLoading } = useQuery<StoreWithDistance[]>({
-    queryKey: ["/api/stores/nearby", userLocation?.latitude, userLocation?.longitude],
+    queryKey: ["/api/stores/nearby", userLocation?.latitude, userLocation?.longitude, storeType],
     queryFn: async () => {
       if (!userLocation) return [];
       
-      const response = await fetch(
-        `/api/stores/nearby?lat=${userLocation.latitude}&lon=${userLocation.longitude}`
-      );
+      const url = `/api/stores/nearby?lat=${userLocation.latitude}&lon=${userLocation.longitude}&storeType=${storeType}`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch nearby stores");
       return response.json();
     },
-    enabled: !!userLocation,
+    enabled: !!userLocation && showNearbyStores,
   });
 
   // Generate Google Maps URL for directions
@@ -148,6 +151,30 @@ export default function StoreMap() {
   // Center coordinates for the map (Siraha, Nepal)
   const defaultCenter: [number, number] = [26.6586, 86.2003];
 
+  // Dynamic content based on store type
+  const getStoreTypeContent = () => {
+    if (storeType === 'restaurant') {
+      return {
+        title: 'Restaurant Locations & Directions',
+        description: 'Find nearby restaurants and get directions to them',
+        buttonText: 'Find Nearby Restaurants',
+        subtitle: 'Click to track your location and discover restaurants near you',
+        cardTitle: 'Nearby Restaurants',
+        cardDescription: 'Restaurants sorted by distance from closest to farthest'
+      };
+    }
+    return {
+      title: 'Store Locations & Directions',
+      description: 'Find nearby retail stores and get directions to them',
+      buttonText: 'Find Nearby Stores',
+      subtitle: 'Click to track your location and discover stores near you',
+      cardTitle: 'Nearby Stores',
+      cardDescription: 'Stores sorted by distance from closest to farthest'
+    };
+  };
+
+  const content = getStoreTypeContent();
+
   useEffect(() => {
     getUserLocation();
   }, []);
@@ -158,10 +185,10 @@ export default function StoreMap() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
             <MapPin className="h-5 w-5" />
-            Store Locations & Directions
+            {content.title}
           </CardTitle>
           <CardDescription>
-            Find nearby stores and get directions to them
+            {content.description}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -181,12 +208,12 @@ export default function StoreMap() {
               ) : (
                 <>
                   <Target className="h-5 w-5 mr-2" />
-                  Find Nearby Stores
+                  {content.buttonText}
                 </>
               )}
             </Button>
             <p className="text-sm text-gray-600 mt-2">
-              Click to track your location and discover stores near you
+              {content.subtitle}
             </p>
           </div>
 
@@ -242,7 +269,7 @@ export default function StoreMap() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-blue-600" />
-                Nearby Stores
+                {content.cardTitle}
                 {nearbyStores && nearbyStores.length > 0 && (
                   <Badge variant="secondary" className="ml-2">
                     {nearbyStores.length} found
@@ -250,7 +277,7 @@ export default function StoreMap() {
                 )}
               </CardTitle>
               <CardDescription>
-                Stores sorted by distance from closest to farthest
+                {content.cardDescription}
               </CardDescription>
             </CardHeader>
             <CardContent>

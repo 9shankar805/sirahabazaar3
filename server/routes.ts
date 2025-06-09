@@ -166,28 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/stores/nearby", async (req, res) => {
-    try {
-      const { lat, lon } = req.query;
-      
-      if (!lat || !lon) {
-        return res.status(400).json({ error: "Latitude and longitude are required" });
-      }
-      
-      const userLat = parseFloat(lat as string);
-      const userLon = parseFloat(lon as string);
-      
-      if (isNaN(userLat) || isNaN(userLon)) {
-        return res.status(400).json({ error: "Invalid coordinates" });
-      }
-      
-      const storesWithDistance = await storage.getStoresWithDistance(userLat, userLon);
-      res.json(storesWithDistance);
-    } catch (error) {
-      console.error("Nearby stores fetch error:", error);
-      res.status(500).json({ error: "Failed to fetch nearby stores" });
-    }
-  });
+
 
   app.post("/api/stores", async (req, res) => {
     try {
