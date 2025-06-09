@@ -46,6 +46,14 @@ const productSchema = z.object({
   isOnOffer: z.boolean().default(false),
   offerPercentage: z.number().min(0).max(100).default(0),
   offerEndDate: z.string().optional(),
+  // Food-specific fields
+  preparationTime: z.string().optional(),
+  ingredients: z.array(z.string()).default([]),
+  allergens: z.array(z.string()).default([]),
+  spiceLevel: z.string().optional(),
+  isVegetarian: z.boolean().default(false),
+  isVegan: z.boolean().default(false),
+  nutritionInfo: z.string().optional(),
 });
 
 const storeSchema = z.object({
@@ -132,6 +140,13 @@ export default function ShopkeeperDashboard() {
       isOnOffer: false,
       offerPercentage: 0,
       offerEndDate: "",
+      preparationTime: "",
+      ingredients: [],
+      allergens: [],
+      spiceLevel: "",
+      isVegetarian: false,
+      isVegan: false,
+      nutritionInfo: "",
     },
   });
 
@@ -178,6 +193,14 @@ export default function ShopkeeperDashboard() {
         offerPercentage: data.offerPercentage || 0,
         offerEndDate: data.offerEndDate || undefined,
         productType: currentStore.storeType === 'restaurant' ? 'food' : 'retail', // Auto-set based on store type
+        // Food-specific fields for restaurants
+        preparationTime: currentStore.storeType === 'restaurant' ? data.preparationTime || null : null,
+        ingredients: currentStore.storeType === 'restaurant' ? data.ingredients || [] : [],
+        allergens: currentStore.storeType === 'restaurant' ? data.allergens || [] : [],
+        spiceLevel: currentStore.storeType === 'restaurant' ? data.spiceLevel || null : null,
+        isVegetarian: currentStore.storeType === 'restaurant' ? data.isVegetarian || false : false,
+        isVegan: currentStore.storeType === 'restaurant' ? data.isVegan || false : false,
+        nutritionInfo: currentStore.storeType === 'restaurant' ? data.nutritionInfo || null : null,
       };
 
       if (editingProduct) {
@@ -1172,6 +1195,127 @@ export default function ShopkeeperDashboard() {
                         </div>
                       )}
                     </div>
+
+                    {/* Food-specific fields for restaurants */}
+                    {currentStore?.storeType === 'restaurant' && (
+                      <div className="space-y-4 p-4 border rounded-lg bg-orange-50">
+                        <h3 className="font-medium text-lg flex items-center gap-2">
+                          <UtensilsCrossed className="h-5 w-5" />
+                          Food Item Details
+                        </h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="preparationTime"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Preparation Time</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., 15-20 mins" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="spiceLevel"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Spice Level</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select spice level" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="">Not Applicable</SelectItem>
+                                    <SelectItem value="mild">Mild</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="hot">Hot</SelectItem>
+                                    <SelectItem value="extra-hot">Extra Hot</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="isVegetarian"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base font-medium">
+                                    Vegetarian
+                                  </FormLabel>
+                                  <div className="text-sm text-muted-foreground">
+                                    Contains no meat or fish
+                                  </div>
+                                </div>
+                                <FormControl>
+                                  <input
+                                    type="checkbox"
+                                    checked={field.value}
+                                    onChange={field.onChange}
+                                    className="w-4 h-4"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="isVegan"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base font-medium">
+                                    Vegan
+                                  </FormLabel>
+                                  <div className="text-sm text-muted-foreground">
+                                    Contains no animal products
+                                  </div>
+                                </div>
+                                <FormControl>
+                                  <input
+                                    type="checkbox"
+                                    checked={field.value}
+                                    onChange={field.onChange}
+                                    className="w-4 h-4"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={form.control}
+                          name="nutritionInfo"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nutrition Information (Optional)</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="e.g., Calories: 350, Protein: 15g, Carbs: 45g, Fat: 12g"
+                                  className="min-h-20"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
 
                     <div className="flex space-x-4">
                       <Button type="submit" className="btn-primary">
