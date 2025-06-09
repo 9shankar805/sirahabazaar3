@@ -338,10 +338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(allProducts);
     } catch (error) {
       console.error("Error fetching store products:", error);
-      res.status(500).json({ 
-        error: "Failed to fetch products",
-        details: error instanceof Error ? error.message : "Unknown error"
-      });
+      res.status(500).json({ error: "Failed to fetch product" });
     }
   });
 
@@ -979,7 +976,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { isFeatured } = req.body;
-      const product = await storage.updateProduct(id, { isFeatured });
+      const product = await storage.updateProduct(id, { isActive: isFeatured });
       res.json(product);
     } catch (error) {
       res.status(500).json({ error: "Failed to update product featured status" });

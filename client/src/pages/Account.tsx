@@ -161,6 +161,65 @@ export default function Account() {
 
         {/* Orders and Activity */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Shopkeeper Approval Status */}
+          {user.role === 'shopkeeper' && (user as any).status !== 'active' && (
+            <Card className="border-orange-200 bg-orange-50">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-orange-800">
+                  <AlertCircle className="h-5 w-5" />
+                  <span>Account Approval Status</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(user as any).status === 'pending' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <Clock className="h-5 w-5 text-orange-600" />
+                      <div>
+                        <p className="font-medium text-orange-800">Your seller account is under review</p>
+                        <p className="text-sm text-orange-700">
+                          Our admin team is reviewing your application. This process typically takes 1-2 business days.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 p-3 bg-orange-100 rounded-lg">
+                      <p className="text-sm text-orange-800">
+                        <strong>What's next?</strong> You'll receive an email notification once your account is approved. 
+                        Until then, you can browse the marketplace but cannot create stores or add products.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {(user as any).status === 'suspended' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <AlertCircle className="h-5 w-5 text-red-600" />
+                      <div>
+                        <p className="font-medium text-red-800">Your seller account has been suspended</p>
+                        <p className="text-sm text-red-700">
+                          Please contact our support team for more information about your account status.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {(user as any).status === 'rejected' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <AlertCircle className="h-5 w-5 text-red-600" />
+                      <div>
+                        <p className="font-medium text-red-800">Your seller application was not approved</p>
+                        <p className="text-sm text-red-700">
+                          You can reapply by contacting our support team or updating your business information.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Recent Orders */}
           <Card>
             <CardHeader>
