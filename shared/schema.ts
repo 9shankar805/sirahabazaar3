@@ -10,7 +10,20 @@ export const users = pgTable("users", {
   phone: text("phone"),
   address: text("address"),
   role: text("role").notNull().default("customer"), // customer, shopkeeper
+  status: text("status").notNull().default("active"), // active, pending, suspended, rejected
+  approvalDate: timestamp("approval_date"),
+  approvedBy: integer("approved_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const adminUsers = pgTable("admin_users", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  fullName: text("full_name").notNull(),
+  role: text("role").notNull().default("admin"), // admin, super_admin
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true),
 });
 
 export const stores = pgTable("stores", {
@@ -447,3 +460,8 @@ export type StoreAnalytics = typeof storeAnalytics.$inferSelect;
 export type InsertStoreAnalytics = z.infer<typeof insertStoreAnalyticsSchema>;
 export type InventoryLog = typeof inventoryLogs.$inferSelect;
 export type InsertInventoryLog = z.infer<typeof insertInventoryLogSchema>;
+
+// Admin user schema
+export const insertAdminUserSchema = createInsertSchema(adminUsers);
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;

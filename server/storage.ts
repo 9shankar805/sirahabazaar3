@@ -1,8 +1,8 @@
 import { 
-  users, stores, categories, products, orders, orderItems, cartItems, wishlistItems,
+  users, adminUsers, stores, categories, products, orders, orderItems, cartItems, wishlistItems,
   admins, websiteVisits, notifications, orderTracking, returnPolicies, returns,
   promotions, advertisements, productReviews, settlements, storeAnalytics, inventoryLogs,
-  type User, type InsertUser, type Store, type InsertStore, 
+  type User, type InsertUser, type AdminUser, type InsertAdminUser, type Store, type InsertStore, 
   type Category, type InsertCategory, type Product, type InsertProduct,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
   type CartItem, type InsertCartItem, type WishlistItem, type InsertWishlistItem,
