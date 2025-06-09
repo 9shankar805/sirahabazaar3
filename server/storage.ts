@@ -1326,8 +1326,24 @@ export class DatabaseStorage implements IStorage {
         });
         console.log('Default admin account created: admin@sirahbazaar.com / admin123');
       }
+
+      // Create default categories if they don't exist
+      const existingCategories = await db.select().from(categories);
+      if (existingCategories.length === 0) {
+        await db.insert(categories).values([
+          { name: 'Electronics', slug: 'electronics', description: 'Electronic devices and gadgets' },
+          { name: 'Clothing', slug: 'clothing', description: 'Apparel and fashion items' },
+          { name: 'Food & Beverages', slug: 'food-beverages', description: 'Food items and drinks' },
+          { name: 'Home & Garden', slug: 'home-garden', description: 'Home improvement and gardening' },
+          { name: 'Sports & Outdoors', slug: 'sports-outdoors', description: 'Sports equipment and outdoor gear' },
+          { name: 'Books', slug: 'books', description: 'Books and educational materials' },
+          { name: 'Beauty & Health', slug: 'beauty-health', description: 'Health and beauty products' },
+          { name: 'Toys & Games', slug: 'toys-games', description: 'Toys and gaming products' }
+        ]);
+        console.log('Default categories created');
+      }
     } catch (error) {
-      console.error('Error creating default admin:', error);
+      console.error('Error creating default data:', error);
     }
   }
 
