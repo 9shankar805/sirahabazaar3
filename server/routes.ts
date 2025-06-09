@@ -789,6 +789,235 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced admin API routes for comprehensive management
+  
+  // All orders for admin
+  app.get("/api/admin/orders", async (req, res) => {
+    try {
+      const allOrders = await storage.getAllOrders();
+      res.json(allOrders);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
+  // Update order status
+  app.put("/api/admin/orders/:id/status", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { status } = req.body;
+      const updatedOrder = await storage.updateOrderStatus(orderId, status);
+      res.json(updatedOrder);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update order status" });
+    }
+  });
+
+  // Payment transactions management
+  app.get("/api/admin/transactions", async (req, res) => {
+    try {
+      const transactions = await storage.getAllTransactions();
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+
+  // Coupons management
+  app.get("/api/admin/coupons", async (req, res) => {
+    try {
+      const coupons = await storage.getAllCoupons();
+      res.json(coupons);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch coupons" });
+    }
+  });
+
+  app.post("/api/admin/coupons", async (req, res) => {
+    try {
+      const couponData = req.body;
+      const coupon = await storage.createCoupon(couponData);
+      res.json(coupon);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create coupon" });
+    }
+  });
+
+  app.put("/api/admin/coupons/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const coupon = await storage.updateCoupon(id, updates);
+      res.json(coupon);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update coupon" });
+    }
+  });
+
+  app.delete("/api/admin/coupons/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteCoupon(id);
+      res.json({ success: deleted });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete coupon" });
+    }
+  });
+
+  // Banners management
+  app.get("/api/admin/banners", async (req, res) => {
+    try {
+      const banners = await storage.getAllBanners();
+      res.json(banners);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch banners" });
+    }
+  });
+
+  app.post("/api/admin/banners", async (req, res) => {
+    try {
+      const bannerData = req.body;
+      const banner = await storage.createBanner(bannerData);
+      res.json(banner);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create banner" });
+    }
+  });
+
+  app.put("/api/admin/banners/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const banner = await storage.updateBanner(id, updates);
+      res.json(banner);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update banner" });
+    }
+  });
+
+  app.delete("/api/admin/banners/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteBanner(id);
+      res.json({ success: deleted });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete banner" });
+    }
+  });
+
+  // Support tickets management
+  app.get("/api/admin/support-tickets", async (req, res) => {
+    try {
+      const tickets = await storage.getAllSupportTickets();
+      res.json(tickets);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch support tickets" });
+    }
+  });
+
+  app.post("/api/admin/support-tickets", async (req, res) => {
+    try {
+      const ticketData = req.body;
+      const ticket = await storage.createSupportTicket(ticketData);
+      res.json(ticket);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create support ticket" });
+    }
+  });
+
+  app.put("/api/admin/support-tickets/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const ticket = await storage.updateSupportTicket(id, updates);
+      res.json(ticket);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update support ticket" });
+    }
+  });
+
+  // Product management
+  app.put("/api/admin/products/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { isActive } = req.body;
+      const product = await storage.updateProduct(id, { isActive });
+      res.json(product);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update product status" });
+    }
+  });
+
+  app.put("/api/admin/products/:id/featured", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { isFeatured } = req.body;
+      const product = await storage.updateProduct(id, { isFeatured });
+      res.json(product);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update product featured status" });
+    }
+  });
+
+  // User management (ban/suspend)
+  app.put("/api/admin/users/:id/ban", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { reason } = req.body;
+      const user = await storage.updateUser(id, { status: "suspended" });
+      
+      await storage.createNotification({
+        userId: id,
+        title: "Account Suspended",
+        message: reason || "Your account has been suspended. Please contact support.",
+        type: "error"
+      });
+      
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to ban user" });
+    }
+  });
+
+  app.put("/api/admin/users/:id/unban", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.updateUser(id, { status: "active" });
+      
+      await storage.createNotification({
+        userId: id,
+        title: "Account Restored",
+        message: "Your account has been restored and is now active.",
+        type: "success"
+      });
+      
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to unban user" });
+    }
+  });
+
+  // Site settings management
+  app.get("/api/admin/settings", async (req, res) => {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  app.put("/api/admin/settings/:key", async (req, res) => {
+    try {
+      const key = req.params.key;
+      const { value } = req.body;
+      const setting = await storage.updateSiteSetting(key, value);
+      res.json(setting);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update setting" });
+    }
+  });
+
   // Website analytics routes
   app.get("/api/admin/analytics/stats", async (req, res) => {
     try {

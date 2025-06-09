@@ -2,6 +2,7 @@ import {
   users, adminUsers, stores, categories, products, orders, orderItems, cartItems, wishlistItems,
   admins, websiteVisits, notifications, orderTracking, returnPolicies, returns,
   promotions, advertisements, productReviews, settlements, storeAnalytics, inventoryLogs,
+  paymentTransactions, coupons, banners, supportTickets, siteSettings,
   type User, type InsertUser, type AdminUser, type InsertAdminUser, type Store, type InsertStore, 
   type Category, type InsertCategory, type Product, type InsertProduct,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
@@ -158,6 +159,23 @@ export interface IStorage {
   getInventoryLogs(storeId: number, productId?: number): Promise<InventoryLog[]>;
   createInventoryLog(log: InsertInventoryLog): Promise<InventoryLog>;
   updateProductStock(productId: number, quantity: number, type: string, reason?: string): Promise<boolean>;
+
+  // Enhanced admin management methods
+  getAllOrders(): Promise<Order[]>;
+  getAllTransactions(): Promise<any[]>;
+  getAllCoupons(): Promise<any[]>;
+  createCoupon(coupon: any): Promise<any>;
+  updateCoupon(id: number, updates: any): Promise<any>;
+  deleteCoupon(id: number): Promise<boolean>;
+  getAllBanners(): Promise<any[]>;
+  createBanner(banner: any): Promise<any>;
+  updateBanner(id: number, updates: any): Promise<any>;
+  deleteBanner(id: number): Promise<boolean>;
+  getAllSupportTickets(): Promise<any[]>;
+  createSupportTicket(ticket: any): Promise<any>;
+  updateSupportTicket(id: number, updates: any): Promise<any>;
+  getAllSiteSettings(): Promise<any[]>;
+  updateSiteSetting(key: string, value: string): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -892,6 +910,151 @@ export class DatabaseStorage implements IStorage {
     });
 
     return true;
+  }
+
+  // Enhanced admin management methods
+  async getAllOrders(): Promise<Order[]> {
+    return await db.select().from(orders).orderBy(desc(orders.createdAt));
+  }
+
+  async getAllTransactions(): Promise<any[]> {
+    try {
+      return await db.select().from(paymentTransactions).orderBy(desc(paymentTransactions.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async getAllCoupons(): Promise<any[]> {
+    try {
+      return await db.select().from(coupons).orderBy(desc(coupons.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createCoupon(coupon: any): Promise<any> {
+    try {
+      const [newCoupon] = await db.insert(coupons).values(coupon).returning();
+      return newCoupon;
+    } catch {
+      throw new Error("Failed to create coupon");
+    }
+  }
+
+  async updateCoupon(id: number, updates: any): Promise<any> {
+    try {
+      const [updatedCoupon] = await db
+        .update(coupons)
+        .set(updates)
+        .where(eq(coupons.id, id))
+        .returning();
+      return updatedCoupon;
+    } catch {
+      return null;
+    }
+  }
+
+  async deleteCoupon(id: number): Promise<boolean> {
+    try {
+      await db.delete(coupons).where(eq(coupons.id, id));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getAllBanners(): Promise<any[]> {
+    try {
+      return await db.select().from(banners).orderBy(desc(banners.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createBanner(banner: any): Promise<any> {
+    try {
+      const [newBanner] = await db.insert(banners).values(banner).returning();
+      return newBanner;
+    } catch {
+      throw new Error("Failed to create banner");
+    }
+  }
+
+  async updateBanner(id: number, updates: any): Promise<any> {
+    try {
+      const [updatedBanner] = await db
+        .update(banners)
+        .set(updates)
+        .where(eq(banners.id, id))
+        .returning();
+      return updatedBanner;
+    } catch {
+      return null;
+    }
+  }
+
+  async deleteBanner(id: number): Promise<boolean> {
+    try {
+      await db.delete(banners).where(eq(banners.id, id));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getAllSupportTickets(): Promise<any[]> {
+    try {
+      return await db.select().from(supportTickets).orderBy(desc(supportTickets.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createSupportTicket(ticket: any): Promise<any> {
+    try {
+      const [newTicket] = await db.insert(supportTickets).values(ticket).returning();
+      return newTicket;
+    } catch {
+      throw new Error("Failed to create support ticket");
+    }
+  }
+
+  async updateSupportTicket(id: number, updates: any): Promise<any> {
+    try {
+      const [updatedTicket] = await db
+        .update(supportTickets)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(supportTickets.id, id))
+        .returning();
+      return updatedTicket;
+    } catch {
+      return null;
+    }
+  }
+
+  async getAllSiteSettings(): Promise<any[]> {
+    try {
+      return await db.select().from(siteSettings).orderBy(siteSettings.settingKey);
+    } catch {
+      return [];
+    }
+  }
+
+  async updateSiteSetting(key: string, value: string): Promise<any> {
+    try {
+      const [setting] = await db
+        .insert(siteSettings)
+        .values({ settingKey: key, settingValue: value, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: siteSettings.settingKey,
+          set: { settingValue: value, updatedAt: new Date() }
+        })
+        .returning();
+      return setting;
+    } catch {
+      throw new Error("Failed to update setting");
+    }
   }
 }
 
