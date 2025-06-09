@@ -256,31 +256,51 @@ export default function Navbar() {
 
           {/* Mobile Action Icons */}
           <div className="md:hidden flex items-center space-x-3">
-            {/* Cart */}
-            <Link href="/cart" className="relative hover:text-accent transition-colors p-1">
-              <ShoppingCart className="h-5 w-5" />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                  {cartItemCount}
-                </span>
-              )}
-            </Link>
+            {/* Cart & Wishlist - Only for customers */}
+            {user?.role !== "shopkeeper" && (
+              <>
+                {/* Cart */}
+                <Link href="/cart" className="relative hover:text-accent transition-colors p-1">
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                      {cartItemCount}
+                    </span>
+                  )}
+                </Link>
 
-            {/* Wishlist */}
-            <Link href="/wishlist" className="hover:text-accent transition-colors p-1">
-              <Heart className="h-5 w-5" />
-            </Link>
+                {/* Wishlist */}
+                <Link href="/wishlist" className="hover:text-accent transition-colors p-1">
+                  <Heart className="h-5 w-5" />
+                </Link>
+              </>
+            )}
 
             {user ? (
               <>
-                {/* Seller Dashboard */}
+                {/* Seller-specific mobile navigation */}
                 {user.role === "shopkeeper" && (
-                  <Link href="/shopkeeper-dashboard" className="hover:text-accent transition-colors p-1">
-                    <Store className="h-5 w-5" />
+                  <>
+                    <Link href="/seller/dashboard" className="hover:text-accent transition-colors p-1">
+                      <Home className="h-5 w-5" />
+                    </Link>
+                    <Link href="/seller/inventory" className="hover:text-accent transition-colors p-1">
+                      <Package className="h-5 w-5" />
+                    </Link>
+                    <Link href="/seller/orders" className="hover:text-accent transition-colors p-1">
+                      <ShoppingCart className="h-5 w-5" />
+                    </Link>
+                  </>
+                )}
+
+                {/* Customer mobile navigation */}
+                {user.role !== "shopkeeper" && (
+                  <Link href="/customer-dashboard" className="hover:text-accent transition-colors p-1">
+                    <User className="h-5 w-5" />
                   </Link>
                 )}
 
-                {/* Admin Panel */}
+                {/* Admin Panel - for all users who might have admin access */}
                 <Link href="/admin" className="hover:text-accent transition-colors p-1">
                   <Shield className="h-5 w-5" />
                 </Link>
