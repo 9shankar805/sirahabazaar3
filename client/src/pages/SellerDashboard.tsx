@@ -5,18 +5,49 @@ import { useAuth } from "@/hooks/useAuth";
 import { 
   Store, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown,
   Users, Star, Eye, BarChart3, PieChart, Activity, Settings,
-  Plus, Edit, Trash2, Search, Filter, Download, Calendar
+  Plus, Edit, Trash2, Search, Filter, Download, Calendar, UtensilsCrossed
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import ImageUpload from "@/components/ImageUpload";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+
+const productSchema = z.object({
+  name: z.string().min(1, "Product name is required"),
+  description: z.string().optional(),
+  price: z.string().min(1, "Price is required"),
+  originalPrice: z.string().optional(),
+  categoryId: z.number().min(1, "Category is required"),
+  stock: z.number().min(0, "Stock must be 0 or greater"),
+  imageUrl: z.string().optional(),
+  images: z.array(z.string()).min(1, "At least 1 image is required").max(6, "Maximum 6 images allowed"),
+  isFastSell: z.boolean().default(false),
+  isOnOffer: z.boolean().default(false),
+  offerPercentage: z.number().min(0).max(100).default(0),
+  offerEndDate: z.string().optional(),
+  // Food-specific fields
+  preparationTime: z.string().optional(),
+  ingredients: z.array(z.string()).default([]),
+  allergens: z.array(z.string()).default([]),
+  spiceLevel: z.string().optional(),
+  isVegetarian: z.boolean().default(false),
+  isVegan: z.boolean().default(false),
+  nutritionInfo: z.string().optional(),
+});
+
+type ProductForm = z.infer<typeof productSchema>;
 
 interface DashboardStats {
   totalProducts: number;
@@ -62,8 +93,36 @@ export default function SellerDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('30');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userStore, setUserStore] = useState<Store | null>(null);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("overview");
 
 const { user } = useAuth();
+
+  // Form for adding/editing products
+  const productForm = useForm<ProductForm>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      price: "",
+      originalPrice: "",
+      categoryId: 1,
+      stock: 0,
+      imageUrl: "",
+      images: [],
+      isFastSell: false,
+      isOnOffer: false,
+      offerPercentage: 0,
+      offerEndDate: "",
+      preparationTime: "",
+      ingredients: [],
+      allergens: [],
+      spiceLevel: "",
+      isVegetarian: false,
+      isVegan: false,
+      nutritionInfo: "",
+    },
+  });
 
   useEffect(() => {
     if (user) {
@@ -103,6 +162,124 @@ const { user } = useAuth();
     queryFn: () => fetch(`/api/orders/store?userId=${currentUser?.id}`).then(res => res.json()),
     enabled: !!currentUser?.id,
   });
+
+  // Categories query
+  const { data: categories = [] } = useQuery({
+    queryKey: ["/api/categories"],
+  });
+
+  // Store query to get current store info
+  const { data: stores = [] } = useQuery({
+    queryKey: [`/api/stores/owner`, currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return [];
+      const response = await fetch(`/api/stores/owner/${currentUser.id}`);
+      if (!response.ok) throw new Error('Failed to fetch stores');
+      return response.json();
+    },
+    enabled: !!currentUser,
+  });
+
+  const currentStore = stores[0]; // Assuming one store per shopkeeper
+
+  // Product management functions
+  const handleAddProduct = async (data: ProductForm) => {
+    if (!currentStore) return;
+
+    try {
+      const productData = {
+        ...data,
+        storeId: currentStore.id,
+        price: data.price,
+        originalPrice: data.originalPrice || undefined,
+        images: data.images || [],
+        imageUrl: data.images?.[0] || undefined,
+        isFastSell: data.isFastSell || false,
+        isOnOffer: data.isOnOffer || false,
+        offerPercentage: data.offerPercentage || 0,
+        offerEndDate: data.offerEndDate || undefined,
+        productType: currentStore.storeType === 'restaurant' ? 'food' : 'retail',
+        // Food-specific fields for restaurants
+        preparationTime: currentStore.storeType === 'restaurant' ? data.preparationTime || null : null,
+        ingredients: currentStore.storeType === 'restaurant' ? data.ingredients || [] : [],
+        allergens: currentStore.storeType === 'restaurant' ? data.allergens || [] : [],
+        spiceLevel: currentStore.storeType === 'restaurant' ? data.spiceLevel || null : null,
+        isVegetarian: currentStore.storeType === 'restaurant' ? data.isVegetarian || false : false,
+        isVegan: currentStore.storeType === 'restaurant' ? data.isVegan || false : false,
+        nutritionInfo: currentStore.storeType === 'restaurant' ? data.nutritionInfo || null : null,
+      };
+
+      if (editingProduct) {
+        const response = await fetch(`/api/products/${editingProduct.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(productData)
+        });
+        if (!response.ok) throw new Error('Failed to update product');
+        toast({ title: "Product updated successfully" });
+      } else {
+        const response = await fetch("/api/products", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(productData)
+        });
+        if (!response.ok) throw new Error('Failed to create product');
+        toast({ title: "Product added successfully" });
+      }
+
+      productForm.reset();
+      setEditingProduct(null);
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/products/store/${currentStore.id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save product",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditProduct = (product: any) => {
+    setEditingProduct(product);
+    productForm.reset({
+      name: product.name,
+      description: product.description || "",
+      price: product.price,
+      originalPrice: product.originalPrice || "",
+      categoryId: product.categoryId || 0,
+      stock: product.stock || 0,
+      imageUrl: product.images?.[0] || "",
+      images: product.images || [],
+      isFastSell: product.isFastSell || false,
+      isOnOffer: product.isOnOffer || false,
+      offerPercentage: product.offerPercentage || 0,
+      offerEndDate: product.offerEndDate || "",
+    });
+    setActiveTab("add-product");
+  };
+
+  const handleDeleteProduct = async (productId: number) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+
+    try {
+      const response = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete product');
+      toast({ title: "Product deleted successfully" });
+      // Invalidate queries to refresh data
+      if (currentStore) {
+        queryClient.invalidateQueries({ queryKey: [`/api/products/store/${currentStore.id}`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (!currentUser || currentUser.role !== 'shopkeeper') {
     return (
