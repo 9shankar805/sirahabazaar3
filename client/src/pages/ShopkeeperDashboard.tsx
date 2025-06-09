@@ -69,10 +69,10 @@ export default function ShopkeeperDashboard() {
 
   // Queries
   const { data: stores = [] } = useQuery<Store[]>({
-    queryKey: [`/api/stores/owner`, { ownerId: user?.id }],
+    queryKey: [`/api/stores/owner`, user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const response = await fetch(`/api/stores/owner?ownerId=${user.id}`);
+      const response = await fetch(`/api/stores/owner/${user.id}`);
       if (!response.ok) throw new Error('Failed to fetch stores');
       return response.json();
     },
