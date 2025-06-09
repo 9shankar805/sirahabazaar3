@@ -297,6 +297,12 @@ export const insertStoreSchema = createInsertSchema(stores).omit({
   deliveryFee: z.union([z.string(), z.number()]).optional().transform((val) => 
     val !== undefined && val !== null && val !== "" ? String(val) : undefined
   ),
+  latitude: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val !== undefined && val !== null && val !== "" ? String(val) : undefined
+  ),
+  longitude: z.union([z.string(), z.number()]).optional().transform((val) => 
+    val !== undefined && val !== null && val !== "" ? String(val) : undefined
+  ),
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({

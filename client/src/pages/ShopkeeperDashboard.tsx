@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiPost, apiPut, apiDelete } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import ImageUpload from "@/components/ImageUpload";
+import { LocationPicker } from "@/components/LocationPicker";
 import type { Product, Order, OrderItem, Store, Category } from "@shared/schema";
 
 const productSchema = z.object({
@@ -62,6 +63,8 @@ const storeSchema = z.object({
   name: z.string().min(1, "Store name is required"),
   description: z.string().optional(),
   address: z.string().min(1, "Address is required"),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
   website: z.string().url().optional().or(z.literal("")),
   logo: z.string().optional(),
@@ -197,6 +200,8 @@ export default function ShopkeeperDashboard() {
       name: "",
       description: "",
       address: "",
+      latitude: "",
+      longitude: "",
       phone: "",
       website: "",
       logo: "",
@@ -314,6 +319,8 @@ export default function ShopkeeperDashboard() {
         website: data.website || null,
         logo: data.logo || null,
         coverImage: data.coverImage || null,
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
         storeType: data.storeType,
         cuisineType: data.storeType === 'restaurant' ? data.cuisineType || null : null,
         deliveryTime: data.storeType === 'restaurant' ? data.deliveryTime || null : null,
@@ -702,18 +709,15 @@ export default function ShopkeeperDashboard() {
                       )}
                     />
 
-                    <FormField
-                      control={storeForm.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Store Address</FormLabel>
-                          <FormControl>
-                            <Textarea placeholder="Complete store address" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    <LocationPicker
+                      address={storeForm.watch("address")}
+                      latitude={storeForm.watch("latitude")}
+                      longitude={storeForm.watch("longitude")}
+                      onLocationChange={(data) => {
+                        storeForm.setValue("address", data.address);
+                        storeForm.setValue("latitude", data.latitude);
+                        storeForm.setValue("longitude", data.longitude);
+                      }}
                     />
 
                     <FormField
