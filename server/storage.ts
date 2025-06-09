@@ -162,20 +162,41 @@ export interface IStorage {
 
   // Enhanced admin management methods
   getAllOrders(): Promise<Order[]>;
-  getAllTransactions(): Promise<any[]>;
-  getAllCoupons(): Promise<any[]>;
-  createCoupon(coupon: any): Promise<any>;
-  updateCoupon(id: number, updates: any): Promise<any>;
+  getAllTransactions(): Promise<PaymentTransaction[]>;
+  getAllCoupons(): Promise<Coupon[]>;
+  createCoupon(coupon: InsertCoupon): Promise<Coupon>;
+  updateCoupon(id: number, updates: Partial<InsertCoupon>): Promise<Coupon | undefined>;
   deleteCoupon(id: number): Promise<boolean>;
-  getAllBanners(): Promise<any[]>;
-  createBanner(banner: any): Promise<any>;
-  updateBanner(id: number, updates: any): Promise<any>;
+  getAllBanners(): Promise<Banner[]>;
+  createBanner(banner: InsertBanner): Promise<Banner>;
+  updateBanner(id: number, updates: Partial<InsertBanner>): Promise<Banner | undefined>;
   deleteBanner(id: number): Promise<boolean>;
-  getAllSupportTickets(): Promise<any[]>;
-  createSupportTicket(ticket: any): Promise<any>;
-  updateSupportTicket(id: number, updates: any): Promise<any>;
-  getAllSiteSettings(): Promise<any[]>;
-  updateSiteSetting(key: string, value: string): Promise<any>;
+  getAllSupportTickets(): Promise<SupportTicket[]>;
+  createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket>;
+  updateSupportTicket(id: number, updates: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined>;
+  getAllSiteSettings(): Promise<SiteSetting[]>;
+  updateSiteSetting(key: string, value: string): Promise<SiteSetting | undefined>;
+  
+  // Enhanced admin features
+  getDashboardStats(): Promise<any>;
+  getAllVendorVerifications(): Promise<VendorVerification[]>;
+  updateVendorVerification(id: number, updates: Partial<InsertVendorVerification>): Promise<VendorVerification | undefined>;
+  getAllFraudAlerts(): Promise<FraudAlert[]>;
+  createFraudAlert(alert: InsertFraudAlert): Promise<FraudAlert>;
+  updateFraudAlert(id: number, updates: Partial<InsertFraudAlert>): Promise<FraudAlert | undefined>;
+  getAllCommissions(): Promise<Commission[]>;
+  createCommission(commission: InsertCommission): Promise<Commission>;
+  updateCommission(id: number, updates: Partial<InsertCommission>): Promise<Commission | undefined>;
+  getProductAttributes(productId: number): Promise<ProductAttribute[]>;
+  createProductAttribute(attribute: InsertProductAttribute): Promise<ProductAttribute>;
+  deleteProductAttribute(id: number): Promise<boolean>;
+  logAdminAction(log: InsertAdminLog): Promise<AdminLog>;
+  getAdminLogs(adminId?: number): Promise<AdminLog[]>;
+  bulkUpdateProductStatus(productIds: number[], status: boolean): Promise<boolean>;
+  getOrdersWithDetails(): Promise<any[]>;
+  getRevenueAnalytics(days?: number): Promise<any>;
+  getUsersAnalytics(): Promise<any>;
+  getInventoryAlerts(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {

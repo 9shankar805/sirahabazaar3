@@ -309,6 +309,68 @@ export const coupons = pgTable("coupons", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Product attributes for advanced product management
+export const productAttributes = pgTable("product_attributes", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => products.id).notNull(),
+  attributeName: text("attribute_name").notNull(), // size, color, brand, material, etc.
+  attributeValue: text("attribute_value").notNull(),
+});
+
+// Fraud detection and security
+export const fraudAlerts = pgTable("fraud_alerts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  orderId: integer("order_id").references(() => orders.id),
+  alertType: text("alert_type").notNull(), // suspicious_activity, multiple_accounts, payment_fraud
+  riskScore: integer("risk_score").notNull(), // 1-100
+  description: text("description").notNull(),
+  status: text("status").notNull().default("open"), // open, investigating, resolved, false_positive
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Role-based access control
+export const adminRoles = pgTable("admin_roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  permissions: text("permissions").array().default([]), // array of permission strings
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const adminRoleAssignments = pgTable("admin_role_assignments", {
+  id: serial("id").primaryKey(),
+  adminId: integer("admin_id").references(() => adminUsers.id).notNull(),
+  roleId: integer("role_id").references(() => adminRoles.id).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+});
+
+// Vendor/Seller KYC and verification
+export const vendorVerifications = pgTable("vendor_verifications", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
+  documentType: text("document_type").notNull(), // business_license, tax_certificate, id_proof
+  documentUrl: text("document_url").notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
+  reviewedBy: integer("reviewed_by").references(() => adminUsers.id),
+  reviewedAt: timestamp("reviewed_at"),
+  rejectionReason: text("rejection_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Commission tracking for multi-vendor
+export const commissions = pgTable("commissions", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
+  orderId: integer("order_id").references(() => orders.id).notNull(),
+  grossAmount: decimal("gross_amount", { precision: 10, scale: 2 }).notNull(),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).notNull(),
+  commissionAmount: decimal("commission_amount", { precision: 10, scale: 2 }).notNull(),
+  status: text("status").notNull().default("pending"), // pending, paid, disputed
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const flashSales = pgTable("flash_sales", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -440,49 +502,37 @@ export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({
   updatedAt: true,
 });
 
-// Type exports for all tables
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type AdminUser = typeof adminUsers.$inferSelect;
-export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
-export type Store = typeof stores.$inferSelect;
-export type InsertStore = z.infer<typeof insertStoreSchema>;
-export type Category = typeof categories.$inferSelect;
-export type InsertCategory = z.infer<typeof insertCategorySchema>;
-export type Product = typeof products.$inferSelect;
-export type InsertProduct = z.infer<typeof insertProductSchema>;
-export type Order = typeof orders.$inferSelect;
-export type InsertOrder = z.infer<typeof insertOrderSchema>;
-export type OrderItem = typeof orderItems.$inferSelect;
-export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
-export type CartItem = typeof cartItems.$inferSelect;
-export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
-export type WishlistItem = typeof wishlistItems.$inferSelect;
-export type InsertWishlistItem = z.infer<typeof insertWishlistItemSchema>;
-export type Admin = typeof admins.$inferSelect;
-export type InsertAdmin = z.infer<typeof insertAdminSchema>;
-export type WebsiteVisit = typeof websiteVisits.$inferSelect;
-export type InsertWebsiteVisit = z.infer<typeof insertWebsiteVisitSchema>;
-export type Notification = typeof notifications.$inferSelect;
-export type InsertNotification = z.infer<typeof insertNotificationSchema>;
-export type OrderTracking = typeof orderTracking.$inferSelect;
-export type InsertOrderTracking = z.infer<typeof insertOrderTrackingSchema>;
-export type ReturnPolicy = typeof returnPolicies.$inferSelect;
-export type InsertReturnPolicy = z.infer<typeof insertReturnPolicySchema>;
-export type Return = typeof returns.$inferSelect;
-export type InsertReturn = z.infer<typeof insertReturnSchema>;
-export type StoreAnalytics = typeof storeAnalytics.$inferSelect;
-export type InsertStoreAnalytics = z.infer<typeof insertStoreAnalyticsSchema>;
-export type Promotion = typeof promotions.$inferSelect;
-export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
-export type Advertisement = typeof advertisements.$inferSelect;
-export type InsertAdvertisement = z.infer<typeof insertAdvertisementSchema>;
-export type ProductReview = typeof productReviews.$inferSelect;
-export type InsertProductReview = z.infer<typeof insertProductReviewSchema>;
-export type Settlement = typeof settlements.$inferSelect;
-export type InsertSettlement = z.infer<typeof insertSettlementSchema>;
-export type InventoryLog = typeof inventoryLogs.$inferSelect;
-export type InsertInventoryLog = z.infer<typeof insertInventoryLogSchema>;
+
+
+// Add insert schemas for new tables
+export const insertProductAttributeSchema = createInsertSchema(productAttributes).omit({
+  id: true,
+});
+
+export const insertFraudAlertSchema = createInsertSchema(fraudAlerts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAdminRoleSchema = createInsertSchema(adminRoles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAdminRoleAssignmentSchema = createInsertSchema(adminRoleAssignments).omit({
+  id: true,
+  assignedAt: true,
+});
+
+export const insertVendorVerificationSchema = createInsertSchema(vendorVerifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCommissionSchema = createInsertSchema(commissions).omit({
+  id: true,
+  createdAt: true,
+});
 
 // Enhanced admin feature types
 export type Coupon = typeof coupons.$inferSelect;
@@ -501,6 +551,18 @@ export type Banner = typeof banners.$inferSelect;
 export type InsertBanner = z.infer<typeof insertBannerSchema>;
 export type SiteSetting = typeof siteSettings.$inferSelect;
 export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
+export type ProductAttribute = typeof productAttributes.$inferSelect;
+export type InsertProductAttribute = z.infer<typeof insertProductAttributeSchema>;
+export type FraudAlert = typeof fraudAlerts.$inferSelect;
+export type InsertFraudAlert = z.infer<typeof insertFraudAlertSchema>;
+export type AdminRole = typeof adminRoles.$inferSelect;
+export type InsertAdminRole = z.infer<typeof insertAdminRoleSchema>;
+export type AdminRoleAssignment = typeof adminRoleAssignments.$inferSelect;
+export type InsertAdminRoleAssignment = z.infer<typeof insertAdminRoleAssignmentSchema>;
+export type VendorVerification = typeof vendorVerifications.$inferSelect;
+export type InsertVendorVerification = z.infer<typeof insertVendorVerificationSchema>;
+export type Commission = typeof commissions.$inferSelect;
+export type InsertCommission = z.infer<typeof insertCommissionSchema>;
 
 export const insertStoreSchema = createInsertSchema(stores).omit({
   id: true,
