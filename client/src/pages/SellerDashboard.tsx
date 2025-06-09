@@ -147,6 +147,20 @@ export default function SellerDashboard() {
     }
   }, [user]);
 
+  // Store query to get current store info
+  const { data: stores = [] } = useQuery({
+    queryKey: [`/api/stores/owner`, currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return [];
+      const response = await fetch(`/api/stores/owner/${currentUser.id}`);
+      if (!response.ok) throw new Error('Failed to fetch stores');
+      return response.json();
+    },
+    enabled: !!currentUser,
+  });
+
+  const currentStore = stores[0]; // Assuming one store per shopkeeper
+
   useEffect(() => {
     if (currentStore) {
       setUserStore(currentStore);
@@ -190,20 +204,6 @@ export default function SellerDashboard() {
   const { data: categories = [] } = useQuery({
     queryKey: ["/api/categories"],
   });
-
-  // Store query to get current store info
-  const { data: stores = [] } = useQuery({
-    queryKey: [`/api/stores/owner`, currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      const response = await fetch(`/api/stores/owner/${currentUser.id}`);
-      if (!response.ok) throw new Error('Failed to fetch stores');
-      return response.json();
-    },
-    enabled: !!currentUser,
-  });
-
-  const currentStore = stores[0]; // Assuming one store per shopkeeper
 
   // Product management functions
   const handleAddProduct = async (data: ProductForm) => {
@@ -511,11 +511,11 @@ export default function SellerDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Button onClick={() => setActiveTab("add-product")} className="w-full">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Product
+                    {isRestaurant ? "Add Menu Item" : "Add Product"}
                   </Button>
                   <Button onClick={() => setActiveTab("products")} variant="outline" className="w-full">
-                    <Package className="h-4 w-4 mr-2" />
-                    View Products
+                    {isRestaurant ? <UtensilsCrossed className="h-4 w-4 mr-2" /> : <Package className="h-4 w-4 mr-2" />}
+                    {isRestaurant ? "View Menu" : "View Products"}
                   </Button>
                   <Button onClick={() => setActiveTab("analytics")} variant="outline" className="w-full">
                     <BarChart3 className="h-4 w-4 mr-2" />
@@ -530,7 +530,7 @@ export default function SellerDashboard() {
           <TabsContent value="products" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Your Products</CardTitle>
+                <CardTitle>{isRestaurant ? "Your Menu Items" : "Your Products"}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -574,11 +574,17 @@ export default function SellerDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  {editingProduct ? "Edit Product" : "Add New Product"}
+                  {isRestaurant ? <UtensilsCrossed className="h-5 w-5" /> : <Package className="h-5 w-5" />}
+                  {editingProduct 
+                    ? (isRestaurant ? "Edit Menu Item" : "Edit Product")
+                    : (isRestaurant ? "Add New Menu Item" : "Add New Product")
+                  }
                 </CardTitle>
                 <p className="text-muted-foreground">
-                  {editingProduct ? "Update product information" : "Add products to your store inventory"}
+                  {editingProduct 
+                    ? (isRestaurant ? "Update menu item information" : "Update product information")
+                    : (isRestaurant ? "Add items to your restaurant menu" : "Add products to your store inventory")
+                  }
                 </p>
               </CardHeader>
               <CardContent>
@@ -590,9 +596,9 @@ export default function SellerDashboard() {
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Product Name *</FormLabel>
+                            <FormLabel>{isRestaurant ? "Menu Item Name *" : "Product Name *"}</FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter product name" {...field} />
+                              <Input placeholder={isRestaurant ? "Enter menu item name" : "Enter product name"} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
