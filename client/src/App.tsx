@@ -6,11 +6,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./hooks/useAuth";
 import { CartProvider } from "./hooks/useCart";
 import { WishlistProvider } from "./hooks/useWishlist";
+import { AppModeProvider, useAppMode } from "./hooks/useAppMode";
 import NotFound from "@/pages/not-found";
 import Navbar from "@/components/Navbar";
 import BottomNavbar from "@/components/BottomNavbar";
 import Footer from "@/components/Footer";
+import ModeSwiper from "@/components/ModeSwiper";
 import Homepage from "@/pages/Homepage";
+import FoodHomepage from "@/pages/FoodHomepage";
 import Products from "@/pages/Products";
 import ProductDetail from "@/pages/ProductDetail";
 import Cart from "@/pages/Cart";
@@ -33,35 +36,49 @@ import SellerPromotions from "@/pages/SellerPromotions";
 import SellerOrders from "@/pages/SellerOrders";
 import SellerStore from "@/pages/SellerStore";
 
-function Router() {
+function AppRouter() {
+  const { mode, setMode } = useAppMode();
+  
   return (
-    <Switch>
-      <Route path="/" component={Homepage} />
-      <Route path="/categories" component={Categories} />
-      <Route path="/products" component={Products} />
-      <Route path="/products/:id" component={ProductDetail} />
-      <Route path="/cart" component={Cart} />
-      <Route path="/checkout" component={Checkout} />
-      <Route path="/order-confirmation" component={OrderConfirmation} />
-      <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
-      <Route path="/stores" component={Stores} />
-      <Route path="/stores/:id" component={StoreDetail} />
-      <Route path="/account" component={Account} />
-      <Route path="/shopkeeper-dashboard" component={ShopkeeperDashboard} />
-      <Route path="/customer-dashboard" component={CustomerDashboard} />
-      <Route path="/admin" component={AdminPanel} />
-      <Route path="/store-maps" component={StoreMaps} />
-      <Route path="/wishlist" component={Wishlist} />
+    <div className="relative">
+      <ModeSwiper 
+        currentMode={mode}
+        onModeChange={setMode}
+      />
       
-      {/* Seller Hub Routes */}
-      <Route path="/seller/dashboard" component={SellerDashboard} />
-      <Route path="/seller/store" component={SellerStore} />
-      <Route path="/seller/inventory" component={SellerInventory} />
-      <Route path="/seller/promotions" component={SellerPromotions} />
-      <Route path="/seller/orders" component={SellerOrders} />
-      <Route component={NotFound} />
-    </Switch>
+      <Switch>
+        <Route path="/" component={mode === 'shopping' ? Homepage : FoodHomepage} />
+        <Route path="/categories" component={Categories} />
+        <Route path="/food-categories" component={Categories} />
+        <Route path="/products" component={Products} />
+        <Route path="/products/:id" component={ProductDetail} />
+        <Route path="/food/:id" component={ProductDetail} />
+        <Route path="/cart" component={Cart} />
+        <Route path="/checkout" component={Checkout} />
+        <Route path="/order-confirmation" component={OrderConfirmation} />
+        <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
+        <Route path="/stores" component={Stores} />
+        <Route path="/restaurants" component={Stores} />
+        <Route path="/stores/:id" component={StoreDetail} />
+        <Route path="/restaurants/:id" component={StoreDetail} />
+        <Route path="/account" component={Account} />
+        <Route path="/shopkeeper-dashboard" component={ShopkeeperDashboard} />
+        <Route path="/customer-dashboard" component={CustomerDashboard} />
+        <Route path="/admin" component={AdminPanel} />
+        <Route path="/store-maps" component={StoreMaps} />
+        <Route path="/restaurant-maps" component={StoreMaps} />
+        <Route path="/wishlist" component={Wishlist} />
+        
+        {/* Seller Hub Routes */}
+        <Route path="/seller/dashboard" component={SellerDashboard} />
+        <Route path="/seller/store" component={SellerStore} />
+        <Route path="/seller/inventory" component={SellerInventory} />
+        <Route path="/seller/promotions" component={SellerPromotions} />
+        <Route path="/seller/orders" component={SellerOrders} />
+        <Route component={NotFound} />
+      </Switch>
+    </div>
   );
 }
 
@@ -71,17 +88,19 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <WishlistProvider>
-            <TooltipProvider>
-              <div className="min-h-screen flex flex-col">
-                <Navbar />
-                <main className="flex-1 pb-16 md:pb-0">
-                  <Router />
-                </main>
-                <Footer />
-                <BottomNavbar />
-              </div>
-              <Toaster />
-            </TooltipProvider>
+            <AppModeProvider>
+              <TooltipProvider>
+                <div className="min-h-screen flex flex-col">
+                  <Navbar />
+                  <main className="flex-1 pb-16 md:pb-0">
+                    <AppRouter />
+                  </main>
+                  <Footer />
+                  <BottomNavbar />
+                </div>
+                <Toaster />
+              </TooltipProvider>
+            </AppModeProvider>
           </WishlistProvider>
         </CartProvider>
       </AuthProvider>
