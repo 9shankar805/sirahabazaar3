@@ -221,6 +221,37 @@ export default function SellerStore() {
     );
   }
 
+  // Check if shopkeeper is approved by admin
+  if (currentUser.role === 'shopkeeper' && (currentUser as any).status !== 'active') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Card className="w-full max-w-lg">
+          <CardHeader>
+            <CardTitle className="text-center text-yellow-600">
+              Pending Admin Approval
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <div className="mx-auto w-16 h-16 rounded-full bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
+              <Clock className="h-8 w-8 text-yellow-600" />
+            </div>
+            <p className="text-muted-foreground">
+              Your seller account is pending approval from our admin team. You cannot access store management until approved.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/">
+                <Button variant="outline">Go to Homepage</Button>
+              </Link>
+              <Link href="/account">
+                <Button variant="default">View Account Status</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}

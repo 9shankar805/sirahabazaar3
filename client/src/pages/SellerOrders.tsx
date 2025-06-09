@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { 
   ShoppingCart, Package, Truck, CheckCircle, XCircle, 
-  Eye, Edit, Search, Filter, Calendar, MapPin, Phone, Mail
+  Eye, Edit, Search, Filter, Calendar, MapPin, Phone, Mail, Clock
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Order {
@@ -42,13 +43,54 @@ interface OrderItem {
 export default function SellerOrders() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false);
 
-  // Mock store ID - in real app this would come from auth context
-  const storeId = 1;
+  // Check authentication and admin approval
+  if (!user || user.role !== 'shopkeeper') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center text-red-600">Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-muted-foreground">
+              You need to be a shopkeeper to access order management.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (user.role === 'shopkeeper' && (user as any).status !== 'active') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Card className="w-full max-w-lg">
+          <CardHeader>
+            <CardTitle className="text-center text-yellow-600">Pending Admin Approval</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <div className="mx-auto w-16 h-16 rounded-full bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
+              <Clock className="h-8 w-8 text-yellow-600" />
+            </div>
+            <p className="text-muted-foreground">
+              Your seller account is pending approval from our admin team. You cannot access order management until approved.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/">
+                <Button variant="outline">Go to Homepage</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Orders query
   const { data: orders, isLoading: ordersLoading } = useQuery<Order[]>({

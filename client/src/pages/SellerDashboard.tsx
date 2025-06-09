@@ -318,9 +318,9 @@ export default function SellerDashboard() {
   }
 
   // Check if shopkeeper is approved by admin
-  if (currentUser.role === 'shopkeeper' && currentUser.status !== 'active') {
+  if (currentUser.role === 'shopkeeper' && (currentUser as any).status !== 'active') {
     const getStatusMessage = () => {
-      switch (currentUser.status) {
+      switch ((currentUser as any).status) {
         case 'pending':
           return {
             title: 'Pending Admin Approval',
