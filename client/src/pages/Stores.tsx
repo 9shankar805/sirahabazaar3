@@ -127,7 +127,7 @@ export default function Stores() {
     }
   };
 
-  if (isLoading) {
+  if (storesLoading) {
     return (
       <div className="min-h-screen bg-muted flex items-center justify-center">
         <div className="text-center">

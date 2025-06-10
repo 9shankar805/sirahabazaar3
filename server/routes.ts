@@ -283,7 +283,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { search, category, storeId } = req.query;
       
-      console.log(`[Products API] Request received with params:`, { search, category, storeId });
+      console.log(`[Products API] Request received with params:`, { 
+        search: search || 'undefined', 
+        category: category || 'undefined', 
+        storeId: storeId || 'undefined' 
+      });
       
       let products;
       if (search) {
@@ -306,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error(`[Products API] Error fetching products:`, {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
-        params: { search, category, storeId },
+        params: req.query,
         timestamp: new Date().toISOString()
       });
       res.status(500).json({ 
