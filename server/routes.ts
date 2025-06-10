@@ -310,39 +310,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get products by store for current user (shopkeeper)
+  // Get products by owner for inventory page
   app.get("/api/products/store", async (req, res) => {
     try {
       const { userId, ownerId } = req.query;
       const id = userId || ownerId;
       
       if (!id) {
-        return res.status(400).json({ error: "User ID or Owner ID is required" });
+        return res.status(400).json({ error: "User ID required" });
       }
       
-      const parsedId = parseInt(id as string);
-      if (isNaN(parsedId)) {
-        return res.status(400).json({ error: "Invalid user ID" });
-      }
+      const ownerId_num = parseInt(id as string);
       
-      // Direct SQL query to get products owned by the user
-      const query = `
-        SELECT p.id, p.name, p.description, p.price, p.original_price, p.category_id, 
-               p.store_id, p.stock, p.images, p.rating, p.total_reviews, p.is_active,
-               p.is_fast_sell, p.is_on_offer, p.offer_percentage, p.offer_end_date,
-               p.product_type, p.preparation_time, p.ingredients, p.allergens,
-               p.spice_level, p.is_vegetarian, p.is_vegan, p.nutrition_info, p.created_at
-        FROM products p 
-        INNER JOIN stores s ON s.id = p.store_id 
-        WHERE s.owner_id = $1 AND p.is_active = true
-        ORDER BY p.created_at DESC
-      `;
+      // Get all products where store owner matches the user
+      const allProducts = await storage.getAllProducts();
+      const userStores = await storage.getStoresByOwnerId(ownerId_num);
+      const storeIds = userStores.map(store => store.id);
       
-      const result = await pool.query(query, [parsedId]);
-      res.json(result.rows);
+      const userProducts = allProducts.filter(product => 
+        storeIds.includes(product.storeId)
+      );
+      
+      res.json(userProducts);
     } catch (error) {
-      console.error("Error fetching store products:", error);
-      res.status(500).json({ error: "Failed to fetch product" });
+      console.error("Error in products/store:", error);
+      res.json([]);
     }
   });
 
