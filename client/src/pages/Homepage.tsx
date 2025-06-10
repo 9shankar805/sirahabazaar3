@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ArrowRight, Star, MapPin } from "lucide-react";
+import { ArrowRight, Star, MapPin, RefreshCw, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import ProductCard from "@/components/ProductCard";
 import StoreCard from "@/components/StoreCard";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,34 +44,112 @@ export default function Homepage() {
   ];
 
   const categories = mode === 'shopping' ? shoppingCategories : foodCategories;
-  const { data: products, isLoading: productsLoading, error: productsError } = useQuery<Product[]>({
+  
+  const { data: products, isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useQuery<Product[]>({
     queryKey: ["/api/products"],
+    retry: 3,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const { data: stores, isLoading: storesLoading, error: storesError } = useQuery<Store[]>({
+  const { data: stores, isLoading: storesLoading, error: storesError, refetch: refetchStores } = useQuery<Store[]>({
     queryKey: ["/api/stores"],
+    retry: 3,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Debug logging
-  if (productsError) console.error("Products error:", productsError);
-  if (storesError) console.error("Stores error:", storesError);
+  // Enhanced error logging with more context
+  if (productsError) {
+    console.error("Products loading failed:", {
+      error: productsError,
+      message: productsError instanceof Error ? productsError.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
+  if (storesError) {
+    console.error("Stores loading failed:", {
+      error: storesError,
+      message: storesError instanceof Error ? storesError.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
   if (products) console.log("Products loaded:", products.length);
   if (stores) console.log("Stores loaded:", stores.length);
 
   const featuredProducts = products?.filter(product => mode === 'shopping' ? product.productType !== 'food' : product.productType === 'food').slice(0, 6) || [];
-  const popularStores = stores?.filter(store => mode === 'shopping' ? store.storeType !== 'restaurant' : store.storeType === 'restaurant').slice(0, 4).map(store => ({
-    ...store,
-    description: store.description ?? undefined,
-    latitude: store.latitude ?? undefined,
-    longitude: store.longitude ?? undefined,
-    phone: store.phone ?? undefined,
-    website: store.website ?? undefined,
-    logo: store.logo ?? undefined,
-    coverImage: store.coverImage ?? undefined,
-    cuisineType: store.cuisineType ?? undefined,
-    deliveryTime: store.deliveryTime ?? undefined,
-    isDeliveryAvailable: store.isDeliveryAvailable ?? undefined,
-  })) || [];
+  const popularStores = stores?.filter(store => mode === 'shopping' ? store.storeType !== 'restaurant' : store.storeType === 'restaurant').slice(0, 4) || [];
+
+  // Error handling component for products
+  const ProductsErrorState = () => (
+    <div className="text-center py-12">
+      <Alert className="max-w-md mx-auto">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Failed to load products. Please try again.
+        </AlertDescription>
+      </Alert>
+      <Button 
+        onClick={() => refetchProducts()} 
+        variant="outline" 
+        className="mt-4"
+        disabled={productsLoading}
+      >
+        <RefreshCw className={`mr-2 h-4 w-4 ${productsLoading ? 'animate-spin' : ''}`} />
+        Retry
+      </Button>
+    </div>
+  );
+
+  // Loading state component for products
+  const ProductsLoadingState = () => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <Card key={index} className="animate-pulse">
+          <CardContent className="p-4">
+            <div className="bg-gray-200 h-32 rounded-md mb-3"></div>
+            <div className="bg-gray-200 h-4 rounded mb-2"></div>
+            <div className="bg-gray-200 h-3 rounded w-3/4"></div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
+  // Error handling component for stores
+  const StoresErrorState = () => (
+    <div className="text-center py-12">
+      <Alert className="max-w-md mx-auto">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Failed to load stores. Please try again.
+        </AlertDescription>
+      </Alert>
+      <Button 
+        onClick={() => refetchStores()} 
+        variant="outline" 
+        className="mt-4"
+        disabled={storesLoading}
+      >
+        <RefreshCw className={`mr-2 h-4 w-4 ${storesLoading ? 'animate-spin' : ''}`} />
+        Retry
+      </Button>
+    </div>
+  );
+
+  // Loading state component for stores
+  const StoresLoadingState = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <Card key={index} className="animate-pulse">
+          <CardContent className="p-6">
+            <div className="bg-gray-200 h-24 rounded-md mb-4"></div>
+            <div className="bg-gray-200 h-5 rounded mb-2"></div>
+            <div className="bg-gray-200 h-4 rounded w-2/3 mb-2"></div>
+            <div className="bg-gray-200 h-3 rounded w-1/2"></div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
 
   return (
     <div className="min-h-screen">
@@ -201,11 +281,22 @@ export default function Homepage() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {productsError ? (
+            <ProductsErrorState />
+          ) : productsLoading ? (
+            <ProductsLoadingState />
+          ) : featuredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">No featured products available at the moment</p>
+              <p className="text-muted-foreground text-sm mt-2">Check back later for new arrivals</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+              {featuredProducts.map((product: any) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
