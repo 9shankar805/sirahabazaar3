@@ -1954,20 +1954,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/delivery-partners/user", async (req, res) => {
+    console.log("=== DELIVERY PARTNER USER ROUTE HIT ===");
+    console.log("Query params:", req.query);
+    console.log("Headers:", req.headers['user-id']);
     try {
       const userId = req.query.userId || req.headers['user-id'];
-      console.log("Fetching delivery partner for userId:", userId);
+      console.log("Extracted userId:", userId, "Type:", typeof userId);
+      
       if (!userId) {
+        console.log("No userId provided");
         return res.status(400).json({ error: "User ID is required" });
       }
-      const partner = await storage.getDeliveryPartnerByUserId(parseInt(userId as string));
-      console.log("Found partner:", partner);
+      
+      const parsedUserId = parseInt(userId as string);
+      console.log("Parsed userId:", parsedUserId);
+      
+      const partner = await storage.getDeliveryPartnerByUserId(parsedUserId);
+      console.log("Partner result:", partner);
+      
       if (!partner) {
+        console.log("No partner found for userId:", parsedUserId);
         return res.status(404).json({ error: "Delivery partner not found" });
       }
+      
+      console.log("Returning partner:", partner);
       res.json(partner);
     } catch (error) {
-      console.error("Error fetching delivery partner:", error);
+      console.error("Error in delivery partner user route:", error);
       res.status(500).json({ error: "Failed to fetch delivery partner" });
     }
   });
