@@ -487,6 +487,20 @@ export async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_product_reviews_rating ON product_reviews(rating)
     `);
 
+    // Create push_subscriptions table for mobile notifications
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        endpoint TEXT NOT NULL,
+        p256dh TEXT NOT NULL,
+        auth TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id, endpoint)
+      )
+    `);
+
     // Create order_items table
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS order_items (
