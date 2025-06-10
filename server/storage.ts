@@ -289,7 +289,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllUsersWithStatus(): Promise<User[]> {
-    return await db.select().from(users).orderBy(desc(users.createdAt));
+    try {
+      const result = await db.select().from(users).orderBy(desc(users.createdAt));
+      return result;
+    } catch (error) {
+      console.error("Database error in getAllUsersWithStatus:", error);
+      throw error;
+    }
   }
 
   // Store operations
@@ -1360,6 +1366,148 @@ export class DatabaseStorage implements IStorage {
           { name: 'Toys & Games', slug: 'toys-games', description: 'Toys and gaming products', icon: 'gamepad2' }
         ]);
         console.log('Default categories created');
+      }
+
+      // Create test users for admin panel verification
+      const existingUsers = await db.select().from(users);
+      if (existingUsers.length === 0) {
+        await db.insert(users).values([
+          {
+            username: 'johndoe',
+            email: 'john.doe@example.com',
+            password: 'hashed_password_123',
+            fullName: 'John Doe',
+            phone: '+1234567890',
+            address: '123 Main St, City, State',
+            role: 'customer',
+            status: 'active'
+          },
+          {
+            username: 'janesmith',
+            email: 'jane.smith@example.com',
+            password: 'hashed_password_456',
+            fullName: 'Jane Smith',
+            phone: '+1234567891',
+            address: '456 Oak Ave, City, State',
+            role: 'shopkeeper',
+            status: 'pending'
+          },
+          {
+            username: 'mikewilson',
+            email: 'mike.wilson@example.com',
+            password: 'hashed_password_789',
+            fullName: 'Mike Wilson',
+            phone: '+1234567892',
+            address: '789 Pine St, City, State',
+            role: 'customer',
+            status: 'active'
+          }
+        ]);
+        console.log('Test users created');
+      }
+
+      // Create test stores
+      const existingStores = await db.select().from(stores);
+      if (existingStores.length === 0) {
+        await db.insert(stores).values([
+          {
+            name: 'Tech World Electronics',
+            description: 'Latest electronic devices and gadgets',
+            ownerId: 2,
+            address: '123 Tech Street, Electronics District',
+            phone: '+1234567893',
+            website: 'https://techworld.example.com',
+            storeType: 'retail',
+            rating: '4.5',
+            totalReviews: 125,
+            featured: true,
+            isActive: true
+          },
+          {
+            name: 'Flavor Town Restaurant',
+            description: 'Delicious local cuisine and fast food',
+            ownerId: 2,
+            address: '456 Food Avenue, Restaurant Row',
+            phone: '+1234567894',
+            website: 'https://flavortown.example.com',
+            storeType: 'restaurant',
+            cuisineType: 'american',
+            deliveryTime: '25-35 mins',
+            minimumOrder: '15.00',
+            deliveryFee: '2.99',
+            isDeliveryAvailable: true,
+            rating: '4.2',
+            totalReviews: 89,
+            isActive: true
+          }
+        ]);
+        console.log('Test stores created');
+      }
+
+      // Create test products
+      const existingProducts = await db.select().from(products);
+      if (existingProducts.length === 0) {
+        await db.insert(products).values([
+          {
+            name: 'iPhone 15 Pro',
+            description: 'Latest iPhone with advanced features',
+            price: '999.99',
+            originalPrice: '1099.99',
+            categoryId: 1,
+            storeId: 1,
+            stock: 25,
+            images: ['iphone15pro.jpg'],
+            rating: '4.8',
+            totalReviews: 156,
+            isActive: true,
+            isOnOffer: true,
+            offerPercentage: 9
+          },
+          {
+            name: 'Classic Burger',
+            description: 'Juicy beef burger with fresh ingredients',
+            price: '12.99',
+            categoryId: 3,
+            storeId: 2,
+            stock: 50,
+            images: ['burger.jpg'],
+            rating: '4.6',
+            totalReviews: 78,
+            isActive: true,
+            productType: 'food',
+            preparationTime: '15-20 mins',
+            ingredients: ['beef patty', 'lettuce', 'tomato', 'cheese', 'bun'],
+            spiceLevel: 'mild',
+            isVegetarian: false
+          }
+        ]);
+        console.log('Test products created');
+      }
+
+      // Create test orders
+      const existingOrders = await db.select().from(orders);
+      if (existingOrders.length === 0) {
+        await db.insert(orders).values([
+          {
+            customerId: 1,
+            totalAmount: '999.99',
+            status: 'delivered',
+            shippingAddress: '123 Main St, City, State',
+            paymentMethod: 'credit_card',
+            phone: '+1234567890',
+            customerName: 'John Doe'
+          },
+          {
+            customerId: 1,
+            totalAmount: '15.98',
+            status: 'processing',
+            shippingAddress: '123 Main St, City, State',
+            paymentMethod: 'paypal',
+            phone: '+1234567890',
+            customerName: 'John Doe'
+          }
+        ]);
+        console.log('Test orders created');
       }
     } catch (error) {
       console.error('Error creating default data:', error);

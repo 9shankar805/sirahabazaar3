@@ -297,11 +297,23 @@ export async function runMigrations() {
 
     // Fix users table - ensure all columns exist
     await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT
+    `);
+    
+    await db.execute(sql`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT
     `);
     
     await db.execute(sql`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active'
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'customer'
     `);
     
     await db.execute(sql`
@@ -314,6 +326,11 @@ export async function runMigrations() {
     
     await db.execute(sql`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS rejection_reason TEXT
+    `);
+
+    // Update existing users to have usernames based on email
+    await db.execute(sql`
+      UPDATE users SET username = SPLIT_PART(email, '@', 1) WHERE username IS NULL
     `);
 
     // Create missing admin panel tables
