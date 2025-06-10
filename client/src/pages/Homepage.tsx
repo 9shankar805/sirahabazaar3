@@ -304,11 +304,22 @@ export default function Homepage() {
       <section className="py-8 sm:py-12 lg:py-16 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-6 sm:mb-10 text-center">Popular Local Stores</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-            {popularStores.map((store) => (
-              <StoreCard key={store.id} store={store} />
-            ))}
-          </div>
+          {storesError ? (
+            <StoresErrorState />
+          ) : storesLoading ? (
+            <StoresLoadingState />
+          ) : popularStores.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">No stores available at the moment</p>
+              <p className="text-muted-foreground text-sm mt-2">Check back later for new stores</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+              {popularStores.map((store: any) => (
+                <StoreCard key={store.id} store={store} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

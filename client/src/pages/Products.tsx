@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Filter, Grid, List } from "lucide-react";
+import { Filter, Grid, List, RefreshCw, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import ProductCard from "@/components/ProductCard";
 import { useAppMode } from "@/hooks/useAppMode";
 import type { Product, Category } from "@shared/schema";
@@ -33,7 +35,7 @@ export default function Products() {
     }
   }, [location]);
 
-  const { data: products = [], isLoading } = useQuery<Product[]>({
+  const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useQuery<Product[]>({
     queryKey: ["/api/products", { search: searchQuery, category: categoryQuery }],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -41,13 +43,20 @@ export default function Products() {
       if (categoryQuery) params.append('category', categoryQuery);
       
       const response = await fetch(`/api/products?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch products');
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Failed to fetch products: ${response.status} ${errorData}`);
+      }
       return response.json();
     },
+    retry: 3,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const { data: categories = [] } = useQuery<Category[]>({
+  const { data: categories = [], error: categoriesError, refetch: refetchCategories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+    retry: 3,
+    staleTime: 10 * 60 * 1000,
   });
 
   // Filter and sort products
@@ -144,15 +153,7 @@ export default function Products() {
     </div>
   );
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-muted">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="text-center">Loading products...</div>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-muted">
@@ -215,9 +216,39 @@ export default function Products() {
             </div>
 
             {/* Products Grid */}
-            {filteredProducts.length === 0 ? (
+            {productsError ? (
               <div className="bg-card rounded-lg p-12 text-center">
-                <p className="text-muted-foreground">No products found matching your criteria.</p>
+                <Alert className="max-w-md mx-auto mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Failed to load products. Please try again.
+                  </AlertDescription>
+                </Alert>
+                <Button 
+                  onClick={() => refetchProducts()} 
+                  variant="outline"
+                  disabled={productsLoading}
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${productsLoading ? 'animate-spin' : ''}`} />
+                  Retry
+                </Button>
+              </div>
+            ) : productsLoading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 lg:gap-6">
+                {Array.from({ length: 12 }).map((_, index) => (
+                  <Card key={index} className="animate-pulse">
+                    <CardContent className="p-4">
+                      <div className="bg-gray-200 h-32 rounded-md mb-3"></div>
+                      <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                      <div className="bg-gray-200 h-3 rounded w-3/4"></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="bg-card rounded-lg p-12 text-center">
+                <p className="text-muted-foreground text-lg">No products found matching your criteria.</p>
+                <p className="text-muted-foreground text-sm mt-2">Try adjusting your filters or search terms.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 lg:gap-6">

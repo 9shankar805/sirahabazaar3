@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Search, MapPin, Filter, Utensils, Store } from "lucide-react";
+import { Search, MapPin, Filter, Utensils, Store, RefreshCw, AlertCircle, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import StoreCard from "@/components/StoreCard";
 import { getCurrentUserLocation } from "@/lib/distance";
 import { useToast } from "@/hooks/use-toast";
@@ -43,10 +44,21 @@ export default function Stores() {
   const [locationEnabled, setLocationEnabled] = useState(false);
   const { toast } = useToast();
 
-  // Fetch all stores
-  const { data: stores = [], isLoading } = useQuery<Store[]>({
+  // Fetch all stores with comprehensive error handling
+  const { data: stores = [], isLoading: storesLoading, error: storesError, refetch: refetchStores } = useQuery<Store[]>({
     queryKey: ["/api/stores"],
+    retry: 3,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Enhanced error logging
+  if (storesError) {
+    console.error("Stores loading failed:", {
+      error: storesError,
+      message: storesError instanceof Error ? storesError.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
 
   // Get user location on component mount
   useEffect(() => {
@@ -399,7 +411,39 @@ export default function Stores() {
         </div>
 
         {/* Stores Grid */}
-        {filteredStores.length > 0 ? (
+        {storesError ? (
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <Alert className="max-w-md mx-auto mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Failed to load stores. Please try again.
+                </AlertDescription>
+              </Alert>
+              <Button 
+                onClick={() => refetchStores()} 
+                variant="outline"
+                disabled={storesLoading}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${storesLoading ? 'animate-spin' : ''}`} />
+                Retry Loading Stores
+              </Button>
+            </CardContent>
+          </Card>
+        ) : storesLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Card key={index} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="bg-gray-200 h-32 rounded-md mb-4"></div>
+                  <div className="bg-gray-200 h-5 rounded mb-2"></div>
+                  <div className="bg-gray-200 h-4 rounded w-2/3 mb-2"></div>
+                  <div className="bg-gray-200 h-3 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : filteredStores.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredStores.map((store) => (
               <StoreCard
