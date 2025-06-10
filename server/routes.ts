@@ -278,6 +278,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/stores/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const store = await storage.updateStore(id, updates);
+      
+      if (!store) {
+        return res.status(404).json({ error: "Store not found" });
+      }
+      
+      res.json(store);
+    } catch (error) {
+      console.error("Store update error:", error);
+      res.status(400).json({ 
+        error: "Failed to update store",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Product routes
   app.get("/api/products", async (req, res) => {
     try {
@@ -403,51 +423,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid user ID" });
       }
       
-      console.log(`Fetching stores for user ${userIdNum}`);
-      
-      // Get user's stores first with error handling
-      let userStores = [];
-      try {
-        userStores = await storage.getStoresByOwnerId(userIdNum);
-        console.log(`Found ${userStores.length} stores for user ${userIdNum}`);
-      } catch (storeError) {
-        console.error(`Error fetching stores for user ${userIdNum}:`, storeError);
-        return res.status(500).json({ error: "Failed to fetch user stores" });
-      }
+      // Get user's stores first
+      const userStores = await storage.getStoresByOwnerId(userIdNum);
       
       if (userStores.length === 0) {
-        console.log(`No stores found for user ${userIdNum}, returning empty array`);
         return res.json([]);
       }
       
       // Get products for all user's stores
       const allProducts = [];
       for (const store of userStores) {
-        console.log(`Fetching products for store ${store.id} (${store.name})`);
-        try {
-          const storeProducts = await storage.getProductsByStoreId(store.id);
-          console.log(`Found ${storeProducts.length} products for store ${store.id}`);
-          
-          // Add store information to each product for better debugging
-          const productsWithStore = storeProducts.map(product => ({
-            ...product,
-            storeName: store.name,
-            storeType: store.storeType
-          }));
-          
-          allProducts.push(...productsWithStore);
-        } catch (storeError) {
-          console.error(`Error fetching products for store ${store.id}:`, storeError);
-          // Continue with other stores instead of failing completely
-        }
+        const storeProducts = await storage.getProductsByStoreId(store.id);
+        const productsWithStore = storeProducts.map(product => ({
+          ...product,
+          storeName: store.name,
+          storeType: store.storeType
+        }));
+        allProducts.push(...productsWithStore);
       }
       
-      console.log(`Total products found: ${allProducts.length}`);
       res.json(allProducts);
     } catch (error) {
-      console.error("Products/store error details:", error);
+      console.error("Products/store error:", error);
       res.status(500).json({ 
-        error: "Failed to fetch product",
+        error: "Failed to fetch products",
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
