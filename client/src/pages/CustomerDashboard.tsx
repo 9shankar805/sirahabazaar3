@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Link } from "wouter";
 import { 
   User, 
   Package, 
@@ -345,9 +346,11 @@ export default function CustomerDashboard() {
                               </Button>
                             )}
                             {order.status !== "delivered" && order.status !== "cancelled" && (
-                              <Button variant="outline" size="sm">
-                                Track Order
-                              </Button>
+                              <Link href={`/orders/${order.id}/tracking`}>
+                                <Button variant="outline" size="sm">
+                                  Track Order
+                                </Button>
+                              </Link>
                             )}
                           </div>
                         </div>

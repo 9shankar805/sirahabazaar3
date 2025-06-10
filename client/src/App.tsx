@@ -50,6 +50,7 @@ import DeliveryPartnerNotifications from "@/pages/DeliveryPartnerNotifications";
 import DeliveryTrackingMap from "@/pages/DeliveryTrackingMap";
 import DeliveryPartnerQuickReg from "@/pages/DeliveryPartnerQuickReg";
 import AdminDeliveryPartners from "@/pages/AdminDeliveryPartners";
+import OrderTracking from "@/pages/OrderTracking";
 
 function AppRouter() {
   const { mode } = useAppMode();
@@ -101,6 +102,9 @@ function AppRouter() {
         <Route path="/delivery-partner/tracking" component={DeliveryTrackingMap} />
         <Route path="/delivery-partner/register" component={DeliveryPartnerQuickReg} />
         <Route path="/admin/delivery-partners" component={AdminDeliveryPartners} />
+        
+        {/* Order Tracking Route */}
+        <Route path="/orders/:orderId/tracking" component={OrderTracking} />
         
         <Route component={NotFound} />
       </Switch>
