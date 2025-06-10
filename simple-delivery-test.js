@@ -103,7 +103,6 @@ async function runQuickTest() {
     role: 'customer'
   });
 
-  let customerToken = null;
   if (customerRes.ok) {
     const customerLoginRes = await makeRequest('/api/auth/login', 'POST', {
       email: `customer${timestamp}@test.com`,
@@ -112,7 +111,6 @@ async function runQuickTest() {
 
     if (customerLoginRes.ok) {
       testResults.customer = customerLoginRes.data.user;
-      customerToken = customerLoginRes.data.token;
       logResult('Customer Creation', true, `Customer ID: ${testResults.customer.id}`);
     } else {
       logResult('Customer Login', false, customerLoginRes.data?.error);
@@ -144,9 +142,8 @@ async function runQuickTest() {
   console.log(`   Customer: ${testResults.customer ? 'Available' : 'Missing'}`);
   console.log(`   Product: ${product ? 'Available' : 'Missing'}`);
   console.log(`   Store: ${store ? 'Available' : 'Missing'}`);
-  console.log(`   Token: ${customerToken ? 'Available' : 'Missing'}`);
   
-  if (testResults.customer && product && store && customerToken) {
+  if (testResults.customer && product && store) {
     console.log(`   Customer ID: ${testResults.customer.id}`);
     console.log(`   Product ID: ${product.id}`);
     console.log(`   Store ID: ${store.id}`);
@@ -156,13 +153,13 @@ async function runQuickTest() {
       userId: testResults.customer.id,
       productId: product.id,
       quantity: 2
-    }, customerToken);
+    });
 
     if (cartRes.ok) {
       logResult('Add to Cart', true);
 
       // Get cart items
-      const cartItemsRes = await makeRequest(`/api/cart/${testResults.customer.id}`, 'GET', null, customerToken);
+      const cartItemsRes = await makeRequest(`/api/cart/${testResults.customer.id}`, 'GET');
       
       if (cartItemsRes.ok && cartItemsRes.data.length > 0) {
         const cartItems = cartItemsRes.data;
@@ -192,7 +189,7 @@ async function runQuickTest() {
           }))
         };
 
-        const orderRes = await makeRequest('/api/orders', 'POST', orderData, customerToken);
+        const orderRes = await makeRequest('/api/orders', 'POST', orderData);
 
         if (orderRes.ok) {
           testResults.order = orderRes.data.order || orderRes.data;
