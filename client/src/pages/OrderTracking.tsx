@@ -360,20 +360,23 @@ const OrderTracking = () => {
             <CardContent>
               <div className="space-y-4">
                 {tracking.map((track, index) => (
-                  <div key={track.id} className="flex items-start gap-4">
+                  <div key={track.id} className="flex items-start gap-4 p-4 border rounded-lg">
                     <div className={`w-3 h-3 rounded-full mt-2 ${getStatusColor(track.status)}`}></div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium capitalize">{track.status}</h4>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground">
                           {format(new Date(track.updatedAt), 'MMM dd, yyyy HH:mm')}
                         </span>
                       </div>
                       {track.description && (
-                        <p className="text-gray-600 text-sm mt-1">{track.description}</p>
+                        <p className="text-muted-foreground text-sm mt-1">{track.description}</p>
                       )}
                       {track.location && (
-                        <p className="text-gray-500 text-xs mt-1">Location: {track.location}</p>
+                        <p className="text-muted-foreground text-xs mt-1 flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {track.location}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -382,6 +385,63 @@ const OrderTracking = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Customer Support Section */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Phone className="h-5 w-5" />
+              Need Help?
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-foreground mb-2">Contact Customer Support</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-primary" />
+                      <a href="tel:+977-33-123456" className="text-primary hover:underline">
+                        +977-33-123456
+                      </a>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-primary" />
+                      <a href="mailto:support@sirahbazaar.com" className="text-primary hover:underline">
+                        support@sirahbazaar.com
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-medium text-foreground mb-2">Order Information</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Have your order number ready: <span className="font-mono font-medium">#{order.id}</span>
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-foreground mb-2">Support Hours</h4>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
+                    <p>Saturday: 10:00 AM - 4:00 PM</p>
+                    <p>Sunday: Closed</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1">
+                    Chat Support
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1">
+                    Report Issue
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
