@@ -9,10 +9,11 @@ export const users = pgTable("users", {
   fullName: text("full_name").notNull(),
   phone: text("phone"),
   address: text("address"),
-  role: text("role").notNull().default("customer"), // customer, shopkeeper
+  role: text("role").notNull().default("customer"), // customer, shopkeeper, delivery_partner
   status: text("status").notNull().default("active"), // active, pending, suspended, rejected
   approvalDate: timestamp("approval_date"),
   approvedBy: integer("approved_by").references(() => users.id),
+  rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -131,6 +132,45 @@ export const admins = pgTable("admins", {
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
   role: text("role").notNull().default("admin"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Delivery Partners table
+export const deliveryPartners = pgTable("delivery_partners", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  vehicleType: text("vehicle_type").notNull(), // bike, scooter, car, bicycle
+  vehicleNumber: text("vehicle_number").notNull(),
+  deliveryArea: text("delivery_area").notNull(),
+  idProofUrl: text("id_proof_url").notNull(),
+  drivingLicenseUrl: text("driving_license_url"),
+  isAvailable: boolean("is_available").default(true),
+  currentLocation: text("current_location"), // JSON string for lat/lng
+  totalDeliveries: integer("total_deliveries").default(0),
+  rating: decimal("rating", { precision: 3, scale: 2 }).default("0.00"),
+  totalEarnings: decimal("total_earnings", { precision: 10, scale: 2 }).default("0.00"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Delivery assignments
+export const deliveries = pgTable("deliveries", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").references(() => orders.id).notNull(),
+  deliveryPartnerId: integer("delivery_partner_id").references(() => deliveryPartners.id),
+  status: text("status").notNull().default("pending"), // pending, assigned, picked_up, in_transit, delivered, cancelled
+  assignedAt: timestamp("assigned_at"),
+  pickedUpAt: timestamp("picked_up_at"),
+  deliveredAt: timestamp("delivered_at"),
+  deliveryFee: decimal("delivery_fee", { precision: 10, scale: 2 }).notNull(),
+  distance: decimal("distance", { precision: 8, scale: 2 }), // in kilometers
+  estimatedTime: integer("estimated_time"), // in minutes
+  actualTime: integer("actual_time"), // in minutes
+  pickupLocation: text("pickup_location").notNull(), // JSON string for address + lat/lng
+  deliveryLocation: text("delivery_location").notNull(), // JSON string for address + lat/lng
+  specialInstructions: text("special_instructions"),
+  proofOfDelivery: text("proof_of_delivery"), // photo URL
+  customerRating: integer("customer_rating"), // 1-5 stars
+  customerFeedback: text("customer_feedback"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
