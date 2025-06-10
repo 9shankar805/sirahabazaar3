@@ -20,6 +20,7 @@ import {
   BarChart3, FileText, MessageSquare, Tag, Image, Globe, Zap, UserCheck,
   LogOut, RefreshCw, Calendar, Mail, Phone, MapPin, Truck
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function ComprehensiveAdminDashboard() {
   const [, setLocation] = useLocation();
@@ -29,6 +30,8 @@ export default function ComprehensiveAdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [processingApprovals, setProcessingApprovals] = useState<Set<number>>(new Set());
+  const [processingRejections, setProcessingRejections] = useState<Set<number>>(new Set());
   const [editingZone, setEditingZone] = useState<any>(null);
   const [showCreateZone, setShowCreateZone] = useState(false);
   const [newZone, setNewZone] = useState({
@@ -212,29 +215,59 @@ export default function ComprehensiveAdminDashboard() {
   // User approval mutations
   const approveUserMutation = useMutation({
     mutationFn: async (userId: number) => {
+      setProcessingApprovals(prev => new Set(prev).add(userId));
       return apiRequest(`/api/admin/users/${userId}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ adminId: adminUser?.id })
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({ title: "User approved successfully" });
+    onSuccess: (_, userId) => {
+      setTimeout(() => {
+        setProcessingApprovals(prev => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+        toast({ title: "User approved successfully", description: "The user has been activated and can now access their account." });
+      }, 1000);
+    },
+    onError: (_, userId) => {
+      setProcessingApprovals(prev => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
     },
   });
 
   const rejectUserMutation = useMutation({
     mutationFn: async ({ userId, reason }: { userId: number; reason: string }) => {
+      setProcessingRejections(prev => new Set(prev).add(userId));
       return apiRequest(`/api/admin/users/${userId}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ adminId: adminUser?.id, reason })
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({ title: "User rejected successfully" });
+    onSuccess: (_, { userId }) => {
+      setTimeout(() => {
+        setProcessingRejections(prev => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+        toast({ title: "User rejected successfully", description: "The application has been declined." });
+      }, 1000);
+    },
+    onError: (_, { userId }) => {
+      setProcessingRejections(prev => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
     },
   });
 
@@ -264,6 +297,49 @@ export default function ComprehensiveAdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/delivery-partners"] });
       toast({ title: "Delivery partner rejected successfully" });
+    },
+  });
+
+  // Vendor management mutations
+  const banVendorMutation = useMutation({
+    mutationFn: async (storeId: number) => {
+      return apiRequest(`/api/admin/stores/${storeId}/ban`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser?.id })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stores"] });
+      toast({ title: "Vendor banned successfully" });
+    },
+  });
+
+  const suspendVendorMutation = useMutation({
+    mutationFn: async (storeId: number) => {
+      return apiRequest(`/api/admin/stores/${storeId}/suspend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser?.id })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stores"] });
+      toast({ title: "Vendor suspended successfully" });
+    },
+  });
+
+  const activateVendorMutation = useMutation({
+    mutationFn: async (storeId: number) => {
+      return apiRequest(`/api/admin/stores/${storeId}/activate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser?.id })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stores"] });
+      toast({ title: "Vendor activated successfully" });
     },
   });
 
@@ -432,9 +508,10 @@ export default function ComprehensiveAdminDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-12">
+          <TabsList className="grid w-full grid-cols-13">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="approvals">Approvals</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="vendors">Vendors</TabsTrigger>
@@ -594,27 +671,93 @@ export default function ComprehensiveAdminDashboard() {
                                   </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => approveUserMutation.mutate(user.id)}
-                                    disabled={approveUserMutation.isPending}
-                                    className="bg-green-600 hover:bg-green-700"
+                                  <motion.div
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
                                   >
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => rejectUserMutation.mutate({ 
-                                      userId: user.id, 
-                                      reason: "Application review incomplete" 
-                                    })}
-                                    disabled={rejectUserMutation.isPending}
+                                    <Button
+                                      size="sm"
+                                      onClick={() => approveUserMutation.mutate(user.id)}
+                                      disabled={processingApprovals.has(user.id) || processingRejections.has(user.id)}
+                                      className={`${
+                                        processingApprovals.has(user.id) 
+                                          ? "bg-green-500 text-white" 
+                                          : "bg-green-600 hover:bg-green-700"
+                                      } transition-all duration-300`}
+                                    >
+                                      <AnimatePresence mode="wait">
+                                        {processingApprovals.has(user.id) ? (
+                                          <motion.div
+                                            key="approved"
+                                            initial={{ opacity: 0, scale: 0.5 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.5 }}
+                                            className="flex items-center"
+                                          >
+                                            <CheckCircle className="h-4 w-4 mr-1" />
+                                            Approved!
+                                          </motion.div>
+                                        ) : (
+                                          <motion.div
+                                            key="approve"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="flex items-center"
+                                          >
+                                            <CheckCircle className="h-4 w-4 mr-1" />
+                                            Approve
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+                                    </Button>
+                                  </motion.div>
+                                  
+                                  <motion.div
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
                                   >
-                                    <XCircle className="h-4 w-4 mr-1" />
-                                    Reject
-                                  </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => rejectUserMutation.mutate({ 
+                                        userId: user.id, 
+                                        reason: "Application review incomplete" 
+                                      })}
+                                      disabled={processingApprovals.has(user.id) || processingRejections.has(user.id)}
+                                      className={`${
+                                        processingRejections.has(user.id) 
+                                          ? "bg-red-500 text-white" 
+                                          : ""
+                                      } transition-all duration-300`}
+                                    >
+                                      <AnimatePresence mode="wait">
+                                        {processingRejections.has(user.id) ? (
+                                          <motion.div
+                                            key="rejected"
+                                            initial={{ opacity: 0, scale: 0.5 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.5 }}
+                                            className="flex items-center"
+                                          >
+                                            <XCircle className="h-4 w-4 mr-1" />
+                                            Rejected!
+                                          </motion.div>
+                                        ) : (
+                                          <motion.div
+                                            key="reject"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="flex items-center"
+                                          >
+                                            <XCircle className="h-4 w-4 mr-1" />
+                                            Reject
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+                                    </Button>
+                                  </motion.div>
                                 </div>
                               </div>
                             </CardContent>
@@ -721,6 +864,192 @@ export default function ComprehensiveAdminDashboard() {
                 </Card>
               </TabsContent>
             </Tabs>
+          </TabsContent>
+
+          {/* Users Tab */}
+          <TabsContent value="users" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">User Management</h2>
+              <div className="flex space-x-2">
+                <Input 
+                  placeholder="Search users..." 
+                  className="w-64"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Filter by role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>
+                    <SelectItem value="customer">Customers</SelectItem>
+                    <SelectItem value="shopkeeper">Shopkeepers</SelectItem>
+                    <SelectItem value="delivery_partner">Delivery Partners</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+                      <p className="text-2xl font-bold">{allUsers.length}</p>
+                    </div>
+                    <Users className="h-8 w-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Customers</p>
+                      <p className="text-2xl font-bold">
+                        {allUsers.filter((u: any) => u.role === 'customer').length}
+                      </p>
+                    </div>
+                    <UserCheck className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Shopkeepers</p>
+                      <p className="text-2xl font-bold">
+                        {allUsers.filter((u: any) => u.role === 'shopkeeper').length}
+                      </p>
+                    </div>
+                    <Store className="h-8 w-8 text-orange-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Pending Approvals</p>
+                      <p className="text-2xl font-bold">
+                        {allUsers.filter((u: any) => u.status === 'pending').length}
+                      </p>
+                    </div>
+                    <Clock className="h-8 w-8 text-yellow-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allUsers
+                      .filter((user: any) => 
+                        (filterStatus === "all" || user.role === filterStatus) &&
+                        (searchTerm === "" || 
+                         user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.username?.toLowerCase().includes(searchTerm.toLowerCase()))
+                      )
+                      .map((user: any) => (
+                        <TableRow key={user.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                <Users className="h-4 w-4 text-blue-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium">{user.fullName}</p>
+                                <p className="text-sm text-muted-foreground">@{user.username}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={
+                                user.role === 'customer' ? 'default' :
+                                user.role === 'shopkeeper' ? 'secondary' :
+                                user.role === 'delivery_partner' ? 'outline' : 'default'
+                              }
+                            >
+                              {user.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={
+                                user.status === 'active' ? 'default' :
+                                user.status === 'pending' ? 'secondary' :
+                                user.status === 'suspended' ? 'destructive' : 'outline'
+                              }
+                            >
+                              {user.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{user.phone || 'N/A'}</TableCell>
+                          <TableCell>{user.city || 'N/A'}</TableCell>
+                          <TableCell>{formatDate(user.createdAt)}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-1">
+                              <Button size="sm" variant="outline">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              {user.status === 'pending' && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => approveUserMutation.mutate(user.id)}
+                                    disabled={approveUserMutation.isPending}
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => rejectUserMutation.mutate({ 
+                                      userId: user.id, 
+                                      reason: "Admin review" 
+                                    })}
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                              {user.status === 'active' && user.role !== 'customer' && (
+                                <Button size="sm" variant="outline">
+                                  <Ban className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Orders Tab */}
@@ -961,24 +1290,88 @@ export default function ComprehensiveAdminDashboard() {
                       <TableRow>
                         <TableHead>Store Name</TableHead>
                         <TableHead>Owner</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Revenue</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {allStores.slice(0, 5).map((store: any) => (
+                      {allStores.map((store: any) => (
                         <TableRow key={store.id}>
-                          <TableCell className="font-medium">{store.name}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                <Store className="h-4 w-4 text-orange-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium">{store.name}</p>
+                                <p className="text-sm text-muted-foreground">{store.slug}</p>
+                              </div>
+                            </div>
+                          </TableCell>
                           <TableCell>{store.ownerName || 'N/A'}</TableCell>
                           <TableCell>
-                            <Badge variant={store.isActive ? 'default' : 'destructive'}>
-                              {store.isActive ? 'Active' : 'Inactive'}
+                            <Badge variant="outline">
+                              {store.storeType === 'restaurant' ? 'Restaurant' : 'Retail'}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Button size="sm" variant="outline">
-                              <Eye className="h-4 w-4" />
-                            </Button>
+                            <span className="font-medium text-green-600">
+                              ${(Math.random() * 5000).toFixed(2)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              store.isActive ? 'default' : 
+                              store.status === 'suspended' ? 'secondary' :
+                              store.status === 'banned' ? 'destructive' : 'outline'
+                            }>
+                              {store.isActive ? 'Active' : store.status || 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-1">
+                              <Button size="sm" variant="outline" title="View Details">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" title="Edit Store">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              {store.isActive && (
+                                <>
+                                  <Button 
+                                    size="sm" 
+                                    variant="secondary"
+                                    onClick={() => suspendVendorMutation.mutate(store.id)}
+                                    disabled={suspendVendorMutation.isPending}
+                                    title="Suspend Vendor"
+                                  >
+                                    <Clock className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="destructive"
+                                    onClick={() => banVendorMutation.mutate(store.id)}
+                                    disabled={banVendorMutation.isPending}
+                                    title="Ban Vendor"
+                                  >
+                                    <Ban className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                              {!store.isActive && (
+                                <Button 
+                                  size="sm" 
+                                  className="bg-green-600 hover:bg-green-700"
+                                  onClick={() => activateVendorMutation.mutate(store.id)}
+                                  disabled={activateVendorMutation.isPending}
+                                  title="Activate Vendor"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
