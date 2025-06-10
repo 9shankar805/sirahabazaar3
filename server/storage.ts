@@ -389,7 +389,8 @@ export class DatabaseStorage implements IStorage {
       isActive: true,
       featured: false,
       rating: "0.00",
-      totalReviews: 0
+      totalReviews: 0,
+      state: store.state || 'Not specified'
     };
     
     const [newStore] = await db.insert(stores).values(storeWithSlug).returning();
@@ -458,7 +459,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
-    const [newProduct] = await db.insert(products).values(product).returning();
+    // Generate slug if not provided
+    let slug = product.slug;
+    if (!slug) {
+      const baseSlug = product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      let counter = 1;
+      slug = baseSlug;
+      
+      while (true) {
+        const existingProduct = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
+        if (existingProduct.length === 0) {
+          break;
+        }
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+    }
+    
+    const productWithDefaults = {
+      ...product,
+      slug,
+      isActive: product.isActive !== undefined ? product.isActive : true,
+      rating: product.rating || "0.00",
+      totalReviews: product.totalReviews || 0,
+      stock: product.stock || 0,
+      imageUrl: product.imageUrl || "",
+      images: product.images || []
+    };
+    
+    const [newProduct] = await db.insert(products).values(productWithDefaults).returning();
     return newProduct;
   }
 
