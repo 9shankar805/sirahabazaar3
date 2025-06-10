@@ -642,6 +642,18 @@ export async function runMigrations() {
       )
     `);
 
+    // Create order_tracking table for order status tracking
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS order_tracking (
+        id SERIAL PRIMARY KEY,
+        order_id INTEGER REFERENCES orders(id) NOT NULL,
+        status TEXT NOT NULL,
+        description TEXT,
+        location TEXT,
+        updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
     console.log("Database migrations completed successfully");
   } catch (error) {
     console.error("Migration error:", error);
