@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
+import { NotificationService } from "./notificationService";
 
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
@@ -681,26 +682,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: "Order placed successfully"
       });
       
-      // Send notifications to store owners with customer location details
-      for (const ownerId of Array.from(storeOwners)) {
-        const locationInfo = orderData.latitude && orderData.longitude 
-          ? `Customer Location: ${orderData.latitude}, ${orderData.longitude}` 
-          : "Location not provided";
-          
-        await storage.createNotification({
-          userId: ownerId,
-          title: "New Order Received",
-          message: `New order #${createdOrder.id} from ${orderData.customerName}. Address: ${orderData.shippingAddress}. ${locationInfo}. Phone: ${orderData.phone}`,
-          type: "success"
-        });
-      }
+      // Send notifications using the notification service
+      await NotificationService.sendOrderNotificationToShopkeepers(
+        createdOrder.id,
+        orderData.customerName,
+        orderData.totalAmount,
+        orderItems
+      );
       
-      // Send confirmation notification to customer
+      // Send payment confirmation to customer
+      await NotificationService.sendPaymentConfirmation(
+        orderData.customerId,
+        createdOrder.id,
+        orderData.totalAmount,
+        orderData.paymentMethod
+      );
+      
+      // Send order confirmation to customer
       await storage.createNotification({
         userId: orderData.customerId,
         title: "Order Confirmed",
         message: `Your order #${createdOrder.id} has been confirmed and is being processed`,
-        type: "success"
+        type: "order",
+        orderId: createdOrder.id,
+        isRead: false
       });
       
       // Clear user's cart

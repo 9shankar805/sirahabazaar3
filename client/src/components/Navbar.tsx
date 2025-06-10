@@ -186,6 +186,7 @@ export default function Navbar() {
             {/* User Menu or Auth Buttons */}
             {user ? (
               <div className="flex items-center space-x-2">
+                <NotificationCenter />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="text-white hover:text-accent p-2">
