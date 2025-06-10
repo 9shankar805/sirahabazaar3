@@ -525,7 +525,7 @@ export default function SellerDashboard() {
             </div>
 
             {/* Pending Orders Alert */}
-            {dashboardStats?.pendingOrders > 0 && (
+            {(dashboardStats?.pendingOrders ?? 0) > 0 && (
               <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
@@ -537,7 +537,7 @@ export default function SellerDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-orange-600 dark:text-orange-300">
-                        You have <strong>{dashboardStats.pendingOrders}</strong> pending order{dashboardStats.pendingOrders > 1 ? 's' : ''} that need{dashboardStats.pendingOrders === 1 ? 's' : ''} your attention.
+                        You have <strong>{dashboardStats?.pendingOrders ?? 0}</strong> pending order{(dashboardStats?.pendingOrders ?? 0) > 1 ? 's' : ''} that need{(dashboardStats?.pendingOrders ?? 0) === 1 ? 's' : ''} your attention.
                       </p>
                       <p className="text-sm text-orange-500 dark:text-orange-400 mt-1">
                         Click below to view and process these orders.

@@ -77,6 +77,9 @@ export default function DeliveryPartnerQuickReg() {
 
       if (!userResponse.ok) {
         const error = await userResponse.json();
+        if (error.error === 'User already exists') {
+          throw new Error('An account with this phone number or email already exists. Please use different credentials or login to your existing account.');
+        }
         throw new Error(error.error || 'Registration failed');
       }
 
