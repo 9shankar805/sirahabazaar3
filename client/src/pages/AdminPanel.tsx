@@ -11,7 +11,12 @@ import {
   Eye,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  MapPin,
+  Plus,
+  Edit,
+  Trash2,
+  Save
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +26,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@shared/schema";
@@ -32,6 +40,16 @@ export default function AdminPanel() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [adminUser, setAdminUser] = useState<any>(null);
+  const [editingZone, setEditingZone] = useState<any>(null);
+  const [showCreateZone, setShowCreateZone] = useState(false);
+  const [newZone, setNewZone] = useState({
+    name: "",
+    minDistance: "",
+    maxDistance: "",
+    baseFee: "",
+    perKmRate: "",
+    isActive: true
+  });
 
   useEffect(() => {
     const storedAdmin = localStorage.getItem("adminUser");
@@ -49,6 +67,11 @@ export default function AdminPanel() {
 
   const { data: pendingUsers = [], isLoading: pendingLoading } = useQuery({
     queryKey: ["/api/admin/users/pending"],
+    enabled: !!adminUser,
+  });
+
+  const { data: deliveryZones = [], isLoading: zonesLoading } = useQuery({
+    queryKey: ["/api/delivery-zones"],
     enabled: !!adminUser,
   });
 
@@ -99,6 +122,86 @@ export default function AdminPanel() {
       toast({
         title: "Rejection failed",
         description: "Failed to reject user. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createZoneMutation = useMutation({
+    mutationFn: async (zoneData: any) => {
+      return await apiRequest("/api/admin/delivery-zones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(zoneData),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-zones"] });
+      setShowCreateZone(false);
+      setNewZone({
+        name: "",
+        minDistance: "",
+        maxDistance: "",
+        baseFee: "",
+        perKmRate: "",
+        isActive: true
+      });
+      toast({
+        title: "Zone created",
+        description: "Delivery zone has been created successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Creation failed",
+        description: "Failed to create delivery zone.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateZoneMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      return await apiRequest(`/api/admin/delivery-zones/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-zones"] });
+      setEditingZone(null);
+      toast({
+        title: "Zone updated",
+        description: "Delivery zone has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Update failed",
+        description: "Failed to update delivery zone.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteZoneMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest(`/api/admin/delivery-zones/${id}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-zones"] });
+      toast({
+        title: "Zone deleted",
+        description: "Delivery zone has been deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Deletion failed",
+        description: "Failed to delete delivery zone.",
         variant: "destructive",
       });
     },
@@ -238,6 +341,9 @@ export default function AdminPanel() {
             </TabsTrigger>
             <TabsTrigger value="all">
               All Users ({allUsers.length})
+            </TabsTrigger>
+            <TabsTrigger value="delivery-zones">
+              Delivery Zones
             </TabsTrigger>
           </TabsList>
 
@@ -380,6 +486,287 @@ export default function AdminPanel() {
                     </TableBody>
                   </Table>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="delivery-zones">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    Delivery Zone Management
+                  </CardTitle>
+                  <Dialog open={showCreateZone} onOpenChange={setShowCreateZone}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Zone
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create New Delivery Zone</DialogTitle>
+                        <DialogDescription>
+                          Add a new delivery zone with custom pricing.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="name" className="text-right">Name</Label>
+                          <Input
+                            id="name"
+                            value={newZone.name}
+                            onChange={(e) => setNewZone({ ...newZone, name: e.target.value })}
+                            className="col-span-3"
+                            placeholder="e.g., Inner City"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="minDistance" className="text-right">Min Distance (km)</Label>
+                          <Input
+                            id="minDistance"
+                            type="number"
+                            step="0.01"
+                            value={newZone.minDistance}
+                            onChange={(e) => setNewZone({ ...newZone, minDistance: e.target.value })}
+                            className="col-span-3"
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="maxDistance" className="text-right">Max Distance (km)</Label>
+                          <Input
+                            id="maxDistance"
+                            type="number"
+                            step="0.01"
+                            value={newZone.maxDistance}
+                            onChange={(e) => setNewZone({ ...newZone, maxDistance: e.target.value })}
+                            className="col-span-3"
+                            placeholder="5"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="baseFee" className="text-right">Base Fee (Rs.)</Label>
+                          <Input
+                            id="baseFee"
+                            type="number"
+                            step="0.01"
+                            value={newZone.baseFee}
+                            onChange={(e) => setNewZone({ ...newZone, baseFee: e.target.value })}
+                            className="col-span-3"
+                            placeholder="30.00"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="perKmRate" className="text-right">Per km Rate (Rs.)</Label>
+                          <Input
+                            id="perKmRate"
+                            type="number"
+                            step="0.01"
+                            value={newZone.perKmRate}
+                            onChange={(e) => setNewZone({ ...newZone, perKmRate: e.target.value })}
+                            className="col-span-3"
+                            placeholder="5.00"
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="isActive"
+                            checked={newZone.isActive}
+                            onCheckedChange={(checked) => setNewZone({ ...newZone, isActive: checked })}
+                          />
+                          <Label htmlFor="isActive">Active Zone</Label>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowCreateZone(false)}>
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => createZoneMutation.mutate(newZone)}
+                          disabled={createZoneMutation.isPending}
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          Create Zone
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {zonesLoading ? (
+                  <div className="text-center py-8">Loading delivery zones...</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Zone Name</TableHead>
+                        <TableHead>Distance Range</TableHead>
+                        <TableHead>Base Fee</TableHead>
+                        <TableHead>Per Km Rate</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Sample Fee (10km)</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(deliveryZones as any[]).map((zone) => (
+                        <TableRow key={zone.id}>
+                          <TableCell className="font-medium">{zone.name}</TableCell>
+                          <TableCell>{zone.minDistance} - {zone.maxDistance} km</TableCell>
+                          <TableCell>Rs. {zone.baseFee}</TableCell>
+                          <TableCell>Rs. {zone.perKmRate}/km</TableCell>
+                          <TableCell>
+                            {zone.isActive ? (
+                              <Badge variant="default" className="bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />Active
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">Inactive</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            Rs. {(parseFloat(zone.baseFee) + (10 * parseFloat(zone.perKmRate))).toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setEditingZone({ ...zone })}
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Edit
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Edit Delivery Zone</DialogTitle>
+                                    <DialogDescription>
+                                      Modify the delivery zone pricing and settings.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  {editingZone && (
+                                    <div className="grid gap-4 py-4">
+                                      <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="edit-name" className="text-right">Name</Label>
+                                        <Input
+                                          id="edit-name"
+                                          value={editingZone.name}
+                                          onChange={(e) => setEditingZone({ ...editingZone, name: e.target.value })}
+                                          className="col-span-3"
+                                        />
+                                      </div>
+                                      <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="edit-minDistance" className="text-right">Min Distance (km)</Label>
+                                        <Input
+                                          id="edit-minDistance"
+                                          type="number"
+                                          step="0.01"
+                                          value={editingZone.minDistance}
+                                          onChange={(e) => setEditingZone({ ...editingZone, minDistance: e.target.value })}
+                                          className="col-span-3"
+                                        />
+                                      </div>
+                                      <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="edit-maxDistance" className="text-right">Max Distance (km)</Label>
+                                        <Input
+                                          id="edit-maxDistance"
+                                          type="number"
+                                          step="0.01"
+                                          value={editingZone.maxDistance}
+                                          onChange={(e) => setEditingZone({ ...editingZone, maxDistance: e.target.value })}
+                                          className="col-span-3"
+                                        />
+                                      </div>
+                                      <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="edit-baseFee" className="text-right">Base Fee (Rs.)</Label>
+                                        <Input
+                                          id="edit-baseFee"
+                                          type="number"
+                                          step="0.01"
+                                          value={editingZone.baseFee}
+                                          onChange={(e) => setEditingZone({ ...editingZone, baseFee: e.target.value })}
+                                          className="col-span-3"
+                                        />
+                                      </div>
+                                      <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="edit-perKmRate" className="text-right">Per km Rate (Rs.)</Label>
+                                        <Input
+                                          id="edit-perKmRate"
+                                          type="number"
+                                          step="0.01"
+                                          value={editingZone.perKmRate}
+                                          onChange={(e) => setEditingZone({ ...editingZone, perKmRate: e.target.value })}
+                                          className="col-span-3"
+                                        />
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                        <Switch
+                                          id="edit-isActive"
+                                          checked={editingZone.isActive}
+                                          onCheckedChange={(checked) => setEditingZone({ ...editingZone, isActive: checked })}
+                                        />
+                                        <Label htmlFor="edit-isActive">Active Zone</Label>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <DialogFooter>
+                                    <Button variant="outline" onClick={() => setEditingZone(null)}>
+                                      Cancel
+                                    </Button>
+                                    <Button 
+                                      onClick={() => updateZoneMutation.mutate({ 
+                                        id: editingZone.id, 
+                                        data: editingZone 
+                                      })}
+                                      disabled={updateZoneMutation.isPending}
+                                    >
+                                      <Save className="h-4 w-4 mr-2" />
+                                      Update Zone
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => deleteZoneMutation.mutate(zone.id)}
+                                disabled={deleteZoneMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+                
+                {/* Delivery Fee Preview */}
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <h3 className="font-semibold mb-3">Delivery Fee Calculator Preview</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {(deliveryZones as any[]).filter(zone => zone.isActive).map((zone) => (
+                      <div key={zone.id} className="bg-white p-3 rounded border">
+                        <h4 className="font-medium text-sm">{zone.name}</h4>
+                        <p className="text-xs text-gray-600">{zone.minDistance}-{zone.maxDistance}km</p>
+                        <div className="mt-2 space-y-1 text-xs">
+                          <div>5km: Rs. {(parseFloat(zone.baseFee) + (5 * parseFloat(zone.perKmRate))).toFixed(2)}</div>
+                          <div>10km: Rs. {(parseFloat(zone.baseFee) + (10 * parseFloat(zone.perKmRate))).toFixed(2)}</div>
+                          <div>15km: Rs. {(parseFloat(zone.baseFee) + (15 * parseFloat(zone.perKmRate))).toFixed(2)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
