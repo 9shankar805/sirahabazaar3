@@ -50,55 +50,60 @@ export default function ComprehensiveAdminDashboard() {
   }, [setLocation]);
 
   // Data fetching queries
-  const { data: dashboardStats } = useQuery({
+  const { data: dashboardStats = {} } = useQuery({
     queryKey: ["/api/admin/dashboard/stats"],
     enabled: !!adminUser,
-  });
+  }) as { data: any };
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ["/api/admin/users"],
     enabled: !!adminUser,
-  });
+  }) as { data: any[] };
 
   const { data: allStores = [] } = useQuery({
     queryKey: ["/api/admin/stores"],
     enabled: !!adminUser,
-  });
+  }) as { data: any[] };
 
   const { data: allProducts = [] } = useQuery({
     queryKey: ["/api/admin/products"],
     enabled: !!adminUser,
-  });
+  }) as { data: any[] };
 
   const { data: allOrders = [] } = useQuery({
     queryKey: ["/api/admin/orders"],
     enabled: !!adminUser,
-  });
+  }) as { data: any[] };
 
   const { data: transactions = [] } = useQuery({
     queryKey: ["/api/admin/transactions"],
     enabled: !!adminUser,
-  });
+  }) as { data: any[] };
 
   const { data: coupons = [] } = useQuery({
     queryKey: ["/api/admin/coupons"],
     enabled: !!adminUser,
-  });
+  }) as { data: any[] };
 
   const { data: supportTickets = [] } = useQuery({
     queryKey: ["/api/admin/support-tickets"],
     enabled: !!adminUser,
-  });
+  }) as { data: any[] };
 
   const { data: vendorVerifications = [] } = useQuery({
     queryKey: ["/api/admin/vendor-verifications"],
     enabled: !!adminUser,
-  });
+  }) as { data: any[] };
 
   const { data: fraudAlerts = [] } = useQuery({
     queryKey: ["/api/admin/fraud-alerts"],
     enabled: !!adminUser,
-  });
+  }) as { data: any[] };
+
+  const { data: inventoryAlerts = [] } = useQuery({
+    queryKey: ["/api/admin/inventory/alerts"],
+    enabled: !!adminUser,
+  }) as { data: any[] };
 
   const { data: inventoryAlerts = [] } = useQuery({
     queryKey: ["/api/admin/inventory/alerts"],

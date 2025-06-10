@@ -51,6 +51,13 @@ export async function runMigrations() {
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()
     `);
+    
+    // Fix city column constraint if it exists as NOT NULL
+    await db.execute(sql`
+      ALTER TABLE stores ALTER COLUMN city DROP NOT NULL
+    `).catch(() => {
+      // Ignore error if constraint doesn't exist
+    });
 
     // Add missing columns to products table
     await db.execute(sql`
