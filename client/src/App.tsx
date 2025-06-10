@@ -44,6 +44,7 @@ import DeliveryPartnerDashboard from "@/pages/DeliveryPartnerDashboard";
 import DeliveryPartnerTest from "@/pages/DeliveryPartnerTest";
 import DeliveryPartnerNotifications from "@/pages/DeliveryPartnerNotifications";
 import DeliveryTrackingMap from "@/pages/DeliveryTrackingMap";
+import DeliveryPartnerQuickReg from "@/pages/DeliveryPartnerQuickReg";
 import AdminDeliveryPartners from "@/pages/AdminDeliveryPartners";
 
 function AppRouter() {
@@ -93,6 +94,7 @@ function AppRouter() {
         <Route path="/delivery-partner/test" component={DeliveryPartnerTest} />
         <Route path="/delivery-partner/notifications" component={DeliveryPartnerNotifications} />
         <Route path="/delivery-partner/tracking" component={DeliveryTrackingMap} />
+        <Route path="/delivery-partner/register" component={DeliveryPartnerQuickReg} />
         <Route path="/admin/delivery-partners" component={AdminDeliveryPartners} />
         
         <Route component={NotFound} />

@@ -36,12 +36,44 @@ const registerSchema = z.object({
   path: ["confirmPassword"],
 }).refine((data) => {
   if (data.role === "delivery_partner") {
-    return data.vehicleType && data.vehicleNumber && data.deliveryArea && data.idProofUrl && data.termsAccepted;
+    return data.vehicleType && data.vehicleType.length > 0;
   }
   return true;
 }, {
-  message: "All delivery partner fields are required",
+  message: "Vehicle type is required",
   path: ["vehicleType"],
+}).refine((data) => {
+  if (data.role === "delivery_partner") {
+    return data.vehicleNumber && data.vehicleNumber.length > 0;
+  }
+  return true;
+}, {
+  message: "Vehicle number is required",
+  path: ["vehicleNumber"],
+}).refine((data) => {
+  if (data.role === "delivery_partner") {
+    return data.deliveryArea && data.deliveryArea.length > 0;
+  }
+  return true;
+}, {
+  message: "Delivery area is required",
+  path: ["deliveryArea"],
+}).refine((data) => {
+  if (data.role === "delivery_partner") {
+    return data.idProofUrl && data.idProofUrl.length > 0;
+  }
+  return true;
+}, {
+  message: "ID proof is required",
+  path: ["idProofUrl"],
+}).refine((data) => {
+  if (data.role === "delivery_partner") {
+    return data.termsAccepted === true;
+  }
+  return true;
+}, {
+  message: "You must accept the terms and conditions",
+  path: ["termsAccepted"],
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
