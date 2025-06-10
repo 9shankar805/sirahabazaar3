@@ -84,6 +84,11 @@ function AppRouter() {
         <Route path="/seller/promotions" component={SellerPromotions} />
         <Route path="/seller/orders" component={SellerOrders} />
         <Route path="/seller/products/add" component={AddProduct} />
+        
+        {/* Delivery Partner Routes */}
+        <Route path="/delivery-partner/dashboard" component={DeliveryPartnerDashboard} />
+        <Route path="/admin/delivery-partners" component={AdminDeliveryPartners} />
+        
         <Route component={NotFound} />
       </Switch>
     </div>
