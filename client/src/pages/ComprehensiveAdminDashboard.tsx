@@ -105,11 +105,6 @@ export default function ComprehensiveAdminDashboard() {
     enabled: !!adminUser,
   }) as { data: any[] };
 
-  const { data: inventoryAlerts = [] } = useQuery({
-    queryKey: ["/api/admin/inventory/alerts"],
-    enabled: !!adminUser,
-  });
-
   const { data: analytics } = useQuery({
     queryKey: ["/api/admin/analytics"],
     enabled: !!adminUser,
