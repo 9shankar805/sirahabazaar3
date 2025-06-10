@@ -1371,7 +1371,7 @@ export class DatabaseStorage implements IStorage {
       // Create test users for admin panel verification
       const existingUsers = await db.select().from(users);
       if (existingUsers.length === 0) {
-        await db.insert(users).values([
+        const insertedUsers = await db.insert(users).values([
           {
             username: 'johndoe',
             email: 'john.doe@example.com',
@@ -1402,19 +1402,23 @@ export class DatabaseStorage implements IStorage {
             role: 'customer',
             status: 'active'
           }
-        ]);
+        ]).returning();
         console.log('Test users created');
       }
 
+      // Get first user ID for store ownership
+      const allUsers = await db.select().from(users);
+      const firstUserId = allUsers[0]?.id;
+
       // Create test stores
       const existingStores = await db.select().from(stores);
-      if (existingStores.length === 0) {
+      if (existingStores.length === 0 && firstUserId) {
         await db.insert(stores).values([
           {
             name: 'Tech World Electronics',
             slug: 'tech-world-electronics',
             description: 'Latest electronic devices and gadgets',
-            ownerId: 2,
+            ownerId: firstUserId,
             address: '123 Tech Street, Electronics District',
             city: 'Electronics District',
             state: 'State',
@@ -1432,7 +1436,7 @@ export class DatabaseStorage implements IStorage {
             name: 'Flavor Town Restaurant',
             slug: 'flavor-town-restaurant',
             description: 'Delicious local cuisine and fast food',
-            ownerId: 2,
+            ownerId: firstUserId,
             address: '456 Food Avenue, Restaurant Row',
             city: 'Restaurant Row',
             state: 'State',
