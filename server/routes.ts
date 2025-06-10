@@ -1974,6 +1974,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/delivery-partners/user", async (req, res) => {
+    try {
+      const userId = req.query.userId || req.headers['user-id'];
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      const partner = await storage.getDeliveryPartnerByUserId(parseInt(userId as string));
+      if (!partner) {
+        return res.status(404).json({ error: "Delivery partner not found" });
+      }
+      res.json(partner);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch delivery partner" });
+    }
+  });
+
   app.put("/api/delivery-partners/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -2119,6 +2135,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(notifications);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch delivery notifications" });
+    }
+  });
+
+  app.get("/api/deliveries/active", async (req, res) => {
+    try {
+      // Return empty array for now - will be populated when orders with deliveries exist
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch active deliveries" });
+    }
+  });
+
+  app.get("/api/deliveries/active-tracking", async (req, res) => {
+    try {
+      // Return empty array for now - will be populated when tracking is needed
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch tracking data" });
+    }
+  });
+
+  app.get("/api/delivery-notifications", async (req, res) => {
+    try {
+      // Return empty array for now - notifications will be added as needed
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notifications" });
     }
   });
 

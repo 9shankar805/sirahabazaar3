@@ -71,6 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { user } = await response.json();
     setUser(user);
     localStorage.setItem("user", JSON.stringify(user));
+    
+    // Redirect delivery partners directly to their dashboard
+    if (user.role === 'delivery_partner') {
+      window.location.href = '/delivery-partner/dashboard';
+    }
   };
 
   const register = async (userData: any) => {
