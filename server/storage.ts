@@ -1599,9 +1599,13 @@ export class DatabaseStorage implements IStorage {
 
   async getDeliveryPartnerByUserId(userId: number): Promise<DeliveryPartner | undefined> {
     try {
-      const [partner] = await db.select().from(deliveryPartners).where(eq(deliveryPartners.userId, userId));
+      console.log("Database query for userId:", userId);
+      const partners = await db.select().from(deliveryPartners).where(eq(deliveryPartners.userId, userId));
+      console.log("Found partners:", partners.length, partners);
+      const [partner] = partners;
       return partner || undefined;
-    } catch {
+    } catch (error) {
+      console.error("Database error in getDeliveryPartnerByUserId:", error);
       return undefined;
     }
   }
