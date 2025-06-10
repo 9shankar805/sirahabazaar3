@@ -896,6 +896,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Product Reviews and Rating System
+  app.get("/api/products/:productId/reviews", async (req, res) => {
+    try {
+      const productId = parseInt(req.params.productId);
+      const { minRating, maxRating, limit = 10, offset = 0 } = req.query;
+      
+      let reviews = await storage.getProductReviews(productId);
+      
+      // Filter by rating if specified
+      if (minRating) {
+        reviews = reviews.filter(review => review.rating >= parseInt(minRating as string));
+      }
+      if (maxRating) {
+        reviews = reviews.filter(review => review.rating <= parseInt(maxRating as string));
+      }
+      
+      // Apply pagination
+      const startIndex = parseInt(offset as string);
+      const endIndex = startIndex + parseInt(limit as string);
+      const paginatedReviews = reviews.slice(startIndex, endIndex);
+      
+      // Get user details for each review
+      const reviewsWithUsers = await Promise.all(
+        paginatedReviews.map(async (review) => {
+          const user = await storage.getUser(review.customerId);
+          return {
+            ...review,
+            customer: user ? {
+              id: user.id,
+              username: user.username,
+              fullName: user.fullName
+            } : null
+          };
+        })
+      );
+      
+      res.json(reviewsWithUsers);
+    } catch (error) {
+      console.error("Error fetching product reviews:", error);
+      res.status(500).json({ error: "Failed to fetch reviews" });
+    }
+  });
+
+  app.post("/api/reviews", async (req, res) => {
+    try {
+      const reviewData = {
+        ...req.body,
+        isApproved: true, // Auto-approve reviews for now
+        isVerifiedPurchase: false // TODO: Check if user actually purchased the product
+      };
+      
+      // Validate the review data
+      const validatedData = {
+        productId: reviewData.productId,
+        customerId: reviewData.customerId,
+        rating: reviewData.rating,
+        title: reviewData.title || null,
+        comment: reviewData.comment || null,
+        images: reviewData.images || [],
+        orderId: reviewData.orderId || null,
+        isVerifiedPurchase: reviewData.isVerifiedPurchase,
+        isApproved: reviewData.isApproved
+      };
+      
+      // Check if user already reviewed this product
+      const existingReviews = await storage.getProductReviews(validatedData.productId);
+      const userAlreadyReviewed = existingReviews.some(review => review.customerId === validatedData.customerId);
+      
+      if (userAlreadyReviewed) {
+        return res.status(400).json({ error: "You have already reviewed this product" });
+      }
+      
+      const review = await storage.createProductReview(validatedData);
+      
+      // Get user details for response
+      const user = await storage.getUser(review.customerId);
+      const reviewWithUser = {
+        ...review,
+        customer: user ? {
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName
+        } : null
+      };
+      
+      res.json(reviewWithUser);
+    } catch (error) {
+      console.error("Error creating review:", error);
+      res.status(400).json({ error: "Failed to create review" });
+    }
+  });
+
+  app.patch("/api/reviews/:reviewId", async (req, res) => {
+    try {
+      const reviewId = parseInt(req.params.reviewId);
+      const updates = req.body;
+      
+      const updatedReview = await storage.updateProductReview(reviewId, updates);
+      
+      if (!updatedReview) {
+        return res.status(404).json({ error: "Review not found" });
+      }
+      
+      res.json(updatedReview);
+    } catch (error) {
+      console.error("Error updating review:", error);
+      res.status(400).json({ error: "Failed to update review" });
+    }
+  });
+
+  app.delete("/api/reviews/:reviewId", async (req, res) => {
+    try {
+      const reviewId = parseInt(req.params.reviewId);
+      
+      // TODO: Add authorization check to ensure user can delete this review
+      const success = await storage.deleteProductReview(reviewId);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Review not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      res.status(500).json({ error: "Failed to delete review" });
+    }
+  });
+
+  app.get("/api/stores/:storeId/reviews", async (req, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      const reviews = await storage.getStoreReviews(storeId);
+      
+      // Get user details for each review
+      const reviewsWithUsers = await Promise.all(
+        reviews.map(async (review) => {
+          const user = await storage.getUser(review.customerId);
+          return {
+            ...review,
+            customer: user ? {
+              id: user.id,
+              username: user.username,
+              fullName: user.fullName
+            } : null
+          };
+        })
+      );
+      
+      res.json(reviewsWithUsers);
+    } catch (error) {
+      console.error("Error fetching store reviews:", error);
+      res.status(500).json({ error: "Failed to fetch store reviews" });
+    }
+  });
+
   // Enhanced admin API routes for comprehensive management
   
   // All orders for admin

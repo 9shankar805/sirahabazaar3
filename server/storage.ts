@@ -157,6 +157,7 @@ export interface IStorage {
   getStoreReviews(storeId: number): Promise<ProductReview[]>;
   createProductReview(review: InsertProductReview): Promise<ProductReview>;
   updateProductReview(id: number, updates: Partial<InsertProductReview>): Promise<ProductReview | undefined>;
+  deleteProductReview(id: number): Promise<boolean>;
 
   // Settlements
   getStoreSettlements(storeId: number): Promise<Settlement[]>;
@@ -991,6 +992,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(productReviews.id, id))
       .returning();
     return updated;
+  }
+
+  async deleteProductReview(id: number): Promise<boolean> {
+    const result = await db
+      .delete(productReviews)
+      .where(eq(productReviews.id, id))
+      .returning();
+    return result.length > 0;
   }
 
   // Settlements
