@@ -198,6 +198,24 @@ export interface IStorage {
   getRevenueAnalytics(days?: number): Promise<any>;
   getUsersAnalytics(): Promise<any>;
   getInventoryAlerts(): Promise<any[]>;
+
+  // Delivery partner operations
+  getDeliveryPartner(id: number): Promise<DeliveryPartner | undefined>;
+  getDeliveryPartnerByUserId(userId: number): Promise<DeliveryPartner | undefined>;
+  getAllDeliveryPartners(): Promise<DeliveryPartner[]>;
+  getPendingDeliveryPartners(): Promise<DeliveryPartner[]>;
+  createDeliveryPartner(deliveryPartner: InsertDeliveryPartner): Promise<DeliveryPartner>;
+  updateDeliveryPartner(id: number, updates: Partial<InsertDeliveryPartner>): Promise<DeliveryPartner | undefined>;
+  approveDeliveryPartner(id: number, adminId: number): Promise<DeliveryPartner | undefined>;
+  rejectDeliveryPartner(id: number, adminId: number, reason: string): Promise<DeliveryPartner | undefined>;
+
+  // Delivery operations
+  getDelivery(id: number): Promise<Delivery | undefined>;
+  getDeliveriesByPartnerId(partnerId: number): Promise<Delivery[]>;
+  getDeliveriesByOrderId(orderId: number): Promise<Delivery[]>;
+  createDelivery(delivery: InsertDelivery): Promise<Delivery>;
+  updateDeliveryStatus(id: number, status: string, partnerId?: number): Promise<Delivery | undefined>;
+  assignDeliveryToPartner(deliveryId: number, partnerId: number): Promise<Delivery | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1389,6 +1407,153 @@ export class DatabaseStorage implements IStorage {
       return admins;
     } catch {
       return [];
+    }
+  }
+
+  // Delivery partner operations
+  async getDeliveryPartner(id: number): Promise<DeliveryPartner | undefined> {
+    try {
+      const [partner] = await db.select().from(deliveryPartners).where(eq(deliveryPartners.id, id));
+      return partner || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getDeliveryPartnerByUserId(userId: number): Promise<DeliveryPartner | undefined> {
+    try {
+      const [partner] = await db.select().from(deliveryPartners).where(eq(deliveryPartners.userId, userId));
+      return partner || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getAllDeliveryPartners(): Promise<DeliveryPartner[]> {
+    try {
+      return await db.select().from(deliveryPartners).orderBy(desc(deliveryPartners.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async getPendingDeliveryPartners(): Promise<DeliveryPartner[]> {
+    try {
+      return await db.select().from(deliveryPartners).where(eq(deliveryPartners.status, 'pending')).orderBy(desc(deliveryPartners.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createDeliveryPartner(deliveryPartner: InsertDeliveryPartner): Promise<DeliveryPartner> {
+    const [created] = await db.insert(deliveryPartners).values(deliveryPartner).returning();
+    return created;
+  }
+
+  async updateDeliveryPartner(id: number, updates: Partial<InsertDeliveryPartner>): Promise<DeliveryPartner | undefined> {
+    try {
+      const [updated] = await db.update(deliveryPartners).set(updates).where(eq(deliveryPartners.id, id)).returning();
+      return updated || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async approveDeliveryPartner(id: number, adminId: number): Promise<DeliveryPartner | undefined> {
+    try {
+      const [updated] = await db.update(deliveryPartners).set({
+        status: 'approved',
+        approvedBy: adminId,
+        approvalDate: new Date()
+      }).where(eq(deliveryPartners.id, id)).returning();
+
+      // Also update the user status
+      if (updated) {
+        await db.update(users).set({ status: 'active' }).where(eq(users.id, updated.userId));
+      }
+
+      return updated || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async rejectDeliveryPartner(id: number, adminId: number, reason: string): Promise<DeliveryPartner | undefined> {
+    try {
+      const [updated] = await db.update(deliveryPartners).set({
+        status: 'rejected',
+        approvedBy: adminId,
+        rejectionReason: reason,
+        approvalDate: new Date()
+      }).where(eq(deliveryPartners.id, id)).returning();
+
+      // Also update the user status
+      if (updated) {
+        await db.update(users).set({ status: 'rejected' }).where(eq(users.id, updated.userId));
+      }
+
+      return updated || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  // Delivery operations
+  async getDelivery(id: number): Promise<Delivery | undefined> {
+    try {
+      const [delivery] = await db.select().from(deliveries).where(eq(deliveries.id, id));
+      return delivery || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getDeliveriesByPartnerId(partnerId: number): Promise<Delivery[]> {
+    try {
+      return await db.select().from(deliveries).where(eq(deliveries.partnerId, partnerId)).orderBy(desc(deliveries.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async getDeliveriesByOrderId(orderId: number): Promise<Delivery[]> {
+    try {
+      return await db.select().from(deliveries).where(eq(deliveries.orderId, orderId)).orderBy(desc(deliveries.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createDelivery(delivery: InsertDelivery): Promise<Delivery> {
+    const [created] = await db.insert(deliveries).values(delivery).returning();
+    return created;
+  }
+
+  async updateDeliveryStatus(id: number, status: string, partnerId?: number): Promise<Delivery | undefined> {
+    try {
+      const updates: any = { status, updatedAt: new Date() };
+      if (partnerId) {
+        updates.partnerId = partnerId;
+      }
+      
+      const [updated] = await db.update(deliveries).set(updates).where(eq(deliveries.id, id)).returning();
+      return updated || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async assignDeliveryToPartner(deliveryId: number, partnerId: number): Promise<Delivery | undefined> {
+    try {
+      const [updated] = await db.update(deliveries).set({
+        partnerId,
+        status: 'assigned',
+        assignedAt: new Date(),
+        updatedAt: new Date()
+      }).where(eq(deliveries.id, deliveryId)).returning();
+      return updated || undefined;
+    } catch {
+      return undefined;
     }
   }
 }

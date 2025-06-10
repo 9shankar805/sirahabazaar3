@@ -10,7 +10,8 @@ import {
   insertPromotionSchema, insertAdvertisementSchema, insertProductReviewSchema, insertSettlementSchema,
   insertStoreAnalyticsSchema, insertInventoryLogSchema, insertCouponSchema, insertBannerSchema,
   insertSupportTicketSchema, insertSiteSettingSchema, insertFraudAlertSchema, insertCommissionSchema,
-  insertProductAttributeSchema, insertVendorVerificationSchema, insertAdminLogSchema
+  insertProductAttributeSchema, insertVendorVerificationSchema, insertAdminLogSchema,
+  insertDeliveryPartnerSchema, insertDeliverySchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1868,6 +1869,208 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Enhanced order creation error:", error);
       res.status(400).json({ error: "Failed to create order" });
+    }
+  });
+
+  // Delivery Partner Routes
+  app.post("/api/delivery-partners/signup", async (req, res) => {
+    try {
+      const deliveryPartnerData = insertDeliveryPartnerSchema.parse(req.body);
+      const partner = await storage.createDeliveryPartner(deliveryPartnerData);
+      
+      // Create notification for admin about new delivery partner application
+      await storage.createNotification({
+        userId: 1, // Admin user ID
+        title: "New Delivery Partner Application",
+        message: `A new delivery partner application has been submitted and is pending approval`,
+        type: "info"
+      });
+      
+      res.json(partner);
+    } catch (error) {
+      console.error("Delivery partner signup error:", error);
+      res.status(400).json({ error: "Failed to create delivery partner application" });
+    }
+  });
+
+  app.get("/api/delivery-partners", async (req, res) => {
+    try {
+      const partners = await storage.getAllDeliveryPartners();
+      res.json(partners);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch delivery partners" });
+    }
+  });
+
+  app.get("/api/delivery-partners/pending", async (req, res) => {
+    try {
+      const pendingPartners = await storage.getPendingDeliveryPartners();
+      res.json(pendingPartners);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch pending delivery partners" });
+    }
+  });
+
+  app.get("/api/delivery-partners/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const partner = await storage.getDeliveryPartner(id);
+      if (!partner) {
+        return res.status(404).json({ error: "Delivery partner not found" });
+      }
+      res.json(partner);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch delivery partner" });
+    }
+  });
+
+  app.get("/api/delivery-partners/user/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const partner = await storage.getDeliveryPartnerByUserId(userId);
+      if (!partner) {
+        return res.status(404).json({ error: "Delivery partner not found" });
+      }
+      res.json(partner);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch delivery partner" });
+    }
+  });
+
+  app.put("/api/delivery-partners/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const partner = await storage.updateDeliveryPartner(id, updates);
+      res.json(partner);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update delivery partner" });
+    }
+  });
+
+  app.post("/api/delivery-partners/:id/approve", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { adminId } = req.body;
+      const partner = await storage.approveDeliveryPartner(id, adminId);
+      
+      if (partner) {
+        // Create notification for delivery partner
+        await storage.createNotification({
+          userId: partner.userId,
+          title: "Application Approved",
+          message: "Congratulations! Your delivery partner application has been approved. You can now start accepting deliveries.",
+          type: "success"
+        });
+      }
+      
+      res.json(partner);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to approve delivery partner" });
+    }
+  });
+
+  app.post("/api/delivery-partners/:id/reject", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { adminId, reason } = req.body;
+      const partner = await storage.rejectDeliveryPartner(id, adminId, reason);
+      
+      if (partner) {
+        // Create notification for delivery partner
+        await storage.createNotification({
+          userId: partner.userId,
+          title: "Application Rejected",
+          message: `Your delivery partner application has been rejected. Reason: ${reason}`,
+          type: "error"
+        });
+      }
+      
+      res.json(partner);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to reject delivery partner" });
+    }
+  });
+
+  // Delivery Routes
+  app.post("/api/deliveries", async (req, res) => {
+    try {
+      const deliveryData = insertDeliverySchema.parse(req.body);
+      const delivery = await storage.createDelivery(deliveryData);
+      res.json(delivery);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create delivery" });
+    }
+  });
+
+  app.get("/api/deliveries/partner/:partnerId", async (req, res) => {
+    try {
+      const partnerId = parseInt(req.params.partnerId);
+      const deliveries = await storage.getDeliveriesByPartnerId(partnerId);
+      res.json(deliveries);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch partner deliveries" });
+    }
+  });
+
+  app.get("/api/deliveries/order/:orderId", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const deliveries = await storage.getDeliveriesByOrderId(orderId);
+      res.json(deliveries);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch order deliveries" });
+    }
+  });
+
+  app.put("/api/deliveries/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status, partnerId } = req.body;
+      const delivery = await storage.updateDeliveryStatus(id, status, partnerId);
+      
+      if (delivery) {
+        // Create notification for customer about delivery status update
+        const order = await storage.getOrder(delivery.orderId);
+        if (order) {
+          await storage.createNotification({
+            userId: order.customerId,
+            title: "Delivery Status Updated",
+            message: `Your delivery status has been updated to: ${status}`,
+            type: "info",
+            orderId: delivery.orderId
+          });
+        }
+      }
+      
+      res.json(delivery);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update delivery status" });
+    }
+  });
+
+  app.post("/api/deliveries/:deliveryId/assign/:partnerId", async (req, res) => {
+    try {
+      const deliveryId = parseInt(req.params.deliveryId);
+      const partnerId = parseInt(req.params.partnerId);
+      const delivery = await storage.assignDeliveryToPartner(deliveryId, partnerId);
+      
+      if (delivery) {
+        // Create notification for delivery partner
+        const partner = await storage.getDeliveryPartner(partnerId);
+        if (partner) {
+          await storage.createNotification({
+            userId: partner.userId,
+            title: "New Delivery Assigned",
+            message: `You have been assigned a new delivery. Please check your dashboard for details.`,
+            type: "info"
+          });
+        }
+      }
+      
+      res.json(delivery);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to assign delivery" });
     }
   });
 

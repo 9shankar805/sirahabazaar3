@@ -40,6 +40,8 @@ import SellerPromotions from "@/pages/SellerPromotions";
 import SellerOrders from "@/pages/SellerOrders";
 import SellerStore from "@/pages/SellerStore";
 import AddProduct from "@/pages/AddProduct";
+import DeliveryPartnerDashboard from "@/pages/DeliveryPartnerDashboard";
+import AdminDeliveryPartners from "@/pages/AdminDeliveryPartners";
 
 function AppRouter() {
   const { mode } = useAppMode();
