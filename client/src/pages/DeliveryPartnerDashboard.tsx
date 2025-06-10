@@ -52,20 +52,36 @@ export default function DeliveryPartnerDashboard() {
 
   const { data: partner, isLoading: partnerLoading } = useQuery({
     queryKey: ['/api/delivery-partners/user', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/delivery-partners/user?userId=${user?.id}`);
+      if (!response.ok) {
+        throw new Error('Partner not found');
+      }
+      return response.json();
+    },
     enabled: !!user?.id,
   });
 
   const { data: deliveries = [], isLoading: deliveriesLoading } = useQuery({
     queryKey: ['/api/deliveries/partner', partner?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/deliveries/partner/${partner?.id}`);
+      if (!response.ok) {
+        return [];
+      }
+      return response.json();
+    },
     enabled: !!partner?.id,
   });
 
   const updateDeliveryStatus = useMutation({
     mutationFn: async ({ deliveryId, status }: { deliveryId: number; status: string }) => {
-      return apiRequest(`/api/deliveries/${deliveryId}/status`, {
+      const response = await fetch(`/api/deliveries/${deliveryId}/status`, {
         method: 'PUT',
-        body: { status, partnerId: partner?.id },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, partnerId: partner?.id }),
       });
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/deliveries/partner'] });
@@ -85,10 +101,12 @@ export default function DeliveryPartnerDashboard() {
 
   const toggleAvailability = useMutation({
     mutationFn: async (isAvailable: boolean) => {
-      return apiRequest(`/api/delivery-partners/${partner?.id}`, {
+      const response = await fetch(`/api/delivery-partners/${partner?.id}`, {
         method: 'PUT',
-        body: { isAvailable },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isAvailable }),
       });
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/delivery-partners/user'] });
@@ -188,9 +206,10 @@ export default function DeliveryPartnerDashboard() {
     );
   }
 
-  const pendingDeliveries = deliveries.filter((d: Delivery) => d.status === 'assigned');
-  const activeDeliveries = deliveries.filter((d: Delivery) => d.status === 'picked_up');
-  const completedDeliveries = deliveries.filter((d: Delivery) => d.status === 'delivered');
+  const deliveriesArray = Array.isArray(deliveries) ? deliveries : [];
+  const pendingDeliveries = deliveriesArray.filter((d: Delivery) => d.status === 'assigned');
+  const activeDeliveries = deliveriesArray.filter((d: Delivery) => d.status === 'picked_up');
+  const completedDeliveries = deliveriesArray.filter((d: Delivery) => d.status === 'delivered');
 
   const totalEarnings = completedDeliveries.reduce((sum: number, delivery: Delivery) => 
     sum + parseFloat(delivery.deliveryFee), 0

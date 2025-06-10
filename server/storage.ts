@@ -449,7 +449,12 @@ export class DatabaseStorage implements IStorage {
 
   // Cart operations
   async getCartItems(userId: number): Promise<CartItem[]> {
-    return await db.select().from(cartItems).where(eq(cartItems.userId, userId));
+    try {
+      return await db.select().from(cartItems).where(eq(cartItems.userId, userId));
+    } catch (error) {
+      console.error("Error fetching cart items:", error);
+      return [];
+    }
   }
 
   async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
@@ -488,7 +493,12 @@ export class DatabaseStorage implements IStorage {
 
   // Wishlist operations
   async getWishlistItems(userId: number): Promise<WishlistItem[]> {
-    return await db.select().from(wishlistItems).where(eq(wishlistItems.userId, userId));
+    try {
+      return await db.select().from(wishlistItems).where(eq(wishlistItems.userId, userId));
+    } catch (error) {
+      console.error("Error fetching wishlist items:", error);
+      return [];
+    }
   }
 
   async addToWishlist(wishlistItem: InsertWishlistItem): Promise<WishlistItem> {
