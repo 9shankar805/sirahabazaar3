@@ -128,7 +128,11 @@ export default function ComprehensiveAdminDashboard() {
   // Mutations
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
-      return apiRequest(`/api/admin/orders/${orderId}/status`, "PUT", { status });
+      return apiRequest(`/api/admin/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/orders"] });
@@ -138,7 +142,11 @@ export default function ComprehensiveAdminDashboard() {
 
   const createCouponMutation = useMutation({
     mutationFn: async (couponData: any) => {
-      return apiRequest("/api/admin/coupons", "POST", couponData);
+      return apiRequest("/api/admin/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(couponData)
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/coupons"] });
@@ -148,7 +156,11 @@ export default function ComprehensiveAdminDashboard() {
 
   const updateFraudAlertMutation = useMutation({
     mutationFn: async ({ alertId, status }: { alertId: number; status: string }) => {
-      return apiRequest(`/api/admin/fraud-alerts/${alertId}/status`, "PUT", { status });
+      return apiRequest(`/api/admin/fraud-alerts/${alertId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/fraud-alerts"] });
@@ -158,8 +170,10 @@ export default function ComprehensiveAdminDashboard() {
 
   const approveVendorMutation = useMutation({
     mutationFn: async (verificationId: number) => {
-      return apiRequest(`/api/admin/vendor-verifications/${verificationId}/approve`, "PUT", { 
-        adminId: adminUser?.id 
+      return apiRequest(`/api/admin/vendor-verifications/${verificationId}/approve`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser?.id })
       });
     },
     onSuccess: () => {
@@ -170,7 +184,11 @@ export default function ComprehensiveAdminDashboard() {
 
   const updateSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      return apiRequest(`/api/admin/site-settings/${key}`, "PUT", { value });
+      return apiRequest(`/api/admin/site-settings/${key}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value })
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/site-settings"] });
