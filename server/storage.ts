@@ -1350,14 +1350,14 @@ export class DatabaseStorage implements IStorage {
       const existingCategories = await db.select().from(categories);
       if (existingCategories.length === 0) {
         await db.insert(categories).values([
-          { name: 'Electronics', slug: 'electronics', description: 'Electronic devices and gadgets' },
-          { name: 'Clothing', slug: 'clothing', description: 'Apparel and fashion items' },
-          { name: 'Food & Beverages', slug: 'food-beverages', description: 'Food items and drinks' },
-          { name: 'Home & Garden', slug: 'home-garden', description: 'Home improvement and gardening' },
-          { name: 'Sports & Outdoors', slug: 'sports-outdoors', description: 'Sports equipment and outdoor gear' },
-          { name: 'Books', slug: 'books', description: 'Books and educational materials' },
-          { name: 'Beauty & Health', slug: 'beauty-health', description: 'Health and beauty products' },
-          { name: 'Toys & Games', slug: 'toys-games', description: 'Toys and gaming products' }
+          { name: 'Electronics', slug: 'electronics', description: 'Electronic devices and gadgets', icon: 'smartphone' },
+          { name: 'Clothing', slug: 'clothing', description: 'Apparel and fashion items', icon: 'shirt' },
+          { name: 'Food & Beverages', slug: 'food-beverages', description: 'Food items and drinks', icon: 'utensils' },
+          { name: 'Home & Garden', slug: 'home-garden', description: 'Home improvement and gardening', icon: 'home' },
+          { name: 'Sports & Outdoors', slug: 'sports-outdoors', description: 'Sports equipment and outdoor gear', icon: 'dumbbell' },
+          { name: 'Books', slug: 'books', description: 'Books and educational materials', icon: 'book' },
+          { name: 'Beauty & Health', slug: 'beauty-health', description: 'Health and beauty products', icon: 'heart' },
+          { name: 'Toys & Games', slug: 'toys-games', description: 'Toys and gaming products', icon: 'gamepad2' }
         ]);
         console.log('Default categories created');
       }
