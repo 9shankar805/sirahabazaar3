@@ -325,16 +325,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid user ID" });
       }
       
-      // Direct query using raw SQL to bypass schema issues
-      const query = `
-        SELECT p.* FROM products p 
-        JOIN stores s ON s.id = p.store_id 
-        WHERE s.owner_id = $1
-        ORDER BY p.created_at DESC
-      `;
+      // Get stores owned by the user first
+      const stores = await storage.getStoresByOwnerId(parsedId);
+      if (stores.length === 0) {
+        return res.json([]);
+      }
       
-      const result = await pool.query(query, [parsedId]);
-      res.json(result.rows);
+      // Get products for all stores owned by this user
+      let allProducts: any[] = [];
+      for (const store of stores) {
+        const storeProducts = await storage.getProductsByStoreId(store.id);
+        allProducts = allProducts.concat(storeProducts);
+      }
+      
+      res.json(allProducts);
     } catch (error) {
       console.error("Error fetching store products:", error);
       res.status(500).json({ error: "Failed to fetch products", details: error instanceof Error ? error.message : "Unknown error" });
@@ -566,10 +570,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allOrders = [];
       for (const store of stores) {
         const orders = await storage.getOrdersByStoreId(store.id);
-        // Get order items for each order
+        // Get order items with product details for each order
         for (const order of orders) {
           const items = await storage.getOrderItems(order.id);
-          allOrders.push({ ...order, items });
+          const itemsWithProducts = await Promise.all(
+            items.map(async (item) => {
+              const product = await storage.getProduct(item.productId);
+              return { ...item, product };
+            })
+          );
+          allOrders.push({ ...order, items: itemsWithProducts });
         }
       }
       
@@ -585,11 +595,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const storeId = parseInt(req.params.storeId);
       const orders = await storage.getOrdersByStoreId(storeId);
       
-      // Get order items for each order
+      // Get order items with product details for each order
       const ordersWithItems = await Promise.all(
         orders.map(async (order) => {
           const items = await storage.getOrderItems(order.id);
-          return { ...order, items };
+          const itemsWithProducts = await Promise.all(
+            items.map(async (item) => {
+              const product = await storage.getProduct(item.productId);
+              return { ...item, product };
+            })
+          );
+          return { ...order, items: itemsWithProducts };
         })
       );
       
