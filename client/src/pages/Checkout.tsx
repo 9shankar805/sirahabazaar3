@@ -137,7 +137,7 @@ export default function Checkout() {
       const response = await apiPost("/api/orders", {
         order: orderData,
         items: orderItems,
-      });
+      }) as { order?: { id: number } };
 
       // Store order ID for tracking
       if (response.order?.id) {
