@@ -262,6 +262,59 @@ export async function runMigrations() {
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES users(id) NOT NULL DEFAULT 1
     `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address TEXT NOT NULL DEFAULT ''
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT 'cash'
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS phone TEXT NOT NULL DEFAULT ''
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name TEXT NOT NULL DEFAULT ''
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,8)
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS longitude DECIMAL(11,8)
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending'
+    `);
+
+    // Fix users table - ensure all columns exist
+    await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS approval_date TIMESTAMP
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_by INTEGER REFERENCES users(id)
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS rejection_reason TEXT
+    `);
 
     // Create missing admin panel tables
     await db.execute(sql`
