@@ -241,8 +241,4 @@ async function runAdminTests() {
 }
 
 // Run the admin tests
-if (require.main === module) {
-  runAdminTests().catch(console.error);
-}
-
-module.exports = { runAdminTests, testAdminAuthentication };
+runAdminTests().catch(console.error);
