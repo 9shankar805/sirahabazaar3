@@ -35,19 +35,23 @@ export default function AdminLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: AdminLoginForm) => {
-      return apiRequest("/api/admin/login", {
+      const response = await apiRequest("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      return await response.json();
     },
-    onSuccess: (data) => {
-      // Store admin session (you might want to use a proper auth context)
+    onSuccess: (data: any) => {
+      // Store admin session
+      console.log("Login success, storing admin data:", data.admin);
       localStorage.setItem("adminUser", JSON.stringify(data.admin));
       toast({
         title: "Login successful",
         description: "Welcome to the admin panel",
       });
+      // Redirect to dashboard
+      console.log("Redirecting to admin dashboard");
       setLocation("/admin/dashboard");
     },
     onError: (error: any) => {

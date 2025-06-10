@@ -42,15 +42,19 @@ export default function ComprehensiveAdminDashboard() {
 
   useEffect(() => {
     const stored = localStorage.getItem("adminUser");
+    console.log("Admin dashboard checking authentication, stored data:", stored);
     if (stored && stored !== "undefined" && stored !== "null") {
       try {
-        setAdminUser(JSON.parse(stored));
+        const adminData = JSON.parse(stored);
+        console.log("Admin user data parsed successfully:", adminData);
+        setAdminUser(adminData);
       } catch (error) {
         console.error('Error parsing admin user data:', error);
         localStorage.removeItem("adminUser");
         setLocation("/admin/login");
       }
     } else {
+      console.log("No admin user found, redirecting to login");
       setLocation("/admin/login");
     }
   }, [setLocation]);
