@@ -1915,14 +1915,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deliveryPartnerData = insertDeliveryPartnerSchema.parse(req.body);
       const partner = await storage.createDeliveryPartner(deliveryPartnerData);
       
-      // Create notification for admin about new delivery partner application
-      await storage.createNotification({
-        userId: 1, // Admin user ID
-        title: "New Delivery Partner Application",
-        message: `A new delivery partner application has been submitted and is pending approval`,
-        type: "info"
-      });
-      
       res.json(partner);
     } catch (error) {
       console.error("Delivery partner signup error:", error);
