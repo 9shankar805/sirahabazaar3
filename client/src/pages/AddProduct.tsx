@@ -186,9 +186,14 @@ export default function AddProduct() {
       const successMessage = isRestaurant ? "Menu item added successfully!" : "Product added successfully!";
       toast({ title: successMessage });
       
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: [`/api/products/store/${currentStore.id}`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      // Invalidate all relevant queries to refresh inventory data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [`/api/products/store/${currentStore.id}`] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/products/store", user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/seller/inventory", user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/seller/dashboard", user?.id] })
+      ]);
       
       // Navigate back to inventory
       setLocation("/seller/inventory");

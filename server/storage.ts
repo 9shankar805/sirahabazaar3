@@ -445,7 +445,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProductsByStoreId(storeId: number): Promise<Product[]> {
-    return await db.select().from(products).where(eq(products.storeId, storeId));
+    return await db.select().from(products)
+      .where(eq(products.storeId, storeId))
+      .orderBy(desc(products.createdAt));
   }
 
   async getAllProducts(): Promise<Product[]> {

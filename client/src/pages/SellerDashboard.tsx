@@ -167,41 +167,67 @@ export default function SellerDashboard() {
     }
   }, [currentStore]);
 
-  // Dashboard stats query with refetch interval
-  const { data: dashboardStats, isLoading: statsLoading, refetch: refetchStats } = useQuery<RestaurantStats>({
+  // Dashboard stats query with optimized caching
+  const { data: dashboardStats, isLoading: statsLoading, refetch: refetchStats, error: statsError } = useQuery<RestaurantStats>({
     queryKey: ['/api/seller/dashboard', currentUser?.id],
-    queryFn: () => fetch(`/api/seller/dashboard?userId=${currentUser?.id}`).then(res => res.json()),
+    queryFn: async () => {
+      if (!currentUser?.id) throw new Error('User ID required');
+      const response = await fetch(`/api/seller/dashboard?userId=${currentUser.id}`);
+      if (!response.ok) throw new Error(`Failed to fetch dashboard stats: ${response.statusText}`);
+      return response.json();
+    },
     enabled: !!currentUser?.id,
-    refetchInterval: 30000, // Refetch every 30 seconds
-    refetchOnWindowFocus: true, // Refetch when window gains focus
+    staleTime: 60000, // 1 minute
+    refetchInterval: 120000, // Refetch every 2 minutes
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 
-  // Analytics query
-  const { data: analytics, isLoading: analyticsLoading } = useQuery<StoreAnalytics[]>({
+  // Analytics query with improved error handling
+  const { data: analytics, isLoading: analyticsLoading, error: analyticsError } = useQuery<StoreAnalytics[]>({
     queryKey: ['/api/seller/analytics', currentUser?.id, selectedPeriod],
-    queryFn: () => fetch(`/api/seller/analytics?userId=${currentUser?.id}&days=${selectedPeriod}`).then(res => res.json()),
+    queryFn: async () => {
+      if (!currentUser?.id) throw new Error('User ID required');
+      const response = await fetch(`/api/seller/analytics?userId=${currentUser.id}&days=${selectedPeriod}`);
+      if (!response.ok) throw new Error(`Failed to fetch analytics: ${response.statusText}`);
+      return response.json();
+    },
     enabled: !!currentUser?.id,
+    staleTime: 300000, // 5 minutes for analytics
+    refetchOnWindowFocus: false
   });
 
-  // Products query
-  const { data: products = [], isLoading: productsLoading } = useQuery({
+  // Products query with fast loading
+  const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useQuery({
     queryKey: ['/api/products/store', currentUser?.id],
     queryFn: async () => {
       if (!currentUser?.id) return [];
       const response = await fetch(`/api/products/store?userId=${currentUser.id}`);
-      if (!response.ok) throw new Error('Failed to fetch products');
-      return response.json();
+      if (!response.ok) throw new Error(`Failed to fetch products: ${response.statusText}`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!currentUser?.id,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 
-  // Orders query with real-time updates
-  const { data: orders = [], isLoading: ordersLoading, refetch: refetchOrders } = useQuery({
+  // Orders query with efficient updates
+  const { data: orders = [], isLoading: ordersLoading, refetch: refetchOrders, error: ordersError } = useQuery({
     queryKey: ['/api/orders/store', currentUser?.id],
-    queryFn: () => fetch(`/api/orders/store?userId=${currentUser?.id}`).then(res => res.json()),
+    queryFn: async () => {
+      if (!currentUser?.id) return [];
+      const response = await fetch(`/api/orders/store?userId=${currentUser.id}`);
+      if (!response.ok) throw new Error(`Failed to fetch orders: ${response.statusText}`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
     enabled: !!currentUser?.id,
-    refetchInterval: 15000, // Refetch every 15 seconds for orders
-    refetchOnWindowFocus: true,
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // Refetch every minute for orders
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 
   // Categories query

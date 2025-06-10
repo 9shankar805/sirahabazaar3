@@ -44,21 +44,46 @@ export default function SellerInventory() {
     }
   });
 
-  // Products query
-  const { data: products = [], isLoading: productsLoading } = useQuery({
+  // Products query with enhanced error handling and data validation
+  const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useQuery({
     queryKey: ['/api/products/store', user?.id],
-    queryFn: () => fetch(`/api/products/store?userId=${user?.id}`).then(res => res.json()),
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User ID required');
+      const response = await fetch(`/api/products/store?userId=${user.id}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
     enabled: !!user?.id,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    retry: (failureCount, error) => {
+      if (failureCount < 3) return true;
+      console.error('Products fetch failed:', error);
+      return false;
+    }
   });
 
-  // Inventory logs query
-  const { data: inventoryLogs = [], isLoading: logsLoading } = useQuery({
+  // Inventory logs query with enhanced error handling
+  const { data: inventoryLogs = [], isLoading: logsLoading, refetch: refetchLogs } = useQuery({
     queryKey: ['/api/seller/inventory', user?.id],
-    queryFn: () => fetch(`/api/seller/inventory?userId=${user?.id}`).then(res => res.json()),
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User ID required');
+      const response = await fetch(`/api/seller/inventory?userId=${user.id}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
     enabled: !!user?.id,
+    staleTime: 30000,
+    refetchOnWindowFocus: false
   });
 
-  // Stock update mutation
+  // Stock update mutation with enhanced error handling and immediate refresh
   const updateStockMutation = useMutation({
     mutationFn: async (data: z.infer<typeof stockUpdateSchema>) => {
       const response = await fetch('/api/seller/inventory/update', {
@@ -68,23 +93,32 @@ export default function SellerInventory() {
         },
         body: JSON.stringify(data)
       });
-      if (!response.ok) throw new Error('Failed to update stock');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update stock');
+      }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Stock Updated",
         description: "Product inventory has been updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/products/store', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/seller/inventory', user?.id] });
+      
+      // Force immediate data refresh
+      await Promise.all([
+        refetchProducts(),
+        refetchLogs()
+      ]);
+      
       setIsUpdateDialogOpen(false);
       form.reset();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
+      console.error('Stock update error:', error);
       toast({
         title: "Error",
-        description: "Failed to update stock",
+        description: error.message || "Failed to update stock",
         variant: "destructive"
       });
     }
@@ -267,9 +301,31 @@ export default function SellerInventory() {
         {/* Products Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Product Inventory</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              Product Inventory
+              {productsLoading && (
+                <div className="text-sm text-muted-foreground">Loading...</div>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
+            {productsError && (
+              <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="text-red-800 dark:text-red-200 font-medium">Error loading products</div>
+                <div className="text-red-600 dark:text-red-400 text-sm mt-1">
+                  {productsError.message}
+                </div>
+                <Button 
+                  onClick={() => refetchProducts()} 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
+            
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -284,7 +340,45 @@ export default function SellerInventory() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredProducts.map((product: any) => {
+                  {productsLoading ? (
+                    Array.from({ length: 5 }).map((_, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                            <div>
+                              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"></div>
+                              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48 mt-1"></div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div></TableCell>
+                        <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-12"></div></TableCell>
+                        <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div></TableCell>
+                        <TableCell><div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20"></div></TableCell>
+                        <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div></TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                            <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : filteredProducts.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        <div className="text-muted-foreground">
+                          {searchTerm || stockFilter !== 'all' ? 'No products match your filters' : 'No products found'}
+                        </div>
+                        {!searchTerm && stockFilter === 'all' && (
+                          <Link href="/seller/products/add" className="inline-block mt-2">
+                            <Button size="sm">Add Your First Product</Button>
+                          </Link>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredProducts.map((product: any) => {
                     const stock = product.stock || 0;
                     const value = stock * parseFloat(product.price);
                     
