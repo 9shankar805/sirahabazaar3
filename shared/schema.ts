@@ -141,9 +141,13 @@ export const deliveryPartners = pgTable("delivery_partners", {
   userId: integer("user_id").references(() => users.id).notNull(),
   vehicleType: text("vehicle_type").notNull(), // bike, scooter, car, bicycle
   vehicleNumber: text("vehicle_number").notNull(),
-  deliveryArea: text("delivery_area").notNull(),
-  idProofUrl: text("id_proof_url").notNull(),
-  drivingLicenseUrl: text("driving_license_url"),
+  drivingLicense: text("driving_license").notNull(),
+  idProofType: text("id_proof_type").notNull(),
+  idProofNumber: text("id_proof_number").notNull(),
+  deliveryAreas: text("delivery_areas").array().default([]),
+  emergencyContact: text("emergency_contact").notNull(),
+  bankAccountNumber: text("bank_account_number").notNull(),
+  ifscCode: text("ifsc_code").notNull(),
   status: text("status").notNull().default("pending"), // pending, approved, rejected
   approvedBy: integer("approved_by").references(() => users.id),
   approvalDate: timestamp("approval_date"),
@@ -166,11 +170,11 @@ export const deliveries = pgTable("deliveries", {
   pickedUpAt: timestamp("picked_up_at"),
   deliveredAt: timestamp("delivered_at"),
   deliveryFee: decimal("delivery_fee", { precision: 10, scale: 2 }).notNull(),
-  distance: decimal("distance", { precision: 8, scale: 2 }), // in kilometers
+  pickupAddress: text("pickup_address").notNull(),
+  deliveryAddress: text("delivery_address").notNull(),
+  estimatedDistance: decimal("estimated_distance", { precision: 8, scale: 2 }), // in kilometers
   estimatedTime: integer("estimated_time"), // in minutes
   actualTime: integer("actual_time"), // in minutes
-  pickupLocation: text("pickup_location").notNull(), // JSON string for address + lat/lng
-  deliveryLocation: text("delivery_location").notNull(), // JSON string for address + lat/lng
   specialInstructions: text("special_instructions"),
   proofOfDelivery: text("proof_of_delivery"), // photo URL
   customerRating: integer("customer_rating"), // 1-5 stars

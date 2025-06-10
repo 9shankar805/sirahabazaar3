@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
+import { runMigrations } from "./migrate";
 
 const app = express();
 app.use(express.json({ limit: '50mb' }));
@@ -38,8 +39,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize database with default admin account
-  await storage.createDefaultAdmin();
+  try {
+    // Run database migrations first
+    await runMigrations();
+    
+    // Initialize database with default admin account
+    await storage.createDefaultAdmin();
+  } catch (error) {
+    console.error("Error initializing database:", error);
+  }
   
   const server = await registerRoutes(app);
 
