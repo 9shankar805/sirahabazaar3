@@ -167,11 +167,13 @@ export default function SellerDashboard() {
     }
   }, [currentStore]);
 
-  // Dashboard stats query
-  const { data: dashboardStats, isLoading: statsLoading } = useQuery<RestaurantStats>({
+  // Dashboard stats query with refetch interval
+  const { data: dashboardStats, isLoading: statsLoading, refetch: refetchStats } = useQuery<RestaurantStats>({
     queryKey: ['/api/seller/dashboard', currentUser?.id],
     queryFn: () => fetch(`/api/seller/dashboard?userId=${currentUser?.id}`).then(res => res.json()),
     enabled: !!currentUser?.id,
+    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchOnWindowFocus: true, // Refetch when window gains focus
   });
 
   // Analytics query
@@ -193,11 +195,13 @@ export default function SellerDashboard() {
     enabled: !!currentUser?.id,
   });
 
-  // Orders query
-  const { data: orders = [], isLoading: ordersLoading } = useQuery({
+  // Orders query with real-time updates
+  const { data: orders = [], isLoading: ordersLoading, refetch: refetchOrders } = useQuery({
     queryKey: ['/api/orders/store', currentUser?.id],
     queryFn: () => fetch(`/api/orders/store?userId=${currentUser?.id}`).then(res => res.json()),
     enabled: !!currentUser?.id,
+    refetchInterval: 15000, // Refetch every 15 seconds for orders
+    refetchOnWindowFocus: true,
   });
 
   // Categories query
@@ -416,6 +420,21 @@ export default function SellerDashboard() {
                   <SelectItem value="90">Last 90 days</SelectItem>
                 </SelectContent>
               </Select>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  refetchStats();
+                  refetchOrders();
+                  toast({
+                    title: "Dashboard Refreshed",
+                    description: "Latest data has been loaded",
+                  });
+                }}
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
               <Button variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Export
@@ -463,13 +482,16 @@ export default function SellerDashboard() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{dashboardStats?.totalOrders || 0}</div>
                   <p className="text-xs text-muted-foreground">
                     <TrendingUp className="h-3 w-3 inline mr-1" />
-                    +12% from last month
+                    {dashboardStats?.pendingOrders || 0} pending orders
                   </p>
                 </CardContent>
               </Card>
@@ -502,13 +524,43 @@ export default function SellerDashboard() {
               </Card>
             </div>
 
+            {/* Pending Orders Alert */}
+            {dashboardStats?.pendingOrders > 0 && (
+              <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                    <AlertCircle className="h-5 w-5" />
+                    New Orders Waiting
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-orange-600 dark:text-orange-300">
+                        You have <strong>{dashboardStats.pendingOrders}</strong> pending order{dashboardStats.pendingOrders > 1 ? 's' : ''} that need{dashboardStats.pendingOrders === 1 ? 's' : ''} your attention.
+                      </p>
+                      <p className="text-sm text-orange-500 dark:text-orange-400 mt-1">
+                        Click below to view and process these orders.
+                      </p>
+                    </div>
+                    <Link href="/seller/orders">
+                      <Button className="bg-orange-600 hover:bg-orange-700">
+                        <Receipt className="h-4 w-4 mr-2" />
+                        View Orders
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Quick Actions */}
             <Card>
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <Button onClick={() => setActiveTab("add-product")} className="w-full">
                     <Plus className="h-4 w-4 mr-2" />
                     {isRestaurant ? "Add Menu Item" : "Add Product"}
@@ -517,6 +569,12 @@ export default function SellerDashboard() {
                     {isRestaurant ? <UtensilsCrossed className="h-4 w-4 mr-2" /> : <Package className="h-4 w-4 mr-2" />}
                     {isRestaurant ? "View Menu" : "View Products"}
                   </Button>
+                  <Link href="/seller/orders" className="w-full">
+                    <Button variant="outline" className="w-full">
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Manage Orders
+                    </Button>
+                  </Link>
                   <Button onClick={() => setActiveTab("analytics")} variant="outline" className="w-full">
                     <BarChart3 className="h-4 w-4 mr-2" />
                     View Analytics
