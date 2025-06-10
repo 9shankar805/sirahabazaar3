@@ -12,6 +12,7 @@ import NavbarWrapper from "@/components/NavbarWrapper";
 import BottomNavbar from "@/components/BottomNavbar";
 import Footer from "@/components/Footer";
 import ModeSwiper from "@/components/ModeSwiper";
+import MobileNotificationBar from "@/components/MobileNotificationBar";
 import Homepage from "@/pages/Homepage";
 import FoodHomepage from "@/pages/FoodHomepage";
 import Products from "@/pages/Products";
@@ -115,6 +116,7 @@ function App() {
             <AppModeProvider>
               <TooltipProvider>
                 <div className="min-h-screen flex flex-col">
+                  <MobileNotificationBar className="md:hidden" />
                   <NavbarWrapper />
                   <main className="flex-1 pb-16 md:pb-0">
                     <AppRouter />
