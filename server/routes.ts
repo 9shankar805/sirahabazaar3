@@ -2389,6 +2389,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delivery Zone routes
+  app.get("/api/delivery-zones", async (req, res) => {
+    try {
+      const zones = await storage.getDeliveryZones();
+      res.json(zones);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch delivery zones" });
+    }
+  });
+
+  app.get("/api/admin/delivery-zones", async (req, res) => {
+    try {
+      const zones = await storage.getAllDeliveryZones();
+      res.json(zones);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch delivery zones" });
+    }
+  });
+
+  app.post("/api/admin/delivery-zones", async (req, res) => {
+    try {
+      const zoneData = insertDeliveryZoneSchema.parse(req.body);
+      const zone = await storage.createDeliveryZone(zoneData);
+      res.json(zone);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid delivery zone data" });
+    }
+  });
+
+  app.put("/api/admin/delivery-zones/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const zone = await storage.updateDeliveryZone(parseInt(id), updateData);
+      res.json(zone);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update delivery zone" });
+    }
+  });
+
+  app.delete("/api/admin/delivery-zones/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteDeliveryZone(parseInt(id));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete delivery zone" });
+    }
+  });
+
+  // Calculate delivery fee based on distance
+  app.post("/api/calculate-delivery-fee", async (req, res) => {
+    try {
+      const { distance } = req.body;
+      if (typeof distance !== 'number' || distance < 0) {
+        return res.status(400).json({ error: "Invalid distance value" });
+      }
+      
+      const result = await storage.calculateDeliveryFee(distance);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to calculate delivery fee" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

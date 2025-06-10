@@ -520,6 +520,18 @@ export const siteSettings = pgTable("site_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Distance-based delivery pricing
+export const deliveryZones = pgTable("delivery_zones", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // "Inner City", "Suburban", "Rural"
+  minDistance: decimal("min_distance", { precision: 8, scale: 2 }).notNull(), // in kilometers
+  maxDistance: decimal("max_distance", { precision: 8, scale: 2 }).notNull(), // in kilometers
+  baseFee: decimal("base_fee", { precision: 10, scale: 2 }).notNull(),
+  perKmRate: decimal("per_km_rate", { precision: 10, scale: 2 }).notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -567,6 +579,11 @@ export const insertBannerSchema = createInsertSchema(banners).omit({
 export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({
   id: true,
   updatedAt: true,
+});
+
+export const insertDeliveryZoneSchema = createInsertSchema(deliveryZones).omit({
+  id: true,
+  createdAt: true,
 });
 
 
@@ -629,6 +646,9 @@ export type Banner = typeof banners.$inferSelect;
 export type InsertBanner = z.infer<typeof insertBannerSchema>;
 export type SiteSetting = typeof siteSettings.$inferSelect;
 export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
+
+export type DeliveryZone = typeof deliveryZones.$inferSelect;
+export type InsertDeliveryZone = z.infer<typeof insertDeliveryZoneSchema>;
 export type ProductAttribute = typeof productAttributes.$inferSelect;
 export type InsertProductAttribute = z.infer<typeof insertProductAttributeSchema>;
 export type FraudAlert = typeof fraudAlerts.$inferSelect;

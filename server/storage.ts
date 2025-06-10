@@ -1903,15 +1903,76 @@ export class DatabaseStorage implements IStorage {
   async assignDeliveryToPartner(deliveryId: number, partnerId: number): Promise<Delivery | undefined> {
     try {
       const [updated] = await db.update(deliveries).set({
-        partnerId,
+        deliveryPartnerId: partnerId,
         status: 'assigned',
-        assignedAt: new Date(),
-        updatedAt: new Date()
+        assignedAt: new Date()
       }).where(eq(deliveries.id, deliveryId)).returning();
       return updated || undefined;
     } catch {
       return undefined;
     }
+  }
+
+  // Delivery Zone methods
+  async createDeliveryZone(data: InsertDeliveryZone): Promise<DeliveryZone> {
+    const [zone] = await db.insert(deliveryZones).values(data).returning();
+    return zone;
+  }
+
+  async getDeliveryZones(): Promise<DeliveryZone[]> {
+    return await db.select().from(deliveryZones).where(eq(deliveryZones.isActive, true));
+  }
+
+  async getAllDeliveryZones(): Promise<DeliveryZone[]> {
+    return await db.select().from(deliveryZones);
+  }
+
+  async updateDeliveryZone(id: number, data: Partial<InsertDeliveryZone>): Promise<DeliveryZone> {
+    const [zone] = await db
+      .update(deliveryZones)
+      .set(data)
+      .where(eq(deliveryZones.id, id))
+      .returning();
+    return zone;
+  }
+
+  async deleteDeliveryZone(id: number): Promise<void> {
+    await db.update(deliveryZones)
+      .set({ isActive: false })
+      .where(eq(deliveryZones.id, id));
+  }
+
+  // Calculate delivery fee based on distance
+  async calculateDeliveryFee(distance: number): Promise<{ fee: number; zone: DeliveryZone | null }> {
+    const zones = await this.getDeliveryZones();
+    
+    // Find the appropriate zone for this distance
+    const applicableZone = zones.find(zone => {
+      const minDist = parseFloat(zone.minDistance);
+      const maxDist = parseFloat(zone.maxDistance);
+      return distance >= minDist && distance <= maxDist;
+    });
+
+    if (!applicableZone) {
+      // Default fee if no zone found (fallback to furthest zone)
+      const furthestZone = zones
+        .sort((a, b) => parseFloat(b.maxDistance) - parseFloat(a.maxDistance))[0];
+      
+      if (furthestZone) {
+        const baseFee = parseFloat(furthestZone.baseFee);
+        const perKmRate = parseFloat(furthestZone.perKmRate);
+        const fee = baseFee + (distance * perKmRate);
+        return { fee: Math.round(fee * 100) / 100, zone: furthestZone };
+      }
+      
+      return { fee: 100, zone: null }; // Default fallback fee
+    }
+
+    const baseFee = parseFloat(applicableZone.baseFee);
+    const perKmRate = parseFloat(applicableZone.perKmRate);
+    const fee = baseFee + (distance * perKmRate);
+
+    return { fee: Math.round(fee * 100) / 100, zone: applicableZone };
   }
 }
 
