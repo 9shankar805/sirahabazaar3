@@ -333,6 +333,11 @@ export async function runMigrations() {
       UPDATE users SET username = SPLIT_PART(email, '@', 1) WHERE username IS NULL
     `);
 
+    // Make username column NOT NULL after updating existing records
+    await db.execute(sql`
+      ALTER TABLE users ALTER COLUMN username SET NOT NULL
+    `);
+
     // Create missing admin panel tables
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS coupons (
