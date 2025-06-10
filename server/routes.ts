@@ -310,30 +310,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get products by owner for inventory page
+  // Fixed products by store endpoint for inventory
   app.get("/api/products/store", async (req, res) => {
+    const { userId } = req.query;
+    
+    if (!userId) {
+      return res.json([]);
+    }
+    
+    const userIdNum = parseInt(userId as string);
+    if (isNaN(userIdNum)) {
+      return res.json([]);
+    }
+    
     try {
-      const { userId, ownerId } = req.query;
-      const id = userId || ownerId;
+      // Direct query to get products for user's stores
+      const query = `
+        SELECT p.* 
+        FROM products p 
+        INNER JOIN stores s ON s.id = p.store_id 
+        WHERE s.owner_id = $1 
+        ORDER BY p.created_at DESC
+      `;
       
-      if (!id) {
-        return res.status(400).json({ error: "User ID required" });
-      }
-      
-      const ownerId_num = parseInt(id as string);
-      
-      // Get all products where store owner matches the user
-      const allProducts = await storage.getAllProducts();
-      const userStores = await storage.getStoresByOwnerId(ownerId_num);
-      const storeIds = userStores.map(store => store.id);
-      
-      const userProducts = allProducts.filter(product => 
-        storeIds.includes(product.storeId)
-      );
-      
-      res.json(userProducts);
+      const result = await pool.query(query, [userIdNum]);
+      res.json(result.rows);
     } catch (error) {
-      console.error("Error in products/store:", error);
+      console.error("Products/store error:", error);
       res.json([]);
     }
   });
