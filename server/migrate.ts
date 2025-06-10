@@ -421,6 +421,39 @@ export async function runMigrations() {
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name TEXT NOT NULL DEFAULT 'Default Customer'
     `);
 
+    // Create cart_items table
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS cart_items (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) NOT NULL,
+        product_id INTEGER REFERENCES products(id) NOT NULL,
+        quantity INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    // Create wishlist_items table
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS wishlist_items (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) NOT NULL,
+        product_id INTEGER REFERENCES products(id) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    // Create order_items table
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS order_items (
+        id SERIAL PRIMARY KEY,
+        order_id INTEGER REFERENCES orders(id) NOT NULL,
+        product_id INTEGER REFERENCES products(id) NOT NULL,
+        quantity INTEGER NOT NULL,
+        price DECIMAL(10,2) NOT NULL,
+        store_id INTEGER REFERENCES stores(id) NOT NULL
+      )
+    `);
+
     // Create missing admin panel tables
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS coupons (
