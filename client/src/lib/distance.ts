@@ -125,3 +125,42 @@ export function estimateDeliveryTime(distance: number): number {
   
   return Math.round(baseTime + (distance * timePerKm));
 }
+
+/**
+ * Format distance for display
+ */
+export function formatDistance(distance: number): string {
+  if (distance < 1) {
+    return `${Math.round(distance * 1000)}m`;
+  }
+  return `${distance.toFixed(1)}km`;
+}
+
+/**
+ * Get current user location using browser geolocation API
+ */
+export function getCurrentUserLocation(): Promise<Coordinates> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation is not supported by this browser'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        });
+      },
+      (error) => {
+        reject(new Error(`Geolocation error: ${error.message}`));
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
+  });
+}
