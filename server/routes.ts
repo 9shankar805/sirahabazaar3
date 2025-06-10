@@ -1357,6 +1357,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Security and Fraud Detection
+  app.get("/api/admin/fraud-alerts", async (req, res) => {
+    try {
+      const alerts = await storage.getAllFraudAlerts();
+      res.json(alerts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch fraud alerts" });
+    }
+  });
+
+  app.post("/api/admin/fraud-alerts", async (req, res) => {
+    try {
+      const alertData = insertFraudAlertSchema.parse(req.body);
+      const alert = await storage.createFraudAlert(alertData);
+      res.json(alert);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create fraud alert" });
+    }
+  });
+
+  app.put("/api/admin/fraud-alerts/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      const alert = await storage.updateFraudAlertStatus(id, status);
+      res.json(alert);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update fraud alert" });
+    }
+  });
+
+  // Vendor Verification Management
+  app.get("/api/admin/vendor-verifications", async (req, res) => {
+    try {
+      const verifications = await storage.getAllVendorVerifications();
+      res.json(verifications);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch vendor verifications" });
+    }
+  });
+
+  app.put("/api/admin/vendor-verifications/:id/approve", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { adminId } = req.body;
+      const verification = await storage.approveVendorVerification(id, adminId);
+      res.json(verification);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to approve verification" });
+    }
+  });
+
+  app.put("/api/admin/vendor-verifications/:id/reject", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { adminId, reason } = req.body;
+      const verification = await storage.rejectVendorVerification(id, adminId, reason);
+      res.json(verification);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to reject verification" });
+    }
+  });
+
+  // Commission Management
+  app.get("/api/admin/commissions", async (req, res) => {
+    try {
+      const status = req.query.status as string;
+      const commissions = await storage.getCommissions(status);
+      res.json(commissions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch commissions" });
+    }
+  });
+
+  app.put("/api/admin/commissions/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      const commission = await storage.updateCommissionStatus(id, status);
+      res.json(commission);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update commission status" });
+    }
+  });
+
+  // Enhanced Dashboard Statistics
+  app.get("/api/admin/dashboard/stats", async (req, res) => {
+    try {
+      const [
+        totalUsers,
+        totalStores,
+        totalOrders,
+        totalRevenue,
+        pendingOrders,
+        activeUsers,
+        pendingVerifications,
+        fraudAlerts
+      ] = await Promise.all([
+        storage.getTotalUsersCount(),
+        storage.getTotalStoresCount(),
+        storage.getTotalOrdersCount(),
+        storage.getTotalRevenue(),
+        storage.getPendingOrdersCount(),
+        storage.getActiveUsersCount(),
+        storage.getPendingVendorVerificationsCount(),
+        storage.getOpenFraudAlertsCount()
+      ]);
+
+      res.json({
+        totalUsers,
+        totalStores,
+        totalOrders,
+        totalRevenue,
+        pendingOrders,
+        activeUsers,
+        pendingVerifications,
+        fraudAlerts
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch dashboard stats" });
+    }
+  });
+
   // Website analytics routes
   app.get("/api/admin/analytics/stats", async (req, res) => {
     try {

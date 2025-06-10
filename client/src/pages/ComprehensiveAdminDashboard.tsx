@@ -1,0 +1,1246 @@
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  Users, Store, Package, ShoppingCart, DollarSign, TrendingUp, AlertTriangle, 
+  Eye, Edit, Trash2, Plus, Download, Upload, Search, Filter, MoreHorizontal,
+  CheckCircle, XCircle, Clock, Ban, Settings, Bell, Shield, CreditCard,
+  BarChart3, FileText, MessageSquare, Tag, Image, Globe, Zap, UserCheck,
+  LogOut, RefreshCw, Calendar, Mail, Phone, MapPin
+} from "lucide-react";
+
+export default function ComprehensiveAdminDashboard() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [adminUser, setAdminUser] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  useEffect(() => {
+    const stored = localStorage.getItem("adminUser");
+    if (stored) {
+      setAdminUser(JSON.parse(stored));
+    } else {
+      setLocation("/admin/login");
+    }
+  }, [setLocation]);
+
+  // Data fetching queries
+  const { data: dashboardStats } = useQuery({
+    queryKey: ["/api/admin/dashboard/stats"],
+    enabled: !!adminUser,
+  });
+
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ["/api/admin/users"],
+    enabled: !!adminUser,
+  });
+
+  const { data: allStores = [] } = useQuery({
+    queryKey: ["/api/admin/stores"],
+    enabled: !!adminUser,
+  });
+
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ["/api/admin/products"],
+    enabled: !!adminUser,
+  });
+
+  const { data: allOrders = [] } = useQuery({
+    queryKey: ["/api/admin/orders"],
+    enabled: !!adminUser,
+  });
+
+  const { data: transactions = [] } = useQuery({
+    queryKey: ["/api/admin/transactions"],
+    enabled: !!adminUser,
+  });
+
+  const { data: coupons = [] } = useQuery({
+    queryKey: ["/api/admin/coupons"],
+    enabled: !!adminUser,
+  });
+
+  const { data: supportTickets = [] } = useQuery({
+    queryKey: ["/api/admin/support-tickets"],
+    enabled: !!adminUser,
+  });
+
+  const { data: vendorVerifications = [] } = useQuery({
+    queryKey: ["/api/admin/vendor-verifications"],
+    enabled: !!adminUser,
+  });
+
+  const { data: fraudAlerts = [] } = useQuery({
+    queryKey: ["/api/admin/fraud-alerts"],
+    enabled: !!adminUser,
+  });
+
+  const { data: inventoryAlerts = [] } = useQuery({
+    queryKey: ["/api/admin/inventory/alerts"],
+    enabled: !!adminUser,
+  });
+
+  const { data: analytics } = useQuery({
+    queryKey: ["/api/admin/analytics"],
+    enabled: !!adminUser,
+  });
+
+  const { data: siteSettings = [] } = useQuery({
+    queryKey: ["/api/admin/site-settings"],
+    enabled: !!adminUser,
+  });
+
+  // Mutations
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
+      return apiRequest(`/api/admin/orders/${orderId}/status`, "PUT", { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/orders"] });
+      toast({ title: "Order status updated successfully" });
+    },
+  });
+
+  const createCouponMutation = useMutation({
+    mutationFn: async (couponData: any) => {
+      return apiRequest("/api/admin/coupons", "POST", couponData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/coupons"] });
+      toast({ title: "Coupon created successfully" });
+    },
+  });
+
+  const updateFraudAlertMutation = useMutation({
+    mutationFn: async ({ alertId, status }: { alertId: number; status: string }) => {
+      return apiRequest(`/api/admin/fraud-alerts/${alertId}/status`, "PUT", { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/fraud-alerts"] });
+      toast({ title: "Fraud alert updated successfully" });
+    },
+  });
+
+  const approveVendorMutation = useMutation({
+    mutationFn: async (verificationId: number) => {
+      return apiRequest(`/api/admin/vendor-verifications/${verificationId}/approve`, "PUT", { 
+        adminId: adminUser?.id 
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/vendor-verifications"] });
+      toast({ title: "Vendor verification approved" });
+    },
+  });
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminUser");
+    setLocation("/admin/login");
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NP', {
+      style: 'currency',
+      currency: 'NPR',
+    }).format(amount);
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-NP', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (!adminUser) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-3">
+              <Shield className="h-8 w-8 text-primary" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Siraha Bazaar Admin</h1>
+                <p className="text-sm text-muted-foreground">Comprehensive management dashboard</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <span className="text-sm text-muted-foreground">Welcome, {adminUser.fullName}</span>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-10">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="vendors">Vendors</TabsTrigger>
+            <TabsTrigger value="coupons">Coupons</TabsTrigger>
+            <TabsTrigger value="inventory">Inventory</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="support">Support</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+                      <p className="text-2xl font-bold">{dashboardStats?.totalUsers || 0}</p>
+                    </div>
+                    <Users className="h-8 w-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                      <p className="text-2xl font-bold">{formatCurrency(dashboardStats?.totalRevenue || 0)}</p>
+                    </div>
+                    <DollarSign className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+                      <p className="text-2xl font-bold">{dashboardStats?.totalOrders || 0}</p>
+                    </div>
+                    <ShoppingCart className="h-8 w-8 text-purple-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Active Stores</p>
+                      <p className="text-2xl font-bold">{dashboardStats?.totalStores || 0}</p>
+                    </div>
+                    <Store className="h-8 w-8 text-orange-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("orders")}>
+                <div className="flex items-center">
+                  <ShoppingCart className="h-6 w-6 text-purple-600" />
+                  <div className="ml-3">
+                    <p className="font-medium">Pending Orders</p>
+                    <p className="text-sm text-gray-500">{dashboardStats?.pendingOrders || 0} orders awaiting processing</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("vendors")}>
+                <div className="flex items-center">
+                  <UserCheck className="h-6 w-6 text-blue-600" />
+                  <div className="ml-3">
+                    <p className="font-medium">Vendor Approvals</p>
+                    <p className="text-sm text-gray-500">{dashboardStats?.pendingVerifications || 0} pending verifications</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("security")}>
+                <div className="flex items-center">
+                  <Shield className="h-6 w-6 text-red-600" />
+                  <div className="ml-3">
+                    <p className="font-medium">Security Alerts</p>
+                    <p className="text-sm text-gray-500">{dashboardStats?.fraudAlerts || 0} active alerts</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Orders Tab */}
+          <TabsContent value="orders" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Order Management</h2>
+              <div className="flex space-x-2">
+                <Input 
+                  placeholder="Search orders..." 
+                  className="w-64"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Orders</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="shipped">Shipped</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Total Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allOrders
+                      .filter((order: any) => 
+                        (filterStatus === "all" || order.status === filterStatus) &&
+                        (searchTerm === "" || 
+                         order.id.toString().includes(searchTerm) ||
+                         order.customerName.toLowerCase().includes(searchTerm.toLowerCase()))
+                      )
+                      .map((order: any) => (
+                        <TableRow key={order.id}>
+                          <TableCell className="font-medium">#{order.id}</TableCell>
+                          <TableCell>{order.customerName}</TableCell>
+                          <TableCell>{formatCurrency(parseFloat(order.totalAmount))}</TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={
+                                order.status === 'delivered' ? 'default' :
+                                order.status === 'cancelled' ? 'destructive' :
+                                order.status === 'shipped' ? 'secondary' : 'outline'
+                              }
+                            >
+                              {order.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatDate(order.createdAt)}</TableCell>
+                          <TableCell>
+                            <Select 
+                              value={order.status}
+                              onValueChange={(status) => 
+                                updateOrderStatusMutation.mutate({ orderId: order.id, status })
+                              }
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="processing">Processing</SelectItem>
+                                <SelectItem value="shipped">Shipped</SelectItem>
+                                <SelectItem value="delivered">Delivered</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Payments Tab */}
+          <TabsContent value="payments" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Payment Management</h2>
+              <Button>
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Transactions</p>
+                      <p className="text-2xl font-bold">{transactions.length}</p>
+                    </div>
+                    <CreditCard className="h-8 w-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Successful Payments</p>
+                      <p className="text-2xl font-bold">
+                        {transactions.filter((t: any) => t.status === 'completed').length}
+                      </p>
+                    </div>
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Failed Payments</p>
+                      <p className="text-2xl font-bold">
+                        {transactions.filter((t: any) => t.status === 'failed').length}
+                      </p>
+                    </div>
+                    <XCircle className="h-8 w-8 text-red-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Transaction ID</TableHead>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Payment Method</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.map((transaction: any) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell className="font-medium">{transaction.transactionId}</TableCell>
+                        <TableCell>#{transaction.orderId}</TableCell>
+                        <TableCell>{formatCurrency(parseFloat(transaction.amount))}</TableCell>
+                        <TableCell>{transaction.paymentMethod}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={
+                              transaction.status === 'completed' ? 'default' :
+                              transaction.status === 'failed' ? 'destructive' : 'outline'
+                            }
+                          >
+                            {transaction.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatDate(transaction.createdAt)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Vendors Tab */}
+          <TabsContent value="vendors" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Vendor Management</h2>
+              <div className="flex space-x-2">
+                <Input placeholder="Search vendors..." className="w-64" />
+                <Button variant="outline">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filter
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pending Verifications</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {vendorVerifications
+                    .filter((v: any) => v.status === 'pending')
+                    .map((verification: any) => (
+                      <div key={verification.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <p className="font-medium">Store ID: {verification.storeId}</p>
+                          <p className="text-sm text-muted-foreground">{verification.documentType}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            onClick={() => approveVendorMutation.mutate(verification.id)}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <XCircle className="h-4 w-4 mr-1" />
+                            Reject
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Active Vendors</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Store Name</TableHead>
+                        <TableHead>Owner</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allStores.slice(0, 5).map((store: any) => (
+                        <TableRow key={store.id}>
+                          <TableCell className="font-medium">{store.name}</TableCell>
+                          <TableCell>{store.ownerName || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant={store.isActive ? 'default' : 'destructive'}>
+                              {store.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button size="sm" variant="outline">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Coupons Tab */}
+          <TabsContent value="coupons" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Coupon Management</h2>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Coupon
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create New Coupon</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="coupon-code">Coupon Code</Label>
+                      <Input id="coupon-code" placeholder="Enter coupon code" />
+                    </div>
+                    <div>
+                      <Label htmlFor="coupon-title">Title</Label>
+                      <Input id="coupon-title" placeholder="Enter coupon title" />
+                    </div>
+                    <div>
+                      <Label htmlFor="discount-value">Discount Value</Label>
+                      <Input id="discount-value" type="number" placeholder="Enter discount amount" />
+                    </div>
+                    <div>
+                      <Label htmlFor="discount-type">Discount Type</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select discount type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="percentage">Percentage</SelectItem>
+                          <SelectItem value="fixed">Fixed Amount</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button className="w-full">Create Coupon</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Discount</TableHead>
+                      <TableHead>Used/Limit</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Expires</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {coupons.map((coupon: any) => (
+                      <TableRow key={coupon.id}>
+                        <TableCell className="font-medium">{coupon.code}</TableCell>
+                        <TableCell>{coupon.title}</TableCell>
+                        <TableCell>
+                          {coupon.discountType === 'percentage' 
+                            ? `${coupon.discountValue}%` 
+                            : formatCurrency(parseFloat(coupon.discountValue))
+                          }
+                        </TableCell>
+                        <TableCell>{coupon.usedCount}/{coupon.usageLimit || '∞'}</TableCell>
+                        <TableCell>
+                          <Badge variant={coupon.isActive ? 'default' : 'destructive'}>
+                            {coupon.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {coupon.expiresAt ? formatDate(coupon.expiresAt) : 'Never'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button size="sm" variant="outline">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Inventory Tab */}
+          <TabsContent value="inventory" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Inventory Management</h2>
+              <div className="flex space-x-2">
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+                <Button>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Low Stock Items</p>
+                      <p className="text-2xl font-bold text-red-600">{inventoryAlerts.length}</p>
+                    </div>
+                    <AlertTriangle className="h-8 w-8 text-red-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Products</p>
+                      <p className="text-2xl font-bold">{allProducts.length}</p>
+                    </div>
+                    <Package className="h-8 w-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Out of Stock</p>
+                      <p className="text-2xl font-bold">
+                        {allProducts.filter((p: any) => (p.stock || 0) === 0).length}
+                      </p>
+                    </div>
+                    <XCircle className="h-8 w-8 text-orange-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Low Stock Alerts</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Store</TableHead>
+                      <TableHead>Current Stock</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allProducts
+                      .filter((product: any) => (product.stock || 0) <= 10)
+                      .map((product: any) => (
+                        <TableRow key={product.id}>
+                          <TableCell className="font-medium">{product.name}</TableCell>
+                          <TableCell>{product.storeName || 'N/A'}</TableCell>
+                          <TableCell>
+                            <span className={`font-medium ${(product.stock || 0) === 0 ? 'text-red-600' : 'text-orange-600'}`}>
+                              {product.stock || 0}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={(product.stock || 0) === 0 ? 'destructive' : 'secondary'}>
+                              {(product.stock || 0) === 0 ? 'Out of Stock' : 'Low Stock'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button size="sm" variant="outline">
+                              <Bell className="h-4 w-4 mr-1" />
+                              Notify Store
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Analytics & Reports</h2>
+              <div className="flex space-x-2">
+                <Select defaultValue="30">
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">Last 7 days</SelectItem>
+                    <SelectItem value="30">Last 30 days</SelectItem>
+                    <SelectItem value="90">Last 90 days</SelectItem>
+                    <SelectItem value="365">Last year</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Report
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Revenue Growth</p>
+                      <p className="text-2xl font-bold text-green-600">+12.5%</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">New Customers</p>
+                      <p className="text-2xl font-bold">
+                        {allUsers.filter((u: any) => u.role === 'customer').length}
+                      </p>
+                    </div>
+                    <Users className="h-8 w-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Conversion Rate</p>
+                      <p className="text-2xl font-bold">3.2%</p>
+                    </div>
+                    <BarChart3 className="h-8 w-8 text-purple-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Avg Order Value</p>
+                      <p className="text-2xl font-bold">{formatCurrency(1250)}</p>
+                    </div>
+                    <DollarSign className="h-8 w-8 text-orange-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Analytics Charts Placeholder */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Revenue Trend</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p className="text-muted-foreground">Revenue chart would be displayed here</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top Products</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {allProducts.slice(0, 5).map((product: any, index: number) => (
+                      <div key={product.id} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>
+                          <span className="font-medium">{product.name}</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">{product.totalReviews || 0} reviews</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Support Tab */}
+          <TabsContent value="support" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Support Management</h2>
+              <div className="flex space-x-2">
+                <Select defaultValue="all">
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Tickets</SelectItem>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Ticket
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Open Tickets</p>
+                      <p className="text-2xl font-bold">
+                        {supportTickets.filter((t: any) => t.status === 'open').length}
+                      </p>
+                    </div>
+                    <MessageSquare className="h-8 w-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">In Progress</p>
+                      <p className="text-2xl font-bold">
+                        {supportTickets.filter((t: any) => t.status === 'in_progress').length}
+                      </p>
+                    </div>
+                    <Clock className="h-8 w-8 text-orange-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Resolved</p>
+                      <p className="text-2xl font-bold">
+                        {supportTickets.filter((t: any) => t.status === 'resolved').length}
+                      </p>
+                    </div>
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Avg Response</p>
+                      <p className="text-2xl font-bold">2.4h</p>
+                    </div>
+                    <Calendar className="h-8 w-8 text-purple-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ticket ID</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {supportTickets.map((ticket: any) => (
+                      <TableRow key={ticket.id}>
+                        <TableCell className="font-medium">#{ticket.id}</TableCell>
+                        <TableCell>{ticket.subject}</TableCell>
+                        <TableCell>{ticket.customerName || 'Anonymous'}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={
+                              ticket.priority === 'urgent' ? 'destructive' :
+                              ticket.priority === 'high' ? 'secondary' : 'outline'
+                            }
+                          >
+                            {ticket.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={
+                              ticket.status === 'resolved' ? 'default' :
+                              ticket.status === 'in_progress' ? 'secondary' : 'outline'
+                            }
+                          >
+                            {ticket.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatDate(ticket.createdAt)}</TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button size="sm" variant="outline">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <MessageSquare className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent value="security" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Security & Fraud Detection</h2>
+              <Button>
+                <Shield className="h-4 w-4 mr-2" />
+                Run Security Scan
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Active Alerts</p>
+                      <p className="text-2xl font-bold text-red-600">{fraudAlerts.length}</p>
+                    </div>
+                    <AlertTriangle className="h-8 w-8 text-red-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Blocked Users</p>
+                      <p className="text-2xl font-bold">
+                        {allUsers.filter((u: any) => u.status === 'suspended').length}
+                      </p>
+                    </div>
+                    <Ban className="h-8 w-8 text-orange-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Security Score</p>
+                      <p className="text-2xl font-bold text-green-600">94%</p>
+                    </div>
+                    <Shield className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Fraud Alerts</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Alert ID</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Risk Score</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {fraudAlerts.map((alert: any) => (
+                      <TableRow key={alert.id}>
+                        <TableCell className="font-medium">#{alert.id}</TableCell>
+                        <TableCell>{alert.alertType}</TableCell>
+                        <TableCell>
+                          <span className={`font-medium ${
+                            alert.riskScore >= 80 ? 'text-red-600' :
+                            alert.riskScore >= 50 ? 'text-orange-600' : 'text-yellow-600'
+                          }`}>
+                            {alert.riskScore}/100
+                          </span>
+                        </TableCell>
+                        <TableCell>{alert.description}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={
+                              alert.status === 'resolved' ? 'default' :
+                              alert.status === 'investigating' ? 'secondary' : 'destructive'
+                            }
+                          >
+                            {alert.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatDate(alert.createdAt)}</TableCell>
+                        <TableCell>
+                          <Select 
+                            value={alert.status}
+                            onValueChange={(status) => 
+                              updateFraudAlertMutation.mutate({ alertId: alert.id, status })
+                            }
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="open">Open</SelectItem>
+                              <SelectItem value="investigating">Investigating</SelectItem>
+                              <SelectItem value="resolved">Resolved</SelectItem>
+                              <SelectItem value="false_positive">False Positive</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">System Settings</h2>
+              <Button>
+                <Settings className="h-4 w-4 mr-2" />
+                Save Changes
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>General Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="site-name">Site Name</Label>
+                    <Input id="site-name" defaultValue="Siraha Bazaar" />
+                  </div>
+                  <div>
+                    <Label htmlFor="site-description">Site Description</Label>
+                    <Textarea id="site-description" defaultValue="Multi-vendor e-commerce platform" />
+                  </div>
+                  <div>
+                    <Label htmlFor="admin-email">Admin Email</Label>
+                    <Input id="admin-email" type="email" defaultValue="admin@sirahbazaar.com" />
+                  </div>
+                  <div>
+                    <Label htmlFor="contact-phone">Contact Phone</Label>
+                    <Input id="contact-phone" defaultValue="+977-33-123456" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Business Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="commission-rate">Commission Rate (%)</Label>
+                    <Input id="commission-rate" type="number" defaultValue="5" />
+                  </div>
+                  <div>
+                    <Label htmlFor="min-order">Minimum Order Amount</Label>
+                    <Input id="min-order" type="number" defaultValue="100" />
+                  </div>
+                  <div>
+                    <Label htmlFor="delivery-fee">Default Delivery Fee</Label>
+                    <Input id="delivery-fee" type="number" defaultValue="50" />
+                  </div>
+                  <div>
+                    <Label htmlFor="tax-rate">Tax Rate (%)</Label>
+                    <Input id="tax-rate" type="number" defaultValue="13" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notification Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Email Notifications</Label>
+                    <input type="checkbox" defaultChecked className="toggle" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label>SMS Notifications</Label>
+                    <input type="checkbox" defaultChecked className="toggle" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label>Order Alerts</Label>
+                    <input type="checkbox" defaultChecked className="toggle" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label>Low Stock Alerts</Label>
+                    <input type="checkbox" defaultChecked className="toggle" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Security Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Two-Factor Authentication</Label>
+                    <input type="checkbox" className="toggle" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label>Login Notifications</Label>
+                    <input type="checkbox" defaultChecked className="toggle" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label>Fraud Detection</Label>
+                    <input type="checkbox" defaultChecked className="toggle" />
+                  </div>
+                  <div>
+                    <Label htmlFor="session-timeout">Session Timeout (minutes)</Label>
+                    <Input id="session-timeout" type="number" defaultValue="30" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}

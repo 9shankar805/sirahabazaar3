@@ -3,6 +3,7 @@ import {
   admins, websiteVisits, notifications, orderTracking, returnPolicies, returns,
   promotions, advertisements, productReviews, settlements, storeAnalytics, inventoryLogs,
   paymentTransactions, coupons, banners, supportTickets, siteSettings, deliveryPartners, deliveries,
+  vendorVerifications, fraudAlerts, commissions, productAttributes, adminLogs,
   type User, type InsertUser, type AdminUser, type InsertAdminUser, type Store, type InsertStore, 
   type Category, type InsertCategory, type Product, type InsertProduct,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
@@ -13,10 +14,15 @@ import {
   type Promotion, type InsertPromotion, type Advertisement, type InsertAdvertisement,
   type ProductReview, type InsertProductReview, type Settlement, type InsertSettlement,
   type StoreAnalytics, type InsertStoreAnalytics, type InventoryLog, type InsertInventoryLog,
-  type DeliveryPartner, type InsertDeliveryPartner, type Delivery, type InsertDelivery
+  type DeliveryPartner, type InsertDeliveryPartner, type Delivery, type InsertDelivery,
+  type PaymentTransaction, type Coupon, type InsertCoupon, type Banner, type InsertBanner,
+  type SupportTicket, type InsertSupportTicket, type SiteSetting,
+  type VendorVerification, type InsertVendorVerification, type FraudAlert, type InsertFraudAlert,
+  type Commission, type InsertCommission, type ProductAttribute, type InsertProductAttribute,
+  type AdminLog, type InsertAdminLog
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, ilike, or, desc, count, sql, gte } from "drizzle-orm";
+import { eq, and, ilike, or, desc, count, sql, gte, lt, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -182,12 +188,27 @@ export interface IStorage {
   getDashboardStats(): Promise<any>;
   getAllVendorVerifications(): Promise<VendorVerification[]>;
   updateVendorVerification(id: number, updates: Partial<InsertVendorVerification>): Promise<VendorVerification | undefined>;
+  approveVendorVerification(id: number, adminId: number): Promise<VendorVerification | undefined>;
+  rejectVendorVerification(id: number, adminId: number, reason: string): Promise<VendorVerification | undefined>;
   getAllFraudAlerts(): Promise<FraudAlert[]>;
   createFraudAlert(alert: InsertFraudAlert): Promise<FraudAlert>;
   updateFraudAlert(id: number, updates: Partial<InsertFraudAlert>): Promise<FraudAlert | undefined>;
+  updateFraudAlertStatus(id: number, status: string): Promise<FraudAlert | undefined>;
   getAllCommissions(): Promise<Commission[]>;
   createCommission(commission: InsertCommission): Promise<Commission>;
   updateCommission(id: number, updates: Partial<InsertCommission>): Promise<Commission | undefined>;
+  getCommissions(status?: string): Promise<Commission[]>;
+  updateCommissionStatus(id: number, status: string): Promise<Commission | undefined>;
+  
+  // Dashboard stats methods
+  getTotalUsersCount(): Promise<number>;
+  getTotalStoresCount(): Promise<number>;
+  getTotalOrdersCount(): Promise<number>;
+  getTotalRevenue(): Promise<number>;
+  getPendingOrdersCount(): Promise<number>;
+  getActiveUsersCount(): Promise<number>;
+  getPendingVendorVerificationsCount(): Promise<number>;
+  getOpenFraudAlertsCount(): Promise<number>;
   getProductAttributes(productId: number): Promise<ProductAttribute[]>;
   createProductAttribute(attribute: InsertProductAttribute): Promise<ProductAttribute>;
   deleteProductAttribute(id: number): Promise<boolean>;
@@ -1185,6 +1206,161 @@ export class DatabaseStorage implements IStorage {
       return updated;
     } catch {
       return undefined;
+    }
+  }
+
+  async updateFraudAlertStatus(id: number, status: string): Promise<FraudAlert | undefined> {
+    try {
+      const [updated] = await db.update(fraudAlerts)
+        .set({ status })
+        .where(eq(fraudAlerts.id, id))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async approveVendorVerification(id: number, adminId: number): Promise<VendorVerification | undefined> {
+    try {
+      const [updated] = await db.update(vendorVerifications)
+        .set({ 
+          status: 'approved',
+          reviewedBy: adminId,
+          reviewedAt: new Date()
+        })
+        .where(eq(vendorVerifications.id, id))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async rejectVendorVerification(id: number, adminId: number, reason: string): Promise<VendorVerification | undefined> {
+    try {
+      const [updated] = await db.update(vendorVerifications)
+        .set({ 
+          status: 'rejected',
+          reviewedBy: adminId,
+          reviewedAt: new Date(),
+          rejectionReason: reason
+        })
+        .where(eq(vendorVerifications.id, id))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getCommissions(status?: string): Promise<Commission[]> {
+    try {
+      let query = db.select().from(commissions);
+      
+      if (status) {
+        query = query.where(eq(commissions.status, status));
+      }
+      
+      return await query.orderBy(desc(commissions.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async updateCommissionStatus(id: number, status: string): Promise<Commission | undefined> {
+    try {
+      const [updated] = await db.update(commissions)
+        .set({ status })
+        .where(eq(commissions.id, id))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  // Dashboard statistics methods
+  async getTotalUsersCount(): Promise<number> {
+    try {
+      const result = await db.select({ count: count() }).from(users);
+      return result[0]?.count || 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  async getTotalStoresCount(): Promise<number> {
+    try {
+      const result = await db.select({ count: count() }).from(stores);
+      return result[0]?.count || 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  async getTotalOrdersCount(): Promise<number> {
+    try {
+      const result = await db.select({ count: count() }).from(orders);
+      return result[0]?.count || 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  async getTotalRevenue(): Promise<number> {
+    try {
+      const result = await db.select({
+        total: sql`sum(${orders.totalAmount})`
+      }).from(orders).where(eq(orders.status, 'delivered'));
+      
+      return parseFloat(result[0]?.total || '0');
+    } catch {
+      return 0;
+    }
+  }
+
+  async getPendingOrdersCount(): Promise<number> {
+    try {
+      const result = await db.select({ count: count() })
+        .from(orders)
+        .where(eq(orders.status, 'pending'));
+      return result[0]?.count || 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  async getActiveUsersCount(): Promise<number> {
+    try {
+      const result = await db.select({ count: count() })
+        .from(users)
+        .where(eq(users.status, 'active'));
+      return result[0]?.count || 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  async getPendingVendorVerificationsCount(): Promise<number> {
+    try {
+      const result = await db.select({ count: count() })
+        .from(vendorVerifications)
+        .where(eq(vendorVerifications.status, 'pending'));
+      return result[0]?.count || 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  async getOpenFraudAlertsCount(): Promise<number> {
+    try {
+      const result = await db.select({ count: count() })
+        .from(fraudAlerts)
+        .where(eq(fraudAlerts.status, 'open'));
+      return result[0]?.count || 0;
+    } catch {
+      return 0;
     }
   }
 
