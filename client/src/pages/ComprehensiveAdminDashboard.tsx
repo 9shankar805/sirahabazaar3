@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ import {
   Eye, Edit, Trash2, Plus, Download, Upload, Search, Filter, MoreHorizontal,
   CheckCircle, XCircle, Clock, Ban, Settings, Bell, Shield, CreditCard,
   BarChart3, FileText, MessageSquare, Tag, Image, Globe, Zap, UserCheck,
-  LogOut, RefreshCw, Calendar, Mail, Phone, MapPin
+  LogOut, RefreshCw, Calendar, Mail, Phone, MapPin, Truck
 } from "lucide-react";
 
 export default function ComprehensiveAdminDashboard() {
@@ -127,6 +127,11 @@ export default function ComprehensiveAdminDashboard() {
 
   const { data: deliveryZones = [] } = useQuery({
     queryKey: ["/api/delivery-zones"],
+    enabled: !!adminUser,
+  });
+
+  const { data: deliveryPartners = [] } = useQuery({
+    queryKey: ["/api/delivery-partners"],
     enabled: !!adminUser,
   });
 
@@ -372,8 +377,9 @@ export default function ComprehensiveAdminDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-11">
+          <TabsList className="grid w-full grid-cols-12">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="approvals">Approvals</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="vendors">Vendors</TabsTrigger>
@@ -470,6 +476,196 @@ export default function ComprehensiveAdminDashboard() {
                 </div>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Approvals Tab */}
+          <TabsContent value="approvals" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">User Approvals</h2>
+              <Badge variant="secondary" className="text-sm">
+                {allUsers.filter((user: any) => user.status === 'pending').length} pending approvals
+              </Badge>
+            </div>
+
+            <Tabs defaultValue="shopkeepers" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="shopkeepers">Pending Shopkeepers</TabsTrigger>
+                <TabsTrigger value="delivery-partners">Pending Delivery Partners</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="shopkeepers" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Store className="h-5 w-5" />
+                      Shopkeeper Applications
+                    </CardTitle>
+                    <CardDescription>
+                      Review and approve shopkeeper account applications
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {allUsers
+                        .filter((user: any) => user.role === 'shopkeeper' && user.status === 'pending')
+                        .map((user: any) => (
+                          <Card key={user.id} className="border-l-4 border-l-yellow-400">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                      <Users className="h-5 w-5 text-blue-600" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold">{user.fullName}</h4>
+                                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                      <span className="font-medium">Phone:</span> {user.phone || 'Not provided'}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">City:</span> {user.city || 'Not provided'}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Applied:</span> {formatDate(user.createdAt)}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Status:</span> 
+                                      <Badge variant="secondary" className="ml-1">Pending</Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => approveUserMutation.mutate(user.id)}
+                                    disabled={approveUserMutation.isPending}
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => rejectUserMutation.mutate({ 
+                                      userId: user.id, 
+                                      reason: "Application review incomplete" 
+                                    })}
+                                    disabled={rejectUserMutation.isPending}
+                                  >
+                                    <XCircle className="h-4 w-4 mr-1" />
+                                    Reject
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      
+                      {allUsers.filter((user: any) => user.role === 'shopkeeper' && user.status === 'pending').length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Store className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>No pending shopkeeper applications</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="delivery-partners" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Truck className="h-5 w-5" />
+                      Delivery Partner Applications
+                    </CardTitle>
+                    <CardDescription>
+                      Review and approve delivery partner account applications
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {deliveryPartners
+                        .filter((partner: any) => partner.status === 'pending')
+                        .map((partner: any) => (
+                          <Card key={partner.id} className="border-l-4 border-l-blue-400">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                      <Truck className="h-5 w-5 text-green-600" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold">Delivery Partner #{partner.id}</h4>
+                                      <p className="text-sm text-muted-foreground">User ID: {partner.userId}</p>
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                      <span className="font-medium">Vehicle:</span> {partner.vehicleType} - {partner.vehicleNumber}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">License:</span> {partner.drivingLicense}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">ID Proof:</span> {partner.idProofType} - {partner.idProofNumber}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Areas:</span> {partner.deliveryAreas?.join(', ') || 'Not specified'}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Emergency Contact:</span> {partner.emergencyContact}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Applied:</span> {formatDate(partner.createdAt)}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => approvePartnerMutation.mutate(partner.id)}
+                                    disabled={approvePartnerMutation.isPending}
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => rejectPartnerMutation.mutate({ 
+                                      partnerId: partner.id, 
+                                      reason: "Application review incomplete" 
+                                    })}
+                                    disabled={rejectPartnerMutation.isPending}
+                                  >
+                                    <XCircle className="h-4 w-4 mr-1" />
+                                    Reject
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      
+                      {deliveryPartners.filter((partner: any) => partner.status === 'pending').length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>No pending delivery partner applications</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           {/* Orders Tab */}
