@@ -90,6 +90,9 @@ function AppRouter() {
         
         {/* Delivery Partner Routes */}
         <Route path="/delivery-partner/dashboard" component={DeliveryPartnerDashboard} />
+        <Route path="/delivery-partner/test" component={DeliveryPartnerTest} />
+        <Route path="/delivery-partner/notifications" component={DeliveryPartnerNotifications} />
+        <Route path="/delivery-partner/tracking" component={DeliveryTrackingMap} />
         <Route path="/admin/delivery-partners" component={AdminDeliveryPartners} />
         
         <Route component={NotFound} />

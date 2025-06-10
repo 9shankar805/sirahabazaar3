@@ -2086,6 +2086,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delivery Partner Comprehensive API Endpoints
+  app.get("/api/delivery-notifications/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const notifications = await storage.getUserNotifications(userId);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch delivery notifications" });
+    }
+  });
+
+  app.get("/api/deliveries/active/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const partner = await storage.getDeliveryPartnerByUserId(userId);
+      if (!partner) {
+        return res.json([]);
+      }
+      
+      const deliveries = await storage.getDeliveriesByPartnerId(partner.id);
+      const activeDeliveries = deliveries.filter(d => 
+        ['assigned', 'picked_up', 'in_transit'].includes(d.status)
+      );
+      
+      res.json(activeDeliveries);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch active deliveries" });
+    }
+  });
+
+  app.get("/api/deliveries/active-tracking/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const partner = await storage.getDeliveryPartnerByUserId(userId);
+      if (!partner) {
+        return res.json(null);
+      }
+      
+      const deliveries = await storage.getDeliveriesByPartnerId(partner.id);
+      const activeDelivery = deliveries.find(d => 
+        ['assigned', 'picked_up', 'in_transit'].includes(d.status)
+      );
+      
+      res.json(activeDelivery || null);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch active delivery tracking" });
+    }
+  });
+
+  app.post("/api/deliveries/:id/accept", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { partnerId } = req.body;
+      
+      const delivery = await storage.updateDeliveryStatus(id, 'assigned', partnerId);
+      
+      if (delivery) {
+        await storage.createNotification({
+          userId: partnerId,
+          title: "Delivery Accepted",
+          message: `You have successfully accepted delivery for Order #${delivery.orderId}`,
+          type: "success"
+        });
+      }
+      
+      res.json({ success: true, delivery });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to accept delivery" });
+    }
+  });
+
+  app.put("/api/delivery-notifications/:id/read", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.markNotificationAsRead(id);
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  app.put("/api/deliveries/:id/location", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { location } = req.body;
+      
+      const delivery = await storage.updateDeliveryLocation(id, location);
+      
+      if (delivery) {
+        const order = await storage.getOrder(delivery.orderId);
+        if (order) {
+          await storage.createNotification({
+            userId: order.customerId,
+            title: "Delivery Location Updated",
+            message: "Your delivery partner has shared their current location",
+            type: "info",
+            orderId: delivery.orderId
+          });
+        }
+      }
+      
+      res.json({ success: true, delivery });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update delivery location" });
+    }
+  });
+
+  app.post("/api/deliveries/upload-proof", async (req, res) => {
+    try {
+      const { deliveryId } = req.body;
+      const delivery = await storage.updateDeliveryProof(parseInt(deliveryId), "proof_uploaded");
+      res.json({ success: true, delivery });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to upload proof" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
