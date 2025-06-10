@@ -513,6 +513,11 @@ export async function runMigrations() {
       )
     `);
 
+    // Ensure store_id column exists in order_items table
+    await db.execute(sql`
+      ALTER TABLE order_items ADD COLUMN IF NOT EXISTS store_id INTEGER REFERENCES stores(id)
+    `);
+
     // Create missing admin panel tables
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS coupons (
