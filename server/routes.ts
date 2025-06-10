@@ -212,6 +212,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add route for stores/owner without parameter (used by frontend)
+  app.get("/api/stores/owner", async (req, res) => {
+    try {
+      const { userId, ownerId } = req.query;
+      
+      if (!userId && !ownerId) {
+        return res.status(400).json({ error: "Owner ID or User ID is required" });
+      }
+      
+      const id = parseInt((userId || ownerId) as string);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid ID" });
+      }
+      
+      const stores = await storage.getStoresByOwnerId(id);
+      res.json(stores);
+    } catch (error) {
+      console.error("Stores/owner error:", error);
+      res.status(500).json({ error: "Failed to fetch stores for owner" });
+    }
+  });
+
 
 
   app.post("/api/stores", async (req, res) => {
@@ -347,23 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get products by store ID
-  app.get("/api/products/store/:storeId", async (req, res) => {
-    try {
-      const storeId = parseInt(req.params.storeId);
-      if (isNaN(storeId)) {
-        return res.status(400).json({ error: "Invalid store ID" });
-      }
-      
-      const products = await storage.getProductsByStoreId(storeId);
-      res.json(products);
-    } catch (error) {
-      console.error("Error fetching store products:", error);
-      res.status(500).json({ error: "Failed to fetch product" });
-    }
-  });
-
-  // Fixed products by store endpoint for inventory
+  // Fixed products by store endpoint for inventory (must come before parameterized route)
   app.get("/api/products/store", async (req, res) => {
     try {
       const { userId } = req.query;
@@ -378,9 +384,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log(`Fetching stores for user ${userIdNum}`);
-      // Get user's stores first
-      const userStores = await storage.getStoresByOwnerId(userIdNum);
-      console.log(`Found ${userStores.length} stores for user ${userIdNum}`);
+      
+      // Get user's stores first with error handling
+      let userStores = [];
+      try {
+        userStores = await storage.getStoresByOwnerId(userIdNum);
+        console.log(`Found ${userStores.length} stores for user ${userIdNum}`);
+      } catch (storeError) {
+        console.error(`Error fetching stores for user ${userIdNum}:`, storeError);
+        return res.status(500).json({ error: "Failed to fetch user stores" });
+      }
       
       if (userStores.length === 0) {
         console.log(`No stores found for user ${userIdNum}, returning empty array`);
@@ -394,7 +407,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const storeProducts = await storage.getProductsByStoreId(store.id);
           console.log(`Found ${storeProducts.length} products for store ${store.id}`);
-          allProducts.push(...storeProducts);
+          
+          // Add store information to each product for better debugging
+          const productsWithStore = storeProducts.map(product => ({
+            ...product,
+            storeName: store.name,
+            storeType: store.storeType
+          }));
+          
+          allProducts.push(...productsWithStore);
         } catch (storeError) {
           console.error(`Error fetching products for store ${store.id}:`, storeError);
           // Continue with other stores instead of failing completely
@@ -405,7 +426,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(allProducts);
     } catch (error) {
       console.error("Products/store error details:", error);
-      res.status(500).json({ error: "Failed to fetch products" });
+      console.error("Stack trace:", error instanceof Error ? error.stack : 'No stack trace');
+      res.status(500).json({ 
+        error: "Failed to fetch products",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Get products by store ID (parameterized route comes after query-based route)
+  app.get("/api/products/store/:storeId", async (req, res) => {
+    try {
+      const storeId = parseInt(req.params.storeId);
+      if (isNaN(storeId)) {
+        return res.status(400).json({ error: "Invalid store ID" });
+      }
+      
+      const products = await storage.getProductsByStoreId(storeId);
+      res.json(products);
+    } catch (error) {
+      console.error("Error fetching store products:", error);
+      res.status(500).json({ error: "Failed to fetch products by store ID" });
     }
   });
 
