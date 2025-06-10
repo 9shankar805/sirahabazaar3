@@ -446,14 +446,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(allProducts);
     } catch (error) {
       console.error("Products/store error details:", error);
-      console.error("Stack trace:", error instanceof Error ? error.stack : 'No stack trace');
       res.status(500).json({ 
-        error: "Failed to fetch products",
-        details: error instanceof Error ? error.message : 'Unknown error',
-        debug: {
-          userId: req.query.userId,
-          endpoint: '/api/products/store'
-        }
+        error: "Failed to fetch product",
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });
