@@ -59,6 +59,13 @@ export async function runMigrations() {
       // Ignore error if constraint doesn't exist
     });
 
+    // Fix postal_code column constraint if it exists as NOT NULL
+    await db.execute(sql`
+      ALTER TABLE stores ALTER COLUMN postal_code DROP NOT NULL
+    `).catch(() => {
+      // Ignore error if constraint doesn't exist
+    });
+
     // Add missing columns to products table
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS slug TEXT UNIQUE
