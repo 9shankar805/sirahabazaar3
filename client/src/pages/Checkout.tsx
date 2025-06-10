@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CreditCard, Truck, MapPin, Navigation } from "lucide-react";
+import { CreditCard, Truck, MapPin, Navigation, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -16,6 +16,9 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiPost } from "@/lib/api";
+import { DeliveryCalculator } from "@/components/DeliveryCalculator";
+import { calculateDistance, getCoordinatesFromAddress } from "@/lib/distance";
+import { useQuery } from "@tanstack/react-query";
 
 const checkoutSchema = z.object({
   customerName: z.string().min(1, "Name is required"),
@@ -31,6 +34,9 @@ type CheckoutForm = z.infer<typeof checkoutSchema>;
 export default function Checkout() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [deliveryDistance, setDeliveryDistance] = useState(0);
+  const [estimatedDeliveryTime, setEstimatedDeliveryTime] = useState(0);
   const [, setLocation] = useLocation();
   const { cartItems, totalAmount, clearCart } = useCart();
   const { user } = useAuth();

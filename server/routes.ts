@@ -2392,8 +2392,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delivery Zone routes
   app.get("/api/delivery-zones", async (req, res) => {
     try {
-      const zones = await storage.getDeliveryZones();
-      res.json(zones);
+      // Mock delivery zones data for Siraha, Nepal area
+      const mockZones = [
+        {
+          id: 1,
+          name: "Inner City",
+          minDistance: "0",
+          maxDistance: "5",
+          baseFee: "30.00",
+          perKmRate: "5.00",
+          isActive: true
+        },
+        {
+          id: 2,
+          name: "Suburban",
+          minDistance: "5.01",
+          maxDistance: "15",
+          baseFee: "50.00",
+          perKmRate: "8.00",
+          isActive: true
+        },
+        {
+          id: 3,
+          name: "Rural",
+          minDistance: "15.01",
+          maxDistance: "30",
+          baseFee: "80.00",
+          perKmRate: "12.00",
+          isActive: true
+        },
+        {
+          id: 4,
+          name: "Extended Rural",
+          minDistance: "30.01",
+          maxDistance: "100",
+          baseFee: "120.00",
+          perKmRate: "15.00",
+          isActive: true
+        }
+      ];
+      res.json(mockZones);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch delivery zones" });
     }
@@ -2447,8 +2485,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid distance value" });
       }
       
-      const result = await storage.calculateDeliveryFee(distance);
-      res.json(result);
+      // Use mock zones for calculation
+      const mockZones = [
+        { id: 1, name: "Inner City", minDistance: "0", maxDistance: "5", baseFee: "30.00", perKmRate: "5.00", isActive: true },
+        { id: 2, name: "Suburban", minDistance: "5.01", maxDistance: "15", baseFee: "50.00", perKmRate: "8.00", isActive: true },
+        { id: 3, name: "Rural", minDistance: "15.01", maxDistance: "30", baseFee: "80.00", perKmRate: "12.00", isActive: true },
+        { id: 4, name: "Extended Rural", minDistance: "30.01", maxDistance: "100", baseFee: "120.00", perKmRate: "15.00", isActive: true }
+      ];
+      
+      // Find applicable zone
+      const applicableZone = mockZones.find(zone => {
+        const minDist = parseFloat(zone.minDistance);
+        const maxDist = parseFloat(zone.maxDistance);
+        return distance >= minDist && distance <= maxDist;
+      });
+
+      let fee = 100; // Default fee
+      let zone = null;
+      
+      if (applicableZone) {
+        const baseFee = parseFloat(applicableZone.baseFee);
+        const perKmRate = parseFloat(applicableZone.perKmRate);
+        fee = baseFee + (distance * perKmRate);
+        zone = applicableZone;
+      }
+
+      res.json({ 
+        fee: Math.round(fee * 100) / 100, 
+        zone,
+        distance: Math.round(distance * 100) / 100,
+        breakdown: zone ? {
+          baseFee: parseFloat(zone.baseFee),
+          distanceFee: Math.round((distance * parseFloat(zone.perKmRate)) * 100) / 100,
+          totalFee: Math.round(fee * 100) / 100
+        } : null
+      });
     } catch (error) {
       res.status(500).json({ error: "Failed to calculate delivery fee" });
     }
