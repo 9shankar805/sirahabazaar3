@@ -875,7 +875,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       res.json(usersWithoutPasswords);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch users" });
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users", details: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
