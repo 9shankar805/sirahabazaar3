@@ -380,6 +380,31 @@ export async function runMigrations() {
       ALTER TABLE users ALTER COLUMN username SET NOT NULL
     `);
 
+    // Fix orders table schema mismatch
+    await db.execute(sql`
+      ALTER TABLE orders DROP COLUMN IF EXISTS user_id
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders DROP COLUMN IF EXISTS address_id
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES users(id) NOT NULL DEFAULT 1
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address TEXT NOT NULL DEFAULT '123 Main St'
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS phone TEXT NOT NULL DEFAULT '+1234567890'
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name TEXT NOT NULL DEFAULT 'Default Customer'
+    `);
+
     // Create missing admin panel tables
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS coupons (

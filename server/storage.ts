@@ -1502,12 +1502,13 @@ export class DatabaseStorage implements IStorage {
         console.log('Test products created');
       }
 
-      // Create test orders
+      // Create test orders using existing users
       const existingOrders = await db.select().from(orders);
-      if (existingOrders.length === 0) {
+      if (existingOrders.length === 0 && allUsers.length > 0) {
+        const firstUserId = allUsers[0].id;
         await db.insert(orders).values([
           {
-            customerId: 1,
+            customerId: firstUserId,
             totalAmount: '999.99',
             status: 'delivered',
             shippingAddress: '123 Main St, City, State',
@@ -1516,7 +1517,7 @@ export class DatabaseStorage implements IStorage {
             customerName: 'John Doe'
           },
           {
-            customerId: 1,
+            customerId: firstUserId,
             totalAmount: '15.98',
             status: 'processing',
             shippingAddress: '123 Main St, City, State',
