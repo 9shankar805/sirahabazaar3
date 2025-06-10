@@ -15,7 +15,7 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("customer"), // customer, shopkeeper, delivery_partner
   status: text("status").notNull().default("active"), // active, pending, suspended, rejected
   approvalDate: timestamp("approval_date"),
-  approvedBy: integer("approved_by").references(() => users.id),
+  approvedBy: integer("approved_by").references(() => adminUsers.id),
   rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -165,7 +165,7 @@ export const deliveryPartners = pgTable("delivery_partners", {
   bankAccountNumber: text("bank_account_number").notNull(),
   ifscCode: text("ifsc_code").notNull(),
   status: text("status").notNull().default("pending"), // pending, approved, rejected
-  approvedBy: integer("approved_by").references(() => users.id),
+  approvedBy: integer("approved_by").references(() => adminUsers.id),
   approvalDate: timestamp("approval_date"),
   rejectionReason: text("rejection_reason"),
   isAvailable: boolean("is_available").default(true),

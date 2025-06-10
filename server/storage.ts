@@ -287,12 +287,14 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log(`Attempting to approve user ${userId} by admin ${adminId}`);
       
+      // For now, we'll set approvedBy to null to avoid foreign key constraint issues
+      // until we properly migrate the database schema
       const [approvedUser] = await db
         .update(users)
         .set({
           status: 'active',
           approvalDate: new Date(),
-          approvedBy: adminId,
+          approvedBy: null, // Temporarily set to null to avoid FK constraint
           updatedAt: new Date()
         })
         .where(eq(users.id, userId))
@@ -307,16 +309,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async rejectUser(userId: number, adminId: number): Promise<User | undefined> {
-    const [rejectedUser] = await db
-      .update(users)
-      .set({
-        status: 'rejected',
-        approvalDate: new Date(),
-        approvedBy: adminId
-      })
-      .where(eq(users.id, userId))
-      .returning();
-    return rejectedUser;
+    try {
+      console.log(`Attempting to reject user ${userId} by admin ${adminId}`);
+      
+      const [rejectedUser] = await db
+        .update(users)
+        .set({
+          status: 'rejected',
+          approvalDate: new Date(),
+          approvedBy: null, // Temporarily set to null to avoid FK constraint
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      console.log('User rejection successful:', rejectedUser);
+      return rejectedUser;
+    } catch (error) {
+      console.error('Error in rejectUser:', error);
+      throw error;
+    }
   }
 
   async getAllUsersWithStatus(): Promise<User[]> {
