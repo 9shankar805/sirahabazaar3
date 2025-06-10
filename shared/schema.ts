@@ -4,17 +4,21 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  username: text("username").unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
   phone: text("phone"),
   address: text("address"),
+  city: text("city"),
+  state: text("state"),
   role: text("role").notNull().default("customer"), // customer, shopkeeper, delivery_partner
   status: text("status").notNull().default("active"), // active, pending, suspended, rejected
   approvalDate: timestamp("approval_date"),
   approvedBy: integer("approved_by").references(() => users.id),
   rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const adminUsers = pgTable("admin_users", {

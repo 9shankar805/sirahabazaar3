@@ -86,7 +86,7 @@ export default function Homepage() {
           {/* Slide 1 - Fast Delivery */}
           <SwiperSlide>
             <div className="relative h-full flex items-center justify-center" style={{
-              backgroundImage: `url(/attached_assets/slider2_1749495663488.jpg)`,
+              backgroundImage: `url(@assets/slider1.png)`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat'
@@ -111,7 +111,12 @@ export default function Homepage() {
 
           {/* Slide 2 - Food Delivery */}
           <SwiperSlide>
-            <div className="relative h-full bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 flex items-center justify-center">
+            <div className="relative h-full flex items-center justify-center" style={{
+              backgroundImage: `url(@assets/slider2.jpg)`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}>
               <div className="absolute inset-0 bg-black/25"></div>
               <div className="relative text-center text-white px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
@@ -132,7 +137,12 @@ export default function Homepage() {
 
           {/* Slide 3 - Limited Offers */}
           <SwiperSlide>
-            <div className="relative h-full bg-gradient-to-br from-green-500 via-emerald-600 to-teal-700 flex items-center justify-center">
+            <div className="relative h-full flex items-center justify-center" style={{
+              backgroundImage: `url(@assets/slider.jpg)`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}>
               <div className="absolute inset-0 bg-black/20"></div>
               <div className="relative text-center text-white px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
