@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 import { NotificationService } from "./notificationService";
 
 import { 
@@ -2790,65 +2792,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Push notification endpoints
-  app.post('/api/push/subscribe', async (req, res) => {
-    try {
-      const { subscription, userId } = req.body;
-      
-      if (!subscription || !subscription.endpoint || !subscription.keys) {
-        return res.status(400).json({ error: 'Invalid subscription data' });
-      }
-
-      // Store subscription in database
-      await db.execute(sql`
-        INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, updated_at)
-        VALUES (${userId}, ${subscription.endpoint}, ${subscription.keys.p256dh}, ${subscription.keys.auth}, NOW())
-        ON CONFLICT (user_id, endpoint) 
-        DO UPDATE SET 
-          p256dh = EXCLUDED.p256dh,
-          auth = EXCLUDED.auth,
-          updated_at = NOW()
-      `);
-
-      res.json({ success: true, message: 'Push subscription saved' });
-    } catch (error) {
-      console.error('Push subscription error:', error);
-      res.status(500).json({ error: 'Failed to save push subscription' });
-    }
-  });
-
-  app.post('/api/push/unsubscribe', async (req, res) => {
-    try {
-      const { userId } = req.body;
-      
-      await db.execute(sql`
-        DELETE FROM push_subscriptions WHERE user_id = ${userId}
-      `);
-
-      res.json({ success: true, message: 'Push subscription removed' });
-    } catch (error) {
-      console.error('Push unsubscribe error:', error);
-      res.status(500).json({ error: 'Failed to remove push subscription' });
-    }
-  });
-
-  app.post('/api/push/test', async (req, res) => {
-    try {
-      const { userId } = req.body;
-      
-      // Send test notification
-      await NotificationService.sendNotification({
-        userId,
-        type: 'test',
-        title: 'Test Notification',
-        message: 'This is a test notification from Siraha Bazaar!'
-      });
-
-      res.json({ success: true, message: 'Test notification sent' });
-    } catch (error) {
-      console.error('Test notification error:', error);
-      res.status(500).json({ error: 'Failed to send test notification' });
-    }
+  // Basic notification status endpoint
+  app.get('/api/notifications/status', (req, res) => {
+    res.json({ 
+      webPushSupported: false,
+      inAppNotifications: true,
+      message: 'Mobile push notifications will be available soon'
+    });
   });
 
   const httpServer = createServer(app);
