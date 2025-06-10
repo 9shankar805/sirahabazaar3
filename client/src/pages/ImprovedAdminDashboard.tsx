@@ -417,13 +417,13 @@ export default function ImprovedAdminDashboard() {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        {pendingUsers.length === 0 ? (
+                        {!Array.isArray(pendingUsers) || pendingUsers.length === 0 ? (
                           <p className="text-gray-500 text-center py-4">
                             No pending approvals
                           </p>
                         ) : (
                           <div className="space-y-3">
-                            {pendingUsers.slice(0, 3).map((user: any) => (
+                            {Array.isArray(pendingUsers) && pendingUsers.slice(0, 3).map((user: any) => (
                               <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <div className="flex items-center">
                                   <Avatar className="h-8 w-8">
@@ -804,7 +804,435 @@ export default function ImprovedAdminDashboard() {
                 </div>
               )}
 
-              {/* Other tabs would be implemented similarly */}
+              {activeTab === "products" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="Search products..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10 w-80"
+                        />
+                      </div>
+                    </div>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Product
+                    </Button>
+                  </div>
+
+                  <Card>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Product</TableHead>
+                            <TableHead>Store</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>Stock</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {Array.isArray(allProducts) && allProducts
+                            .filter((product: any) =>
+                              product.name?.toLowerCase().includes(searchTerm.toLowerCase())
+                            )
+                            .map((product: any) => (
+                              <TableRow key={product.id}>
+                                <TableCell>
+                                  <div className="flex items-center">
+                                    <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                                      <Package className="h-5 w-5 text-gray-500" />
+                                    </div>
+                                    <div className="ml-3">
+                                      <p className="font-medium">{product.name}</p>
+                                      <p className="text-sm text-gray-500">{product.description?.substring(0, 50)}...</p>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{product.storeName || "N/A"}</TableCell>
+                                <TableCell>${product.price}</TableCell>
+                                <TableCell>{product.stock || 0}</TableCell>
+                                <TableCell>
+                                  <StatusBadge status={product.isActive ? "active" : "inactive"} />
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center space-x-2">
+                                    <Button size="sm" variant="outline">
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    <Button size="sm" variant="outline">
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {activeTab === "orders" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="Search orders..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10 w-80"
+                        />
+                      </div>
+                      <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="shipped">Shipped</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Card>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Order ID</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Total</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {Array.isArray(allOrders) && allOrders
+                            .filter((order: any) => {
+                              const matchesStatus = filterStatus === "all" || order.status === filterStatus;
+                              return matchesStatus;
+                            })
+                            .map((order: any) => (
+                              <TableRow key={order.id}>
+                                <TableCell>
+                                  <span className="font-mono text-sm">#{order.id}</span>
+                                </TableCell>
+                                <TableCell>{order.customerName || "N/A"}</TableCell>
+                                <TableCell>${order.totalAmount || order.total || 0}</TableCell>
+                                <TableCell>
+                                  <StatusBadge status={order.status} />
+                                </TableCell>
+                                <TableCell>
+                                  {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "N/A"}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center space-x-2">
+                                    <Button size="sm" variant="outline">
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    <Button size="sm" variant="outline">
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {activeTab === "coupons" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">Coupon Management</h3>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Coupon
+                    </Button>
+                  </div>
+
+                  <Card>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Code</TableHead>
+                            <TableHead>Discount</TableHead>
+                            <TableHead>Min Order</TableHead>
+                            <TableHead>Usage</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Expires</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {Array.isArray(coupons) && coupons.map((coupon: any) => (
+                            <TableRow key={coupon.id}>
+                              <TableCell>
+                                <code className="bg-gray-100 px-2 py-1 rounded text-sm">
+                                  {coupon.code}
+                                </code>
+                              </TableCell>
+                              <TableCell>
+                                {coupon.discountType === 'percentage' ? 
+                                  `${coupon.discountValue}%` : 
+                                  `$${coupon.discountValue}`
+                                }
+                              </TableCell>
+                              <TableCell>${coupon.minimumOrderAmount || 0}</TableCell>
+                              <TableCell>
+                                {coupon.usedCount || 0} / {coupon.usageLimit || '∞'}
+                              </TableCell>
+                              <TableCell>
+                                <StatusBadge status={coupon.isActive ? "active" : "inactive"} />
+                              </TableCell>
+                              <TableCell>
+                                {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : "Never"}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  <Button size="sm" variant="outline">
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="sm" variant="destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {activeTab === "delivery" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">Delivery Zone Management</h3>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Zone
+                    </Button>
+                  </div>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      {Array.isArray(deliveryZones) && deliveryZones.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Truck className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            No delivery zones configured
+                          </h3>
+                          <p className="text-gray-500 mb-4">
+                            Set up delivery zones to manage shipping fees and coverage areas.
+                          </p>
+                          <Button>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create First Zone
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {Array.isArray(deliveryZones) && deliveryZones.map((zone: any) => (
+                            <Card key={zone.id} className="border">
+                              <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-medium">{zone.name}</h4>
+                                    <p className="text-sm text-gray-500">
+                                      {zone.minDistance}km - {zone.maxDistance}km
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      Base fee: ${zone.baseFee} + ${zone.perKmRate}/km
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Switch 
+                                      checked={zone.isActive} 
+                                      className="data-[state=checked]:bg-green-600"
+                                    />
+                                    <Button size="sm" variant="outline">
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button size="sm" variant="destructive">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {activeTab === "settings" && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-medium">System Settings</h3>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Platform Settings</CardTitle>
+                        <CardDescription>
+                          Configure general platform settings
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="maintenance">Maintenance Mode</Label>
+                          <Switch id="maintenance" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="registration">Allow New Registrations</Label>
+                          <Switch id="registration" defaultChecked />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="notifications">Email Notifications</Label>
+                          <Switch id="notifications" defaultChecked />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Commission Settings</CardTitle>
+                        <CardDescription>
+                          Set platform commission rates
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label htmlFor="store-commission">Store Commission (%)</Label>
+                          <Input
+                            id="store-commission"
+                            type="number"
+                            defaultValue="5"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="restaurant-commission">Restaurant Commission (%)</Label>
+                          <Input
+                            id="restaurant-commission"
+                            type="number"
+                            defaultValue="8"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="delivery-commission">Delivery Commission (%)</Label>
+                          <Input
+                            id="delivery-commission"
+                            type="number"
+                            defaultValue="3"
+                            className="mt-1"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Payment Settings</CardTitle>
+                        <CardDescription>
+                          Configure payment options
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="cod">Cash on Delivery</Label>
+                          <Switch id="cod" defaultChecked />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="stripe">Stripe Payments</Label>
+                          <Switch id="stripe" defaultChecked />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="paypal">PayPal Payments</Label>
+                          <Switch id="paypal" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Security Settings</CardTitle>
+                        <CardDescription>
+                          Manage security configurations
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label htmlFor="session-timeout">Session Timeout (minutes)</Label>
+                          <Input
+                            id="session-timeout"
+                            type="number"
+                            defaultValue="60"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="two-factor">Two-Factor Authentication</Label>
+                          <Switch id="two-factor" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="password-policy">Strong Password Policy</Label>
+                          <Switch id="password-policy" defaultChecked />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>System Information</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-600">Platform Version</Label>
+                          <p className="mt-1 text-lg font-semibold">v2.1.0</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-600">Database Status</Label>
+                          <p className="mt-1 text-lg font-semibold text-green-600">Connected</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-gray-600">Last Backup</Label>
+                          <p className="mt-1 text-lg font-semibold">{new Date().toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
               {activeTab === "analytics" && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

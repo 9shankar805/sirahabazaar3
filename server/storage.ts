@@ -1137,31 +1137,102 @@ export class DatabaseStorage implements IStorage {
   // Enhanced admin features implementation
   async getDashboardStats(): Promise<any> {
     try {
-      const totalUsers = await db.select({ count: sql`count(*)` }).from(users);
-      const activeStores = await db.select({ count: sql`count(*)` }).from(stores).where(eq(stores.isActive, true));
-      const totalProducts = await db.select({ count: sql`count(*)` }).from(products);
-      const totalOrders = await db.select({ count: sql`count(*)` }).from(orders);
+      const [
+        totalUsersResult,
+        activeUsersResult,
+        pendingUsersResult,
+        totalStoresResult,
+        activeStoresResult,
+        totalProductsResult,
+        totalOrdersResult,
+        pendingOrdersResult,
+        completedOrdersResult,
+        revenueResult,
+        totalCouponsResult,
+        activeCouponsResult,
+        totalSupportTicketsResult,
+        openSupportTicketsResult
+      ] = await Promise.all([
+        db.select({ count: sql`count(*)` }).from(users),
+        db.select({ count: sql`count(*)` }).from(users).where(eq(users.status, 'active')),
+        db.select({ count: sql`count(*)` }).from(users).where(eq(users.status, 'pending')),
+        db.select({ count: sql`count(*)` }).from(stores),
+        db.select({ count: sql`count(*)` }).from(stores).where(eq(stores.isActive, true)),
+        db.select({ count: sql`count(*)` }).from(products),
+        db.select({ count: sql`count(*)` }).from(orders),
+        db.select({ count: sql`count(*)` }).from(orders).where(eq(orders.status, 'pending')),
+        db.select({ count: sql`count(*)` }).from(orders).where(eq(orders.status, 'delivered')),
+        db.select({ total: sql`sum(${orders.totalAmount})` }).from(orders).where(eq(orders.status, 'delivered')),
+        db.select({ count: sql`count(*)` }).from(coupons),
+        db.select({ count: sql`count(*)` }).from(coupons).where(eq(coupons.isActive, true)),
+        db.select({ count: sql`count(*)` }).from(supportTickets),
+        db.select({ count: sql`count(*)` }).from(supportTickets).where(eq(supportTickets.status, 'open'))
+      ]);
+
+      // Calculate growth metrics (last 30 days vs previous 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const revenueResult = await db.select({ 
-        total: sql`sum(${orders.totalAmount})` 
-      }).from(orders).where(eq(orders.status, 'delivered'));
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+      const [newUsersLast30, newUsersPrevious30, newOrdersLast30, newOrdersPrevious30] = await Promise.all([
+        db.select({ count: sql`count(*)` }).from(users).where(sql`${users.createdAt} >= ${thirtyDaysAgo.toISOString()}`),
+        db.select({ count: sql`count(*)` }).from(users).where(sql`${users.createdAt} >= ${sixtyDaysAgo.toISOString()} AND ${users.createdAt} < ${thirtyDaysAgo.toISOString()}`),
+        db.select({ count: sql`count(*)` }).from(orders).where(sql`${orders.createdAt} >= ${thirtyDaysAgo.toISOString()}`),
+        db.select({ count: sql`count(*)` }).from(orders).where(sql`${orders.createdAt} >= ${sixtyDaysAgo.toISOString()} AND ${orders.createdAt} < ${thirtyDaysAgo.toISOString()}`)
+      ]);
+
+      const userGrowthRate = this.calculateGrowthRate(Number(newUsersPrevious30[0]?.count) || 0, Number(newUsersLast30[0]?.count) || 0);
+      const orderGrowthRate = this.calculateGrowthRate(Number(newOrdersPrevious30[0]?.count) || 0, Number(newOrdersLast30[0]?.count) || 0);
 
       return {
-        totalUsers: totalUsers[0]?.count || 0,
-        activeStores: activeStores[0]?.count || 0,
-        totalProducts: totalProducts[0]?.count || 0,
-        totalOrders: totalOrders[0]?.count || 0,
-        totalRevenue: revenueResult[0]?.total || 0,
+        totalUsers: Number(totalUsersResult[0]?.count) || 0,
+        activeUsers: Number(activeUsersResult[0]?.count) || 0,
+        pendingUsers: Number(pendingUsersResult[0]?.count) || 0,
+        totalStores: Number(totalStoresResult[0]?.count) || 0,
+        activeStores: Number(activeStoresResult[0]?.count) || 0,
+        totalProducts: Number(totalProductsResult[0]?.count) || 0,
+        totalOrders: Number(totalOrdersResult[0]?.count) || 0,
+        pendingOrders: Number(pendingOrdersResult[0]?.count) || 0,
+        completedOrders: Number(completedOrdersResult[0]?.count) || 0,
+        totalRevenue: Number(revenueResult[0]?.total) || 0,
+        totalCoupons: Number(totalCouponsResult[0]?.count) || 0,
+        activeCoupons: Number(activeCouponsResult[0]?.count) || 0,
+        totalSupportTickets: Number(totalSupportTicketsResult[0]?.count) || 0,
+        openSupportTickets: Number(openSupportTicketsResult[0]?.count) || 0,
+        userGrowthRate,
+        orderGrowthRate,
+        averageOrderValue: Number(totalOrdersResult[0]?.count) > 0 ? 
+          (Number(revenueResult[0]?.total) || 0) / Number(totalOrdersResult[0]?.count) : 0
       };
-    } catch {
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
       return {
         totalUsers: 0,
+        activeUsers: 0,
+        pendingUsers: 0,
+        totalStores: 0,
         activeStores: 0,
         totalProducts: 0,
         totalOrders: 0,
+        pendingOrders: 0,
+        completedOrders: 0,
         totalRevenue: 0,
+        totalCoupons: 0,
+        activeCoupons: 0,
+        totalSupportTickets: 0,
+        openSupportTickets: 0,
+        userGrowthRate: 0,
+        orderGrowthRate: 0,
+        averageOrderValue: 0
       };
     }
+  }
+
+  private calculateGrowthRate(previous: number, current: number): number {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
   }
 
   async getAllVendorVerifications(): Promise<VendorVerification[]> {
