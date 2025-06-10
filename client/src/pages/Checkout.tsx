@@ -134,10 +134,15 @@ export default function Checkout() {
         storeId: item.product?.storeId || 0,
       }));
 
-      await apiPost("/api/orders", {
+      const response = await apiPost("/api/orders", {
         order: orderData,
         items: orderItems,
       });
+
+      // Store order ID for tracking
+      if (response.order?.id) {
+        localStorage.setItem('lastOrderId', response.order.id.toString());
+      }
 
       await clearCart();
       
@@ -146,7 +151,9 @@ export default function Checkout() {
         description: "You will receive a confirmation email shortly.",
       });
 
-      setLocation("/order-confirmation");
+      // Redirect with order ID in URL
+      const orderParam = response.order?.id ? `?orderId=${response.order.id}` : '';
+      setLocation(`/order-confirmation${orderParam}`);
     } catch (error) {
       toast({
         title: "Error",

@@ -1,6 +1,6 @@
-import { useEffect } from "react";
-import { Link } from "wouter";
-import { CheckCircle, Package, Truck, Calendar } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "wouter";
+import { CheckCircle, Package, Truck, Calendar, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -8,11 +8,20 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function OrderConfirmation() {
   const { user } = useAuth();
+  const [location] = useLocation();
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     // Scroll to top when component mounts
     window.scrollTo(0, 0);
-  }, []);
+    
+    // Get order ID from URL parameters or local storage
+    const urlParams = new URLSearchParams(location.split('?')[1] || '');
+    const orderIdFromUrl = urlParams.get('orderId');
+    const orderIdFromStorage = localStorage.getItem('lastOrderId');
+    
+    setOrderId(orderIdFromUrl || orderIdFromStorage);
+  }, [location]);
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
@@ -55,7 +64,7 @@ export default function OrderConfirmation() {
                 <div className="bg-muted rounded-lg p-4 space-y-3">
                   <div className="flex justify-between">
                     <span className="font-medium">Order ID:</span>
-                    <span className="font-mono text-sm">#SB{Date.now().toString().slice(-8)}</span>
+                    <span className="font-mono text-sm">#{orderId || 'SB' + Date.now().toString().slice(-8)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Order Date:</span>
@@ -104,8 +113,16 @@ export default function OrderConfirmation() {
 
               {/* Action Buttons */}
               <div className="space-y-3">
+                {orderId && (
+                  <Link href={`/orders/${orderId}/tracking`}>
+                    <Button className="w-full btn-primary">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Track Your Order
+                    </Button>
+                  </Link>
+                )}
                 <Link href="/customer-dashboard">
-                  <Button className="w-full btn-primary">
+                  <Button variant="outline" className="w-full">
                     View Order Details
                   </Button>
                 </Link>

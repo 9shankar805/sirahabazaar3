@@ -565,7 +565,7 @@ export default function CustomerDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <NotificationCenter userId={user.id} />
+                  <NotificationCenter />
                 </CardContent>
               </Card>
             )}
