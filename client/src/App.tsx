@@ -41,6 +41,9 @@ import SellerOrders from "@/pages/SellerOrders";
 import SellerStore from "@/pages/SellerStore";
 import AddProduct from "@/pages/AddProduct";
 import DeliveryPartnerDashboard from "@/pages/DeliveryPartnerDashboard";
+import DeliveryPartnerTest from "@/pages/DeliveryPartnerTest";
+import DeliveryPartnerNotifications from "@/pages/DeliveryPartnerNotifications";
+import DeliveryTrackingMap from "@/pages/DeliveryTrackingMap";
 import AdminDeliveryPartners from "@/pages/AdminDeliveryPartners";
 
 function AppRouter() {
