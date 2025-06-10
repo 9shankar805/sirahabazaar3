@@ -43,6 +43,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: req.body.username || req.body.email.split('@')[0]
       };
       
+      // Validate role and set appropriate status
+      const validRoles = ['customer', 'shopkeeper', 'delivery_partner'];
+      if (userData.role && !validRoles.includes(userData.role)) {
+        return res.status(400).json({ error: "Invalid role specified" });
+      }
+      
+      // Set default role if not provided
+      if (!userData.role) {
+        userData.role = 'customer';
+      }
+      
+      // Set status based on role - customers are active by default, others need approval
+      if (userData.role === 'customer') {
+        userData.status = 'active';
+      } else {
+        userData.status = 'pending'; // shopkeepers and delivery_partners need approval
+      }
+      
       const validatedData = insertUserSchema.parse(userData);
       
       // Check if user already exists

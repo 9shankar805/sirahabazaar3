@@ -370,6 +370,11 @@ export async function runMigrations() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS rejection_reason TEXT
     `);
 
+    // Remove any enum constraints on role column to allow delivery_partner
+    await db.execute(sql`
+      ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+    `);
+
     // Update existing users to have usernames based on email
     await db.execute(sql`
       UPDATE users SET username = SPLIT_PART(email, '@', 1) WHERE username IS NULL
