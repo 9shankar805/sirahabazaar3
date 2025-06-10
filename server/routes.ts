@@ -1491,6 +1491,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notification routes
+  app.get("/api/notifications/user/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const notifications = await storage.getNotificationsByUserId(userId);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  app.put("/api/notifications/:id/read", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const notification = await storage.markNotificationAsRead(id);
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  app.put("/api/notifications/user/:userId/read-all", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      await storage.markAllNotificationsAsRead(userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark all notifications as read" });
+    }
+  });
+
+  app.post("/api/notifications", async (req, res) => {
+    try {
+      const notificationData = insertNotificationSchema.parse(req.body);
+      const notification = await storage.createNotification(notificationData);
+      res.json(notification);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid notification data" });
+    }
+  });
+
+  // Real-time notification stream endpoint
+  app.get("/api/notifications/stream/:userId", (req, res) => {
+    const userId = parseInt(req.params.userId);
+    
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+
+    // Send initial connection confirmation
+    res.write(`data: ${JSON.stringify({ type: 'connected', userId })}\n\n`);
+
+    // Store the connection for this user
+    if (!global.notificationStreams) {
+      global.notificationStreams = new Map();
+    }
+    global.notificationStreams.set(userId, res);
+
+    // Handle client disconnect
+    req.on('close', () => {
+      global.notificationStreams?.delete(userId);
+    });
+
+    req.on('error', () => {
+      global.notificationStreams?.delete(userId);
+    });
+  });
+
   // Website analytics routes
   app.get("/api/admin/analytics/stats", async (req, res) => {
     try {

@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { useAppMode } from "@/hooks/useAppMode";
 import SearchWithSuggestions from "@/components/SearchWithSuggestions";
+import NotificationCenter from "@/components/NotificationCenter";
 import {
   DropdownMenu,
   DropdownMenuContent,

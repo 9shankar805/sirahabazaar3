@@ -103,7 +103,8 @@ export interface IStorage {
   // Notifications
   createNotification(notification: InsertNotification): Promise<Notification>;
   getUserNotifications(userId: number): Promise<Notification[]>;
-  markNotificationAsRead(id: number): Promise<boolean>;
+  getNotificationsByUserId(userId: number): Promise<Notification[]>;
+  markNotificationAsRead(id: number): Promise<Notification>;
   markAllNotificationsAsRead(userId: number): Promise<boolean>;
 
   // Order tracking
@@ -667,9 +668,18 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(notifications.createdAt));
   }
 
-  async markNotificationAsRead(id: number): Promise<boolean> {
-    const result = await db.update(notifications).set({ isRead: true }).where(eq(notifications.id, id));
-    return (result.rowCount ?? 0) > 0;
+  async getNotificationsByUserId(userId: number): Promise<Notification[]> {
+    return await db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification> {
+    const [updatedNotification] = await db.update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    return updatedNotification;
   }
 
   async markAllNotificationsAsRead(userId: number): Promise<boolean> {
