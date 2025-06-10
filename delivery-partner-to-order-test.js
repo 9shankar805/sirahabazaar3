@@ -320,7 +320,7 @@ async function testOrderPlacement() {
   const orderResponse = await makeRequest('/api/orders', 'POST', orderData, testState.customerToken);
 
   if (orderResponse.ok) {
-    testState.order = orderResponse.data;
+    testState.order = orderResponse.data.order || orderResponse.data;
     logResult('Order Placement', true, `Order ID: ${testState.order.id}, Amount: Rs. ${testState.order.totalAmount}`);
     return true;
   } else {
