@@ -919,18 +919,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getStoreAnalytics(storeId: number, days: number = 30): Promise<StoreAnalytics[]> {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-    const dateStr = startDate.toISOString().split('T')[0];
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      const dateStr = startDate.toISOString().split('T')[0];
 
-    return await db
-      .select()
-      .from(storeAnalytics)
-      .where(and(
-        eq(storeAnalytics.storeId, storeId),
-        gte(storeAnalytics.date, dateStr)
-      ))
-      .orderBy(desc(storeAnalytics.date));
+      return await db
+        .select()
+        .from(storeAnalytics)
+        .where(and(
+          eq(storeAnalytics.storeId, storeId),
+          gte(storeAnalytics.date, dateStr)
+        ))
+        .orderBy(desc(storeAnalytics.date));
+    } catch (error) {
+      console.error('Error fetching store analytics:', error);
+      // Return empty array with basic structure if table doesn't exist or has issues
+      return [];
+    }
   }
 
   async updateStoreAnalytics(data: InsertStoreAnalytics): Promise<StoreAnalytics> {
