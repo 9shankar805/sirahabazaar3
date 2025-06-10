@@ -8,7 +8,7 @@ import { CartProvider } from "./hooks/useCart";
 import { WishlistProvider } from "./hooks/useWishlist";
 import { AppModeProvider, useAppMode } from "./hooks/useAppMode";
 import NotFound from "@/pages/not-found";
-import Navbar from "@/components/Navbar";
+import NavbarWrapper from "@/components/NavbarWrapper";
 import BottomNavbar from "@/components/BottomNavbar";
 import Footer from "@/components/Footer";
 import ModeSwiper from "@/components/ModeSwiper";
@@ -112,7 +112,7 @@ function App() {
             <AppModeProvider>
               <TooltipProvider>
                 <div className="min-h-screen flex flex-col">
-                  <Navbar />
+                  <NavbarWrapper />
                   <main className="flex-1 pb-16 md:pb-0">
                     <AppRouter />
                   </main>
