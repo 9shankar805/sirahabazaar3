@@ -46,6 +46,9 @@ export async function runMigrations() {
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS country TEXT
     `);
     await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS postal_code TEXT
+    `);
+    await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()
     `);
 

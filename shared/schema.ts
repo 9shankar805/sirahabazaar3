@@ -40,6 +40,7 @@ export const stores = pgTable("stores", {
   address: text("address").notNull(),
   city: text("city"),
   state: text("state"),
+  postalCode: text("postal_code"),
   country: text("country"),
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
