@@ -105,6 +105,26 @@ export default function ComprehensiveAdminDashboard() {
     enabled: !!adminUser,
   });
 
+  // Settings form state
+  const [settingsForm, setSettingsForm] = useState({
+    siteName: "Siraha Bazaar",
+    siteDescription: "Multi-vendor e-commerce platform",
+    adminEmail: "admin@sirahbazaar.com",
+    contactPhone: "+977-33-123456",
+    commissionRate: "5",
+    minOrder: "100",
+    deliveryFee: "50",
+    taxRate: "13",
+    sessionTimeout: "30",
+    emailNotifications: true,
+    smsNotifications: true,
+    orderAlerts: true,
+    lowStockAlerts: true,
+    twoFactorAuth: false,
+    loginNotifications: true,
+    fraudDetection: true,
+  });
+
   // Mutations
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
@@ -147,6 +167,58 @@ export default function ComprehensiveAdminDashboard() {
       toast({ title: "Vendor verification approved" });
     },
   });
+
+  const updateSettingMutation = useMutation({
+    mutationFn: async ({ key, value }: { key: string; value: string }) => {
+      return apiRequest(`/api/admin/site-settings/${key}`, "PUT", { value });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/site-settings"] });
+      toast({ title: "Setting updated successfully" });
+    },
+  });
+
+  const handleSaveSettings = async () => {
+    try {
+      const settingsToUpdate = [
+        { key: "site_name", value: settingsForm.siteName },
+        { key: "site_description", value: settingsForm.siteDescription },
+        { key: "admin_email", value: settingsForm.adminEmail },
+        { key: "contact_phone", value: settingsForm.contactPhone },
+        { key: "commission_rate", value: settingsForm.commissionRate },
+        { key: "min_order", value: settingsForm.minOrder },
+        { key: "delivery_fee", value: settingsForm.deliveryFee },
+        { key: "tax_rate", value: settingsForm.taxRate },
+        { key: "session_timeout", value: settingsForm.sessionTimeout },
+        { key: "email_notifications", value: settingsForm.emailNotifications.toString() },
+        { key: "sms_notifications", value: settingsForm.smsNotifications.toString() },
+        { key: "order_alerts", value: settingsForm.orderAlerts.toString() },
+        { key: "low_stock_alerts", value: settingsForm.lowStockAlerts.toString() },
+        { key: "two_factor_auth", value: settingsForm.twoFactorAuth.toString() },
+        { key: "login_notifications", value: settingsForm.loginNotifications.toString() },
+        { key: "fraud_detection", value: settingsForm.fraudDetection.toString() },
+      ];
+
+      for (const setting of settingsToUpdate) {
+        await updateSettingMutation.mutateAsync(setting);
+      }
+
+      toast({ title: "All settings saved successfully" });
+    } catch (error) {
+      toast({ 
+        title: "Error saving settings", 
+        description: "Some settings may not have been saved",
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setSettingsForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("adminUser");
@@ -1135,9 +1207,12 @@ export default function ComprehensiveAdminDashboard() {
           <TabsContent value="settings" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">System Settings</h2>
-              <Button>
+              <Button 
+                onClick={handleSaveSettings}
+                disabled={updateSettingMutation.isPending}
+              >
                 <Settings className="h-4 w-4 mr-2" />
-                Save Changes
+                {updateSettingMutation.isPending ? "Saving..." : "Save Changes"}
               </Button>
             </div>
 
@@ -1149,19 +1224,36 @@ export default function ComprehensiveAdminDashboard() {
                 <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="site-name">Site Name</Label>
-                    <Input id="site-name" defaultValue="Siraha Bazaar" />
+                    <Input 
+                      id="site-name" 
+                      value={settingsForm.siteName}
+                      onChange={(e) => handleInputChange('siteName', e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="site-description">Site Description</Label>
-                    <Textarea id="site-description" defaultValue="Multi-vendor e-commerce platform" />
+                    <Textarea 
+                      id="site-description" 
+                      value={settingsForm.siteDescription}
+                      onChange={(e) => handleInputChange('siteDescription', e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="admin-email">Admin Email</Label>
-                    <Input id="admin-email" type="email" defaultValue="admin@sirahbazaar.com" />
+                    <Input 
+                      id="admin-email" 
+                      type="email" 
+                      value={settingsForm.adminEmail}
+                      onChange={(e) => handleInputChange('adminEmail', e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="contact-phone">Contact Phone</Label>
-                    <Input id="contact-phone" defaultValue="+977-33-123456" />
+                    <Input 
+                      id="contact-phone" 
+                      value={settingsForm.contactPhone}
+                      onChange={(e) => handleInputChange('contactPhone', e.target.value)}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -1173,19 +1265,39 @@ export default function ComprehensiveAdminDashboard() {
                 <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="commission-rate">Commission Rate (%)</Label>
-                    <Input id="commission-rate" type="number" defaultValue="5" />
+                    <Input 
+                      id="commission-rate" 
+                      type="number" 
+                      value={settingsForm.commissionRate}
+                      onChange={(e) => handleInputChange('commissionRate', e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="min-order">Minimum Order Amount</Label>
-                    <Input id="min-order" type="number" defaultValue="100" />
+                    <Input 
+                      id="min-order" 
+                      type="number" 
+                      value={settingsForm.minOrder}
+                      onChange={(e) => handleInputChange('minOrder', e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="delivery-fee">Default Delivery Fee</Label>
-                    <Input id="delivery-fee" type="number" defaultValue="50" />
+                    <Input 
+                      id="delivery-fee" 
+                      type="number" 
+                      value={settingsForm.deliveryFee}
+                      onChange={(e) => handleInputChange('deliveryFee', e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="tax-rate">Tax Rate (%)</Label>
-                    <Input id="tax-rate" type="number" defaultValue="13" />
+                    <Input 
+                      id="tax-rate" 
+                      type="number" 
+                      value={settingsForm.taxRate}
+                      onChange={(e) => handleInputChange('taxRate', e.target.value)}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -1197,19 +1309,39 @@ export default function ComprehensiveAdminDashboard() {
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <Label>Email Notifications</Label>
-                    <input type="checkbox" defaultChecked className="toggle" />
+                    <input 
+                      type="checkbox" 
+                      checked={settingsForm.emailNotifications}
+                      onChange={(e) => handleInputChange('emailNotifications', e.target.checked)}
+                      className="toggle" 
+                    />
                   </div>
                   <div className="flex items-center justify-between">
                     <Label>SMS Notifications</Label>
-                    <input type="checkbox" defaultChecked className="toggle" />
+                    <input 
+                      type="checkbox" 
+                      checked={settingsForm.smsNotifications}
+                      onChange={(e) => handleInputChange('smsNotifications', e.target.checked)}
+                      className="toggle" 
+                    />
                   </div>
                   <div className="flex items-center justify-between">
                     <Label>Order Alerts</Label>
-                    <input type="checkbox" defaultChecked className="toggle" />
+                    <input 
+                      type="checkbox" 
+                      checked={settingsForm.orderAlerts}
+                      onChange={(e) => handleInputChange('orderAlerts', e.target.checked)}
+                      className="toggle" 
+                    />
                   </div>
                   <div className="flex items-center justify-between">
                     <Label>Low Stock Alerts</Label>
-                    <input type="checkbox" defaultChecked className="toggle" />
+                    <input 
+                      type="checkbox" 
+                      checked={settingsForm.lowStockAlerts}
+                      onChange={(e) => handleInputChange('lowStockAlerts', e.target.checked)}
+                      className="toggle" 
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -1221,19 +1353,39 @@ export default function ComprehensiveAdminDashboard() {
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <Label>Two-Factor Authentication</Label>
-                    <input type="checkbox" className="toggle" />
+                    <input 
+                      type="checkbox" 
+                      checked={settingsForm.twoFactorAuth}
+                      onChange={(e) => handleInputChange('twoFactorAuth', e.target.checked)}
+                      className="toggle" 
+                    />
                   </div>
                   <div className="flex items-center justify-between">
                     <Label>Login Notifications</Label>
-                    <input type="checkbox" defaultChecked className="toggle" />
+                    <input 
+                      type="checkbox" 
+                      checked={settingsForm.loginNotifications}
+                      onChange={(e) => handleInputChange('loginNotifications', e.target.checked)}
+                      className="toggle" 
+                    />
                   </div>
                   <div className="flex items-center justify-between">
                     <Label>Fraud Detection</Label>
-                    <input type="checkbox" defaultChecked className="toggle" />
+                    <input 
+                      type="checkbox" 
+                      checked={settingsForm.fraudDetection}
+                      onChange={(e) => handleInputChange('fraudDetection', e.target.checked)}
+                      className="toggle" 
+                    />
                   </div>
                   <div>
                     <Label htmlFor="session-timeout">Session Timeout (minutes)</Label>
-                    <Input id="session-timeout" type="number" defaultValue="30" />
+                    <Input 
+                      id="session-timeout" 
+                      type="number" 
+                      value={settingsForm.sessionTimeout}
+                      onChange={(e) => handleInputChange('sessionTimeout', e.target.value)}
+                    />
                   </div>
                 </CardContent>
               </Card>
