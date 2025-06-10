@@ -30,6 +30,7 @@ import AdminPanel from "@/pages/AdminPanel";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import EnhancedAdminDashboard from "@/pages/EnhancedAdminDashboard";
+import ComprehensiveAdminDashboard from "@/pages/ComprehensiveAdminDashboard";
 import StoreMaps from "@/pages/StoreMaps";
 import RestaurantMaps from "@/pages/RestaurantMaps";
 import Wishlist from "@/pages/Wishlist";
@@ -73,10 +74,10 @@ function AppRouter() {
         <Route path="/account" component={Account} />
         <Route path="/shopkeeper-dashboard" component={ShopkeeperDashboard} />
         <Route path="/customer-dashboard" component={CustomerDashboard} />
-        <Route path="/admin" component={EnhancedAdminDashboard} />
+        <Route path="/admin" component={ComprehensiveAdminDashboard} />
         <Route path="/admin/login" component={AdminLogin} />
         <Route path="/admin/panel" component={AdminPanel} />
-        <Route path="/admin/dashboard" component={EnhancedAdminDashboard} />
+        <Route path="/admin/dashboard" component={ComprehensiveAdminDashboard} />
         <Route path="/store-maps" component={StoreMaps} />
         <Route path="/restaurant-maps" component={RestaurantMaps} />
         <Route path="/wishlist" component={Wishlist} />
