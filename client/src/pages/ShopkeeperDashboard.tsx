@@ -65,7 +65,7 @@ const storeSchema = z.object({
   address: z.string().min(1, "Address is required"),
   latitude: z.string().optional(),
   longitude: z.string().optional(),
-  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  phone: z.string().optional(),
   website: z.string().url().optional().or(z.literal("")),
   logo: z.string().optional(),
   coverImage: z.string().optional(),

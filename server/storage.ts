@@ -362,7 +362,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createStore(store: InsertStore): Promise<Store> {
-    const [newStore] = await db.insert(stores).values(store).returning();
+    // Generate a unique slug from the store name
+    const baseSlug = store.name.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .trim();
+    
+    let slug = baseSlug;
+    let counter = 1;
+    
+    // Check if slug exists and make it unique
+    while (true) {
+      const existingStore = await db.select().from(stores).where(eq(stores.slug, slug)).limit(1);
+      if (existingStore.length === 0) {
+        break;
+      }
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+    
+    const storeWithSlug = {
+      ...store,
+      slug,
+      isActive: true,
+      featured: false,
+      rating: "0.00",
+      totalReviews: 0
+    };
+    
+    const [newStore] = await db.insert(stores).values(storeWithSlug).returning();
     return newStore;
   }
 

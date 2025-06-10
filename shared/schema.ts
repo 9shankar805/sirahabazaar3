@@ -670,9 +670,13 @@ export type InsertDelivery = z.infer<typeof insertDeliverySchema>;
 
 export const insertStoreSchema = createInsertSchema(stores).omit({
   id: true,
+  slug: true,
   createdAt: true,
+  updatedAt: true,
   rating: true,
   totalReviews: true,
+  featured: true,
+  isActive: true,
 }).extend({
   minimumOrder: z.union([z.string(), z.number()]).optional().transform((val) => 
     val !== undefined && val !== null && val !== "" ? String(val) : undefined
