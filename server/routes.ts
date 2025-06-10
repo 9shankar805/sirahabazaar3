@@ -2766,6 +2766,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Test notification endpoint for demonstration
+  app.post('/api/notifications/test', async (req, res) => {
+    try {
+      const { userId, type = 'order' } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
+
+      const testNotifications = [
+        {
+          userId: parseInt(userId),
+          type: 'order',
+          title: 'New Order Received',
+          message: 'You have a new order #12345 from John Doe worth ₹1,250',
+          isRead: false
+        },
+        {
+          userId: parseInt(userId),
+          type: 'delivery',
+          title: 'Order Out for Delivery',
+          message: 'Your order #12344 is now out for delivery and will arrive in 30 minutes',
+          isRead: false
+        },
+        {
+          userId: parseInt(userId),
+          type: 'payment',
+          title: 'Payment Received',
+          message: 'Payment of ₹850 has been credited to your account',
+          isRead: false
+        },
+        {
+          userId: parseInt(userId),
+          type: 'success',
+          title: 'Store Verification Complete',
+          message: 'Congratulations! Your store has been verified and is now live',
+          isRead: false
+        }
+      ];
+
+      // Create a random test notification
+      const randomNotification = testNotifications[Math.floor(Math.random() * testNotifications.length)];
+      const notification = await storage.createNotification(randomNotification);
+      
+      res.json({ success: true, notification });
+    } catch (error) {
+      console.error('Test notification error:', error);
+      res.status(500).json({ error: 'Failed to create test notification' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

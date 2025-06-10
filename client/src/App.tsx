@@ -13,6 +13,7 @@ import BottomNavbar from "@/components/BottomNavbar";
 import Footer from "@/components/Footer";
 import ModeSwiper from "@/components/ModeSwiper";
 import MobileNotificationBar from "@/components/MobileNotificationBar";
+import NotificationTestButton from "@/components/NotificationTestButton";
 import Homepage from "@/pages/Homepage";
 import FoodHomepage from "@/pages/FoodHomepage";
 import Products from "@/pages/Products";
@@ -123,6 +124,7 @@ function App() {
                   </main>
                   <Footer />
                   <BottomNavbar />
+                  <NotificationTestButton />
                 </div>
                 <Toaster />
               </TooltipProvider>
