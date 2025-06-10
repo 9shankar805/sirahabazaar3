@@ -48,7 +48,7 @@ export default function AdminLogin() {
         title: "Login successful",
         description: "Welcome to the admin panel",
       });
-      setLocation("/admin");
+      setLocation("/admin/dashboard");
     },
     onError: (error: any) => {
       setError(error.message || "Login failed");
