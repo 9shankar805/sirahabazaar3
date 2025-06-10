@@ -77,8 +77,14 @@ export default function DeliveryPartnerQuickReg() {
 
       if (!userResponse.ok) {
         const error = await userResponse.json();
-        if (error.error === 'User already exists') {
-          throw new Error('An account with this phone number or email already exists. Please use different credentials or login to your existing account.');
+        if (error.error?.includes('User already exists')) {
+          if (error.error.includes('email')) {
+            throw new Error('An account with this email already exists. Please use a different email address or login to your existing account.');
+          } else if (error.error.includes('phone')) {
+            throw new Error('An account with this phone number already exists. Please use a different phone number or login to your existing account.');
+          } else {
+            throw new Error('An account with these credentials already exists. Please use different information or login to your existing account.');
+          }
         }
         throw new Error(error.error || 'Registration failed');
       }
@@ -114,11 +120,23 @@ export default function DeliveryPartnerQuickReg() {
       setLocation('/login');
     } catch (error) {
       console.error('Registration error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong. Please try again.";
+      
       toast({
         title: "Registration Failed",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
+      
+      // If it's a duplicate user error, suggest alternative actions
+      if (errorMessage.includes('already exists')) {
+        setTimeout(() => {
+          toast({
+            title: "Need Help?",
+            description: "If you already have an account, try logging in instead. If you need to update your role to delivery partner, contact support.",
+          });
+        }, 3000);
+      }
     } finally {
       setIsLoading(false);
     }
