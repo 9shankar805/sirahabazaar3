@@ -1082,16 +1082,21 @@ export class DatabaseStorage implements IStorage {
 
   // Inventory management
   async getInventoryLogs(storeId: number, productId?: number): Promise<InventoryLog[]> {
-    const conditions = [eq(inventoryLogs.storeId, storeId)];
-    if (productId) {
-      conditions.push(eq(inventoryLogs.productId, productId));
-    }
+    try {
+      const conditions = [eq(inventoryLogs.storeId, storeId)];
+      if (productId) {
+        conditions.push(eq(inventoryLogs.productId, productId));
+      }
 
-    return await db
-      .select()
-      .from(inventoryLogs)
-      .where(and(...conditions))
-      .orderBy(desc(inventoryLogs.createdAt));
+      return await db
+        .select()
+        .from(inventoryLogs)
+        .where(and(...conditions))
+        .orderBy(desc(inventoryLogs.createdAt));
+    } catch (error) {
+      console.error('Error fetching inventory logs:', error);
+      return [];
+    }
   }
 
   async createInventoryLog(log: InsertInventoryLog): Promise<InventoryLog> {
