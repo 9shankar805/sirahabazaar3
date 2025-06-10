@@ -42,11 +42,9 @@ export default function ComprehensiveAdminDashboard() {
 
   useEffect(() => {
     const stored = localStorage.getItem("adminUser");
-    console.log("Admin dashboard checking authentication, stored data:", stored);
     if (stored && stored !== "undefined" && stored !== "null") {
       try {
         const adminData = JSON.parse(stored);
-        console.log("Admin user data parsed successfully:", adminData);
         setAdminUser(adminData);
       } catch (error) {
         console.error('Error parsing admin user data:', error);
@@ -54,7 +52,6 @@ export default function ComprehensiveAdminDashboard() {
         setLocation("/admin/login");
       }
     } else {
-      console.log("No admin user found, redirecting to login");
       setLocation("/admin/login");
     }
   }, [setLocation]);
@@ -133,7 +130,7 @@ export default function ComprehensiveAdminDashboard() {
   const { data: deliveryPartners = [] } = useQuery({
     queryKey: ["/api/delivery-partners"],
     enabled: !!adminUser,
-  });
+  }) as { data: any[] };
 
   // Settings form state
   const [settingsForm, setSettingsForm] = useState({
@@ -209,6 +206,64 @@ export default function ComprehensiveAdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/vendor-verifications"] });
       toast({ title: "Vendor verification approved" });
+    },
+  });
+
+  // User approval mutations
+  const approveUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      return apiRequest(`/api/admin/users/${userId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser?.id })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ title: "User approved successfully" });
+    },
+  });
+
+  const rejectUserMutation = useMutation({
+    mutationFn: async ({ userId, reason }: { userId: number; reason: string }) => {
+      return apiRequest(`/api/admin/users/${userId}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser?.id, reason })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ title: "User rejected successfully" });
+    },
+  });
+
+  // Delivery partner approval mutations
+  const approvePartnerMutation = useMutation({
+    mutationFn: async (partnerId: number) => {
+      return apiRequest(`/api/delivery-partners/${partnerId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser?.id })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-partners"] });
+      toast({ title: "Delivery partner approved successfully" });
+    },
+  });
+
+  const rejectPartnerMutation = useMutation({
+    mutationFn: async ({ partnerId, reason }: { partnerId: number; reason: string }) => {
+      return apiRequest(`/api/delivery-partners/${partnerId}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser?.id, reason })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-partners"] });
+      toast({ title: "Delivery partner rejected successfully" });
     },
   });
 
@@ -590,7 +645,7 @@ export default function ComprehensiveAdminDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {deliveryPartners
+                      {(deliveryPartners as any[])
                         .filter((partner: any) => partner.status === 'pending')
                         .map((partner: any) => (
                           <Card key={partner.id} className="border-l-4 border-l-blue-400">
@@ -655,7 +710,7 @@ export default function ComprehensiveAdminDashboard() {
                           </Card>
                         ))}
                       
-                      {deliveryPartners.filter((partner: any) => partner.status === 'pending').length === 0 && (
+                      {(deliveryPartners as any[]).filter((partner: any) => partner.status === 'pending').length === 0 && (
                         <div className="text-center py-8 text-muted-foreground">
                           <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
                           <p>No pending delivery partner applications</p>

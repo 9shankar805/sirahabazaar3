@@ -44,14 +44,12 @@ export default function AdminLogin() {
     },
     onSuccess: (data: any) => {
       // Store admin session
-      console.log("Login success, storing admin data:", data.admin);
       localStorage.setItem("adminUser", JSON.stringify(data.admin));
       toast({
         title: "Login successful",
         description: "Welcome to the admin panel",
       });
       // Redirect to dashboard
-      console.log("Redirecting to admin dashboard");
       setLocation("/admin/dashboard");
     },
     onError: (error: any) => {
