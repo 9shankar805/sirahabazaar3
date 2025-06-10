@@ -831,7 +831,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(approvedUser);
     } catch (error) {
-      res.status(500).json({ error: "Failed to approve user" });
+      console.error("Error in approve user route:", error);
+      res.status(500).json({ error: "Failed to approve user", details: error.message });
     }
   });
 

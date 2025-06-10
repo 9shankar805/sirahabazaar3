@@ -284,16 +284,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async approveUser(userId: number, adminId: number): Promise<User | undefined> {
-    const [approvedUser] = await db
-      .update(users)
-      .set({
-        status: 'active',
-        approvalDate: new Date(),
-        approvedBy: adminId
-      })
-      .where(eq(users.id, userId))
-      .returning();
-    return approvedUser;
+    try {
+      console.log(`Attempting to approve user ${userId} by admin ${adminId}`);
+      
+      const [approvedUser] = await db
+        .update(users)
+        .set({
+          status: 'active',
+          approvalDate: new Date(),
+          approvedBy: adminId,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      console.log('User approval successful:', approvedUser);
+      return approvedUser;
+    } catch (error) {
+      console.error('Error in approveUser:', error);
+      throw error;
+    }
   }
 
   async rejectUser(userId: number, adminId: number): Promise<User | undefined> {
