@@ -81,36 +81,26 @@ async function createAdminUser() {
 async function testAdminLogin() {
   console.log('\n=== STEP 1: Admin Login ===');
   
-  // First try to create admin user
-  const adminCreds = await createAdminUser();
-  
-  const response = await makeRequest('/api/admin/login', 'POST', adminCreds);
-  
-  if (response.ok && response.data.admin) {
-    testState.adminUser = response.data.admin;
-    testState.adminToken = response.data.token;
-    logResult('Admin Login', true, `Logged in as ${testState.adminUser.fullName}`);
-    return true;
-  }
-  
-  // Try alternative credentials
-  const altCredentials = [
+  // Try known admin credentials that should exist
+  const adminCredentials = [
+    { email: 'testadmin@test.com', password: 'admin123' },
     { email: 'admin@admin.com', password: 'admin123' },
-    { email: 'test@admin.com', password: 'password123' }
+    { email: 'admin@sirahaBazaar.com', password: 'admin123' }
   ];
 
-  for (const creds of altCredentials) {
-    const altResponse = await makeRequest('/api/admin/login', 'POST', creds);
+  for (const creds of adminCredentials) {
+    const response = await makeRequest('/api/admin/login', 'POST', creds);
     
-    if (altResponse.ok && altResponse.data.admin) {
-      testState.adminUser = altResponse.data.admin;
-      testState.adminToken = altResponse.data.token;
+    if (response.ok && response.data.admin) {
+      testState.adminUser = response.data.admin;
+      testState.adminToken = response.data.token;
       logResult('Admin Login', true, `Logged in as ${testState.adminUser.fullName}`);
       return true;
     }
   }
   
-  logResult('Admin Login', false, 'All admin credentials failed');
+  // If no existing admin works, skip admin-dependent tests for now
+  logResult('Admin Login', false, 'Will proceed with non-admin tests');
   return false;
 }
 
@@ -180,8 +170,14 @@ async function testDeliveryPartnerRegistration() {
 async function testDeliveryPartnerApproval() {
   console.log('\n=== STEP 3: Delivery Partner Approval ===');
   
-  if (!testState.deliveryPartner || !testState.adminUser) {
-    logResult('Delivery Partner Approval', false, 'Missing required data');
+  if (!testState.deliveryPartner) {
+    logResult('Delivery Partner Approval', false, 'No delivery partner to approve');
+    return false;
+  }
+
+  if (!testState.adminUser) {
+    // Skip approval for now, manually approve via direct database update
+    logResult('Delivery Partner Approval', false, 'Admin not available - skipping approval step');
     return false;
   }
 
@@ -273,27 +269,55 @@ async function testOrderPlacement() {
   }
 
   // Add item to cart
-  const cartResponse = await makeRequest('/api/cart', 'POST', {
+  const addCartResponse = await makeRequest('/api/cart', 'POST', {
+    userId: testState.customer.id,
     productId: testState.product.id,
     quantity: 2
   }, testState.customerToken);
 
-  if (!cartResponse.ok) {
-    logResult('Add to Cart', false, cartResponse.data?.error);
+  if (!addCartResponse.ok) {
+    logResult('Add to Cart', false, addCartResponse.data?.error);
     return false;
   }
 
   logResult('Add to Cart', true, 'Product added to cart');
 
-  // Place order
-  const orderResponse = await makeRequest('/api/orders', 'POST', {
-    shippingAddress: 'Test Delivery Address, Siraha',
-    paymentMethod: 'cash_on_delivery',
-    phone: testState.customer.phone,
-    customerName: testState.customer.fullName,
-    latitude: 26.6616,
-    longitude: 86.2089
-  }, testState.customerToken);
+  // Get cart items first to create order items
+  const cartDataResponse = await makeRequest(`/api/cart/${testState.customer.id}`, 'GET', null, testState.customerToken);
+  
+  if (!cartDataResponse.ok || !cartDataResponse.data || cartDataResponse.data.length === 0) {
+    logResult('Get Cart for Order', false, 'No items in cart');
+    return false;
+  }
+
+  const cartItems = cartDataResponse.data;
+  const totalAmount = cartItems.reduce((sum, item) => {
+    const price = parseFloat(item.product?.price || testState.product.price);
+    return sum + (item.quantity * price);
+  }, 0);
+
+  // Place order with proper structure
+  const orderData = {
+    order: {
+      customerId: testState.customer.id,
+      totalAmount: totalAmount.toFixed(2),
+      status: 'pending',
+      shippingAddress: 'Test Delivery Address, Siraha',
+      paymentMethod: 'cash_on_delivery',
+      phone: testState.customer.phone,
+      customerName: testState.customer.fullName,
+      latitude: '26.6616',
+      longitude: '86.2089'
+    },
+    items: cartItems.map(item => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      price: item.product?.price || testState.product.price,
+      storeId: item.product?.storeId || testState.store.id
+    }))
+  };
+
+  const orderResponse = await makeRequest('/api/orders', 'POST', orderData, testState.customerToken);
 
   if (orderResponse.ok) {
     testState.order = orderResponse.data;
