@@ -325,23 +325,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid user ID" });
       }
       
-      // Get stores owned by the user first
-      const stores = await storage.getStoresByOwnerId(parsedId);
-      if (stores.length === 0) {
-        return res.json([]);
-      }
+      // Direct SQL query to get products owned by the user
+      const query = `
+        SELECT p.id, p.name, p.description, p.price, p.original_price, p.category_id, 
+               p.store_id, p.stock, p.images, p.rating, p.total_reviews, p.is_active,
+               p.is_fast_sell, p.is_on_offer, p.offer_percentage, p.offer_end_date,
+               p.product_type, p.preparation_time, p.ingredients, p.allergens,
+               p.spice_level, p.is_vegetarian, p.is_vegan, p.nutrition_info, p.created_at
+        FROM products p 
+        INNER JOIN stores s ON s.id = p.store_id 
+        WHERE s.owner_id = $1 AND p.is_active = true
+        ORDER BY p.created_at DESC
+      `;
       
-      // Get products for all stores owned by this user
-      let allProducts: any[] = [];
-      for (const store of stores) {
-        const storeProducts = await storage.getProductsByStoreId(store.id);
-        allProducts = allProducts.concat(storeProducts);
-      }
-      
-      res.json(allProducts);
+      const result = await pool.query(query, [parsedId]);
+      res.json(result.rows);
     } catch (error) {
       console.error("Error fetching store products:", error);
-      res.status(500).json({ error: "Failed to fetch products", details: error instanceof Error ? error.message : "Unknown error" });
+      res.status(500).json({ error: "Failed to fetch product" });
     }
   });
 
