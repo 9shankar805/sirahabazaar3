@@ -53,16 +53,20 @@ export default function DeliveryPartnerDashboard() {
   const queryClient = useQueryClient();
   const [showApplication, setShowApplication] = useState(false);
 
-  const { data: partner, isLoading: partnerLoading } = useQuery({
+  const { data: partner, isLoading: partnerLoading, error: partnerError } = useQuery({
     queryKey: ['/api/delivery-partners/user', user?.id],
     queryFn: async () => {
       const response = await fetch(`/api/delivery-partners/user?userId=${user?.id}`);
       if (!response.ok) {
-        throw new Error('Partner not found');
+        if (response.status === 404) {
+          return null; // Partner not found is a valid state
+        }
+        throw new Error('Failed to fetch partner data');
       }
       return response.json();
     },
     enabled: !!user?.id,
+    retry: 2,
   });
 
   const { data: deliveries = [], isLoading: deliveriesLoading } = useQuery({

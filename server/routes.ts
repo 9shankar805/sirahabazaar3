@@ -1953,31 +1953,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/delivery-partners/user/:userId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const partner = await storage.getDeliveryPartnerByUserId(userId);
-      if (!partner) {
-        return res.status(404).json({ error: "Delivery partner not found" });
-      }
-      res.json(partner);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch delivery partner" });
-    }
-  });
-
   app.get("/api/delivery-partners/user", async (req, res) => {
     try {
       const userId = req.query.userId || req.headers['user-id'];
+      console.log("Fetching delivery partner for userId:", userId);
       if (!userId) {
         return res.status(400).json({ error: "User ID is required" });
       }
       const partner = await storage.getDeliveryPartnerByUserId(parseInt(userId as string));
+      console.log("Found partner:", partner);
       if (!partner) {
         return res.status(404).json({ error: "Delivery partner not found" });
       }
       res.json(partner);
     } catch (error) {
+      console.error("Error fetching delivery partner:", error);
       res.status(500).json({ error: "Failed to fetch delivery partner" });
     }
   });
