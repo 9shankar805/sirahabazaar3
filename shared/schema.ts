@@ -574,6 +574,17 @@ export const insertCommissionSchema = createInsertSchema(commissions).omit({
   createdAt: true,
 });
 
+// Delivery partner schemas
+export const insertDeliveryPartnerSchema = createInsertSchema(deliveryPartners).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDeliverySchema = createInsertSchema(deliveries).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Enhanced admin feature types
 export type Coupon = typeof coupons.$inferSelect;
 export type InsertCoupon = z.infer<typeof insertCouponSchema>;
@@ -603,6 +614,12 @@ export type VendorVerification = typeof vendorVerifications.$inferSelect;
 export type InsertVendorVerification = z.infer<typeof insertVendorVerificationSchema>;
 export type Commission = typeof commissions.$inferSelect;
 export type InsertCommission = z.infer<typeof insertCommissionSchema>;
+
+// Delivery partner types
+export type DeliveryPartner = typeof deliveryPartners.$inferSelect;
+export type InsertDeliveryPartner = z.infer<typeof insertDeliveryPartnerSchema>;
+export type Delivery = typeof deliveries.$inferSelect;
+export type InsertDelivery = z.infer<typeof insertDeliverySchema>;
 
 export const insertStoreSchema = createInsertSchema(stores).omit({
   id: true,

@@ -2,7 +2,7 @@ import {
   users, adminUsers, stores, categories, products, orders, orderItems, cartItems, wishlistItems,
   admins, websiteVisits, notifications, orderTracking, returnPolicies, returns,
   promotions, advertisements, productReviews, settlements, storeAnalytics, inventoryLogs,
-  paymentTransactions, coupons, banners, supportTickets, siteSettings,
+  paymentTransactions, coupons, banners, supportTickets, siteSettings, deliveryPartners, deliveries,
   type User, type InsertUser, type AdminUser, type InsertAdminUser, type Store, type InsertStore, 
   type Category, type InsertCategory, type Product, type InsertProduct,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
@@ -12,7 +12,8 @@ import {
   type ReturnPolicy, type InsertReturnPolicy, type Return, type InsertReturn,
   type Promotion, type InsertPromotion, type Advertisement, type InsertAdvertisement,
   type ProductReview, type InsertProductReview, type Settlement, type InsertSettlement,
-  type StoreAnalytics, type InsertStoreAnalytics, type InventoryLog, type InsertInventoryLog
+  type StoreAnalytics, type InsertStoreAnalytics, type InventoryLog, type InsertInventoryLog,
+  type DeliveryPartner, type InsertDeliveryPartner, type Delivery, type InsertDelivery
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, ilike, or, desc, count, sql, gte } from "drizzle-orm";
