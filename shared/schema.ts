@@ -144,6 +144,10 @@ export const deliveryPartners = pgTable("delivery_partners", {
   deliveryArea: text("delivery_area").notNull(),
   idProofUrl: text("id_proof_url").notNull(),
   drivingLicenseUrl: text("driving_license_url"),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvalDate: timestamp("approval_date"),
+  rejectionReason: text("rejection_reason"),
   isAvailable: boolean("is_available").default(true),
   currentLocation: text("current_location"), // JSON string for lat/lng
   totalDeliveries: integer("total_deliveries").default(0),
