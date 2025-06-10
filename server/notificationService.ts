@@ -20,8 +20,8 @@ export class NotificationService {
       });
 
       // Send real-time notification if user is connected
-      if (global.notificationStreams && global.notificationStreams.has(notificationData.userId)) {
-        const userStream = global.notificationStreams.get(notificationData.userId);
+      if ((global as any).notificationStreams && (global as any).notificationStreams.has(notificationData.userId)) {
+        const userStream = (global as any).notificationStreams.get(notificationData.userId);
         if (userStream) {
           userStream.write(`data: ${JSON.stringify(notification)}\n\n`);
         }

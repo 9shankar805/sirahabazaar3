@@ -338,18 +338,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Fixed products by store endpoint for inventory
   app.get("/api/products/store", async (req, res) => {
-    const { userId } = req.query;
-    
-    if (!userId) {
-      return res.json([]);
-    }
-    
-    const userIdNum = parseInt(userId as string);
-    if (isNaN(userIdNum)) {
-      return res.json([]);
-    }
-    
     try {
+      const { userId } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      
+      const userIdNum = parseInt(userId as string);
+      if (isNaN(userIdNum)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
       console.log(`Fetching stores for user ${userIdNum}`);
       // Get user's stores first
       const userStores = await storage.getStoresByOwnerId(userIdNum);
@@ -364,16 +364,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allProducts = [];
       for (const store of userStores) {
         console.log(`Fetching products for store ${store.id} (${store.name})`);
-        const storeProducts = await storage.getProductsByStoreId(store.id);
-        console.log(`Found ${storeProducts.length} products for store ${store.id}`);
-        allProducts.push(...storeProducts);
+        try {
+          const storeProducts = await storage.getProductsByStoreId(store.id);
+          console.log(`Found ${storeProducts.length} products for store ${store.id}`);
+          allProducts.push(...storeProducts);
+        } catch (storeError) {
+          console.error(`Error fetching products for store ${store.id}:`, storeError);
+          // Continue with other stores instead of failing completely
+        }
       }
       
       console.log(`Total products found: ${allProducts.length}`);
       res.json(allProducts);
     } catch (error) {
       console.error("Products/store error details:", error);
-      res.status(500).json({ error: "Failed to fetch product" });
+      res.status(500).json({ error: "Failed to fetch products" });
     }
   });
 
@@ -1553,18 +1558,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.write(`data: ${JSON.stringify({ type: 'connected', userId })}\n\n`);
 
     // Store the connection for this user
-    if (!global.notificationStreams) {
-      global.notificationStreams = new Map();
+    if (!(global as any).notificationStreams) {
+      (global as any).notificationStreams = new Map();
     }
-    global.notificationStreams.set(userId, res);
+    (global as any).notificationStreams.set(userId, res);
 
     // Handle client disconnect
     req.on('close', () => {
-      global.notificationStreams?.delete(userId);
+      (global as any).notificationStreams?.delete(userId);
     });
 
     req.on('error', () => {
-      global.notificationStreams?.delete(userId);
+      (global as any).notificationStreams?.delete(userId);
     });
   });
 

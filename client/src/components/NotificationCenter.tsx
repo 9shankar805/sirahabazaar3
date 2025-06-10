@@ -152,7 +152,16 @@ export default function NotificationCenter() {
                       </p>
                       
                       <p className="text-xs text-muted-foreground mt-1">
-                        {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                        {(() => {
+                          try {
+                            if (!notification.createdAt) return 'Just now';
+                            const date = new Date(notification.createdAt);
+                            if (isNaN(date.getTime())) return 'Recently';
+                            return formatDistanceToNow(date, { addSuffix: true });
+                          } catch {
+                            return 'Recently';
+                          }
+                        })()}
                       </p>
                     </div>
                   </div>
