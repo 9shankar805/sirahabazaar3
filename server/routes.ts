@@ -283,20 +283,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { search, category, storeId } = req.query;
       
+      console.log(`[Products API] Request received with params:`, { search, category, storeId });
+      
       let products;
       if (search) {
+        console.log(`[Products API] Searching products with query: "${search}"`);
         products = await storage.searchProducts(search as string);
       } else if (category) {
+        console.log(`[Products API] Fetching products by category: ${category}`);
         products = await storage.getProductsByCategory(parseInt(category as string));
       } else if (storeId) {
+        console.log(`[Products API] Fetching products by store ID: ${storeId}`);
         products = await storage.getProductsByStoreId(parseInt(storeId as string));
       } else {
+        console.log(`[Products API] Fetching all products`);
         products = await storage.getAllProducts();
       }
       
+      console.log(`[Products API] Successfully fetched ${products.length} products`);
       res.json(products);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch products" });
+      console.error(`[Products API] Error fetching products:`, {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        params: { search, category, storeId },
+        timestamp: new Date().toISOString()
+      });
+      res.status(500).json({ 
+        error: "Failed to fetch products",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
