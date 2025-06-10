@@ -374,6 +374,17 @@ export async function runMigrations() {
     await db.execute(sql`
       ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
     `);
+    
+    // Also check for and remove any enum type constraints
+    await db.execute(sql`
+      DO $$ 
+      BEGIN
+        IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+          ALTER TABLE users ALTER COLUMN role TYPE TEXT;
+          DROP TYPE user_role CASCADE;
+        END IF;
+      END $$;
+    `);
 
     // Update existing users to have usernames based on email
     await db.execute(sql`
