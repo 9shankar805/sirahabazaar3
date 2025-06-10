@@ -14,6 +14,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
+
 export default function Homepage() {
   const [, setLocation] = useLocation();
   const { user, isLoading } = useAuth();
@@ -86,7 +87,7 @@ export default function Homepage() {
           {/* Slide 1 - Fast Delivery */}
           <SwiperSlide>
             <div className="relative h-full flex items-center justify-center" style={{
-              backgroundImage: `url(@assets/slider1.png)`,
+              backgroundImage: `url(/attached_assets/slider2_1749495663488.jpg)`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat'
@@ -112,7 +113,7 @@ export default function Homepage() {
           {/* Slide 2 - Food Delivery */}
           <SwiperSlide>
             <div className="relative h-full flex items-center justify-center" style={{
-              backgroundImage: `url(@assets/slider2.jpg)`,
+              backgroundImage: `url(/attached_assets/slider1_1749496287701.jpg)`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat'
@@ -138,7 +139,7 @@ export default function Homepage() {
           {/* Slide 3 - Limited Offers */}
           <SwiperSlide>
             <div className="relative h-full flex items-center justify-center" style={{
-              backgroundImage: `url(@assets/slider.jpg)`,
+              backgroundImage: `url(/attached_assets/slider2_1749495663488.jpg)`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat'

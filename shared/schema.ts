@@ -34,9 +34,13 @@ export const adminUsers = pgTable("admin_users", {
 export const stores = pgTable("stores", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
   description: text("description"),
   ownerId: integer("owner_id").references(() => users.id).notNull(),
   address: text("address").notNull(),
+  city: text("city"),
+  state: text("state"),
+  country: text("country"),
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
   phone: text("phone"),
@@ -55,6 +59,7 @@ export const stores = pgTable("stores", {
   isDeliveryAvailable: boolean("is_delivery_available").default(false),
   openingHours: text("opening_hours"), // JSON string for business hours
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const categories = pgTable("categories", {
