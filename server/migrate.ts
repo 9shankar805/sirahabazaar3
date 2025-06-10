@@ -456,6 +456,37 @@ export async function runMigrations() {
       )
     `);
 
+    // Create product_reviews table for rating system
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS product_reviews (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER NOT NULL REFERENCES products(id),
+        customer_id INTEGER NOT NULL REFERENCES users(id),
+        order_id INTEGER REFERENCES orders(id),
+        rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+        title TEXT,
+        comment TEXT,
+        images TEXT[] DEFAULT '{}',
+        is_verified_purchase BOOLEAN DEFAULT FALSE,
+        is_approved BOOLEAN DEFAULT TRUE,
+        helpful_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Create indexes for product_reviews table
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_product_reviews_product_id ON product_reviews(product_id)
+    `);
+    
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_product_reviews_customer_id ON product_reviews(customer_id)
+    `);
+    
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_product_reviews_rating ON product_reviews(rating)
+    `);
+
     // Create order_items table
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS order_items (
