@@ -197,23 +197,10 @@ export default function ComprehensiveAdminDashboard() {
     },
   });
 
-  const updateSettingMutation = useMutation({
-    mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      return apiRequest(`/api/admin/site-settings/${key}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value })
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/site-settings"] });
-      toast({ title: "Setting updated successfully" });
-    },
-  });
-
+  // Delivery Zone Mutations
   const createZoneMutation = useMutation({
     mutationFn: async (zoneData: any) => {
-      return apiRequest("/api/admin/delivery-zones", {
+      return apiRequest("/api/delivery-zones", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(zoneData)
@@ -233,6 +220,49 @@ export default function ComprehensiveAdminDashboard() {
       toast({ title: "Delivery zone created successfully" });
     },
   });
+
+  const updateZoneMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      return apiRequest(`/api/delivery-zones/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-zones"] });
+      setEditingZone(null);
+      toast({ title: "Delivery zone updated successfully" });
+    },
+  });
+
+  const deleteZoneMutation = useMutation({
+    mutationFn: async (zoneId: number) => {
+      return apiRequest(`/api/delivery-zones/${zoneId}`, {
+        method: "DELETE"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-zones"] });
+      toast({ title: "Delivery zone deleted successfully" });
+    },
+  });
+
+  const updateSettingMutation = useMutation({
+    mutationFn: async ({ key, value }: { key: string; value: string }) => {
+      return apiRequest(`/api/admin/site-settings/${key}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/site-settings"] });
+      toast({ title: "Setting updated successfully" });
+    },
+  });
+
+
 
   const updateZoneMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {

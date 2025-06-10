@@ -118,23 +118,41 @@ export default function Register() {
         status: (registerData.role === 'shopkeeper' || registerData.role === 'delivery_partner') ? 'pending' : 'active'
       };
       
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
+      if (registerData.role === 'customer') {
+        // For customers, use the auth hook to properly set user state
+        await register(userData);
+      } else {
+        // For shopkeepers and delivery partners, use direct API call since they need approval
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData),
+        });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Registration failed');
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Registration failed');
+        }
       }
-
-      const result = await response.json();
       
       if (registerData.role === 'delivery_partner') {
+        // Get the user ID from the response or user state
+        const dpResponse = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData),
+        });
+        
+        if (!dpResponse.ok) {
+          const error = await dpResponse.json();
+          throw new Error(error.error || 'Registration failed');
+        }
+        
+        const { user } = await dpResponse.json();
+        
         // Create delivery partner profile
         const deliveryPartnerData = {
-          userId: result.user.id,
+          userId: user.id,
           vehicleType: data.vehicleType,
           vehicleNumber: data.vehicleNumber,
           deliveryArea: data.deliveryArea,
