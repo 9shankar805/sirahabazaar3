@@ -206,6 +206,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/stores", async (req, res) => {
     try {
+      // Auto-generate slug if not provided
+      if (!req.body.slug && req.body.name) {
+        req.body.slug = req.body.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '') + '-' + Date.now();
+      }
+      
       const storeData = insertStoreSchema.parse(req.body);
       
       // Check if user already has a store
@@ -278,6 +286,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/products", async (req, res) => {
     try {
       const productData = insertProductSchema.parse(req.body);
+      
+      // Auto-generate slug if not provided
+      if (!productData.slug && productData.name) {
+        productData.slug = productData.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '') + '-' + Date.now();
+      }
+      
       const product = await storage.createProduct(productData);
       res.json(product);
     } catch (error) {

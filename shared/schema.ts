@@ -702,6 +702,7 @@ export const insertProductSchema = createInsertSchema(products).omit({
   rating: true,
   totalReviews: true,
 }).extend({
+  slug: z.string().optional(),
   price: z.union([z.string(), z.number()]).transform((val) => String(val)),
   originalPrice: z.union([z.string(), z.number()]).optional().transform((val) => 
     val !== undefined ? String(val) : undefined
