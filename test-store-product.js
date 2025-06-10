@@ -79,12 +79,15 @@ async function testStoreCreationWorkflow() {
     description: 'A test store for verification',
     ownerId: userId,
     address: '123 Test Street, Kathmandu, Nepal',
+    city: 'Kathmandu',
+    state: 'Bagmati',
+    postalCode: '44600',
+    country: 'Nepal',
     latitude: '27.7172',
     longitude: '85.3240',
     phone: '+977-9841234567',
     website: 'https://teststore.com',
-    storeType: 'retail',
-    isActive: true
+    storeType: 'retail'
   };
   
   const storeCreation = await testAPI('/api/stores', 'POST', storeData);
@@ -105,6 +108,7 @@ async function testStoreCreationWorkflow() {
   console.log('\n4. Adding product to store...');
   const productData = {
     name: `Test Product ${timestamp}`,
+    slug: `test-product-${timestamp}`,
     description: 'A test product for verification',
     price: '99.99',
     originalPrice: '149.99',
@@ -112,8 +116,7 @@ async function testStoreCreationWorkflow() {
     storeId: storeId,
     categoryId: 3, // Electronics category
     images: ['https://via.placeholder.com/400x400?text=Test+Product'],
-    productType: 'retail',
-    isActive: true
+    productType: 'retail'
   };
   
   const productCreation = await testAPI('/api/products', 'POST', productData);
@@ -162,6 +165,10 @@ async function testStoreCreationWorkflow() {
         description: 'A test restaurant for verification',
         ownerId: restaurantLogin.data.user.id,
         address: '456 Food Street, Kathmandu, Nepal',
+        city: 'Kathmandu',
+        state: 'Bagmati',
+        postalCode: '44600',
+        country: 'Nepal',
         latitude: '27.7172',
         longitude: '85.3240',
         phone: '+977-9841234568',
@@ -169,8 +176,7 @@ async function testStoreCreationWorkflow() {
         cuisineType: 'Nepali',
         deliveryTime: '30-45 minutes',
         minimumOrder: '200',
-        isDeliveryAvailable: true,
-        isActive: true
+        isDeliveryAvailable: true
       };
       
       const restaurantCreation = await testAPI('/api/stores', 'POST', restaurantData);
@@ -180,17 +186,17 @@ async function testStoreCreationWorkflow() {
         // Add food item
         const foodData = {
           name: `Momo Special ${timestamp}`,
+          slug: `momo-special-${timestamp}`,
           description: 'Delicious steamed dumplings',
           price: '250.00',
           stock: 100,
           storeId: restaurantCreation.data.id,
-          categoryId: 4, // Food category if exists, otherwise 3
+          categoryId: 3, // Electronics category (using existing category)
           productType: 'food',
           preparationTime: '20 minutes',
           ingredients: ['flour', 'chicken', 'onion', 'spices'],
           spiceLevel: 'medium',
-          isVegetarian: false,
-          isActive: true
+          isVegetarian: false
         };
         
         const foodCreation = await testAPI('/api/products', 'POST', foodData);
