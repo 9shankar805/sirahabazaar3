@@ -104,6 +104,8 @@ export default function ImprovedAdminDashboard() {
     mutationFn: async (userId: number) => {
       const response = await apiRequest(`/api/admin/users/${userId}/approve`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser.id }),
       });
       return response.json();
     },
@@ -112,6 +114,13 @@ export default function ImprovedAdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users/pending"] });
       toast({ title: "Success", description: "User approved successfully" });
     },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to approve user",
+        variant: "destructive"
+      });
+    },
   });
 
   const rejectUserMutation = useMutation({
@@ -119,7 +128,7 @@ export default function ImprovedAdminDashboard() {
       const response = await apiRequest(`/api/admin/users/${userId}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason }),
+        body: JSON.stringify({ adminId: adminUser.id, reason }),
       });
       return response.json();
     },
@@ -127,6 +136,13 @@ export default function ImprovedAdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users/pending"] });
       toast({ title: "Success", description: "User rejected successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to reject user",
+        variant: "destructive"
+      });
     },
   });
 
@@ -440,17 +456,27 @@ export default function ImprovedAdminDashboard() {
                                   <Button
                                     size="sm"
                                     onClick={() => approveUserMutation.mutate(user.id)}
-                                    disabled={approveUserMutation.isPending}
+                                    disabled={approveUserMutation.isPending || rejectUserMutation.isPending}
+                                    className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 transition-all duration-200"
                                   >
-                                    <CheckCircle className="h-4 w-4" />
+                                    {approveUserMutation.isPending ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    ) : (
+                                      <CheckCircle className="h-4 w-4" />
+                                    )}
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     onClick={() => rejectUserMutation.mutate({ userId: user.id, reason: "Admin rejection" })}
-                                    disabled={rejectUserMutation.isPending}
+                                    disabled={approveUserMutation.isPending || rejectUserMutation.isPending}
+                                    className="border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50 transition-all duration-200"
                                   >
-                                    <XCircle className="h-4 w-4" />
+                                    {rejectUserMutation.isPending ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                                    ) : (
+                                      <XCircle className="h-4 w-4" />
+                                    )}
                                   </Button>
                                 </div>
                               </div>
@@ -778,19 +804,28 @@ export default function ImprovedAdminDashboard() {
                                   <div className="flex space-x-3">
                                     <Button
                                       onClick={() => approveUserMutation.mutate(user.id)}
-                                      disabled={approveUserMutation.isPending}
-                                      className="bg-green-600 hover:bg-green-700"
+                                      disabled={approveUserMutation.isPending || rejectUserMutation.isPending}
+                                      className="bg-green-600 hover:bg-green-700 disabled:opacity-50 transition-all duration-200"
                                     >
-                                      <CheckCircle className="h-4 w-4 mr-2" />
-                                      Approve
+                                      {approveUserMutation.isPending ? (
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                      ) : (
+                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                      )}
+                                      {approveUserMutation.isPending ? "Approving..." : "Approve"}
                                     </Button>
                                     <Button
                                       variant="destructive"
                                       onClick={() => rejectUserMutation.mutate({ userId: user.id, reason: "Admin rejection" })}
-                                      disabled={rejectUserMutation.isPending}
+                                      disabled={approveUserMutation.isPending || rejectUserMutation.isPending}
+                                      className="disabled:opacity-50 transition-all duration-200"
                                     >
-                                      <XCircle className="h-4 w-4 mr-2" />
-                                      Reject
+                                      {rejectUserMutation.isPending ? (
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                      ) : (
+                                        <XCircle className="h-4 w-4 mr-2" />
+                                      )}
+                                      {rejectUserMutation.isPending ? "Rejecting..." : "Reject"}
                                     </Button>
                                   </div>
                                 </div>
