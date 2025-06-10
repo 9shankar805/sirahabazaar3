@@ -264,32 +264,8 @@ export default function ComprehensiveAdminDashboard() {
 
 
 
-  const updateZoneMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return apiRequest(`/api/admin/delivery-zones/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/delivery-zones"] });
-      setEditingZone(null);
-      toast({ title: "Delivery zone updated successfully" });
-    },
-  });
 
-  const deleteZoneMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return apiRequest(`/api/admin/delivery-zones/${id}`, {
-        method: "DELETE"
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/delivery-zones"] });
-      toast({ title: "Delivery zone deleted successfully" });
-    },
-  });
+
 
   const handleSaveSettings = async () => {
     try {
