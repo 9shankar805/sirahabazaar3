@@ -19,14 +19,6 @@ export class NotificationService {
         isRead: false
       });
 
-      // Send real-time notification if user is connected
-      if ((global as any).notificationStreams && (global as any).notificationStreams.has(notificationData.userId)) {
-        const userStream = (global as any).notificationStreams.get(notificationData.userId);
-        if (userStream) {
-          userStream.write(`data: ${JSON.stringify(notification)}\n\n`);
-        }
-      }
-
       return notification;
     } catch (error) {
       console.error('Failed to send notification:', error);
