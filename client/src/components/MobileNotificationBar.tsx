@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Bell, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -10,19 +10,21 @@ interface MobileNotificationBarProps {
 }
 
 export default function MobileNotificationBar({ className = '' }: MobileNotificationBarProps) {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead } = useNotifications();
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentNotification, setCurrentNotification] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
 
   // Get unread notifications
-  const unreadNotifications = notifications.filter(n => !n.isRead);
-  
-  // Show notification bar when there are unread notifications
+  const unreadNotifications = useMemo(() => 
+    notifications.filter(n => !n.isRead), 
+    [notifications]
+  );
+
+  // Reset current notification when unread notifications change
   useEffect(() => {
-    setIsVisible(unreadNotifications.length > 0);
     if (unreadNotifications.length > 0) {
       setCurrentNotification(0);
+      setIsExpanded(false);
     }
   }, [unreadNotifications.length]);
 
@@ -33,7 +35,7 @@ export default function MobileNotificationBar({ className = '' }: MobileNotifica
         setCurrentNotification(prev => 
           prev + 1 >= unreadNotifications.length ? 0 : prev + 1
         );
-      }, 4000); // Change notification every 4 seconds
+      }, 4000);
 
       return () => clearInterval(interval);
     }
@@ -55,7 +57,6 @@ export default function MobileNotificationBar({ className = '' }: MobileNotifica
   const handleDismissAll = (event: React.MouseEvent) => {
     event.stopPropagation();
     markAllAsRead();
-    setIsVisible(false);
     setIsExpanded(false);
   };
 
@@ -67,6 +68,8 @@ export default function MobileNotificationBar({ className = '' }: MobileNotifica
       case 'product': return '📦';
       case 'store': return '🏪';
       case 'system': return '⚙️';
+      case 'success': return '✅';
+      case 'error': return '❌';
       default: return '🔔';
     }
   };
@@ -80,11 +83,12 @@ export default function MobileNotificationBar({ className = '' }: MobileNotifica
       case 'store': return 'bg-indigo-500';
       case 'error': return 'bg-red-500';
       case 'success': return 'bg-emerald-500';
-      default: return 'bg-gray-500';
+      default: return 'bg-gray-600';
     }
   };
 
-  if (!isVisible || unreadNotifications.length === 0) {
+  // Don't render if no unread notifications
+  if (unreadNotifications.length === 0) {
     return null;
   }
 
@@ -112,9 +116,9 @@ export default function MobileNotificationBar({ className = '' }: MobileNotifica
                 <h4 className="font-medium text-sm truncate">
                   {activeNotification?.title}
                 </h4>
-                {unreadCount > 1 && (
+                {unreadNotifications.length > 1 && (
                   <Badge variant="secondary" className="bg-white/20 text-white text-xs">
-                    {unreadCount}
+                    {unreadNotifications.length}
                   </Badge>
                 )}
               </div>

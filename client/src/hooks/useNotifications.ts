@@ -143,44 +143,26 @@ export function useNotifications() {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  // Listen for real-time notifications via WebSocket or EventSource
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const eventSource = new EventSource(`/api/notifications/stream/${user.id}`);
+  // Show new notification when received
+  const showNewNotification = (notification: NotificationData) => {
+    // Add to notifications list
+    setNotifications(prev => [notification, ...prev]);
+    setUnreadCount(prev => prev + 1);
     
-    eventSource.onmessage = (event) => {
-      try {
-        const notification: NotificationData = JSON.parse(event.data);
-        
-        // Add to notifications list
-        setNotifications(prev => [notification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        // Show browser notification
-        showNotification(notification.title, {
-          body: notification.message,
-          tag: `notification-${notification.id}`
-        });
-        
-        // Show toast notification
-        toast({
-          title: notification.title,
-          description: notification.message
-        });
-      } catch (error) {
-        console.error('Error parsing notification:', error);
-      }
-    };
-
-    eventSource.onerror = (error) => {
-      console.error('EventSource error:', error);
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [user?.id]);
+    // Show browser notification
+    showNotification(notification.title, {
+      body: notification.message,
+      tag: `notification-${notification.id}`
+    });
+    
+    // Show toast notification for desktop
+    if (window.innerWidth >= 768) {
+      toast({
+        title: notification.title,
+        description: notification.message
+      });
+    }
+  };
 
   return {
     isSupported,
@@ -189,6 +171,7 @@ export function useNotifications() {
     unreadCount,
     requestPermission,
     showNotification,
+    showNewNotification,
     fetchNotifications,
     markAsRead,
     markAllAsRead
