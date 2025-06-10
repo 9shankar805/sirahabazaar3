@@ -29,6 +29,16 @@ export default function ComprehensiveAdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [editingZone, setEditingZone] = useState<any>(null);
+  const [showCreateZone, setShowCreateZone] = useState(false);
+  const [newZone, setNewZone] = useState({
+    name: "",
+    minDistance: "",
+    maxDistance: "",
+    baseFee: "",
+    perKmRate: "",
+    isActive: true
+  });
 
   useEffect(() => {
     const stored = localStorage.getItem("adminUser");
@@ -102,6 +112,11 @@ export default function ComprehensiveAdminDashboard() {
 
   const { data: siteSettings = [] } = useQuery({
     queryKey: ["/api/admin/site-settings"],
+    enabled: !!adminUser,
+  });
+
+  const { data: deliveryZones = [] } = useQuery({
+    queryKey: ["/api/delivery-zones"],
     enabled: !!adminUser,
   });
 
@@ -193,6 +208,56 @@ export default function ComprehensiveAdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/site-settings"] });
       toast({ title: "Setting updated successfully" });
+    },
+  });
+
+  const createZoneMutation = useMutation({
+    mutationFn: async (zoneData: any) => {
+      return apiRequest("/api/admin/delivery-zones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(zoneData)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-zones"] });
+      setShowCreateZone(false);
+      setNewZone({
+        name: "",
+        minDistance: "",
+        maxDistance: "",
+        baseFee: "",
+        perKmRate: "",
+        isActive: true
+      });
+      toast({ title: "Delivery zone created successfully" });
+    },
+  });
+
+  const updateZoneMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      return apiRequest(`/api/admin/delivery-zones/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-zones"] });
+      setEditingZone(null);
+      toast({ title: "Delivery zone updated successfully" });
+    },
+  });
+
+  const deleteZoneMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/admin/delivery-zones/${id}`, {
+        method: "DELETE"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-zones"] });
+      toast({ title: "Delivery zone deleted successfully" });
     },
   });
 
@@ -291,12 +356,13 @@ export default function ComprehensiveAdminDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-10">
+          <TabsList className="grid w-full grid-cols-11">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="vendors">Vendors</TabsTrigger>
             <TabsTrigger value="coupons">Coupons</TabsTrigger>
+            <TabsTrigger value="delivery-zones">Delivery Zones</TabsTrigger>
             <TabsTrigger value="inventory">Inventory</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="support">Support</TabsTrigger>
@@ -750,6 +816,260 @@ export default function ComprehensiveAdminDashboard() {
                     ))}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Delivery Zones Management */}
+          <TabsContent value="delivery-zones" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    Delivery Zone Management
+                  </CardTitle>
+                  <Dialog open={showCreateZone} onOpenChange={setShowCreateZone}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Zone
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create New Delivery Zone</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="name" className="text-right">Name</Label>
+                          <Input
+                            id="name"
+                            value={newZone.name}
+                            onChange={(e) => setNewZone({ ...newZone, name: e.target.value })}
+                            className="col-span-3"
+                            placeholder="e.g., Inner City"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="minDistance" className="text-right">Min Distance (km)</Label>
+                          <Input
+                            id="minDistance"
+                            type="number"
+                            step="0.01"
+                            value={newZone.minDistance}
+                            onChange={(e) => setNewZone({ ...newZone, minDistance: e.target.value })}
+                            className="col-span-3"
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="maxDistance" className="text-right">Max Distance (km)</Label>
+                          <Input
+                            id="maxDistance"
+                            type="number"
+                            step="0.01"
+                            value={newZone.maxDistance}
+                            onChange={(e) => setNewZone({ ...newZone, maxDistance: e.target.value })}
+                            className="col-span-3"
+                            placeholder="5"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="baseFee" className="text-right">Base Fee (Rs.)</Label>
+                          <Input
+                            id="baseFee"
+                            type="number"
+                            step="0.01"
+                            value={newZone.baseFee}
+                            onChange={(e) => setNewZone({ ...newZone, baseFee: e.target.value })}
+                            className="col-span-3"
+                            placeholder="30.00"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="perKmRate" className="text-right">Per km Rate (Rs.)</Label>
+                          <Input
+                            id="perKmRate"
+                            type="number"
+                            step="0.01"
+                            value={newZone.perKmRate}
+                            onChange={(e) => setNewZone({ ...newZone, perKmRate: e.target.value })}
+                            className="col-span-3"
+                            placeholder="5.00"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <Button variant="outline" onClick={() => setShowCreateZone(false)}>
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => createZoneMutation.mutate(newZone)}
+                          disabled={createZoneMutation.isPending}
+                        >
+                          Create Zone
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Zone Name</TableHead>
+                      <TableHead>Distance Range</TableHead>
+                      <TableHead>Base Fee</TableHead>
+                      <TableHead>Per Km Rate</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Sample Fee (10km)</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(deliveryZones as any[]).map((zone) => (
+                      <TableRow key={zone.id}>
+                        <TableCell className="font-medium">{zone.name}</TableCell>
+                        <TableCell>{zone.minDistance} - {zone.maxDistance} km</TableCell>
+                        <TableCell>Rs. {zone.baseFee}</TableCell>
+                        <TableCell>Rs. {zone.perKmRate}/km</TableCell>
+                        <TableCell>
+                          {zone.isActive ? (
+                            <Badge variant="default" className="bg-green-100 text-green-800">
+                              <CheckCircle className="h-3 w-3 mr-1" />Active
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">Inactive</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          Rs. {(parseFloat(zone.baseFee) + (10 * parseFloat(zone.perKmRate))).toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setEditingZone({ ...zone })}
+                                >
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  Edit
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Edit Delivery Zone</DialogTitle>
+                                </DialogHeader>
+                                {editingZone && (
+                                  <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                      <Label htmlFor="edit-name" className="text-right">Name</Label>
+                                      <Input
+                                        id="edit-name"
+                                        value={editingZone.name}
+                                        onChange={(e) => setEditingZone({ ...editingZone, name: e.target.value })}
+                                        className="col-span-3"
+                                      />
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                      <Label htmlFor="edit-minDistance" className="text-right">Min Distance (km)</Label>
+                                      <Input
+                                        id="edit-minDistance"
+                                        type="number"
+                                        step="0.01"
+                                        value={editingZone.minDistance}
+                                        onChange={(e) => setEditingZone({ ...editingZone, minDistance: e.target.value })}
+                                        className="col-span-3"
+                                      />
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                      <Label htmlFor="edit-maxDistance" className="text-right">Max Distance (km)</Label>
+                                      <Input
+                                        id="edit-maxDistance"
+                                        type="number"
+                                        step="0.01"
+                                        value={editingZone.maxDistance}
+                                        onChange={(e) => setEditingZone({ ...editingZone, maxDistance: e.target.value })}
+                                        className="col-span-3"
+                                      />
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                      <Label htmlFor="edit-baseFee" className="text-right">Base Fee (Rs.)</Label>
+                                      <Input
+                                        id="edit-baseFee"
+                                        type="number"
+                                        step="0.01"
+                                        value={editingZone.baseFee}
+                                        onChange={(e) => setEditingZone({ ...editingZone, baseFee: e.target.value })}
+                                        className="col-span-3"
+                                      />
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                      <Label htmlFor="edit-perKmRate" className="text-right">Per km Rate (Rs.)</Label>
+                                      <Input
+                                        id="edit-perKmRate"
+                                        type="number"
+                                        step="0.01"
+                                        value={editingZone.perKmRate}
+                                        onChange={(e) => setEditingZone({ ...editingZone, perKmRate: e.target.value })}
+                                        className="col-span-3"
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="flex justify-end space-x-2">
+                                  <Button variant="outline" onClick={() => setEditingZone(null)}>
+                                    Cancel
+                                  </Button>
+                                  <Button 
+                                    onClick={() => updateZoneMutation.mutate({ 
+                                      id: editingZone.id, 
+                                      data: editingZone 
+                                    })}
+                                    disabled={updateZoneMutation.isPending}
+                                  >
+                                    Update Zone
+                                  </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deleteZoneMutation.mutate(zone.id)}
+                              disabled={deleteZoneMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                
+                {/* Delivery Fee Preview */}
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <h3 className="font-semibold mb-3">Delivery Fee Calculator Preview</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {(deliveryZones as any[]).filter(zone => zone.isActive).map((zone) => (
+                      <div key={zone.id} className="bg-white p-3 rounded border">
+                        <h4 className="font-medium text-sm">{zone.name}</h4>
+                        <p className="text-xs text-gray-600">{zone.minDistance}-{zone.maxDistance}km</p>
+                        <div className="mt-2 space-y-1 text-xs">
+                          <div>5km: Rs. {(parseFloat(zone.baseFee) + (5 * parseFloat(zone.perKmRate))).toFixed(2)}</div>
+                          <div>10km: Rs. {(parseFloat(zone.baseFee) + (10 * parseFloat(zone.perKmRate))).toFixed(2)}</div>
+                          <div>15km: Rs. {(parseFloat(zone.baseFee) + (15 * parseFloat(zone.perKmRate))).toFixed(2)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
