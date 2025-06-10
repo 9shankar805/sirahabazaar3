@@ -833,36 +833,76 @@ export class DatabaseStorage implements IStorage {
 
   // Seller hub analytics
   async getSellerDashboardStats(storeId: number) {
-    const [productCount] = await db
-      .select({ count: count() })
-      .from(products)
-      .where(eq(products.storeId, storeId));
+    // Run all queries in parallel for better performance
+    const [
+      [productCount],
+      [orderStats],
+      [pendingOrders],
+      [ratingStats],
+      [lowStockCount],
+      [outOfStockCount],
+      [todayOrders],
+      [todayRevenue]
+    ] = await Promise.all([
+      db.select({ count: count() })
+        .from(products)
+        .where(eq(products.storeId, storeId)),
 
-    const [orderStats] = await db
-      .select({ 
+      db.select({ 
         totalOrders: count(),
         totalRevenue: sql<number>`COALESCE(SUM(CAST(${orders.totalAmount} AS DECIMAL)), 0)`
       })
-      .from(orders)
-      .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
-      .where(eq(orderItems.storeId, storeId));
+        .from(orders)
+        .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+        .where(eq(orderItems.storeId, storeId)),
 
-    const [pendingOrders] = await db
-      .select({ count: count() })
-      .from(orders)
-      .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
-      .where(and(
-        eq(orderItems.storeId, storeId),
-        eq(orders.status, "pending")
-      ));
+      db.select({ count: count() })
+        .from(orders)
+        .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+        .where(and(
+          eq(orderItems.storeId, storeId),
+          eq(orders.status, "pending")
+        )),
 
-    const [ratingStats] = await db
-      .select({
+      db.select({
         avgRating: sql<number>`COALESCE(AVG(${products.rating}), 0)`,
         totalReviews: sql<number>`COALESCE(SUM(${products.totalReviews}), 0)`
       })
-      .from(products)
-      .where(eq(products.storeId, storeId));
+        .from(products)
+        .where(eq(products.storeId, storeId)),
+
+      db.select({ count: count() })
+        .from(products)
+        .where(and(
+          eq(products.storeId, storeId),
+          sql`${products.stock} < 10 AND ${products.stock} > 0`
+        )),
+
+      db.select({ count: count() })
+        .from(products)
+        .where(and(
+          eq(products.storeId, storeId),
+          sql`${products.stock} = 0`
+        )),
+
+      db.select({ count: count() })
+        .from(orders)
+        .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+        .where(and(
+          eq(orderItems.storeId, storeId),
+          sql`DATE(${orders.createdAt}) = CURRENT_DATE`
+        )),
+
+      db.select({ 
+        revenue: sql<number>`COALESCE(SUM(CAST(${orders.totalAmount} AS DECIMAL)), 0)`
+      })
+        .from(orders)
+        .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+        .where(and(
+          eq(orderItems.storeId, storeId),
+          sql`DATE(${orders.createdAt}) = CURRENT_DATE`
+        ))
+    ]);
 
     return {
       totalProducts: productCount?.count || 0,
@@ -871,6 +911,10 @@ export class DatabaseStorage implements IStorage {
       pendingOrders: pendingOrders?.count || 0,
       averageRating: ratingStats?.avgRating || 0,
       totalReviews: ratingStats?.totalReviews || 0,
+      lowStockProducts: lowStockCount?.count || 0,
+      outOfStockProducts: outOfStockCount?.count || 0,
+      todayOrders: todayOrders?.count || 0,
+      todayRevenue: todayRevenue?.revenue || 0,
     };
   }
 
