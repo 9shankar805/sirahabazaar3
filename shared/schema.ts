@@ -524,6 +524,9 @@ export const siteSettings = pgTable("site_settings", {
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
+}).extend({
+  username: z.string().optional(),
 });
 
 export const insertCouponSchema = createInsertSchema(coupons).omit({
