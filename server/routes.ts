@@ -742,15 +742,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get individual order details
+  app.get("/api/orders/:orderId", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const order = await storage.getOrder(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      
+      // Get order items with product details
+      const items = await storage.getOrderItems(orderId);
+      const itemsWithProducts = await Promise.all(
+        items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        })
+      );
+      
+      res.json({ ...order, items: itemsWithProducts });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch order" });
+    }
+  });
+
   app.put("/api/orders/:id/status", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { status } = req.body;
+      const { status, description, location } = req.body;
+      
       const order = await storage.updateOrderStatus(id, status);
       
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
       }
+      
+      // Create tracking entry for the status update
+      await storage.updateOrderTracking(id, status, description, location);
+      
+      // Send notification to customer
+      await NotificationService.sendOrderStatusUpdateToCustomer(
+        order.customerId,
+        order.id,
+        status,
+        description
+      );
       
       res.json(order);
     } catch (error) {

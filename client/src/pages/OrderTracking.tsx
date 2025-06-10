@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Package, Truck, MapPin, Calendar, DollarSign, User, CheckCircle2, Circle, Clock, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Package, Truck, MapPin, Calendar, DollarSign, User, CheckCircle2, Circle, Clock, Home, ArrowLeft, Phone, Mail } from "lucide-react";
 import { format } from "date-fns";
 
 interface Order {
@@ -147,14 +148,31 @@ const OrderTracking = () => {
   estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + 7); // Add 7 days for delivery
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <div className="container mx-auto py-8 px-4">
+        {/* Navigation Header */}
+        <div className="flex items-center justify-between mb-6">
+          <Link href="/customer-dashboard">
+            <Button variant="outline" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link href={`/orders/${orderId}/tracking`}>
+              <Button variant="outline" size="sm">
+                Refresh Status
+              </Button>
+            </Link>
+          </div>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">ORDER TRACKING PAGE</h1>
-          <div className="w-16 h-1 bg-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Please note that these are accurate but not guaranteed estimates. Delivery date is subject to change without advance notice.
+          <h1 className="text-3xl font-bold text-foreground mb-2">Order Tracking</h1>
+          <div className="w-16 h-1 bg-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Track your order in real-time. Delivery estimates may vary based on location and availability.
           </p>
         </div>
 
@@ -184,11 +202,14 @@ const OrderTracking = () => {
 
         {/* Order Status */}
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Order Status: <span className="text-green-600">{getStatusText(order.status)}</span>
-          </h2>
-          <p className="text-gray-600">
-            Estimated Delivery Date: {format(estimatedDeliveryDate, 'dd MMM - dd MMM')}
+          <div className="inline-flex items-center gap-3 bg-card p-4 rounded-lg border">
+            <div className={`w-3 h-3 rounded-full ${getStatusColor(order.status)}`}></div>
+            <h2 className="text-2xl font-bold text-foreground">
+              {getStatusText(order.status)}
+            </h2>
+          </div>
+          <p className="text-muted-foreground mt-4">
+            Estimated Delivery: {format(estimatedDeliveryDate, 'EEEE, MMMM dd, yyyy')}
           </p>
         </div>
 
