@@ -52,6 +52,14 @@ export async function runMigrations() {
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()
     `);
 
+    // Add missing columns to products table
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS slug TEXT UNIQUE
+    `);
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT NOT NULL DEFAULT ''
+    `);
+
     // Update stores table to ensure owner_id column exists
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS owner_id INTEGER REFERENCES users(id) NOT NULL DEFAULT 1
