@@ -42,8 +42,14 @@ export default function ComprehensiveAdminDashboard() {
 
   useEffect(() => {
     const stored = localStorage.getItem("adminUser");
-    if (stored) {
-      setAdminUser(JSON.parse(stored));
+    if (stored && stored !== "undefined" && stored !== "null") {
+      try {
+        setAdminUser(JSON.parse(stored));
+      } catch (error) {
+        console.error('Error parsing admin user data:', error);
+        localStorage.removeItem("adminUser");
+        setLocation("/admin/login");
+      }
     } else {
       setLocation("/admin/login");
     }

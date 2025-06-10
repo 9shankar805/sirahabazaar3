@@ -349,20 +349,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      // Direct query to get products for user's stores
-      const query = `
-        SELECT p.* 
-        FROM products p 
-        INNER JOIN stores s ON s.id = p.store_id 
-        WHERE s.owner_id = $1 
-        ORDER BY p.created_at DESC
-      `;
+      console.log(`Fetching stores for user ${userIdNum}`);
+      // Get user's stores first
+      const userStores = await storage.getStoresByOwnerId(userIdNum);
+      console.log(`Found ${userStores.length} stores for user ${userIdNum}`);
       
-      const result = await pool.query(query, [userIdNum]);
-      res.json(result.rows);
+      if (userStores.length === 0) {
+        console.log(`No stores found for user ${userIdNum}, returning empty array`);
+        return res.json([]);
+      }
+      
+      // Get products for all user's stores
+      const allProducts = [];
+      for (const store of userStores) {
+        console.log(`Fetching products for store ${store.id} (${store.name})`);
+        const storeProducts = await storage.getProductsByStoreId(store.id);
+        console.log(`Found ${storeProducts.length} products for store ${store.id}`);
+        allProducts.push(...storeProducts);
+      }
+      
+      console.log(`Total products found: ${allProducts.length}`);
+      res.json(allProducts);
     } catch (error) {
-      console.error("Products/store error:", error);
-      res.json([]);
+      console.error("Products/store error details:", error);
+      res.status(500).json({ error: "Failed to fetch product" });
     }
   });
 
