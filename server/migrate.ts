@@ -99,6 +99,294 @@ export async function runMigrations() {
       ALTER TABLE categories ADD COLUMN IF NOT EXISTS description TEXT
     `);
 
+    // Fix stores table - add missing columns
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS website TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS rating DECIMAL(3,2) DEFAULT 0.00
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS total_reviews INTEGER DEFAULT 0
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS phone TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS logo TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS cover_image TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT false
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS store_type TEXT DEFAULT 'retail'
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS cuisine_type TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS delivery_time TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS minimum_order DECIMAL(10,2)
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS delivery_fee DECIMAL(10,2)
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS is_delivery_available BOOLEAN DEFAULT false
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS opening_hours TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,8)
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS longitude DECIMAL(11,8)
+    `);
+
+    // Add missing timestamp columns to categories if needed
+    await db.execute(sql`
+      ALTER TABLE categories ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE categories ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()
+    `);
+
+    // Fix products table - add missing columns
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS category_id INTEGER REFERENCES categories(id)
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS store_id INTEGER REFERENCES stores(id) NOT NULL DEFAULT 1
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS original_price DECIMAL(10,2)
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS stock INTEGER DEFAULT 0
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}'
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS rating DECIMAL(3,2) DEFAULT 0.00
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS total_reviews INTEGER DEFAULT 0
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS is_fast_sell BOOLEAN DEFAULT false
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS is_on_offer BOOLEAN DEFAULT false
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_percentage INTEGER DEFAULT 0
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_end_date TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS product_type TEXT DEFAULT 'retail'
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS preparation_time TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS ingredients TEXT[] DEFAULT '{}'
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS allergens TEXT[] DEFAULT '{}'
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS spice_level TEXT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS is_vegetarian BOOLEAN DEFAULT false
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS is_vegan BOOLEAN DEFAULT false
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS nutrition_info TEXT
+    `);
+
+    // Fix orders table - ensure all columns exist
+    await db.execute(sql`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES users(id) NOT NULL DEFAULT 1
+    `);
+
+    // Create missing admin panel tables
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS coupons (
+        id SERIAL PRIMARY KEY,
+        code TEXT NOT NULL UNIQUE,
+        discount_type TEXT NOT NULL DEFAULT 'percentage',
+        discount_value DECIMAL(10,2) NOT NULL,
+        minimum_order_amount DECIMAL(10,2) DEFAULT 0,
+        maximum_discount DECIMAL(10,2),
+        usage_limit INTEGER,
+        used_count INTEGER DEFAULT 0,
+        expires_at TIMESTAMP,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS banners (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        image_url TEXT NOT NULL,
+        link_url TEXT,
+        position TEXT NOT NULL DEFAULT 'homepage',
+        is_active BOOLEAN DEFAULT true,
+        display_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS support_tickets (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) NOT NULL,
+        subject TEXT NOT NULL,
+        message TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open',
+        priority TEXT NOT NULL DEFAULT 'medium',
+        category TEXT NOT NULL DEFAULT 'general',
+        assigned_to INTEGER REFERENCES admin_users(id),
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        id SERIAL PRIMARY KEY,
+        setting_key TEXT NOT NULL UNIQUE,
+        setting_value TEXT,
+        setting_type TEXT NOT NULL DEFAULT 'string',
+        description TEXT,
+        is_public BOOLEAN DEFAULT false,
+        updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS payment_transactions (
+        id SERIAL PRIMARY KEY,
+        order_id INTEGER REFERENCES orders(id) NOT NULL,
+        transaction_id TEXT UNIQUE,
+        payment_method TEXT NOT NULL,
+        amount DECIMAL(10,2) NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        gateway_response TEXT,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS admin_logs (
+        id SERIAL PRIMARY KEY,
+        admin_id INTEGER REFERENCES admin_users(id) NOT NULL,
+        action TEXT NOT NULL,
+        target_type TEXT,
+        target_id INTEGER,
+        details TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS fraud_alerts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        order_id INTEGER REFERENCES orders(id),
+        alert_type TEXT NOT NULL,
+        risk_score INTEGER NOT NULL,
+        description TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open',
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS vendor_verifications (
+        id SERIAL PRIMARY KEY,
+        store_id INTEGER REFERENCES stores(id) NOT NULL,
+        document_type TEXT NOT NULL,
+        document_url TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        reviewed_by INTEGER REFERENCES admin_users(id),
+        reviewed_at TIMESTAMP,
+        rejection_reason TEXT,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS commissions (
+        id SERIAL PRIMARY KEY,
+        store_id INTEGER REFERENCES stores(id) NOT NULL,
+        order_id INTEGER REFERENCES orders(id) NOT NULL,
+        gross_amount DECIMAL(10,2) NOT NULL,
+        commission_rate DECIMAL(5,2) NOT NULL,
+        commission_amount DECIMAL(10,2) NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
     console.log("Database migrations completed successfully");
   } catch (error) {
     console.error("Migration error:", error);
