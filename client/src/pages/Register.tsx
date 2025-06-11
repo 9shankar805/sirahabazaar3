@@ -118,6 +118,8 @@ export default function Register() {
         status: (registerData.role === 'shopkeeper' || registerData.role === 'delivery_partner') ? 'pending' : 'active'
       };
       
+      let user;
+      
       if (registerData.role === 'customer') {
         // For customers, use the auth hook to properly set user state
         await register(userData);
@@ -133,22 +135,12 @@ export default function Register() {
           const error = await response.json();
           throw new Error(error.error || 'Registration failed');
         }
+        
+        const result = await response.json();
+        user = result.user || result;
       }
       
-      if (registerData.role === 'delivery_partner') {
-        // Get the user ID from the response or user state
-        const dpResponse = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData),
-        });
-        
-        if (!dpResponse.ok) {
-          const error = await dpResponse.json();
-          throw new Error(error.error || 'Registration failed');
-        }
-        
-        const { user } = await dpResponse.json();
+      if (registerData.role === 'delivery_partner' && user) {
         
         // Create delivery partner profile
         const deliveryPartnerData = {
