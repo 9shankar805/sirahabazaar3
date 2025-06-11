@@ -2791,8 +2791,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/delivery-zones", async (req, res) => {
     try {
-      const zones = await storage.getAllDeliveryZones();
-      res.json(zones);
+      // For now, return the same mock data as the public endpoint
+      // This will be replaced with database data once the table is created
+      const mockZones = [
+        {
+          id: 1,
+          name: "Inner City",
+          minDistance: "0",
+          maxDistance: "5",
+          baseFee: "30.00",
+          perKmRate: "5.00",
+          isActive: true
+        },
+        {
+          id: 2,
+          name: "Suburban",
+          minDistance: "5.01",
+          maxDistance: "15",
+          baseFee: "50.00",
+          perKmRate: "8.00",
+          isActive: true
+        },
+        {
+          id: 3,
+          name: "Rural",
+          minDistance: "15.01",
+          maxDistance: "30",
+          baseFee: "80.00",
+          perKmRate: "12.00",
+          isActive: true
+        },
+        {
+          id: 4,
+          name: "Extended Rural",
+          minDistance: "30.01",
+          maxDistance: "100",
+          baseFee: "120.00",
+          perKmRate: "15.00",
+          isActive: true
+        }
+      ];
+      res.json(mockZones);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch delivery zones" });
     }

@@ -198,6 +198,18 @@ export const deliveries = pgTable("deliveries", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Delivery zones for configurable delivery fees
+export const deliveryZones = pgTable("delivery_zones", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  minDistance: decimal("min_distance", { precision: 8, scale: 2 }).notNull(),
+  maxDistance: decimal("max_distance", { precision: 8, scale: 2 }).notNull(),
+  baseFee: decimal("base_fee", { precision: 10, scale: 2 }).notNull(),
+  perKmRate: decimal("per_km_rate", { precision: 10, scale: 2 }).notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Website analytics and tracking
 export const websiteVisits = pgTable("website_visits", {
   id: serial("id").primaryKey(),
@@ -520,17 +532,7 @@ export const siteSettings = pgTable("site_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Distance-based delivery pricing
-export const deliveryZones = pgTable("delivery_zones", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(), // "Inner City", "Suburban", "Rural"
-  minDistance: decimal("min_distance", { precision: 8, scale: 2 }).notNull(), // in kilometers
-  maxDistance: decimal("max_distance", { precision: 8, scale: 2 }).notNull(), // in kilometers
-  baseFee: decimal("base_fee", { precision: 10, scale: 2 }).notNull(),
-  perKmRate: decimal("per_km_rate", { precision: 10, scale: 2 }).notNull(),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -585,6 +587,10 @@ export const insertDeliveryZoneSchema = createInsertSchema(deliveryZones).omit({
   id: true,
   createdAt: true,
 });
+
+// Type definitions
+export type DeliveryZone = typeof deliveryZones.$inferSelect;
+export type InsertDeliveryZone = typeof insertDeliveryZoneSchema._type;
 
 
 
