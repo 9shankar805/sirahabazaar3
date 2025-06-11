@@ -2117,11 +2117,49 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getDeliveriesByPartnerId(partnerId: number): Promise<Delivery[]> {
+  async getAllDeliveries(): Promise<Delivery[]> {
     try {
-      return await db.select().from(deliveries).where(eq(deliveries.partnerId, partnerId)).orderBy(desc(deliveries.createdAt));
+      return await db.select().from(deliveries).orderBy(desc(deliveries.createdAt));
     } catch {
       return [];
+    }
+  }
+
+  async getDeliveriesByPartnerId(partnerId: number): Promise<Delivery[]> {
+    try {
+      return await db.select().from(deliveries).where(eq(deliveries.deliveryPartnerId, partnerId)).orderBy(desc(deliveries.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async getActiveDeliveries(partnerId: number): Promise<Delivery[]> {
+    try {
+      return await db.select().from(deliveries)
+        .where(
+          and(
+            eq(deliveries.deliveryPartnerId, partnerId),
+            inArray(deliveries.status, ['assigned', 'picked_up', 'in_transit'])
+          )
+        )
+        .orderBy(desc(deliveries.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async updateDeliveryLocation(deliveryId: number, location: string): Promise<Delivery | undefined> {
+    try {
+      const [updated] = await db.update(deliveries)
+        .set({ 
+          currentLocation: location,
+          updatedAt: new Date()
+        })
+        .where(eq(deliveries.id, deliveryId))
+        .returning();
+      return updated || undefined;
+    } catch {
+      return undefined;
     }
   }
 

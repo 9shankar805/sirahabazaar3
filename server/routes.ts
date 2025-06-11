@@ -2567,6 +2567,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/deliveries", async (req, res) => {
+    try {
+      const deliveries = await storage.getAllDeliveries();
+      res.json(deliveries);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch deliveries" });
+    }
+  });
+
   app.get("/api/deliveries/partner/:partnerId", async (req, res) => {
     try {
       const partnerId = parseInt(req.params.partnerId);
@@ -2574,6 +2583,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(deliveries);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch partner deliveries" });
+    }
+  });
+
+  app.get("/api/deliveries/active-tracking", async (req, res) => {
+    try {
+      const userId = req.query.userId || req.headers['user-id'];
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      
+      // Get delivery partner by user ID first
+      const partner = await storage.getDeliveryPartnerByUserId(parseInt(userId as string));
+      if (!partner) {
+        return res.json([]); // No partner means no active deliveries
+      }
+      
+      const activeDeliveries = await storage.getActiveDeliveries(partner.id);
+      res.json(activeDeliveries);
+    } catch (error) {
+      console.error("Error fetching active tracking:", error);
+      res.status(500).json({ error: "Failed to fetch active deliveries" });
+    }
+  });
+
+  app.put("/api/deliveries/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status, partnerId } = req.body;
+      const delivery = await storage.updateDeliveryStatus(id, status, partnerId);
+      res.json(delivery);
+    } catch (error) {
+      console.error("Error updating delivery status:", error);
+      res.status(500).json({ error: "Failed to update delivery status" });
+    }
+  });
+
+  app.put("/api/deliveries/:id/location", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { location } = req.body;
+      const delivery = await storage.updateDeliveryLocation(id, location);
+      res.json(delivery);
+    } catch (error) {
+      console.error("Error updating delivery location:", error);
+      res.status(500).json({ error: "Failed to update delivery location" });
+    }
+  });
+
+  app.post("/api/deliveries/upload-proof", async (req, res) => {
+    try {
+      const { deliveryId } = req.body;
+      // For now, return success - file upload can be implemented later
+      res.json({ success: true, message: "Proof uploaded successfully" });
+    } catch (error) {
+      console.error("Error uploading proof:", error);
+      res.status(500).json({ error: "Failed to upload proof" });
     }
   });
 

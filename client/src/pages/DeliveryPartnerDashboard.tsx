@@ -437,13 +437,23 @@ export default function DeliveryPartnerDashboard() {
                         <p className="text-sm text-muted-foreground">{delivery.deliveryAddress}</p>
                       </div>
                     </div>
-                    <Button
-                      onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'delivered' })}
-                      disabled={updateDeliveryStatus.isPending}
-                      className="w-full"
-                    >
-                      Mark as Delivered
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => window.open(`/delivery-map/${delivery.id}`, '_blank')}
+                        className="flex-1"
+                      >
+                        <MapPin className="h-4 w-4 mr-2" />
+                        View Route
+                      </Button>
+                      <Button
+                        onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'delivered' })}
+                        disabled={updateDeliveryStatus.isPending}
+                        className="flex-1"
+                      >
+                        Mark as Delivered
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
