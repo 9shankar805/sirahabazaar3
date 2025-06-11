@@ -2642,6 +2642,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/deliveries/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const delivery = await storage.getDelivery(id);
+      if (!delivery) {
+        return res.status(404).json({ error: "Delivery not found" });
+      }
+      res.json(delivery);
+    } catch (error) {
+      console.error("Error fetching delivery:", error);
+      res.status(500).json({ error: "Failed to fetch delivery" });
+    }
+  });
+
   app.get("/api/deliveries/order/:orderId", async (req, res) => {
     try {
       const orderId = parseInt(req.params.orderId);
