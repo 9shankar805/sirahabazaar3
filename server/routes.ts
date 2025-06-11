@@ -545,11 +545,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cart", async (req, res) => {
     try {
-      const cartItemData = insertCartItemSchema.parse(req.body);
-      const cartItem = await storage.addToCart(cartItemData);
+      // Extract user from session or token if available
+      let userId = req.body.userId;
+      
+      // If no userId provided, try to get from auth token
+      if (!userId && req.headers.authorization) {
+        const token = req.headers.authorization.replace('Bearer ', '');
+        try {
+          // Simple token validation - get user ID from session or database
+          const user = await storage.getUserByToken(token);
+          if (user) {
+            userId = user.id;
+          }
+        } catch (error) {
+          // Token validation failed, continue without userId
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "User authentication required" });
+      }
+
+      const cartItemData = {
+        ...req.body,
+        userId: userId
+      };
+
+      const validatedData = insertCartItemSchema.parse(cartItemData);
+      const cartItem = await storage.addToCart(validatedData);
       res.json(cartItem);
     } catch (error) {
-      res.status(400).json({ error: "Invalid cart item data" });
+      console.error('Cart validation error:', error);
+      res.status(400).json({ error: "Invalid cart item data: " + (error.message || error) });
     }
   });
 

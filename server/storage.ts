@@ -265,6 +265,20 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByToken(token: string): Promise<User | undefined> {
+    // Simple token validation - in production this would be more sophisticated
+    // For now, assume token is just the user ID for testing purposes
+    try {
+      const userId = parseInt(token);
+      if (isNaN(userId)) return undefined;
+      
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      return user;
+    } catch {
+      return undefined;
+    }
+  }
+
   async createUser(user: InsertUser): Promise<User> {
     const [newUser] = await db.insert(users).values(user).returning();
     return newUser;
@@ -2166,12 +2180,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateDeliveryZone(id: number, data: Partial<InsertDeliveryZone>): Promise<DeliveryZone> {
-    const [zone] = await db
-      .update(deliveryZones)
-      .set(data)
-      .where(eq(deliveryZones.id, id))
-      .returning();
-    return zone;
+    try {
+      // Ensure numeric fields are properly converted
+      const updateData = {
+        ...data,
+        baseFee: data.baseFee ? parseFloat(data.baseFee.toString()) : undefined,
+        perKmRate: data.perKmRate ? parseFloat(data.perKmRate.toString()) : undefined,
+        minDistance: data.minDistance ? parseFloat(data.minDistance.toString()) : undefined,
+        maxDistance: data.maxDistance ? parseFloat(data.maxDistance.toString()) : undefined
+      };
+
+      // Remove undefined values
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined) {
+          delete updateData[key];
+        }
+      });
+
+      const [zone] = await db
+        .update(deliveryZones)
+        .set(updateData)
+        .where(eq(deliveryZones.id, id))
+        .returning();
+      
+      if (!zone) {
+        throw new Error(`Delivery zone with id ${id} not found`);
+      }
+      
+      return zone;
+    } catch (error) {
+      console.error('Error updating delivery zone:', error);
+      throw new Error(`Failed to update delivery zone: ${error.message}`);
+    }
   }
 
   async deleteDeliveryZone(id: number): Promise<void> {
