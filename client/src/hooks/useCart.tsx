@@ -16,6 +16,8 @@ interface CartContextType {
   totalItems: number;
   isLoading: boolean;
   refreshCart: () => Promise<void>;
+  deliveryFee: number;
+  setDeliveryFee: (fee: number) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -23,6 +25,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [deliveryFee, setDeliveryFee] = useState(0);
   const { user } = useAuth();
 
   const refreshCart = async () => {
@@ -131,6 +134,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       totalItems,
       isLoading,
       refreshCart,
+      deliveryFee,
+      setDeliveryFee,
     }}>
       {children}
     </CartContext.Provider>

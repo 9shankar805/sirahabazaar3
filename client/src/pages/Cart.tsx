@@ -1,16 +1,33 @@
 import { Link } from "wouter";
-import { Minus, Plus, X, ShoppingBag } from "lucide-react";
+import { Minus, Plus, X, ShoppingBag, MapPin, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import { calculateDistance, getCoordinatesFromAddress, formatDistance } from "@/lib/distance";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Cart() {
   const { cartItems, updateCartItem, removeFromCart, totalAmount, totalItems, isLoading } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [deliveryDistance, setDeliveryDistance] = useState(0);
+  const [isCalculatingFee, setIsCalculatingFee] = useState(false);
+  const [deliveryInfo, setDeliveryInfo] = useState<{
+    zone: any;
+    estimatedTime: number;
+  } | null>(null);
+
+  const { data: deliveryZones = [] } = useQuery({
+    queryKey: ["/api/delivery-zones"],
+  });
 
   const handleUpdateQuantity = async (cartItemId: number, newQuantity: number) => {
     try {
@@ -37,6 +54,65 @@ export default function Cart() {
         description: "Failed to remove item",
         variant: "destructive",
       });
+    }
+  };
+
+  const calculateDeliveryFee = async () => {
+    if (!deliveryAddress.trim() || cartItems.length === 0) return;
+
+    setIsCalculatingFee(true);
+    try {
+      // Get store address from first item (assuming single store for now)
+      const firstItem = cartItems[0];
+      if (!firstItem?.product) {
+        throw new Error("Product information not available");
+      }
+
+      // For demo purposes, using mock store coordinates
+      // In real implementation, you'd get this from the store data
+      const storeCoords = { latitude: 26.6618, longitude: 86.2025 }; // Siraha, Nepal
+      const customerCoords = await getCoordinatesFromAddress(deliveryAddress);
+
+      if (!customerCoords) {
+        throw new Error("Could not find location coordinates for the delivery address");
+      }
+
+      // Calculate distance
+      const distance = calculateDistance(storeCoords, customerCoords);
+      setDeliveryDistance(distance);
+
+      // Calculate fee using API
+      const response = await fetch("/api/calculate-delivery-fee", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ distance }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to calculate delivery fee");
+      }
+
+      const result = await response.json();
+      setDeliveryFee(result.fee);
+      setDeliveryInfo({
+        zone: result.zone,
+        estimatedTime: Math.round(30 + (distance * 10)) // Base 30min + 10min per km
+      });
+
+      toast({
+        title: "Delivery Fee Calculated",
+        description: `₹${result.fee} for ${formatDistance(distance)} delivery`,
+      });
+
+    } catch (error) {
+      console.error("Error calculating delivery fee:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to calculate delivery fee",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCalculatingFee(false);
     }
   };
 
@@ -182,6 +258,40 @@ export default function Cart() {
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Delivery Address Input */}
+                <div className="space-y-3 mb-4">
+                  <div>
+                    <Label htmlFor="delivery-address" className="text-sm font-medium">
+                      Delivery Address
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        id="delivery-address"
+                        placeholder="Enter delivery address"
+                        value={deliveryAddress}
+                        onChange={(e) => setDeliveryAddress(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button
+                        onClick={calculateDeliveryFee}
+                        disabled={isCalculatingFee || !deliveryAddress.trim()}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Calculator className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {deliveryDistance > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Distance: {formatDistance(deliveryDistance)}
+                        {deliveryInfo && ` • Est. ${deliveryInfo.estimatedTime} mins`}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
+
                 <div className="space-y-3 mb-4">
                   <div className="flex justify-between">
                     <span>Subtotal ({totalItems} items)</span>
@@ -189,12 +299,19 @@ export default function Cart() {
                   </div>
                   <div className="flex justify-between">
                     <span>Delivery Fee</span>
-                    <span className="text-accent">FREE</span>
+                    <span className={deliveryFee > 0 ? "text-foreground" : "text-accent"}>
+                      {deliveryFee > 0 ? `₹${deliveryFee.toLocaleString()}` : "FREE"}
+                    </span>
                   </div>
+                  {deliveryInfo?.zone && (
+                    <div className="text-xs text-muted-foreground">
+                      Zone: {deliveryInfo.zone.name}
+                    </div>
+                  )}
                   <Separator />
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
-                    <span>₹{totalAmount.toLocaleString()}</span>
+                    <span>₹{(totalAmount + deliveryFee).toLocaleString()}</span>
                   </div>
                 </div>
                 
