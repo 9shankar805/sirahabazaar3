@@ -48,6 +48,7 @@ import DeliveryPartnerDashboard from "@/pages/DeliveryPartnerDashboard";
 import DeliveryPartnerTest from "@/pages/DeliveryPartnerTest";
 import DeliveryPartnerNotifications from "@/pages/DeliveryPartnerNotifications";
 import DeliveryTrackingMap from "@/pages/DeliveryTrackingMap";
+import DeliveryTrackingDashboard from "@/pages/DeliveryTrackingDashboard";
 import DeliveryPartnerQuickReg from "@/pages/DeliveryPartnerQuickReg";
 import AdminDeliveryPartners from "@/pages/AdminDeliveryPartners";
 import OrderTracking from "@/pages/OrderTracking";
