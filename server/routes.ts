@@ -3176,7 +3176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deliveryFee: '50.00', // Default delivery fee
         pickupAddress: 'Store Location',
         deliveryAddress: order.shippingAddress,
-        estimatedDistance: 5.0, // Default 5km
+        estimatedDistance: "5.0", // Default 5km
         estimatedTime: 45 // 45 minutes
       };
 
@@ -3191,16 +3191,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderId: orderId
       });
 
-      // Notify seller about delivery assignment
-      const store = await storage.getStore(order.storeId);
-      if (store) {
-        await storage.createNotification({
-          userId: store.userId,
-          title: "Order Picked Up",
-          message: `Order #${orderId} has been assigned to delivery partner ${partner.fullName}. Customer: ${order.customerName}`,
-          type: "order_update",
-          orderId: orderId
-        });
+      // Notify all relevant store owners about delivery assignment
+      const orderItems = await storage.getOrderItems(orderId);
+      const uniqueStoreIds = [...new Set(orderItems.map(item => item.storeId))];
+      
+      for (const storeId of uniqueStoreIds) {
+        const store = await storage.getStore(storeId);
+        if (store) {
+          await storage.createNotification({
+            userId: store.ownerId,
+            title: "Order Assigned for Delivery",
+            message: `Order #${orderId} has been assigned to a delivery partner. Customer: ${order.customerName}`,
+            type: "order_update",
+            orderId: orderId
+          });
+        }
       }
 
       // Mark all related delivery notifications as read/completed
