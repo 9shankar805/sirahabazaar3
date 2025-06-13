@@ -1,14 +1,11 @@
-import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/use-user";
-import { Truck, Package, DollarSign, Clock, MapPin, CheckCircle, XCircle } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { Truck, Package, DollarSign, Clock, MapPin, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import DeliveryPartnerApplication from "@/components/DeliveryPartnerApplication";
 
 interface DeliveryPartner {
   id: number;
@@ -51,7 +48,6 @@ export default function DeliveryPartnerDashboard() {
   const { user } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [showApplication, setShowApplication] = useState(false);
 
   const { data: partner, isLoading: partnerLoading, error: partnerError } = useQuery({
     queryKey: ['/api/delivery-partners/user', user?.id],
@@ -136,17 +132,6 @@ export default function DeliveryPartnerDashboard() {
   }
 
   if (!partner) {
-    if (showApplication) {
-      return (
-        <DeliveryPartnerApplication 
-          onSuccess={() => {
-            setShowApplication(false);
-            queryClient.invalidateQueries({ queryKey: ['/api/delivery-partners/user'] });
-          }} 
-        />
-      );
-    }
-
     return (
       <div className="container mx-auto p-6">
         <Card className="max-w-2xl mx-auto">
@@ -156,59 +141,15 @@ export default function DeliveryPartnerDashboard() {
                 <Truck className="h-8 w-8 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl">Become a Delivery Partner</CardTitle>
+            <CardTitle className="text-2xl">Delivery Partner Access Required</CardTitle>
             <CardDescription className="text-base">
-              Join our delivery network and start earning money by delivering orders to customers in your area.
+              You need to be registered as a delivery partner to access this dashboard.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-green-800 dark:text-green-400">Earn Money</h3>
-                <p className="text-sm text-green-600 dark:text-green-300">Flexible earnings based on deliveries</p>
-              </div>
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <Clock className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-blue-800 dark:text-blue-400">Flexible Hours</h3>
-                <p className="text-sm text-blue-600 dark:text-blue-300">Work when you want</p>
-              </div>
-              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <MapPin className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-purple-800 dark:text-purple-400">Local Area</h3>
-                <p className="text-sm text-purple-600 dark:text-purple-300">Deliver in your neighborhood</p>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <h4 className="font-semibold">What you need:</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Valid driving license
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Vehicle (bike, scooter, car, or bicycle)
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Valid ID proof
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  Bank account for payments
-                </li>
-              </ul>
-            </div>
-
-            <Button 
-              onClick={() => setShowApplication(true)} 
-              className="w-full"
-              size="lg"
-            >
-              Apply Now
-            </Button>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground">
+              Please contact the administrator to set up your delivery partner account.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -258,7 +199,7 @@ export default function DeliveryPartnerDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-red-500" />
+              <CheckCircle className="h-5 w-5 text-red-500" />
               Application Rejected
             </CardTitle>
             <CardDescription>
