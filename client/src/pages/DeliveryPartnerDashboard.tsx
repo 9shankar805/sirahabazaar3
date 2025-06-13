@@ -342,7 +342,7 @@ export default function DeliveryPartnerDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {partner.rating ? `${partner.rating.toFixed(1)}★` : "N/A"}
+              {partner.rating && partner.rating !== '0.00' ? `${parseFloat(partner.rating).toFixed(1)}★` : "N/A"}
             </div>
           </CardContent>
         </Card>
