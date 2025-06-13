@@ -17,7 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiPost } from "@/lib/api";
 import { DeliveryCalculator } from "@/components/DeliveryCalculator";
-import { calculateDistance, getCoordinatesFromAddress, getCurrentUserLocation, formatDistance } from "@/lib/distance";
+import { calculateDistance, getCoordinatesFromAddress, geocodeAddressWithValidation, getCurrentUserLocation, formatDistance } from "@/lib/distance";
 import { useQuery } from "@tanstack/react-query";
 
 const checkoutSchema = z.object({
@@ -205,10 +205,63 @@ export default function Checkout() {
       // For demo purposes, using mock store coordinates
       // In real implementation, you'd get this from the store data
       const storeCoords = { latitude: 26.6618, longitude: 86.2025 }; // Siraha, Nepal
-      const customerCoords = await getCoordinatesFromAddress(shippingAddress);
+      
+      // Use enhanced geocoding with validation
+      const geocodingResult = await geocodeAddressWithValidation(shippingAddress);
 
-      if (!customerCoords) {
-        throw new Error("Could not find location coordinates for the delivery address");
+      if (!geocodingResult?.coordinates) {
+        // Show Google Maps link for manual verification
+        toast({
+          title: "Address Not Found",
+          description: "Could not locate the address. Please verify on Google Maps and try again.",
+          variant: "destructive",
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.open(geocodingResult?.googleMapsLink, '_blank')}
+            >
+              View on Google Maps
+            </Button>
+          ),
+        });
+        return;
+      }
+
+      const customerCoords = geocodingResult.coordinates;
+
+      // Show confidence level to user and update form with formatted address
+      if (geocodingResult.formattedAddress && geocodingResult.formattedAddress !== shippingAddress) {
+        form.setValue("shippingAddress", geocodingResult.formattedAddress);
+        toast({
+          title: "Address Formatted",
+          description: `Updated to: ${geocodingResult.formattedAddress}`,
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.open(geocodingResult.googleMapsLink, '_blank')}
+            >
+              Verify on Maps
+            </Button>
+          ),
+        });
+      }
+
+      if (geocodingResult.confidence === 'low') {
+        toast({
+          title: "Address Match Found",
+          description: "Please verify this location is correct before proceeding.",
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.open(geocodingResult.googleMapsLink, '_blank')}
+            >
+              Verify on Maps
+            </Button>
+          ),
+        });
       }
 
       // Calculate distance
@@ -235,7 +288,7 @@ export default function Checkout() {
 
       toast({
         title: "Delivery Fee Calculated",
-        description: `₹${result.fee} for ${formatDistance(distance)} delivery`,
+        description: `₹${result.fee} for ${formatDistance(distance)} delivery to ${geocodingResult.formattedAddress || shippingAddress}`,
       });
 
     } catch (error) {

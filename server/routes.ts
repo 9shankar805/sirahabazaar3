@@ -3115,6 +3115,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Geocode address using HERE Maps API
+  app.post("/api/geocode-address", async (req, res) => {
+    try {
+      const { address } = req.body;
+      
+      if (!address || typeof address !== 'string') {
+        return res.status(400).json({ error: "Address is required" });
+      }
+
+      const apiKey = process.env.HERE_API_KEY;
+      if (!apiKey) {
+        return res.status(503).json({ 
+          error: "HERE Maps API not configured",
+          googleMapsLink: `https://www.google.com/maps/search/${encodeURIComponent(address)}`
+        });
+      }
+
+      const response = await fetch(
+        `https://geocode.search.hereapi.com/v1/geocode?q=${encodeURIComponent(address)}&apikey=${apiKey}&limit=1`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HERE Maps API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.items && data.items.length > 0) {
+        const item = data.items[0];
+        const location = item.position;
+        
+        // Determine confidence based on scoring and match quality
+        let confidence = 'low';
+        if (item.scoring && item.scoring.queryScore) {
+          if (item.scoring.queryScore >= 0.8) confidence = 'high';
+          else if (item.scoring.queryScore >= 0.6) confidence = 'medium';
+        }
+        
+        res.json({
+          coordinates: {
+            latitude: location.lat,
+            longitude: location.lng
+          },
+          formattedAddress: item.title || item.address?.label || null,
+          confidence,
+          googleMapsLink: `https://www.google.com/maps/search/${location.lat},${location.lng}`,
+          success: true
+        });
+      } else {
+        res.json({
+          coordinates: null,
+          formattedAddress: null,
+          confidence: 'low',
+          googleMapsLink: `https://www.google.com/maps/search/${encodeURIComponent(address)}`,
+          success: false,
+          message: "No location found for this address"
+        });
+      }
+    } catch (error) {
+      console.error('Server geocoding error:', error);
+      res.status(500).json({ 
+        error: "Failed to geocode address",
+        googleMapsLink: `https://www.google.com/maps/search/${encodeURIComponent(req.body.address || '')}`
+      });
+    }
+  });
+
   // Calculate delivery fee based on distance
   app.post("/api/calculate-delivery-fee", async (req, res) => {
     try {

@@ -9,7 +9,7 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { calculateDistance, getCoordinatesFromAddress, formatDistance, getCurrentUserLocation } from "@/lib/distance";
+import { calculateDistance, getCoordinatesFromAddress, geocodeAddressWithValidation, formatDistance, getCurrentUserLocation } from "@/lib/distance";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Cart() {
@@ -194,10 +194,46 @@ export default function Cart() {
       // For demo purposes, using mock store coordinates
       // In real implementation, you'd get this from the store data
       const storeCoords = { latitude: 26.6618, longitude: 86.2025 }; // Siraha, Nepal
-      const customerCoords = await getCoordinatesFromAddress(deliveryAddress);
+      
+      // Use enhanced geocoding with validation
+      const geocodingResult = await geocodeAddressWithValidation(deliveryAddress);
 
-      if (!customerCoords) {
-        throw new Error("Could not find location coordinates for the delivery address");
+      if (!geocodingResult?.coordinates) {
+        // Show Google Maps link for manual verification
+        toast({
+          title: "Address Not Found",
+          description: "Could not locate the address. Please verify on Google Maps and try again.",
+          variant: "destructive",
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.open(geocodingResult?.googleMapsLink, '_blank')}
+            >
+              View on Google Maps
+            </Button>
+          ),
+        });
+        return;
+      }
+
+      const customerCoords = geocodingResult.coordinates;
+
+      // Show confidence level to user
+      if (geocodingResult.confidence === 'low') {
+        toast({
+          title: "Address Match Found",
+          description: `Found: ${geocodingResult.formattedAddress || deliveryAddress}. Please verify this is correct.`,
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.open(geocodingResult.googleMapsLink, '_blank')}
+            >
+              Verify on Maps
+            </Button>
+          ),
+        });
       }
 
       // Calculate distance
@@ -224,7 +260,7 @@ export default function Cart() {
 
       toast({
         title: "Delivery Fee Calculated",
-        description: `₹${result.fee} for ${formatDistance(distance)} delivery`,
+        description: `₹${result.fee} for ${formatDistance(distance)} delivery to ${geocodingResult.formattedAddress || deliveryAddress}`,
       });
 
     } catch (error) {
