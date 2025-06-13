@@ -26,6 +26,74 @@ import {
 // Initialize real-time tracking service
 const realTimeTrackingService = new RealTimeTrackingService();
 
+// Function to notify available delivery partners
+async function notifyAvailableDeliveryPartners(order: any, orderData: any, orderItems: any[]) {
+  try {
+    // Get all available delivery partners (status: approved, isAvailable: true)
+    const result = await pool.query(`
+      SELECT dp.*, u.fullName, u.phone 
+      FROM delivery_partners dp 
+      JOIN users u ON dp.userId = u.id 
+      WHERE dp.status = 'approved' 
+      AND dp.isAvailable = true
+    `);
+
+    const partners = result.rows;
+
+    if (partners.length === 0) {
+      console.log('No available delivery partners found');
+      return;
+    }
+
+    // Calculate store locations and delivery distance
+    const storeLocations = await Promise.all(
+      orderItems.map(async (item) => {
+        const store = await storage.getStore(item.storeId);
+        return store;
+      })
+    );
+
+    // Create delivery notification for each available partner
+    for (const partner of partners) {
+      await storage.createNotification({
+        userId: Number(partner.userid),
+        title: "New Delivery Request",
+        message: `Order #${order.id} - Rs.${orderData.totalAmount} - ${orderData.shippingAddress}`,
+        type: "delivery_request",
+        orderId: order.id,
+        isRead: false
+      });
+
+      // Also create a delivery notification record for tracking
+      await pool.query(`
+        INSERT INTO delivery_notifications (
+          order_id, delivery_partner_id, status, notification_data, created_at
+        ) VALUES ($1, $2, $3, $4, NOW())
+      `, [
+        order.id, 
+        partner.id, 
+        'pending', 
+        JSON.stringify({
+          orderId: order.id,
+          customerName: orderData.customerName,
+          customerPhone: orderData.phone,
+          totalAmount: orderData.totalAmount,
+          pickupAddress: storeLocations[0]?.address || 'Store Address',
+          deliveryAddress: orderData.shippingAddress,
+          estimatedDistance: 5,
+          estimatedEarnings: 50,
+          latitude: orderData.latitude,
+          longitude: orderData.longitude
+        })
+      ]);
+    }
+
+    console.log(`Notified ${partners.length} delivery partners about order #${order.id}`);
+  } catch (error) {
+    console.error('Error notifying delivery partners:', error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to track website visits
   app.use(async (req, res, next) => {
@@ -816,6 +884,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderData.totalAmount,
         orderItems
       );
+
+      // Notify available delivery partners in the area
+      try {
+        await notifyAvailableDeliveryPartners(createdOrder, orderData, orderItems);
+      } catch (error) {
+        console.error('Failed to notify delivery partners:', error);
+      }
 
       // Send payment confirmation to customer
       await NotificationService.sendPaymentConfirmation(
