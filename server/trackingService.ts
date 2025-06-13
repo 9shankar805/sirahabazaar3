@@ -104,7 +104,7 @@ export class TrackingService {
 
       // Store route information
       await db.insert(deliveryRoutes).values({
-        deliveryId,
+        deliveryId: deliveryId,
         pickupLatitude: store.latitude,
         pickupLongitude: store.longitude,
         deliveryLatitude: customerLocation.latitude,

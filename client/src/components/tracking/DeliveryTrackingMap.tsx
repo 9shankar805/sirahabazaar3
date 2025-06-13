@@ -1,0 +1,561 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { MapPin, Navigation, Clock, Phone, Package } from 'lucide-react';
+
+interface DeliveryTrackingMapProps {
+  deliveryId: number;
+  userType: 'customer' | 'shopkeeper' | 'delivery_partner';
+  onStatusUpdate?: (status: string) => void;
+}
+
+interface TrackingData {
+  delivery: any;
+  currentLocation: {
+    latitude: number;
+    longitude: number;
+    timestamp: Date;
+  } | null;
+  route: {
+    pickupLocation: { lat: number; lng: number };
+    deliveryLocation: { lat: number; lng: number };
+    polyline: string;
+    distance: number;
+    estimatedDuration: number;
+  } | null;
+  statusHistory: any[];
+}
+
+export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: DeliveryTrackingMapProps) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [map, setMap] = useState<any>(null);
+  const [platform, setPlatform] = useState<any>(null);
+  const [trackingData, setTrackingData] = useState<TrackingData | null>(null);
+  const [websocket, setWebsocket] = useState<WebSocket | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Initialize HERE Maps
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://js.api.here.com/v3/3.1/mapsjs-core.js';
+    script.async = true;
+    
+    const uiScript = document.createElement('script');
+    uiScript.src = 'https://js.api.here.com/v3/3.1/mapsjs-ui.js';
+    uiScript.async = true;
+
+    const behaviorScript = document.createElement('script');
+    behaviorScript.src = 'https://js.api.here.com/v3/3.1/mapsjs-mapevents.js';
+    behaviorScript.async = true;
+
+    const serviceScript = document.createElement('script');
+    serviceScript.src = 'https://js.api.here.com/v3/3.1/mapsjs-service.js';
+    serviceScript.async = true;
+
+    script.onload = () => {
+      uiScript.onload = () => {
+        behaviorScript.onload = () => {
+          serviceScript.onload = () => {
+            initializeMap();
+          };
+          document.head.appendChild(serviceScript);
+        };
+        document.head.appendChild(behaviorScript);
+      };
+      document.head.appendChild(uiScript);
+    };
+
+    document.head.appendChild(script);
+
+    return () => {
+      if (websocket) {
+        websocket.close();
+      }
+    };
+  }, []);
+
+  const initializeMap = () => {
+    if (!mapRef.current || !window.H) return;
+
+    try {
+      const platform = new window.H.service.Platform({
+        'apikey': import.meta.env.VITE_HERE_API_KEY || 'YOUR_HERE_API_KEY'
+      });
+
+      const defaultMapTypes = platform.createDefaultMapTypes();
+      const mapInstance = new window.H.Map(
+        mapRef.current,
+        defaultMapTypes.vector.normal.map,
+        {
+          zoom: 13,
+          center: { lat: 26.4499, lng: 80.3319 } // Default center (Kanpur, India)
+        }
+      );
+
+      const behavior = new window.H.mapevents.Behavior();
+      const ui = window.H.ui.UI.createDefault(mapInstance);
+
+      setPlatform(platform);
+      setMap(mapInstance);
+      
+      // Load tracking data
+      loadTrackingData();
+    } catch (error) {
+      console.error('Error initializing HERE Maps:', error);
+      setError('Failed to load map. Please check your internet connection.');
+    }
+  };
+
+  const loadTrackingData = async () => {
+    try {
+      const response = await fetch(`/api/tracking/${deliveryId}`);
+      if (!response.ok) throw new Error('Failed to load tracking data');
+      
+      const data = await response.json();
+      setTrackingData(data);
+      
+      if (map && data.route) {
+        displayRoute(data);
+      }
+      
+      // Initialize WebSocket connection
+      initializeWebSocket();
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error loading tracking data:', error);
+      setError('Failed to load tracking data');
+      setIsLoading(false);
+    }
+  };
+
+  const initializeWebSocket = () => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+      // Authenticate
+      ws.send(JSON.stringify({
+        type: 'auth',
+        userId: 1, // This should come from user context
+        userType: userType,
+        sessionId: `${Date.now()}_${Math.random()}`
+      }));
+      
+      // Subscribe to tracking updates
+      ws.send(JSON.stringify({
+        type: 'subscribe_tracking',
+        deliveryId: deliveryId
+      }));
+    };
+    
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      handleWebSocketMessage(message);
+    };
+    
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+      // Attempt to reconnect after 3 seconds
+      setTimeout(() => {
+        if (!websocket || websocket.readyState === WebSocket.CLOSED) {
+          initializeWebSocket();
+        }
+      }, 3000);
+    };
+    
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+    
+    setWebsocket(ws);
+  };
+
+  const handleWebSocketMessage = (message: any) => {
+    switch (message.type) {
+      case 'location_update':
+        if (message.deliveryId === deliveryId) {
+          updateDeliveryPartnerLocation(message.latitude, message.longitude);
+        }
+        break;
+      case 'status_update':
+        if (message.deliveryId === deliveryId) {
+          updateDeliveryStatus(message.status, message.description);
+        }
+        break;
+      default:
+        console.log('Unknown message type:', message.type);
+    }
+  };
+
+  const displayRoute = (data: TrackingData) => {
+    if (!map || !data.route) return;
+
+    const group = new window.H.map.Group();
+
+    // Add pickup marker
+    const pickupIcon = new window.H.map.Icon(
+      'data:image/svg+xml;base64,' + btoa(`
+        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="16" r="12" fill="#10B981" stroke="white" stroke-width="2"/>
+          <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">P</text>
+        </svg>
+      `),
+      { size: { w: 32, h: 32 } }
+    );
+    
+    const pickupMarker = new window.H.map.Marker(data.route.pickupLocation, { icon: pickupIcon });
+    group.addObject(pickupMarker);
+
+    // Add delivery marker
+    const deliveryIcon = new window.H.map.Icon(
+      'data:image/svg+xml;base64,' + btoa(`
+        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="16" r="12" fill="#EF4444" stroke="white" stroke-width="2"/>
+          <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">D</text>
+        </svg>
+      `),
+      { size: { w: 32, h: 32 } }
+    );
+    
+    const deliveryMarker = new window.H.map.Marker(data.route.deliveryLocation, { icon: deliveryIcon });
+    group.addObject(deliveryMarker);
+
+    // Add current location marker if available
+    if (data.currentLocation) {
+      const currentIcon = new window.H.map.Icon(
+        'data:image/svg+xml;base64,' + btoa(`
+          <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="8" fill="#3B82F6" stroke="white" stroke-width="2"/>
+            <circle cx="12" cy="12" r="3" fill="white"/>
+          </svg>
+        `),
+        { size: { w: 24, h: 24 } }
+      );
+      
+      const currentMarker = new window.H.map.Marker(
+        { lat: data.currentLocation.latitude, lng: data.currentLocation.longitude },
+        { icon: currentIcon }
+      );
+      group.addObject(currentMarker);
+    }
+
+    // Add route polyline if available
+    if (data.route.polyline) {
+      try {
+        const routeCoordinates = decodePolyline(data.route.polyline);
+        const lineString = new window.H.geo.LineString();
+        
+        routeCoordinates.forEach((coord: { lat: number; lng: number }) => {
+          lineString.pushPoint(coord);
+        });
+        
+        const routeLine = new window.H.map.Polyline(lineString, {
+          style: { strokeColor: '#3B82F6', lineWidth: 4 }
+        });
+        
+        group.addObject(routeLine);
+      } catch (error) {
+        console.error('Error displaying route:', error);
+      }
+    }
+
+    map.addObject(group);
+    map.getViewPort().resize();
+    
+    // Set view to show all markers
+    const bbox = group.getBoundingBox();
+    if (bbox) {
+      map.getViewPort().setBounds(bbox, true);
+    }
+  };
+
+  const updateDeliveryPartnerLocation = (latitude: number, longitude: number) => {
+    if (!map) return;
+
+    // Remove existing current location marker
+    const objects = map.getObjects();
+    objects.forEach((obj: any) => {
+      if (obj instanceof window.H.map.Group) {
+        const groupObjects = obj.getObjects();
+        groupObjects.forEach((marker: any) => {
+          if (marker.getData && marker.getData().type === 'current_location') {
+            obj.removeObject(marker);
+          }
+        });
+      }
+    });
+
+    // Add new current location marker
+    const currentIcon = new window.H.map.Icon(
+      'data:image/svg+xml;base64,' + btoa(`
+        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="8" fill="#3B82F6" stroke="white" stroke-width="2"/>
+          <circle cx="12" cy="12" r="3" fill="white"/>
+        </svg>
+      `),
+      { size: { w: 24, h: 24 } }
+    );
+    
+    const currentMarker = new window.H.map.Marker(
+      { lat: latitude, lng: longitude },
+      { icon: currentIcon }
+    );
+    currentMarker.setData({ type: 'current_location' });
+    
+    const group = map.getObjects()[0];
+    if (group instanceof window.H.map.Group) {
+      group.addObject(currentMarker);
+    }
+
+    // Update tracking data
+    setTrackingData(prev => prev ? {
+      ...prev,
+      currentLocation: { latitude, longitude, timestamp: new Date() }
+    } : null);
+  };
+
+  const updateDeliveryStatus = (status: string, description?: string) => {
+    setTrackingData(prev => {
+      if (!prev) return null;
+      
+      return {
+        ...prev,
+        delivery: { ...prev.delivery, status },
+        statusHistory: [
+          {
+            status,
+            description,
+            timestamp: new Date().toISOString()
+          },
+          ...prev.statusHistory
+        ]
+      };
+    });
+
+    if (onStatusUpdate) {
+      onStatusUpdate(status);
+    }
+  };
+
+  const decodePolyline = (polyline: string): Array<{ lat: number; lng: number }> => {
+    // Simple polyline decoder - in production, use HERE's official decoder
+    const coordinates: Array<{ lat: number; lng: number }> = [];
+    let index = 0;
+    let lat = 0;
+    let lng = 0;
+
+    while (index < polyline.length) {
+      let shift = 0;
+      let result = 0;
+      let byte;
+
+      do {
+        byte = polyline.charCodeAt(index++) - 63;
+        result |= (byte & 0x1f) << shift;
+        shift += 5;
+      } while (byte >= 0x20);
+
+      const deltaLat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+      lat += deltaLat;
+
+      shift = 0;
+      result = 0;
+
+      do {
+        byte = polyline.charCodeAt(index++) - 63;
+        result |= (byte & 0x1f) << shift;
+        shift += 5;
+      } while (byte >= 0x20);
+
+      const deltaLng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+      lng += deltaLng;
+
+      coordinates.push({
+        lat: lat / 1e5,
+        lng: lng / 1e5
+      });
+    }
+
+    return coordinates;
+  };
+
+  const openGoogleMaps = () => {
+    if (!trackingData?.route) return;
+    
+    const { pickupLocation, deliveryLocation } = trackingData.route;
+    const url = `https://www.google.com/maps/dir/${pickupLocation.lat},${pickupLocation.lng}/${deliveryLocation.lat},${deliveryLocation.lng}`;
+    window.open(url, '_blank');
+  };
+
+  const formatDistance = (meters: number): string => {
+    if (meters < 1000) {
+      return `${meters}m`;
+    }
+    return `${(meters / 1000).toFixed(1)}km`;
+  };
+
+  const formatDuration = (seconds: number): string => {
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) {
+      return `${minutes} min`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return `${hours}h ${remainingMinutes}m`;
+  };
+
+  const getStatusColor = (status: string): string => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-500';
+      case 'assigned': return 'bg-blue-500';
+      case 'en_route_pickup': return 'bg-orange-500';
+      case 'picked_up': return 'bg-purple-500';
+      case 'en_route_delivery': return 'bg-indigo-500';
+      case 'delivered': return 'bg-green-500';
+      case 'cancelled': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getStatusText = (status: string): string => {
+    switch (status) {
+      case 'pending': return 'Order Placed';
+      case 'assigned': return 'Delivery Partner Assigned';
+      case 'en_route_pickup': return 'En Route to Pickup';
+      case 'picked_up': return 'Order Picked Up';
+      case 'en_route_delivery': return 'En Route to Delivery';
+      case 'delivered': return 'Delivered';
+      case 'cancelled': return 'Cancelled';
+      default: return status;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p>Loading tracking information...</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardContent className="p-6">
+          <div className="text-center text-red-500">
+            <p>{error}</p>
+            <Button onClick={loadTrackingData} className="mt-4">
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="w-full space-y-4">
+      {/* Delivery Status Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Delivery Tracking</span>
+            {trackingData?.delivery && (
+              <Badge className={`${getStatusColor(trackingData.delivery.status)} text-white`}>
+                {getStatusText(trackingData.delivery.status)}
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {trackingData?.route && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="flex items-center space-x-2">
+                <MapPin className="h-4 w-4 text-gray-500" />
+                <div>
+                  <p className="text-sm font-medium">Distance</p>
+                  <p className="text-sm text-gray-600">
+                    {formatDistance(trackingData.route.distance)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Clock className="h-4 w-4 text-gray-500" />
+                <div>
+                  <p className="text-sm font-medium">Est. Time</p>
+                  <p className="text-sm text-gray-600">
+                    {formatDuration(trackingData.route.estimatedDuration)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Navigation className="h-4 w-4 text-gray-500" />
+                <div>
+                  <Button 
+                    onClick={openGoogleMaps}
+                    variant="outline" 
+                    size="sm"
+                    className="text-xs"
+                  >
+                    Open in Google Maps
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Map Card */}
+      <Card>
+        <CardContent className="p-0">
+          <div 
+            ref={mapRef} 
+            className="w-full h-96 bg-gray-100"
+            style={{ minHeight: '400px' }}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Status History */}
+      {trackingData?.statusHistory && trackingData.statusHistory.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Delivery Timeline</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {trackingData.statusHistory.map((status, index) => (
+                <div key={index} className="flex items-start space-x-3">
+                  <div className={`w-3 h-3 rounded-full ${getStatusColor(status.status)} mt-1.5`}></div>
+                  <div className="flex-1">
+                    <p className="font-medium">{getStatusText(status.status)}</p>
+                    {status.description && (
+                      <p className="text-sm text-gray-600">{status.description}</p>
+                    )}
+                    <p className="text-xs text-gray-400">
+                      {new Date(status.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

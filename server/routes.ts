@@ -6,8 +6,9 @@ import { pool } from "./db";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { NotificationService } from "./notificationService";
-import { realTimeTrackingService } from "./services/realTimeTrackingService";
-import { hereMapService } from "./services/hereMapService";
+import { webSocketService } from "./websocketService";
+import { trackingService } from "./trackingService";
+import { hereMapService } from "./hereMapService";
 
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
@@ -3207,7 +3208,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Real-time Tracking API Routes
+  app.post("/api/tracking/initialize/:deliveryId", async (req, res) => {
+    try {
+      const deliveryId = parseInt(req.params.deliveryId);
+      const result = await trackingService.initializeDeliveryTracking(deliveryId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error initializing tracking:", error);
+      res.status(500).json({ error: "Failed to initialize tracking" });
+    }
+  });
+
+  app.post("/api/tracking/location", async (req, res) => {
+    try {
+      const locationUpdate = req.body;
+      await trackingService.updateDeliveryLocation(locationUpdate);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating location:", error);
+      res.status(500).json({ error: "Failed to update location" });
+    }
+  });
+
+  app.post("/api/tracking/status", async (req, res) => {
+    try {
+      const { deliveryId, status, description, location, updatedBy } = req.body;
+      await trackingService.updateDeliveryStatus(deliveryId, status, description, location, updatedBy);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating status:", error);
+      res.status(500).json({ error: "Failed to update status" });
+    }
+  });
+
+  app.get("/api/tracking/:deliveryId", async (req, res) => {
+    try {
+      const deliveryId = parseInt(req.params.deliveryId);
+      const trackingData = await trackingService.getTrackingData(deliveryId);
+      res.json(trackingData);
+    } catch (error) {
+      console.error("Error fetching tracking data:", error);
+      res.status(500).json({ error: "Failed to fetch tracking data" });
+    }
+  });
+
+  app.get("/api/tracking/partner/:partnerId/deliveries", async (req, res) => {
+    try {
+      const partnerId = parseInt(req.params.partnerId);
+      const deliveries = await trackingService.getDeliveryPartnerDeliveries(partnerId);
+      res.json(deliveries);
+    } catch (error) {
+      console.error("Error fetching partner deliveries:", error);
+      res.status(500).json({ error: "Failed to fetch deliveries" });
+    }
+  });
+
+  // HERE Maps integration routes
+  app.post("/api/maps/route", async (req, res) => {
+    try {
+      const { origin, destination, transportMode } = req.body;
+      const routeInfo = await hereMapService.calculateRoute(origin, destination, transportMode);
+      res.json(routeInfo);
+    } catch (error) {
+      console.error("Error calculating route:", error);
+      res.status(500).json({ error: "Failed to calculate route" });
+    }
+  });
+
+  app.post("/api/maps/geocode", async (req, res) => {
+    try {
+      const { address } = req.body;
+      const location = await hereMapService.geocodeAddress(address);
+      res.json(location);
+    } catch (error) {
+      console.error("Error geocoding address:", error);
+      res.status(500).json({ error: "Failed to geocode address" });
+    }
+  });
+
+  app.post("/api/maps/travel-time", async (req, res) => {
+    try {
+      const { origin, destination, transportMode } = req.body;
+      const travelTime = await hereMapService.getEstimatedTravelTime(origin, destination, transportMode);
+      res.json(travelTime);
+    } catch (error) {
+      console.error("Error getting travel time:", error);
+      res.status(500).json({ error: "Failed to get travel time" });
+    }
+  });
+
   const httpServer = createServer(app);
+  
+  // Initialize WebSocket service
+  webSocketService.initialize(httpServer);
   
   // WebSocket Server for real-time tracking
   const wss = new WebSocketServer({ 
