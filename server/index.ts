@@ -40,8 +40,7 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    // Run database migrations first
-    await runMigrations();
+    console.log("Skipping migrations - using existing database tables");
     
     // Initialize database with default admin account
     await storage.createDefaultAdmin();
