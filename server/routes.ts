@@ -3949,6 +3949,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tracking demo data endpoint
+  app.get("/api/tracking/demo-data", async (req, res) => {
+    try {
+      // Get sample delivery and tracking data for demo purposes
+      const deliveries = await db.select().from(deliveries).limit(10);
+      const partners = await db.select().from(deliveryPartners).limit(10);
+      
+      // Get some sample orders for context
+      const ordersData = await db.select()
+        .from(orders)
+        .leftJoin(users, eq(orders.customerId, users.id))
+        .limit(10);
+
+      // Create demo tracking data structure
+      const demoData = {
+        deliveries: deliveries.map(delivery => ({
+          ...delivery,
+          statusHistory: [
+            {
+              status: 'pending',
+              timestamp: new Date(Date.now() - 3600000).toISOString(),
+              description: 'Order placed and waiting for assignment'
+            },
+            {
+              status: delivery.status,
+              timestamp: new Date().toISOString(),
+              description: `Current status: ${delivery.status}`
+            }
+          ]
+        })),
+        deliveryPartners: partners,
+        orders: ordersData.map(order => order.orders)
+      };
+
+      res.json(demoData);
+    } catch (error) {
+      console.error('Demo data error:', error);
+      res.status(500).json({ error: "Failed to get tracking data" });
+    }
+  });
+
   // HERE Maps integration endpoints
   app.post("/api/maps/route", async (req, res) => {
     try {
