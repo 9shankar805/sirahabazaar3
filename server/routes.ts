@@ -3816,6 +3816,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delivery assignment endpoint
+  app.post("/api/deliveries/assign", async (req, res) => {
+    try {
+      const { orderId, pickupLocation, deliveryLocation } = req.body;
+
+      // Get order details
+      const order = await db.select()
+        .from(orders)
+        .leftJoin(users, eq(orders.customerId, users.id))
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      if (!order.length) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      const orderData = order[0];
+
+      // Calculate route and distance
+      const route = await hereMapService.calculateRoute({
+        origin: pickupLocation,
+        destination: deliveryLocation
+      });
+
+      let estimatedDistance = 5000; // Default 5km
+      let estimatedTime = 30; // Default 30 minutes
+      let deliveryFee = "50"; // Default ₹50
+
+      if (route && route.routes && route.routes.length > 0) {
+        const mainRoute = route.routes[0];
+        const section = mainRoute.sections[0];
+        estimatedDistance = section.summary.length;
+        estimatedTime = Math.ceil(section.summary.duration / 60); // Convert to minutes
+        deliveryFee = Math.max(30, Math.ceil(estimatedDistance / 1000) * 10).toString(); // ₹10 per km, minimum ₹30
+      }
+
+      // Create delivery record
+      const delivery = await db.insert(deliveries).values({
+        orderId,
+        status: 'pending',
+        deliveryPartnerId: null, // Will be assigned when partner accepts
+        pickupAddress: req.body.pickupAddress || 'Shop Location',
+        deliveryAddress: req.body.deliveryAddress || orderData.orders.shippingAddress,
+        deliveryFee,
+        estimatedDistance: estimatedDistance.toString(),
+        estimatedTime: estimatedTime.toString(),
+        specialInstructions: req.body.specialInstructions,
+        createdAt: new Date()
+      }).returning({ id: deliveries.id });
+
+      const deliveryId = delivery[0].id;
+
+      // Store route information
+      if (route) {
+        await realTimeTrackingService.calculateAndStoreRoute(
+          deliveryId,
+          pickupLocation,
+          deliveryLocation
+        );
+      }
+
+      // Create assignment object for notification
+      const assignment = {
+        id: deliveryId,
+        orderId,
+        customerName: orderData.users?.fullName || 'Customer',
+        customerPhone: orderData.orders.phone || '',
+        pickupAddress: req.body.pickupAddress || 'Shop Location',
+        deliveryAddress: req.body.deliveryAddress || orderData.orders.shippingAddress,
+        deliveryFee,
+        estimatedDistance,
+        estimatedTime,
+        specialInstructions: req.body.specialInstructions,
+        pickupLocation,
+        deliveryLocation
+      };
+
+      // Find available delivery partners (simplified - in production, use location-based matching)
+      const availablePartners = await db.select({ id: users.id })
+        .from(users)
+        .where(eq(users.userType, 'delivery_partner'))
+        .limit(5);
+
+      const partnerIds = availablePartners.map(p => p.id);
+
+      // Broadcast assignment to available partners
+      if (partnerIds.length > 0) {
+        const { broadcastDeliveryAssignment } = await import('./websocketService');
+        broadcastDeliveryAssignment(assignment, partnerIds);
+      }
+
+      res.json({ 
+        success: true, 
+        deliveryId, 
+        assignment,
+        message: "Delivery assignment sent to available partners" 
+      });
+    } catch (error) {
+      console.error('Delivery assignment error:', error);
+      res.status(500).json({ error: "Failed to assign delivery" });
+    }
+  });
+
+  // Accept delivery assignment
+  app.post("/api/deliveries/:deliveryId/accept", async (req, res) => {
+    try {
+      const deliveryId = parseInt(req.params.deliveryId);
+      const { deliveryPartnerId } = req.body;
+
+      // Update delivery with assigned partner
+      await db.update(deliveries)
+        .set({ 
+          deliveryPartnerId, 
+          status: 'assigned',
+          assignedAt: new Date()
+        })
+        .where(eq(deliveries.id, deliveryId));
+
+      // Update delivery status
+      await realTimeTrackingService.updateDeliveryStatus({
+        deliveryId,
+        status: 'assigned',
+        description: 'Delivery partner assigned',
+        updatedBy: deliveryPartnerId
+      });
+
+      res.json({ success: true, message: "Delivery assignment accepted" });
+    } catch (error) {
+      console.error('Accept delivery error:', error);
+      res.status(500).json({ error: "Failed to accept delivery" });
+    }
+  });
+
   // HERE Maps integration endpoints
   app.post("/api/maps/route", async (req, res) => {
     try {

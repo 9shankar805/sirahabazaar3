@@ -107,7 +107,15 @@ export class RealTimeTrackingService {
     const { deliveryId, deliveryPartnerId, latitude, longitude, heading, speed, accuracy } = locationUpdate;
 
     try {
-      // Store location update
+      // Deactivate previous location entries
+      await db.update(deliveryLocationTracking)
+        .set({ isActive: false })
+        .where(and(
+          eq(deliveryLocationTracking.deliveryId, deliveryId),
+          eq(deliveryLocationTracking.isActive, true)
+        ));
+
+      // Store new location update
       await db.insert(deliveryLocationTracking).values({
         deliveryId,
         deliveryPartnerId,

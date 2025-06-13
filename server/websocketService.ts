@@ -58,7 +58,7 @@ export class WebSocketService {
 
   private async handleConnection(ws: WebSocketClient, request: any) {
     ws.isAlive = true;
-    
+
     ws.on('pong', () => {
       ws.isAlive = true;
     });
@@ -102,7 +102,7 @@ export class WebSocketService {
   private async handleAuthentication(ws: WebSocketClient, message: any) {
     try {
       const { userId, userType, sessionId } = message;
-      
+
       if (!userId || !userType) {
         ws.send(JSON.stringify({ type: 'error', message: 'Missing authentication data' }));
         return;
@@ -138,7 +138,7 @@ export class WebSocketService {
 
   private async handleTrackingSubscription(ws: WebSocketClient, message: any) {
     const { deliveryId } = message;
-    
+
     if (!deliveryId) {
       ws.send(JSON.stringify({ type: 'error', message: 'Missing delivery ID' }));
       return;
@@ -160,7 +160,7 @@ export class WebSocketService {
     }
 
     const { deliveryId, latitude, longitude, speed, heading } = message;
-    
+
     if (!deliveryId || !latitude || !longitude) {
       ws.send(JSON.stringify({ type: 'error', message: 'Missing location data' }));
       return;
@@ -181,13 +181,13 @@ export class WebSocketService {
   private handleDisconnection(ws: WebSocketClient) {
     if (ws.sessionId) {
       this.clients.delete(ws.sessionId);
-      
+
       // Update session status in database
       db.update(webSocketSessions)
         .set({ isActive: false })
         .where(eq(webSocketSessions.sessionId, ws.sessionId))
         .catch(console.error);
-        
+
       console.log(`WebSocket disconnected: Session ${ws.sessionId}`);
     }
   }
@@ -198,7 +198,7 @@ export class WebSocketService {
         this.clients.delete(sessionId);
         return ws.terminate();
       }
-      
+
       ws.isAlive = false;
       ws.ping();
     });
@@ -209,7 +209,7 @@ export class WebSocketService {
    */
   async broadcastLocationUpdate(data: LocationBroadcast) {
     const message = JSON.stringify(data);
-    
+
     this.clients.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN) {
         // Send to customers and shopkeepers (not delivery partners)
@@ -225,7 +225,7 @@ export class WebSocketService {
    */
   async broadcastStatusUpdate(data: StatusBroadcast) {
     const message = JSON.stringify(data);
-    
+
     this.clients.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(message);
@@ -238,7 +238,7 @@ export class WebSocketService {
    */
   async sendToUser(userId: number, data: any) {
     const message = JSON.stringify(data);
-    
+
     this.clients.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN && ws.userId === userId) {
         ws.send(message);
@@ -251,7 +251,7 @@ export class WebSocketService {
    */
   async sendToUserType(userType: string, data: any) {
     const message = JSON.stringify(data);
-    
+
     this.clients.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN && ws.userType === userType) {
         ws.send(message);

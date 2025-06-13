@@ -48,10 +48,10 @@ export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboard
     try {
       const response = await fetch(`/api/tracking/partner/${partnerId}/deliveries`);
       if (!response.ok) throw new Error('Failed to load deliveries');
-      
+
       const data = await response.json();
       setDeliveries(data);
-      
+
       // Auto-select first active delivery
       const activeDelivery = data.find((d: Delivery) => 
         ['assigned', 'en_route_pickup', 'picked_up', 'en_route_delivery'].includes(d.status)
@@ -59,7 +59,7 @@ export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboard
       if (activeDelivery) {
         setSelectedDelivery(activeDelivery);
       }
-      
+
       setIsLoading(false);
     } catch (error) {
       console.error('Error loading deliveries:', error);
@@ -86,9 +86,9 @@ export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboard
   const initializeWebSocket = () => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
-    
+
     const ws = new WebSocket(wsUrl);
-    
+
     ws.onopen = () => {
       console.log('WebSocket connected for delivery partner');
       // Authenticate as delivery partner
@@ -99,12 +99,12 @@ export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboard
         sessionId: `dp_${partnerId}_${Date.now()}`
       }));
     };
-    
+
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
       handleWebSocketMessage(message);
     };
-    
+
     ws.onclose = () => {
       console.log('WebSocket disconnected');
       // Attempt to reconnect
@@ -114,7 +114,7 @@ export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboard
         }
       }, 3000);
     };
-    
+
     setWebsocket(ws);
   };
 
@@ -139,16 +139,16 @@ export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboard
     if (!selectedDelivery || !navigator.geolocation) return;
 
     setIsLocationTracking(true);
-    
+
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const location = {
           lat: position.coords.latitude,
           lng: position.coords.longitude
         };
-        
+
         setCurrentLocation(location);
-        
+
         // Send location update via WebSocket
         if (websocket && websocket.readyState === WebSocket.OPEN) {
           websocket.send(JSON.stringify({
@@ -161,7 +161,7 @@ export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboard
             accuracy: position.coords.accuracy
           }));
         }
-        
+
         // Also send to API
         updateLocationAPI(selectedDelivery.id, location);
       },
@@ -341,7 +341,7 @@ export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboard
                   <span className="text-sm">Location Sharing</span>
                   <div className={`w-3 h-3 rounded-full ${isLocationTracking ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                 </div>
-                
+
                 {!isLocationTracking ? (
                   <Button 
                     onClick={startLocationTracking}
@@ -377,8 +377,18 @@ export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboard
       <div className="lg:col-span-2 space-y-6">
         {selectedDelivery ? (
           <>
-            {/* Delivery Details */}
-            <Card>
+            {/* Location Tracking */}
+            <LocationTracker
+              deliveryId={selectedDelivery.id}
+              deliveryPartnerId={1} // This should come from user context
+              isActive={selectedDelivery.status === 'assigned' || selectedDelivery.status === 'en_route_pickup' || selectedDelivery.status === 'picked_up' || selectedDelivery.status === 'en_route_delivery'}
+              onToggleTracking={(active) => {
+                console.log('Location tracking:', active ? 'started' : 'stopped');
+              }}
+            />
+
+            {/* Delivery Status Updates */}
+            <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Order #{selectedDelivery.orderId}</span>
@@ -423,7 +433,7 @@ export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboard
                       {action.label}
                     </Button>
                   ))}
-                  
+
                   <Button
                     variant="outline"
                     onClick={() => window.open(`tel:${selectedDelivery.customerPhone}`)}
@@ -456,4 +466,37 @@ export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboard
       </div>
     </div>
   );
+}
+
+// LocationTracker Component - Placeholder implementation
+function LocationTracker({ deliveryId, deliveryPartnerId, isActive, onToggleTracking }: any) {
+    const [tracking, setTracking] = useState(isActive);
+
+    useEffect(() => {
+        setTracking(isActive);
+    }, [isActive]);
+
+    const toggleTracking = () => {
+        const newTrackingState = !tracking;
+        setTracking(newTrackingState);
+        onToggleTracking(newTrackingState);
+        // Implement the actual start/stop location tracking logic here,
+        // potentially calling APIs or WebSocket methods.
+        console.log(`Tracking ${newTrackingState ? 'started' : 'stopped'} for delivery ${deliveryId} by partner ${deliveryPartnerId}`);
+    };
+
+    return (
+        <Card className="mb-6">
+            <CardHeader>
+                <CardTitle>Location Tracking</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p>Delivery ID: {deliveryId}</p>
+                <p>Delivery Partner ID: {deliveryPartnerId}</p>
+                <Button onClick={toggleTracking} variant={tracking ? "destructive" : "outline"}>
+                    {tracking ? "Stop Tracking" : "Start Tracking"}
+                </Button>
+            </CardContent>
+        </Card>
+    );
 }

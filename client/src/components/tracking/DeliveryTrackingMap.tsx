@@ -198,51 +198,98 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
 
     const group = new window.H.map.Group();
 
-    // Add pickup marker
+    // Add pickup marker (shop/store)
     const pickupIcon = new window.H.map.Icon(
       'data:image/svg+xml;base64,' + btoa(`
-        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="16" cy="16" r="12" fill="#10B981" stroke="white" stroke-width="2"/>
-          <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">P</text>
+        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="18" fill="#10B981" stroke="white" stroke-width="3"/>
+          <g transform="translate(20,20)">
+            <rect x="-8" y="-6" width="16" height="12" fill="white" rx="2"/>
+            <rect x="-6" y="-8" width="12" height="4" fill="white" rx="1"/>
+            <circle cx="0" cy="0" r="2" fill="#10B981"/>
+          </g>
         </svg>
       `),
-      { size: { w: 32, h: 32 } }
+      { size: { w: 40, h: 40 } }
     );
     
     const pickupMarker = new window.H.map.Marker(data.route.pickupLocation, { icon: pickupIcon });
+    pickupMarker.setData({ type: 'pickup', address: data.delivery?.pickupAddress || 'Pickup Location' });
+    
+    // Add info bubble for pickup
+    pickupMarker.addEventListener('tap', () => {
+      const bubble = new window.H.ui.InfoBubble({
+        content: `<div style="padding: 10px;"><strong>📦 Pickup Location</strong><br/>${data.delivery?.pickupAddress || 'Shop/Store Location'}</div>`
+      }, { position: data.route.pickupLocation });
+      map.getViewPort().getDefaultUI().getBubbles().addBubble(bubble);
+    });
+    
     group.addObject(pickupMarker);
 
-    // Add delivery marker
+    // Add delivery marker (customer)
     const deliveryIcon = new window.H.map.Icon(
       'data:image/svg+xml;base64,' + btoa(`
-        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="16" cy="16" r="12" fill="#EF4444" stroke="white" stroke-width="2"/>
-          <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">D</text>
+        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="18" fill="#EF4444" stroke="white" stroke-width="3"/>
+          <g transform="translate(20,20)">
+            <rect x="-6" y="-8" width="12" height="10" fill="white" rx="1"/>
+            <rect x="-4" y="-6" width="8" height="3" fill="#EF4444"/>
+            <rect x="-5" y="2" width="10" height="6" fill="white" rx="1"/>
+            <rect x="-3" y="4" width="2" height="2" fill="#EF4444"/>
+            <rect x="1" y="4" width="2" height="2" fill="#EF4444"/>
+          </g>
         </svg>
       `),
-      { size: { w: 32, h: 32 } }
+      { size: { w: 40, h: 40 } }
     );
     
     const deliveryMarker = new window.H.map.Marker(data.route.deliveryLocation, { icon: deliveryIcon });
+    deliveryMarker.setData({ type: 'delivery', address: data.delivery?.deliveryAddress || 'Delivery Location' });
+    
+    // Add info bubble for delivery
+    deliveryMarker.addEventListener('tap', () => {
+      const bubble = new window.H.ui.InfoBubble({
+        content: `<div style="padding: 10px;"><strong>🏠 Delivery Location</strong><br/>${data.delivery?.deliveryAddress || 'Customer Location'}</div>`
+      }, { position: data.route.deliveryLocation });
+      map.getViewPort().getDefaultUI().getBubbles().addBubble(bubble);
+    });
+    
     group.addObject(deliveryMarker);
 
-    // Add current location marker if available
+    // Add delivery partner current location marker if available
     if (data.currentLocation) {
-      const currentIcon = new window.H.map.Icon(
+      const deliveryPartnerIcon = new window.H.map.Icon(
         'data:image/svg+xml;base64,' + btoa(`
-          <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="8" fill="#3B82F6" stroke="white" stroke-width="2"/>
-            <circle cx="12" cy="12" r="3" fill="white"/>
+          <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="18" cy="18" r="16" fill="#3B82F6" stroke="white" stroke-width="3"/>
+            <g transform="translate(18,18)">
+              <circle cx="0" cy="-4" r="4" fill="white"/>
+              <rect x="-6" y="0" width="12" height="8" fill="white" rx="2"/>
+              <circle cx="-3" cy="6" r="2" fill="#3B82F6"/>
+              <circle cx="3" cy="6" r="2" fill="#3B82F6"/>
+              <path d="M-4 2 L4 2 L2 -2 L-2 -2 Z" fill="#3B82F6"/>
+            </g>
           </svg>
         `),
-        { size: { w: 24, h: 24 } }
+        { size: { w: 36, h: 36 } }
       );
       
-      const currentMarker = new window.H.map.Marker(
+      const deliveryPartnerMarker = new window.H.map.Marker(
         { lat: data.currentLocation.latitude, lng: data.currentLocation.longitude },
-        { icon: currentIcon }
+        { icon: deliveryPartnerIcon }
       );
-      group.addObject(currentMarker);
+      deliveryPartnerMarker.setData({ type: 'delivery_partner' });
+      
+      // Add info bubble for delivery partner
+      deliveryPartnerMarker.addEventListener('tap', () => {
+        const lastUpdate = new Date(data.currentLocation.timestamp).toLocaleTimeString();
+        const bubble = new window.H.ui.InfoBubble({
+          content: `<div style="padding: 10px;"><strong>🚴 Delivery Partner</strong><br/>Last update: ${lastUpdate}</div>`
+        }, { position: { lat: data.currentLocation.latitude, lng: data.currentLocation.longitude } });
+        map.getViewPort().getDefaultUI().getBubbles().addBubble(bubble);
+      });
+      
+      group.addObject(deliveryPartnerMarker);
     }
 
     // Add route polyline if available
@@ -385,7 +432,31 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
     return coordinates;
   };
 
-  const openGoogleMaps = () => {
+  const openGoogleMapsNavigation = (destination: 'pickup' | 'delivery') => {
+    if (!trackingData?.route) return;
+    
+    const { pickupLocation, deliveryLocation } = trackingData.route;
+    const targetLocation = destination === 'pickup' ? pickupLocation : deliveryLocation;
+    
+    // Get current location for navigation
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const currentLat = position.coords.latitude;
+        const currentLng = position.coords.longitude;
+        const url = `https://www.google.com/maps/dir/${currentLat},${currentLng}/${targetLocation.lat},${targetLocation.lng}`;
+        window.open(url, '_blank');
+      }, () => {
+        // Fallback without current location
+        const url = `https://www.google.com/maps/search/?api=1&query=${targetLocation.lat},${targetLocation.lng}`;
+        window.open(url, '_blank');
+      });
+    } else {
+      const url = `https://www.google.com/maps/search/?api=1&query=${targetLocation.lat},${targetLocation.lng}`;
+      window.open(url, '_blank');
+    }
+  };
+
+  const openGoogleMapsRoute = () => {
     if (!trackingData?.route) return;
     
     const { pickupLocation, deliveryLocation } = trackingData.route;
@@ -503,14 +574,34 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
               </div>
               <div className="flex items-center space-x-2">
                 <Navigation className="h-4 w-4 text-gray-500" />
-                <div>
+                <div className="flex flex-col gap-1">
+                  {userType === 'delivery_partner' && (
+                    <div className="flex gap-1">
+                      <Button 
+                        onClick={() => openGoogleMapsNavigation('pickup')}
+                        variant="outline" 
+                        size="sm"
+                        className="text-xs"
+                      >
+                        Navigate to Pickup
+                      </Button>
+                      <Button 
+                        onClick={() => openGoogleMapsNavigation('delivery')}
+                        variant="outline" 
+                        size="sm"
+                        className="text-xs"
+                      >
+                        Navigate to Customer
+                      </Button>
+                    </div>
+                  )}
                   <Button 
-                    onClick={openGoogleMaps}
+                    onClick={openGoogleMapsRoute}
                     variant="outline" 
                     size="sm"
                     className="text-xs"
                   >
-                    Open in Google Maps
+                    View Full Route
                   </Button>
                 </div>
               </div>
