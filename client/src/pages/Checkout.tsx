@@ -35,6 +35,7 @@ export default function Checkout() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isCalculatingFee, setIsCalculatingFee] = useState(false);
+  const [showManualAddress, setShowManualAddress] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryDistance, setDeliveryDistance] = useState(0);
   const [estimatedDeliveryTime, setEstimatedDeliveryTime] = useState(0);
@@ -107,6 +108,7 @@ export default function Checkout() {
       // Convert coordinates to readable address using HERE Maps
       const address = await reverseGeocode(location.latitude, location.longitude);
       form.setValue("shippingAddress", address);
+      setShowManualAddress(true); // Show the address input after getting location
       
       toast({
         title: "Location Found",
@@ -384,13 +386,24 @@ export default function Checkout() {
                               <Button
                                 type="button"
                                 variant="outline"
-                                onClick={calculateDeliveryFee}
-                                disabled={isCalculatingFee || (!field.value?.trim() && !userLocation)}
+                                onClick={() => setShowManualAddress(!showManualAddress)}
                                 className="flex items-center gap-2"
                               >
-                                <Calculator className="h-4 w-4" />
-                                {isCalculatingFee ? "Calculating..." : "Calculate Fee"}
+                                <MapPin className="h-4 w-4" />
+                                Manual Address
                               </Button>
+                              {(showManualAddress || userLocation || field.value?.trim()) && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={calculateDeliveryFee}
+                                  disabled={isCalculatingFee || (!field.value?.trim() && !userLocation)}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Calculator className="h-4 w-4" />
+                                  {isCalculatingFee ? "Calculating..." : "Calculate Fee"}
+                                </Button>
+                              )}
                             </div>
                             {userLocation && (
                               <p className="text-xs text-green-600">
@@ -404,20 +417,22 @@ export default function Checkout() {
                                 {deliveryInfo && ` • Est. ${deliveryInfo.estimatedTime} mins`}
                               </p>
                             )}
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Enter your complete delivery address or use 'Get My Location'"
-                                className="min-h-20"
-                                {...field}
-                                onChange={(e) => {
-                                  field.onChange(e);
-                                  // Clear user location when manually typing
-                                  if (e.target.value !== field.value) {
-                                    setUserLocation(null);
-                                  }
-                                }}
-                              />
-                            </FormControl>
+                            {showManualAddress && (
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Enter your complete delivery address"
+                                  className="min-h-20"
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    // Clear user location when manually typing
+                                    if (e.target.value !== field.value) {
+                                      setUserLocation(null);
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                            )}
                           </div>
                           <FormMessage />
                         </FormItem>
