@@ -73,18 +73,18 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
         
         <div className="p-2">
-          <h3 className="font-medium text-foreground text-xs mb-1 line-clamp-2">
+          <h3 className="font-medium text-foreground text-[10px] mb-1 line-clamp-2">
             {product.name}
           </h3>
           
           
           
           <div className="flex items-center space-x-1 mb-2">
-            <span className="text-sm font-bold text-foreground">
+            <span className="text-xs font-bold text-foreground">
               ₹{Number(product.price).toLocaleString()}
             </span>
             {product.originalPrice && (
-              <span className="text-xs text-muted-foreground line-through">
+              <span className="text-[10px] text-muted-foreground line-through">
                 ₹{Number(product.originalPrice).toLocaleString()}
               </span>
             )}
