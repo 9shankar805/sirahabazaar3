@@ -17,7 +17,7 @@ import {
   Edit,
   Trash2,
   Save,
-  Bike
+  Truck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -420,7 +420,7 @@ export default function AdminPanel() {
                       : "text-gray-600 hover:bg-gray-100"
                   }`}
                 >
-                  <Bike className="h-4 w-4" />
+                  <Truck className="h-4 w-4" />
                   Delivery Partners
                   {deliveryPartners.filter((p: any) => p.status === 'pending').length > 0 && (
                     <Badge variant="secondary" className="ml-auto bg-orange-100 text-orange-800">
