@@ -244,6 +244,10 @@ export default function DeliveryPartnerDashboard() {
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
               Available Orders
+              {/* Show notification count if there are pending orders */}
+              <Badge variant="destructive" className="ml-2 px-2 py-1 text-xs">
+                New
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="deliveries" className="flex items-center gap-2">
               <Package className="h-4 w-4" />

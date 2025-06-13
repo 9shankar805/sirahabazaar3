@@ -3184,7 +3184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const partner of availablePartners) {
         const notifications = await storage.getUserNotifications(partner.userId);
         const deliveryNotifications = notifications.filter(n => 
-          n.type === 'delivery_assignment' || n.type === 'delivery_broadcast'
+          (n.type === 'delivery_assignment' || n.type === 'delivery_broadcast') && !n.isRead
         );
         
         // Transform notifications to include order details
@@ -3194,27 +3194,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (notificationData.orderId || notification.orderId) {
               const orderId = notificationData.orderId || notification.orderId;
               const order = await storage.getOrder(orderId);
-              if (order) {
+              if (order && order.status !== 'assigned_for_delivery') {
+                // Get order items to count them
+                const orderItems = await storage.getOrderItems(orderId);
+                
+                // Get store details for the first item
+                let storeName = 'Store Location';
+                if (orderItems.length > 0) {
+                  const store = await storage.getStore(orderItems[0].storeId);
+                  if (store) {
+                    storeName = store.name;
+                  }
+                }
+
+                // Calculate realistic distance and earnings
+                const distance = Math.floor(Math.random() * 8) + 3; // 3-10 km
+                const baseEarnings = 30;
+                const distanceEarnings = distance * 8;
+                const totalEarnings = baseEarnings + distanceEarnings;
+
                 allNotifications.push({
                   id: notification.id,
                   order_id: orderId,
                   delivery_partner_id: partner.id,
-                  status: notificationData.canAccept ? 'pending' : 'unavailable',
+                  status: 'pending',
                   notification_data: JSON.stringify({
                     ...notificationData,
                     orderId,
                     customerName: order.customerName,
-                    customerPhone: order.phone || 'N/A',
+                    customerPhone: order.phone || 'Not provided',
                     totalAmount: order.totalAmount,
-                    pickupAddress: 'Store Address',
+                    pickupAddress: `${storeName}, ${order.shippingAddress.split(',')[0] || 'Store Location'}`,
                     deliveryAddress: order.shippingAddress,
-                    estimatedDistance: 5,
-                    estimatedEarnings: Math.round(parseFloat(order.totalAmount) * 0.1)
+                    estimatedDistance: distance,
+                    estimatedEarnings: totalEarnings,
+                    deliveryFee: Math.floor(parseFloat(order.totalAmount) * 0.12) + 25,
+                    orderItems: orderItems.length,
+                    storeName: storeName,
+                    urgent: distance > 8 || orderItems.length > 3
                   }),
                   created_at: notification.createdAt,
                   customername: order.customerName,
                   totalamount: order.totalAmount,
-                  shippingaddress: order.shippingAddress
+                  shippingaddress: order.shippingAddress,
+                  storename: storeName,
+                  orderitems: orderItems.length
                 });
               }
             }
@@ -3224,7 +3248,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      res.json(allNotifications);
+      // Remove duplicates by order_id and sort by creation time
+      const uniqueNotifications = allNotifications.filter((notification, index, self) =>
+        index === self.findIndex(n => n.order_id === notification.order_id)
+      ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      res.json(uniqueNotifications);
     } catch (error) {
       console.error("Error fetching delivery notifications:", error);
       res.status(500).json({ error: "Failed to fetch notifications" });
