@@ -259,12 +259,12 @@ export default function Homepage() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-4 gap-2 sm:gap-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4">
             {categories.map((category) => (
               <Link key={category.name} href={category.href}>
-                <div className="category-card text-center p-2 sm:p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                  <div className="text-lg sm:text-2xl mb-1 sm:mb-2">{category.icon}</div>
-                  <div className="text-xs font-semibold text-foreground">{category.name}</div>
+                <div className="category-card flex items-center gap-2 p-2 sm:p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                  <div className="text-lg sm:text-2xl">{category.icon}</div>
+                  <div className="text-xs sm:text-sm font-semibold text-foreground">{category.name}</div>
                 </div>
               </Link>
             ))}
