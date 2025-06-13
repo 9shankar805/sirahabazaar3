@@ -18,12 +18,6 @@ import {
   MapPin,
   UtensilsCrossed,
   Navigation,
-  Send,
-  Bell,
-  CheckCircle,
-  AlertCircle,
-  Timer,
-  Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,6 +45,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiPost, apiPut, apiDelete } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
+import ImageUpload from "@/components/ImageUpload";
 import { LocationPicker } from "@/components/LocationPicker";
 import type {
   Product,
@@ -59,7 +54,6 @@ import type {
   Store,
   Category,
 } from "@shared/schema";
-import ImageUpload from "@/components/ImageUpload";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -117,8 +111,6 @@ export default function ShopkeeperDashboard() {
     longitude: number;
   } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [notificationHistory, setNotificationHistory] = useState<any[]>([]);
-  const [pendingDeliveries, setPendingDeliveries] = useState<any[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -423,92 +415,10 @@ export default function ShopkeeperDashboard() {
     try {
       await apiPut(`/api/orders/${orderId}/status`, { status });
       toast({ title: "Order status updated successfully" });
-
-      // Invalidate all related queries
-      queryClient.invalidateQueries({
-        queryKey: [`/api/orders/store/${currentStore?.id}`],
-      });
-      queryClient.invalidateQueries({ queryKey: [`/api/orders/store`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-
-      // Force refetch immediately
-      if (currentStore?.id) {
-        queryClient.refetchQueries({
-          queryKey: [`/api/orders/store/${currentStore.id}`],
-        });
-      }
     } catch (error) {
-      console.error("Order status update error:", error);
       toast({
         title: "Error",
         description: "Failed to update order status",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleNotifyDeliveryPartner = async (
-    orderId: number,
-    message: string,
-    urgent: boolean = false,
-  ) => {
-    try {
-      const response = await apiPost("/api/notifications/delivery-assignment", {
-        orderId,
-        message,
-        storeId: currentStore?.id,
-        shopkeeperId: user?.id,
-        urgent,
-        notificationType: "first_accept_first_serve",
-      });
-
-      // Add to notification history
-      const newNotification = {
-        id: Date.now(),
-        orderId,
-        message,
-        urgent,
-        sentAt: new Date().toISOString(),
-        status: "sent",
-        acceptedBy: null,
-      };
-      setNotificationHistory((prev) => [newNotification, ...prev]);
-
-      toast({
-        title: urgent
-          ? "Urgent delivery notification sent"
-          : "Delivery notification sent",
-        description: "All available delivery partners have been notified",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to notify delivery partners",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleBroadcastNotification = async (
-    message: string,
-    targetOrders: number[],
-  ) => {
-    try {
-      await apiPost("/api/notifications/broadcast-delivery", {
-        message,
-        orderIds: targetOrders,
-        storeId: currentStore?.id,
-        shopkeeperId: user?.id,
-      });
-
-      toast({
-        title: "Broadcast notification sent",
-        description: `Notified delivery partners about ${targetOrders.length} orders`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send broadcast notification",
         variant: "destructive",
       });
     }
@@ -547,7 +457,7 @@ export default function ShopkeeperDashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList
-            className={`grid w-full ${currentStore ? "grid-cols-6" : "grid-cols-2"}`}
+            className={`grid w-full ${currentStore ? "grid-cols-5" : "grid-cols-2"}`}
           >
             <TabsTrigger value="overview">Overview</TabsTrigger>
             {!currentStore && (
@@ -561,7 +471,6 @@ export default function ShopkeeperDashboard() {
                   {editingProduct ? "Edit Product" : "Add Product"}
                 </TabsTrigger>
                 <TabsTrigger value="orders">Orders</TabsTrigger>
-                <TabsTrigger value="notifications">Notifications</TabsTrigger>
               </>
             )}
           </TabsList>
@@ -1052,7 +961,7 @@ export default function ShopkeeperDashboard() {
                             name="minimumOrder"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>MinimumOrder Amount (₹)</FormLabel>
+                                <FormLabel>Minimum Order Amount (₹)</FormLabel>
                                 <FormControl>
                                   <Input placeholder="e.g., 200" {...field} />
                                 </FormControl>
@@ -1713,58 +1622,33 @@ export default function ShopkeeperDashboard() {
                               {new Date(order.createdAt).toLocaleDateString()}
                             </p>
                           </div>
-                          <div className="text-right space-y-2">
+                          <div className="text-right">
                             <p className="font-semibold text-lg">
                               ₹{Number(order.totalAmount).toLocaleString()}
                             </p>
-                            <div className="flex gap-2">
-                              <Select
-                                value={order.status}
-                                onValueChange={(value) =>
-                                  handleOrderStatusUpdate(order.id, value)
-                                }
-                              >
-                                <SelectTrigger className="w-32">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">
-                                    Pending
-                                  </SelectItem>
-                                  <SelectItem value="processing">
-                                    Processing
-                                  </SelectItem>
-                                  <SelectItem value="ready_for_pickup">
-                                    Ready for Pickup
-                                  </SelectItem>
-                                  <SelectItem value="shipped">
-                                    Shipped
-                                  </SelectItem>
-                                  <SelectItem value="delivered">
-                                    Delivered
-                                  </SelectItem>
-                                  <SelectItem value="cancelled">
-                                    Cancelled
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                              {(order.status === "processing" ||
-                                order.status === "ready_for_pickup") && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    handleNotifyDeliveryPartner(
-                                      order.id,
-                                      `Order #${order.id} is ready for pickup from ${currentStore?.name}`,
-                                    )
-                                  }
-                                >
-                                  <Navigation className="h-4 w-4 mr-1" />
-                                  Notify Delivery
-                                </Button>
-                              )}
-                            </div>
+                            <Select
+                              value={order.status}
+                              onValueChange={(value) =>
+                                handleOrderStatusUpdate(order.id, value)
+                              }
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="processing">
+                                  Processing
+                                </SelectItem>
+                                <SelectItem value="shipped">Shipped</SelectItem>
+                                <SelectItem value="delivered">
+                                  Delivered
+                                </SelectItem>
+                                <SelectItem value="cancelled">
+                                  Cancelled
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
 
@@ -1780,282 +1664,6 @@ export default function ShopkeeperDashboard() {
                         </div>
                       </div>
                     ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-6">
-            {/* Quick Actions Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Ready for Pickup
-                      </p>
-                      <p className="text-2xl font-bold text-green-600">
-                        {
-                          orders.filter(
-                            (order) => order.status === "ready_for_pickup",
-                          ).length
-                        }
-                      </p>
-                    </div>
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Processing
-                      </p>
-                      <p className="text-2xl font-bold text-blue-600">
-                        {
-                          orders.filter(
-                            (order) => order.status === "processing",
-                          ).length
-                        }
-                      </p>
-                    </div>
-                    <Timer className="h-8 w-8 text-blue-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Notifications Sent
-                      </p>
-                      <p className="text-2xl font-bold text-purple-600">
-                        {notificationHistory.length}
-                      </p>
-                    </div>
-                    <Bell className="h-8 w-8 text-purple-600" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* First Accept First Serve Notification System */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Truck className="h-5 w-5" />
-                  First Accept First Serve - Delivery Notifications
-                </CardTitle>
-                <p className="text-muted-foreground">
-                  Send notifications to all available delivery partners. The
-                  first one to accept gets the delivery.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Bulk Actions */}
-                <div className="flex flex-wrap gap-3 p-4 bg-gray-50 rounded-lg">
-                  <Button
-                    onClick={() => {
-                      const readyOrders = orders.filter(
-                        (order) => order.status === "ready_for_pickup",
-                      );
-                      if (readyOrders.length > 0) {
-                        handleBroadcastNotification(
-                          `🚨 URGENT: ${readyOrders.length} orders ready for immediate pickup from ${currentStore?.name}`,
-                          readyOrders.map((o) => o.id),
-                        );
-                      }
-                    }}
-                    disabled={
-                      orders.filter(
-                        (order) => order.status === "ready_for_pickup",
-                      ).length === 0
-                    }
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    <AlertCircle className="h-4 w-4 mr-2" />
-                    Broadcast All Ready Orders (Urgent)
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const processingOrders = orders.filter(
-                        (order) => order.status === "processing",
-                      );
-                      if (processingOrders.length > 0) {
-                        handleBroadcastNotification(
-                          `📦 ${processingOrders.length} orders being prepared at ${currentStore?.name}`,
-                          processingOrders.map((o) => o.id),
-                        );
-                      }
-                    }}
-                    disabled={
-                      orders.filter((order) => order.status === "processing")
-                        .length === 0
-                    }
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    Notify About Processing Orders
-                  </Button>
-                </div>
-
-                {/* Individual Order Notifications */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg">
-                    Individual Order Notifications
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {orders
-                      .filter(
-                        (order) =>
-                          order.status === "processing" ||
-                          order.status === "ready_for_pickup",
-                      )
-                      .map((order) => (
-                        <div
-                          key={order.id}
-                          className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-medium">Order #{order.id}</h4>
-                              <p className="text-sm text-muted-foreground">
-                                {order.customerName}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {order.phone}
-                              </p>
-                              <Badge
-                                variant={
-                                  order.status === "ready_for_pickup"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                                className={
-                                  order.status === "ready_for_pickup"
-                                    ? "bg-green-100 text-green-800"
-                                    : ""
-                                }
-                              >
-                                {order.status.replace("_", " ").toUpperCase()}
-                              </Badge>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-semibold">
-                                ₹{Number(order.totalAmount).toLocaleString()}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(order.createdAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="text-sm text-muted-foreground">
-                            <p className="truncate">
-                              📍 {order.shippingAddress}
-                            </p>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Button
-                              size="sm"
-                              className="w-full bg-red-600 hover:bg-red-700"
-                              onClick={() =>
-                                handleNotifyDeliveryPartner(
-                                  order.id,
-                                  `🚨 URGENT PICKUP: Order #${order.id} ready NOW from ${currentStore?.name}! Customer: ${order.customerName}, Amount: ₹${order.totalAmount}. First to accept gets this delivery!`,
-                                  true,
-                                )
-                              }
-                            >
-                              <AlertCircle className="h-4 w-4 mr-2" />
-                              Send Urgent Alert (First Accept First Serve)
-                            </Button>
-
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full"
-                              onClick={() =>
-                                handleNotifyDeliveryPartner(
-                                  order.id,
-                                  `📦 Pickup Available: Order #${order.id} at ${currentStore?.name}. Customer: ${order.customerName}, Amount: ₹${order.totalAmount}. Accept to claim this delivery!`,
-                                  false,
-                                )
-                              }
-                            >
-                              <Send className="h-4 w-4 mr-2" />
-                              Send Standard Notification
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-
-                  {orders.filter(
-                    (order) =>
-                      order.status === "processing" ||
-                      order.status === "ready_for_pickup",
-                  ).length === 0 && (
-                    <div className="text-center py-8">
-                      <Truck className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">
-                        No orders ready for delivery notifications
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Orders with "Processing" or "Ready for Pickup" status
-                        will appear here
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Notification History */}
-                {notificationHistory.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">
-                      Recent Notifications
-                    </h3>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {notificationHistory.slice(0, 10).map((notification) => (
-                        <div
-                          key={notification.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            {notification.urgent ? (
-                              <AlertCircle className="h-4 w-4 text-red-500" />
-                            ) : (
-                              <Bell className="h-4 w-4 text-blue-500" />
-                            )}
-                            <div>
-                              <p className="text-sm font-medium">
-                                Order #{notification.orderId}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(notification.sentAt).toLocaleString()}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge
-                            variant={
-                              notification.urgent ? "destructive" : "secondary"
-                            }
-                          >
-                            {notification.urgent ? "Urgent" : "Standard"}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 )}
               </CardContent>
