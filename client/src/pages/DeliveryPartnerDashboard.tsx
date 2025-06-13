@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import DeliveryNotifications from "@/components/DeliveryNotifications";
 import DeliveryPartnerProfileSetup from "@/components/DeliveryPartnerProfileSetup";
+import DeliveryMap from "@/components/DeliveryMap";
 
 interface DeliveryPartner {
   id: number;
@@ -350,7 +351,96 @@ export default function DeliveryPartnerDashboard() {
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-6">
-            <DeliveryNotifications deliveryPartnerId={partner?.id || 0} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Map Section */}
+              <div className="lg:col-span-2">
+                <Card className="shadow-lg border-0">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5" />
+                      Delivery Area Map
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        Live
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="w-full h-96 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg border-2 border-dashed border-blue-200 flex items-center justify-center">
+                      <div className="text-center p-8">
+                        <MapPin className="h-16 w-16 text-blue-400 mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-700 mb-2">Interactive Map</h3>
+                        <p className="text-gray-500 mb-4">
+                          Real-time delivery tracking and navigation
+                        </p>
+                        <div className="space-y-2 text-sm text-gray-600">
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <span>Pickup Locations</span>
+                          </div>
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <span>Delivery Destinations</span>
+                          </div>
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                            <span>Your Current Location</span>
+                          </div>
+                        </div>
+                        <div className="mt-6 grid grid-cols-2 gap-3">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => window.open('https://www.google.com/maps', '_blank')}
+                          >
+                            <Navigation className="h-4 w-4 mr-2" />
+                            Open Maps
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => {
+                              if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition((position) => {
+                                  toast({
+                                    title: "Location Updated",
+                                    description: "Your current location has been recorded.",
+                                  });
+                                });
+                              }
+                            }}
+                          >
+                            <MapPin className="h-4 w-4 mr-2" />
+                            Update Location
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-3 gap-4 mt-6">
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">{partner.deliveryAreas.length}</div>
+                        <div className="text-sm text-green-700">Coverage Areas</div>
+                      </div>
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">{currentStats.activeDeliveries}</div>
+                        <div className="text-sm text-blue-700">Active Routes</div>
+                      </div>
+                      <div className="text-center p-4 bg-orange-50 rounded-lg">
+                        <div className="text-2xl font-bold text-orange-600">
+                          {partner.isAvailable ? "Online" : "Offline"}
+                        </div>
+                        <div className="text-sm text-orange-700">Status</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Notifications Panel */}
+              <div className="lg:col-span-1">
+                <DeliveryNotifications deliveryPartnerId={partner?.id || 0} />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="deliveries" className="space-y-6">

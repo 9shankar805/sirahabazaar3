@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +24,8 @@ import {
   TrendingUp
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import DeliveryNotifications from "@/components/DeliveryNotifications";
+import DeliveryMap from "@/components/DeliveryMap";
 import DeliveryPartnerProfileSetup from "@/components/DeliveryPartnerProfileSetup";
 
 interface DeliveryOrder {
@@ -528,7 +529,7 @@ export default function DeliveryPartnerTest() {
                     <div className={`p-3 rounded-full ${getNotificationColor(notification.type)}`}>
                       {getNotificationIcon(notification.type)}
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-semibold text-lg">{notification.title}</h3>
@@ -541,9 +542,9 @@ export default function DeliveryPartnerTest() {
                           </span>
                         </div>
                       </div>
-                      
+
                       <p className="text-muted-foreground mb-3">{notification.message}</p>
-                      
+
                       {notification.deliveryDetails && (
                         <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg mb-4">
                           <div className="space-y-2">
@@ -562,7 +563,7 @@ export default function DeliveryPartnerTest() {
                               </span>
                             </div>
                           </div>
-                          
+
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-sm">
                               <DollarSign className="h-4 w-4 text-green-600" />
@@ -595,7 +596,7 @@ export default function DeliveryPartnerTest() {
                           </div>
                         </div>
                       )}
-                      
+
                       {notification.type === 'new_delivery' && (
                         <div className="flex gap-2">
                           <Button 
@@ -673,7 +674,7 @@ export default function DeliveryPartnerTest() {
                       <p className="text-sm text-muted-foreground pl-6">
                         {delivery.pickupAddress}
                       </p>
-                      
+
                       <div className="flex items-center gap-2 text-sm">
                         <MapPin className="h-4 w-4 text-green-500" />
                         <span className="font-medium">Delivery:</span>
@@ -682,7 +683,7 @@ export default function DeliveryPartnerTest() {
                         {delivery.deliveryAddress}
                       </p>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm">
                         <DollarSign className="h-4 w-4 text-green-600" />
@@ -725,7 +726,7 @@ export default function DeliveryPartnerTest() {
                         Mark Picked Up
                       </Button>
                     )}
-                    
+
                     {delivery.status === 'picked_up' && (
                       <Button 
                         size="sm"
@@ -736,7 +737,7 @@ export default function DeliveryPartnerTest() {
                         Start Delivery
                       </Button>
                     )}
-                    
+
                     {delivery.status === 'in_transit' && (
                       <Button 
                         size="sm"
@@ -747,7 +748,7 @@ export default function DeliveryPartnerTest() {
                         Mark Delivered
                       </Button>
                     )}
-                    
+
                     <Button 
                       size="sm" 
                       variant="outline"
@@ -756,7 +757,7 @@ export default function DeliveryPartnerTest() {
                       <Navigation className="h-4 w-4 mr-2" />
                       Navigate
                     </Button>
-                    
+
                     <Button 
                       size="sm" 
                       variant="outline"
@@ -801,7 +802,7 @@ export default function DeliveryPartnerTest() {
                       Pickup: Green Valley Restaurant → Delivery: DLF Phase 2
                     </p>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <Button className="h-12" onClick={() => toast({
                       title: "Location Sharing Started",
@@ -818,7 +819,7 @@ export default function DeliveryPartnerTest() {
                       Upload Proof
                     </Button>
                   </div>
-                  
+
                   <div className="bg-gray-100 h-64 rounded-lg flex items-center justify-center">
                     <div className="text-center">
                       <MapPin className="h-12 w-12 mx-auto mb-2 text-gray-400" />
@@ -903,6 +904,28 @@ export default function DeliveryPartnerTest() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+          <TabsContent value="tracking" className="space-y-4">
+            <DeliveryMap
+              deliveryPartnerId={user?.id}
+              pickupLocation={{
+                lat: 26.4499,
+                lng: 80.3319,
+                address: "Tech Store, Mall Road, Kanpur, Uttar Pradesh"
+              }}
+              deliveryLocation={{
+                lat: 26.4599,
+                lng: 80.3419,
+                address: "Customer Location, Civil Lines, Kanpur, Uttar Pradesh"
+              }}
+              onLocationUpdate={(location) => {
+                console.log('Location updated:', location);
+                toast({
+                  title: "Location Updated",
+                  description: "Your location has been shared with customers.",
+                });
+              }}
+            />
           </TabsContent>
         </Tabs>
       </div>
