@@ -413,34 +413,107 @@ export default function Register() {
                 <FormField
                   control={form.control}
                   name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            placeholder="Create a password"
-                            {...field}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const password = field.value || "";
+                    
+                    // Calculate password strength
+                    let strength = 0;
+                    let strengthText = "Very Weak";
+                    let strengthColor = "bg-red-500";
+                    
+                    if (password.length >= 8) strength += 20;
+                    if (password.match(/[a-z]/)) strength += 20;
+                    if (password.match(/[A-Z]/)) strength += 20;
+                    if (password.match(/[0-9]/)) strength += 20;
+                    if (password.match(/[^a-zA-Z0-9]/)) strength += 20;
+                    
+                    if (strength >= 80) {
+                      strengthText = "Very Strong";
+                      strengthColor = "bg-green-500";
+                    } else if (strength >= 60) {
+                      strengthText = "Strong";
+                      strengthColor = "bg-blue-500";
+                    } else if (strength >= 40) {
+                      strengthText = "Medium";
+                      strengthColor = "bg-yellow-500";
+                    } else if (strength >= 20) {
+                      strengthText = "Weak";
+                      strengthColor = "bg-orange-500";
+                    }
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Create a password"
+                              {...field}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </FormControl>
+                        {password && (
+                          <div className="mt-2 space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">Password Strength:</span>
+                              <span className={`font-medium ${
+                                strength >= 80 ? 'text-green-600' :
+                                strength >= 60 ? 'text-blue-600' :
+                                strength >= 40 ? 'text-yellow-600' :
+                                strength >= 20 ? 'text-orange-600' :
+                                'text-red-600'
+                              }`}>
+                                {strengthText}
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                              <div 
+                                className={`h-full ${strengthColor} transition-all duration-500 ease-out rounded-full`}
+                                style={{ width: `${strength}%` }}
+                              ></div>
+                            </div>
+                            <div className="text-xs text-muted-foreground space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <div className={`w-2 h-2 rounded-full ${password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'} transition-colors duration-300`}></div>
+                                <span>At least 8 characters</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <div className={`w-2 h-2 rounded-full ${password.match(/[a-z]/) ? 'bg-green-500' : 'bg-gray-300'} transition-colors duration-300`}></div>
+                                <span>Lowercase letter</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <div className={`w-2 h-2 rounded-full ${password.match(/[A-Z]/) ? 'bg-green-500' : 'bg-gray-300'} transition-colors duration-300`}></div>
+                                <span>Uppercase letter</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <div className={`w-2 h-2 rounded-full ${password.match(/[0-9]/) ? 'bg-green-500' : 'bg-gray-300'} transition-colors duration-300`}></div>
+                                <span>Number</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <div className={`w-2 h-2 rounded-full ${password.match(/[^a-zA-Z0-9]/) ? 'bg-green-500' : 'bg-gray-300'} transition-colors duration-300`}></div>
+                                <span>Special character</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 <FormField
