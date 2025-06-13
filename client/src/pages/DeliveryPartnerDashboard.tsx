@@ -9,6 +9,7 @@ import { Truck, Package, DollarSign, Clock, MapPin, CheckCircle, Star, Bell, Tre
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import DeliveryNotifications from "@/components/DeliveryNotifications";
+import DeliveryPartnerProfileSetup from "@/components/DeliveryPartnerProfileSetup";
 
 interface DeliveryPartner {
   id: number;
@@ -170,15 +171,7 @@ export default function DeliveryPartnerDashboard() {
 
   // Show dashboard for all partners (approved status is handled by admin approval process)
   if (!partner) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
-          <h2 className="text-2xl font-semibold text-gray-700 mb-2">Setting up Dashboard</h2>
-          <p className="text-gray-500">Please wait while we prepare your delivery partner account...</p>
-        </div>
-      </div>
-    );
+    return <DeliveryPartnerProfileSetup userId={user?.id || 0} />;
   }
 
   const deliveriesArray = Array.isArray(deliveries) ? deliveries : [];
