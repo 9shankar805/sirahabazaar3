@@ -43,8 +43,8 @@ export default function Navbar() {
                 />
               ) : (
                 <img 
-                  src="/attached_assets/file_00000000322861f5a3a85a8658e7af45 (2).png" 
-                  alt="Siraha Bazaar" 
+                  src="/assets/icon2.png" 
+                  alt="Shop" 
                   className="h-8 w-auto"
                 />
               )}
