@@ -35,10 +35,21 @@ export default function Navbar() {
           {/* Logo and Mode Swiper */}
           <div className="flex items-center space-x-2">
             <Link href="/" className="flex items-center space-x-1">
-              <Store className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="text-sm sm:text-lg font-bold">Siraha Bazaar</span>
+              {mode === 'food' ? (
+                <img 
+                  src="/attached_assets/file_00000000fb1c61f8876bfb7fa577e37e.png" 
+                  alt="Food Delivery" 
+                  className="h-8 w-auto"
+                />
+              ) : (
+                <img 
+                  src="/attached_assets/file_00000000322861f5a3a85a8658e7af45 (2).png" 
+                  alt="Siraha Bazaar" 
+                  className="h-8 w-auto"
+                />
+              )}
             </Link>
-            
+
             {/* Compact Mode Swiper */}
             {user?.role !== "shopkeeper" && (
               <div className="relative bg-white/10 backdrop-blur-sm rounded-lg p-1 border border-white/20">
@@ -107,7 +118,7 @@ export default function Navbar() {
                   <Home className="h-4 w-4" />
                   <span>Home</span>
                 </Link>
-                
+
                 {mode === 'shopping' ? (
                   <>
                     <Link href="/products" className="flex items-center space-x-1 hover:text-accent transition-colors">
@@ -139,7 +150,7 @@ export default function Navbar() {
                     </Link>
                   </>
                 )}
-                
+
                 {user && (
                   <Link href="/customer-dashboard" className="flex items-center space-x-1 hover:text-accent transition-colors">
                     <User className="h-4 w-4" />
