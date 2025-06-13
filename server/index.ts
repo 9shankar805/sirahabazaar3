@@ -8,6 +8,17 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
+// Ensure delivery tracking tables exist
+const ensureDeliveryTrackingTables = async () => {
+  try {
+    await runMigrations();
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+};
+
+ensureDeliveryTrackingTables();
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
