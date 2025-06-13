@@ -70,29 +70,6 @@ export default function ProductCard({ product }: ProductCardProps) {
               {discount}% OFF
             </Badge>
           )}
-          
-          {/* Wishlist Heart Icon */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/80 hover:bg-white"
-                onClick={handleWishlistToggle}
-              >
-                <Heart 
-                  className={`h-4 w-4 transition-colors ${
-                    isInWishlist(product.id) 
-                      ? "fill-red-500 text-red-500" 
-                      : "text-gray-600 hover:text-red-400"
-                  }`}
-                />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}</p>
-            </TooltipContent>
-          </Tooltip>
         </div>
         
         <div className="p-2">
@@ -127,14 +104,29 @@ export default function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
           
-          <Button
-            onClick={handleAddToCart}
-            className="w-full btn-secondary text-xs py-1 h-8"
-            size="sm"
-          >
-            <ShoppingCart className="h-3 w-3 mr-1" />
-            Add
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleAddToCart}
+              className="flex-1 btn-secondary text-xs py-1 h-8"
+              size="sm"
+            >
+              <ShoppingCart className="h-3 w-3" />
+            </Button>
+            <Button
+              onClick={handleWishlistToggle}
+              variant="outline"
+              className="text-xs py-1 h-8 w-8 p-0"
+              size="sm"
+            >
+              <Heart 
+                className={`h-3 w-3 transition-colors ${
+                  isInWishlist(product.id) 
+                    ? "fill-red-500 text-red-500" 
+                    : "text-gray-600 hover:text-red-400"
+                }`}
+              />
+            </Button>
+          </div>
         </div>
       </div>
     </Link>
