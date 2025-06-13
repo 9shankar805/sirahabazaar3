@@ -249,15 +249,17 @@ export default function Homepage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-              {mode === 'shopping' ? 'Shop by Category' : 'Browse Menu'}
+              {mode === 'shopping' ? 'Categories' : 'Menu'}
             </h2>
             <Link href={mode === 'shopping' ? "/categories" : "/food-categories"}>
-              <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto">
-                {mode === 'shopping' ? 'View All Categories' : 'View Full Menu'}
+              <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-5 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-4">
+          <div className="grid grid-cols-4 gap-2 sm:gap-4">
             {categories.map((category) => (
               <Link key={category.name} href={category.href}>
                 <div className="category-card text-center p-2 sm:p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
