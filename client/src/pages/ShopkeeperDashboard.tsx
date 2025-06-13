@@ -350,8 +350,18 @@ export default function ShopkeeperDashboard() {
     try {
       await apiPut(`/api/orders/${orderId}/status`, { status });
       toast({ title: "Order status updated successfully" });
+      
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: [`/api/orders/store/${currentStore?.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/store`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      
+      // Force refetch immediately
+      if (currentStore?.id) {
+        queryClient.refetchQueries({ queryKey: [`/api/orders/store/${currentStore.id}`] });
+      }
     } catch (error) {
+      console.error("Order status update error:", error);
       toast({
         title: "Error",
         description: "Failed to update order status",

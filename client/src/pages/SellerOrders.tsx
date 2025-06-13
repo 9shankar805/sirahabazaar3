@@ -135,9 +135,17 @@ export default function SellerOrders() {
         title: "Order Updated",
         description: "Order status has been updated successfully",
       });
+      
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ['/api/orders/store', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders/store'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      
+      // Force refetch immediately
+      queryClient.refetchQueries({ queryKey: ['/api/orders/store', user?.id] });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Order status update error:", error);
       toast({
         title: "Error",
         description: "Failed to update order status",
