@@ -835,6 +835,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isRead: false
       });
 
+      // Automatically send delivery notifications to available delivery partners
+      const deliveryPartners = await storage.getAllDeliveryPartners();
+      const availablePartners = deliveryPartners.filter(partner => 
+        partner.status === 'approved' && partner.isAvailable
+      );
+
+      if (availablePartners.length > 0) {
+        // Send first-accept-first-serve notifications to all available delivery partners
+        for (const partner of availablePartners) {
+          await storage.createNotification({
+            userId: partner.userId,
+            title: "📦 New Delivery Available",
+            message: `Order #${createdOrder.id} from ${orderData.customerName}. Amount: ₹${orderData.totalAmount}. Accept to claim this delivery!`,
+            type: "delivery_assignment",
+            orderId: createdOrder.id,
+            isRead: false,
+            data: JSON.stringify({
+              orderId: createdOrder.id,
+              customerName: orderData.customerName,
+              customerPhone: orderData.phone,
+              totalAmount: orderData.totalAmount,
+              pickupAddress: 'Store Location',
+              deliveryAddress: orderData.shippingAddress,
+              estimatedDistance: 5,
+              estimatedEarnings: Math.round(parseFloat(orderData.totalAmount) * 0.1),
+              firstAcceptFirstServe: true,
+              canAccept: true,
+              urgent: false,
+              notificationType: "first_accept_first_serve"
+            })
+          });
+        }
+      }
+
       // Clear user's cart
       await storage.clearCart(order.customerId);
 

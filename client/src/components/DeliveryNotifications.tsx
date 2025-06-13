@@ -37,7 +37,19 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
   const [acceptingOrder, setAcceptingOrder] = useState<number | null>(null);
 
   const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ["/api/delivery-notifications"],
+    queryKey: ["/api/delivery-notifications", deliveryPartnerId],
+    queryFn: async () => {
+      const response = await fetch("/api/delivery-notifications");
+      if (!response.ok) {
+        throw new Error("Failed to fetch notifications");
+      }
+      const allNotifications = await response.json();
+      // Filter notifications for this specific delivery partner
+      return allNotifications.filter((notification: DeliveryNotification) => 
+        notification.delivery_partner_id === deliveryPartnerId && notification.status === 'pending'
+      );
+    },
+    enabled: !!deliveryPartnerId,
     refetchInterval: 5000, // Poll every 5 seconds for new orders
   });
 
