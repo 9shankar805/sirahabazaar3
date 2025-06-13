@@ -3081,10 +3081,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/delivery-notifications", async (req, res) => {
     try {
-      // Return empty array for now - notifications will be added as needed
-      res.json([]);
+      // Get all pending delivery notifications for available delivery partners
+      const deliveryPartners = await storage.getAllDeliveryPartners();
+      const availablePartners = deliveryPartners.filter(partner => 
+        partner.status === 'approved' && partner.isAvailable
+      );
+
+      if (availablePartners.length === 0) {
+        return res.json([]);
+      }
+
+      // Get notifications for all available delivery partners
+      const allNotifications = [];
+      for (const partner of availablePartners) {
+        const notifications = await storage.getUserNotifications(partner.userId);
+        const deliveryNotifications = notifications.filter(n => 
+          n.type === 'delivery_assignment' || n.type === 'delivery_broadcast'
+        );
+        
+        // Transform notifications to include order details
+        for (const notification of deliveryNotifications) {
+          try {
+            const notificationData = notification.data ? JSON.parse(notification.data) : {};
+            if (notificationData.orderId || notification.orderId) {
+              const orderId = notificationData.orderId || notification.orderId;
+              const order = await storage.getOrder(orderId);
+              if (order) {
+                allNotifications.push({
+                  id: notification.id,
+                  order_id: orderId,
+                  delivery_partner_id: partner.id,
+                  status: notificationData.canAccept ? 'pending' : 'unavailable',
+                  notification_data: JSON.stringify({
+                    ...notificationData,
+                    orderId,
+                    customerName: order.customerName,
+                    customerPhone: order.phone || 'N/A',
+                    totalAmount: order.totalAmount,
+                    pickupAddress: 'Store Address',
+                    deliveryAddress: order.shippingAddress,
+                    estimatedDistance: 5,
+                    estimatedEarnings: Math.round(parseFloat(order.totalAmount) * 0.1)
+                  }),
+                  created_at: notification.createdAt,
+                  customername: order.customerName,
+                  totalamount: order.totalAmount,
+                  shippingaddress: order.shippingAddress
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Error processing notification:', err);
+          }
+        }
+      }
+
+      res.json(allNotifications);
     } catch (error) {
+      console.error("Error fetching delivery notifications:", error);
       res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  // Accept delivery notification endpoint
+  app.post("/api/delivery-notifications/:orderId/accept", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const { deliveryPartnerId } = req.body;
+
+      // Check if order is still available
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      if (order.status === 'assigned_for_delivery') {
+        return res.status(409).json({ error: "Order already assigned to another delivery partner" });
+      }
+
+      // Update order status
+      await storage.updateOrderStatus(orderId, 'assigned_for_delivery');
+
+      // Get delivery partner details
+      const partner = await storage.getDeliveryPartner(deliveryPartnerId);
+      if (!partner) {
+        return res.status(404).json({ error: "Delivery partner not found" });
+      }
+
+      // Create delivery record
+      const deliveryData = {
+        orderId,
+        deliveryPartnerId,
+        status: 'assigned',
+        deliveryFee: '50.00', // Default delivery fee
+        pickupAddress: 'Store Location',
+        deliveryAddress: order.shippingAddress,
+        estimatedDistance: 5.0, // Default 5km
+        estimatedTime: 45 // 45 minutes
+      };
+
+      const delivery = await storage.createDelivery(deliveryData);
+
+      // Notify customer about delivery assignment
+      await storage.createNotification({
+        userId: order.customerId,
+        title: "Delivery Partner Assigned",
+        message: `Your order #${orderId} has been assigned to a delivery partner. You will receive updates as your order is being delivered.`,
+        type: "delivery_update",
+        orderId: orderId
+      });
+
+      // Notify seller about delivery assignment
+      const store = await storage.getStore(order.storeId);
+      if (store) {
+        await storage.createNotification({
+          userId: store.userId,
+          title: "Order Picked Up",
+          message: `Order #${orderId} has been assigned to delivery partner ${partner.fullName}. Customer: ${order.customerName}`,
+          type: "order_update",
+          orderId: orderId
+        });
+      }
+
+      // Mark all related delivery notifications as read/completed
+      const allPartners = await storage.getAllDeliveryPartners();
+      for (const p of allPartners) {
+        const notifications = await storage.getUserNotifications(p.userId);
+        for (const notification of notifications) {
+          if (notification.orderId === orderId && 
+              (notification.type === 'delivery_assignment' || notification.type === 'delivery_broadcast')) {
+            await storage.markNotificationAsRead(notification.id);
+          }
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Order accepted successfully",
+        delivery,
+        order: { ...order, status: 'assigned_for_delivery' }
+      });
+    } catch (error) {
+      console.error("Error accepting delivery notification:", error);
+      res.status(500).json({ error: "Failed to accept delivery notification" });
     }
   });
 

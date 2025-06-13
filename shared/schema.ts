@@ -232,6 +232,7 @@ export const notifications = pgTable("notifications", {
   isRead: boolean("is_read").default(false),
   orderId: integer("order_id").references(() => orders.id),
   productId: integer("product_id").references(() => products.id),
+  data: text("data"), // JSON string for additional notification data
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
