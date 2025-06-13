@@ -8,6 +8,7 @@ import { useUser } from "@/hooks/use-user";
 import { Truck, Package, DollarSign, Clock, MapPin, CheckCircle, Star, Bell, TrendingUp, Calendar, Navigation, Phone, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import DeliveryNotifications from "@/components/DeliveryNotifications";
 
 interface DeliveryPartner {
   id: number;
@@ -241,14 +242,18 @@ export default function DeliveryPartnerDashboard() {
 
       <div className="container mx-auto p-6">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-6 mb-8 bg-white shadow-sm">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Dashboard
             </TabsTrigger>
+            <TabsTrigger value="orders" className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Available Orders
+            </TabsTrigger>
             <TabsTrigger value="deliveries" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
-              Deliveries ({pendingDeliveries.length + activeDeliveries.length})
+              My Deliveries ({pendingDeliveries.length + activeDeliveries.length})
             </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
@@ -349,6 +354,10 @@ export default function DeliveryPartnerDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="orders" className="space-y-6">
+            <DeliveryNotifications deliveryPartnerId={partner?.id || 0} />
           </TabsContent>
 
           <TabsContent value="deliveries" className="space-y-6">

@@ -3649,6 +3649,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delivery partner notifications and acceptance endpoints
+  app.get("/api/delivery-notifications", async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT dn.*, o.customerName, o.totalAmount, o.shippingAddress
+        FROM delivery_notifications dn
+        JOIN orders o ON dn.order_id = o.id
+        WHERE dn.status = 'pending'
+        ORDER BY dn.created_at DESC
+      `);
+      res.json(result.rows);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch delivery notifications" });
+    }
+  });
+
+  // Accept delivery order (first-accept-first-serve)
+  app.post("/api/delivery-notifications/:orderId/accept", async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const { deliveryPartnerId } = req.body;
+
+      // Check if order is still available
+      const orderCheck = await pool.query(`
+        SELECT * FROM delivery_notifications 
+        WHERE order_id = $1 AND status = 'pending'
+      `, [orderId]);
+
+      if (orderCheck.rows.length === 0) {
+        return res.status(409).json({ error: "Order already accepted by another delivery partner" });
+      }
+
+      // Start transaction
+      await pool.query('BEGIN');
+
+      try {
+        // Mark all notifications for this order as rejected except the accepting one
+        await pool.query(`
+          UPDATE delivery_notifications 
+          SET status = 'rejected' 
+          WHERE order_id = $1 AND delivery_partner_id != $2
+        `, [orderId, deliveryPartnerId]);
+
+        // Mark the accepting partner's notification as accepted
+        await pool.query(`
+          UPDATE delivery_notifications 
+          SET status = 'accepted' 
+          WHERE order_id = $1 AND delivery_partner_id = $2
+        `, [orderId, deliveryPartnerId]);
+
+        // Create delivery record
+        const deliveryResult = await pool.query(`
+          INSERT INTO deliveries (
+            order_id, delivery_partner_id, status, created_at
+          ) VALUES ($1, $2, 'assigned', NOW())
+          RETURNING *
+        `, [orderId, deliveryPartnerId]);
+
+        // Update order status
+        await pool.query(`
+          UPDATE orders 
+          SET status = 'assigned_for_delivery' 
+          WHERE id = $1
+        `, [orderId]);
+
+        // Get order and delivery partner details
+        const orderDetails = await pool.query(`
+          SELECT o.*, u.fullName as customerName
+          FROM orders o
+          JOIN users u ON o.customerId = u.id
+          WHERE o.id = $1
+        `, [orderId]);
+
+        const partnerDetails = await pool.query(`
+          SELECT dp.*, u.fullName, u.phone
+          FROM delivery_partners dp
+          JOIN users u ON dp.userId = u.id
+          WHERE dp.id = $1
+        `, [deliveryPartnerId]);
+
+        // Notify customer about delivery partner assignment
+        await storage.createNotification({
+          userId: orderDetails.rows[0].customerid,
+          title: "Delivery Partner Assigned",
+          message: `${partnerDetails.rows[0].fullname} will deliver your order #${orderId}`,
+          type: "delivery_assigned",
+          orderId: parseInt(orderId),
+          isRead: false
+        });
+
+        // Notify delivery partner about acceptance
+        await storage.createNotification({
+          userId: partnerDetails.rows[0].userid,
+          title: "Delivery Accepted",
+          message: `You have accepted delivery for order #${orderId}`,
+          type: "delivery_accepted",
+          orderId: parseInt(orderId),
+          isRead: false
+        });
+
+        // Commit transaction
+        await pool.query('COMMIT');
+
+        res.json({ 
+          success: true, 
+          delivery: deliveryResult.rows[0],
+          message: "Order accepted successfully"
+        });
+
+      } catch (error) {
+        await pool.query('ROLLBACK');
+        throw error;
+      }
+
+    } catch (error) {
+      console.error('Error accepting delivery:', error);
+      res.status(500).json({ error: "Failed to accept delivery" });
+    }
+  });
+
+  // Reject delivery order
+  app.post("/api/delivery-notifications/:orderId/reject", async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const { deliveryPartnerId } = req.body;
+
+      await pool.query(`
+        UPDATE delivery_notifications 
+        SET status = 'rejected' 
+        WHERE order_id = $1 AND delivery_partner_id = $2
+      `, [orderId, deliveryPartnerId]);
+
+      res.json({ success: true, message: "Order rejected" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to reject delivery" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Initialize WebSocket service for real-time tracking
