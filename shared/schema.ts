@@ -245,6 +245,74 @@ export const orderTracking = pgTable("order_tracking", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Real-time delivery tracking for HERE Maps integration
+export const deliveryLocationTracking = pgTable("delivery_location_tracking", {
+  id: serial("id").primaryKey(),
+  deliveryId: integer("delivery_id").references(() => deliveries.id).notNull(),
+  deliveryPartnerId: integer("delivery_partner_id").references(() => deliveryPartners.id).notNull(),
+  currentLatitude: decimal("current_latitude", { precision: 10, scale: 8 }).notNull(),
+  currentLongitude: decimal("current_longitude", { precision: 11, scale: 8 }).notNull(),
+  heading: decimal("heading", { precision: 5, scale: 2 }), // Direction in degrees
+  speed: decimal("speed", { precision: 8, scale: 2 }), // Speed in km/h
+  accuracy: decimal("accuracy", { precision: 8, scale: 2 }), // GPS accuracy in meters
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true),
+});
+
+// Route information for HERE Maps
+export const deliveryRoutes = pgTable("delivery_routes", {
+  id: serial("id").primaryKey(),
+  deliveryId: integer("delivery_id").references(() => deliveries.id).notNull(),
+  pickupLatitude: decimal("pickup_latitude", { precision: 10, scale: 8 }).notNull(),
+  pickupLongitude: decimal("pickup_longitude", { precision: 11, scale: 8 }).notNull(),
+  deliveryLatitude: decimal("delivery_latitude", { precision: 10, scale: 8 }).notNull(),
+  deliveryLongitude: decimal("delivery_longitude", { precision: 11, scale: 8 }).notNull(),
+  routeGeometry: text("route_geometry"), // HERE Maps polyline geometry
+  distanceMeters: integer("distance_meters").notNull(),
+  estimatedDurationSeconds: integer("estimated_duration_seconds").notNull(),
+  actualDurationSeconds: integer("actual_duration_seconds"),
+  trafficInfo: text("traffic_info"), // JSON string for traffic conditions
+  hereRouteId: text("here_route_id"), // HERE Maps route identifier
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Push notification tokens for real-time notifications
+export const pushNotificationTokens = pgTable("push_notification_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  token: text("token").notNull().unique(),
+  platform: text("platform").notNull(), // web, android, ios
+  deviceId: text("device_id"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastUsed: timestamp("last_used").defaultNow(),
+});
+
+// WebSocket sessions for real-time tracking
+export const webSocketSessions = pgTable("websocket_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  sessionId: text("session_id").notNull().unique(),
+  userType: text("user_type").notNull(), // customer, delivery_partner, shopkeeper
+  connectedAt: timestamp("connected_at").defaultNow().notNull(),
+  lastActivity: timestamp("last_activity").defaultNow(),
+  isActive: boolean("is_active").default(true),
+});
+
+// Delivery status history for detailed tracking
+export const deliveryStatusHistory = pgTable("delivery_status_history", {
+  id: serial("id").primaryKey(),
+  deliveryId: integer("delivery_id").references(() => deliveries.id).notNull(),
+  status: text("status").notNull(), // order_placed, assigned, en_route_pickup, arrived_pickup, picked_up, en_route_delivery, arrived_delivery, delivered, cancelled
+  description: text("description"),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  updatedBy: integer("updated_by").references(() => users.id),
+  metadata: text("metadata"), // JSON string for additional data
+});
+
 // Return policy and returns
 export const returnPolicies = pgTable("return_policies", {
   id: serial("id").primaryKey(),
@@ -583,16 +651,50 @@ export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({
   updatedAt: true,
 });
 
-export const insertDeliveryZoneSchema = createInsertSchema(deliveryZones).omit({
+// New tracking table insert schemas
+export const insertDeliveryLocationTrackingSchema = createInsertSchema(deliveryLocationTracking).omit({
   id: true,
-  createdAt: true,
+  timestamp: true,
 });
 
-// Type definitions
-export type DeliveryZone = typeof deliveryZones.$inferSelect;
-export type InsertDeliveryZone = typeof insertDeliveryZoneSchema._type;
+export const insertDeliveryRouteSchema = createInsertSchema(deliveryRoutes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
+export const insertPushNotificationTokenSchema = createInsertSchema(pushNotificationTokens).omit({
+  id: true,
+  createdAt: true,
+  lastUsed: true,
+});
 
+export const insertWebSocketSessionSchema = createInsertSchema(webSocketSessions).omit({
+  id: true,
+  connectedAt: true,
+  lastActivity: true,
+});
+
+export const insertDeliveryStatusHistorySchema = createInsertSchema(deliveryStatusHistory).omit({
+  id: true,
+  timestamp: true,
+});
+
+// Type definitions for the new tables
+export type DeliveryLocationTracking = typeof deliveryLocationTracking.$inferSelect;
+export type InsertDeliveryLocationTracking = typeof insertDeliveryLocationTrackingSchema._type;
+
+export type DeliveryRoute = typeof deliveryRoutes.$inferSelect;
+export type InsertDeliveryRoute = typeof insertDeliveryRouteSchema._type;
+
+export type PushNotificationToken = typeof pushNotificationTokens.$inferSelect;
+export type InsertPushNotificationToken = typeof insertPushNotificationTokenSchema._type;
+
+export type WebSocketSession = typeof webSocketSessions.$inferSelect;
+export type InsertWebSocketSession = typeof insertWebSocketSessionSchema._type;
+
+export type DeliveryStatusHistory = typeof deliveryStatusHistory.$inferSelect;
+export type InsertDeliveryStatusHistory = typeof insertDeliveryStatusHistorySchema._type;
 
 // Add insert schemas for new tables
 export const insertProductAttributeSchema = createInsertSchema(productAttributes).omit({
