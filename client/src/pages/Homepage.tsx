@@ -262,9 +262,9 @@ export default function Homepage() {
           <div className="grid grid-cols-2 gap-2 sm:gap-4">
             {categories.map((category) => (
               <Link key={category.name} href={category.href}>
-                <div className="category-card flex items-center gap-2 p-2 sm:p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                  <div className="text-lg sm:text-2xl">{category.icon}</div>
+                <div className="category-card flex items-center justify-between p-2 sm:p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
                   <div className="text-xs sm:text-sm font-semibold text-foreground">{category.name}</div>
+                  <div className="text-lg sm:text-2xl">{category.icon}</div>
                 </div>
               </Link>
             ))}
