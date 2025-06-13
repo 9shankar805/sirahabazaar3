@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiPut } from "@/lib/api";
 import NotificationCenter from "@/components/NotificationCenter";
 import ReturnPolicy from "@/components/ReturnPolicy";
+import { DeliveryTrackingMap } from "@/components/tracking/DeliveryTrackingMap";
 import type { Order, OrderItem } from "@shared/schema";
 
 const profileSchema = z.object({
@@ -182,6 +183,18 @@ export default function CustomerDashboard() {
                   >
                     <ShoppingBag className="h-4 w-4" />
                     <span>Order History</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setActiveTab("tracking")}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-3 ${
+                      activeTab === "tracking" 
+                        ? "bg-primary text-primary-foreground" 
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    <Truck className="h-4 w-4" />
+                    <span>Live Tracking</span>
                   </button>
                   
                   <button
@@ -467,6 +480,89 @@ export default function CustomerDashboard() {
                       <Button variant="outline">View All Wishlist Items</Button>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Live Delivery Tracking */}
+            {activeTab === "tracking" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Truck className="h-5 w-5" />
+                    <span>Live Delivery Tracking</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {/* Show active deliveries */}
+                  {(() => {
+                    const activeOrders = orders.filter(order => 
+                      order.status === 'shipped' || 
+                      order.status === 'processing' || 
+                      order.status === 'out for delivery'
+                    );
+                    
+                    if (activeOrders.length === 0) {
+                      return (
+                        <div className="text-center py-12">
+                          <Truck className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold mb-2">No active deliveries</h3>
+                          <p className="text-muted-foreground mb-4">
+                            You don't have any orders currently being delivered.
+                          </p>
+                          <Button>Start Shopping</Button>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-6">
+                        {activeOrders.map((order) => (
+                          <div key={order.id} className="space-y-4">
+                            <div className="flex items-center justify-between p-4 border rounded-lg">
+                              <div>
+                                <h4 className="font-medium">Order #{order.id}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  Status: <Badge variant="secondary">{order.status}</Badge>
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Total: ₹{Number(order.totalAmount).toLocaleString()}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm text-muted-foreground">
+                                  Ordered on {new Date(order.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Delivery Tracking Map for this order */}
+                            <div className="h-96 border rounded-lg">
+                              <DeliveryTrackingMap
+                                deliveryId={order.id}
+                                userType="customer"
+                                onStatusUpdate={(status) => {
+                                  // Handle status updates
+                                  console.log(`Order ${order.id} status updated to: ${status}`);
+                                }}
+                              />
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <Link href={`/orders/${order.id}/tracking`}>
+                                <Button variant="outline" size="sm">
+                                  View Full Details
+                                </Button>
+                              </Link>
+                              <Button variant="outline" size="sm">
+                                Contact Delivery Partner
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             )}

@@ -41,7 +41,7 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
     const script = document.createElement('script');
     script.src = 'https://js.api.here.com/v3/3.1/mapsjs-core.js';
     script.async = true;
-    
+
     const uiScript = document.createElement('script');
     uiScript.src = 'https://js.api.here.com/v3/3.1/mapsjs-ui.js';
     uiScript.async = true;
@@ -99,7 +99,7 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
 
       setPlatform(platform);
       setMap(mapInstance);
-      
+
       // Load tracking data
       loadTrackingData();
     } catch (error) {
@@ -110,19 +110,41 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
 
   const loadTrackingData = async () => {
     try {
-      const response = await fetch(`/api/tracking/${deliveryId}`);
-      if (!response.ok) throw new Error('Failed to load tracking data');
-      
-      const data = await response.json();
-      setTrackingData(data);
-      
-      if (map && data.route) {
-        displayRoute(data);
+      if (userType === 'customer') {
+        // For customers, get order details along with tracking
+        const orderResponse = await fetch(`/api/orders/${deliveryId}/tracking`);
+        if (!orderResponse.ok) throw new Error('Failed to fetch order data');
+        const orderData = await orderResponse.json();
+
+        // Also get delivery tracking if available
+        const trackingResponse = await fetch(`/api/deliveries/${deliveryId}/tracking`);
+        let trackingInfo = null;
+        if (trackingResponse.ok) {
+          trackingInfo = await trackingResponse.json();
+        }
+
+        setTrackingData({
+          delivery: trackingInfo?.delivery,
+          currentLocation: trackingInfo?.currentLocation,
+          route: trackingInfo?.route,
+          statusHistory: trackingInfo?.statusHistory
+        });
+      } else {
+        const response = await fetch(`/api/tracking/${deliveryId}`);
+        if (!response.ok) throw new Error('Failed to load tracking data');
+
+        const data = await response.json();
+        setTrackingData(data);
+
+        if (map && data.route) {
+          displayRoute(data);
+        }
       }
-      
+
+
       // Initialize WebSocket connection
       initializeWebSocket();
-      
+
       setIsLoading(false);
     } catch (error) {
       console.error('Error loading tracking data:', error);
@@ -134,9 +156,9 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
   const initializeWebSocket = () => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
-    
+
     const ws = new WebSocket(wsUrl);
-    
+
     ws.onopen = () => {
       console.log('WebSocket connected');
       // Authenticate
@@ -146,19 +168,19 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
         userType: userType,
         sessionId: `${Date.now()}_${Math.random()}`
       }));
-      
+
       // Subscribe to tracking updates
       ws.send(JSON.stringify({
         type: 'subscribe_tracking',
         deliveryId: deliveryId
       }));
     };
-    
+
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
       handleWebSocketMessage(message);
     };
-    
+
     ws.onclose = () => {
       console.log('WebSocket disconnected');
       // Attempt to reconnect after 3 seconds
@@ -168,11 +190,11 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
         }
       }, 3000);
     };
-    
+
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
-    
+
     setWebsocket(ws);
   };
 
@@ -213,10 +235,10 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
       `),
       { size: { w: 50, h: 50 } }
     );
-    
+
     const pickupMarker = new window.H.map.Marker(data.route.pickupLocation, { icon: pickupIcon });
     pickupMarker.setData({ type: 'pickup', address: data.delivery?.pickupAddress || 'Pickup Location' });
-    
+
     // Add info bubble for pickup
     pickupMarker.addEventListener('tap', () => {
       const bubble = new window.H.ui.InfoBubble({
@@ -224,7 +246,7 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
       }, { position: data.route.pickupLocation });
       map.getViewPort().getDefaultUI().getBubbles().addBubble(bubble);
     });
-    
+
     group.addObject(pickupMarker);
 
     // Add delivery marker (customer) - Enhanced for shopkeeper view
@@ -244,10 +266,10 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
       `),
       { size: { w: 46, h: 46 } }
     );
-    
+
     const deliveryMarker = new window.H.map.Marker(data.route.deliveryLocation, { icon: deliveryIcon });
     deliveryMarker.setData({ type: 'delivery', address: data.delivery?.deliveryAddress || 'Delivery Location' });
-    
+
     // Add info bubble for delivery
     deliveryMarker.addEventListener('tap', () => {
       const bubble = new window.H.ui.InfoBubble({
@@ -255,7 +277,7 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
       }, { position: data.route.deliveryLocation });
       map.getViewPort().getDefaultUI().getBubbles().addBubble(bubble);
     });
-    
+
     group.addObject(deliveryMarker);
 
     // Add delivery partner current location marker if available
@@ -277,13 +299,13 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
         `),
         { size: { w: 48, h: 48 } }
       );
-      
+
       const deliveryPartnerMarker = new window.H.map.Marker(
         { lat: data.currentLocation.latitude, lng: data.currentLocation.longitude },
         { icon: deliveryPartnerIcon }
       );
       deliveryPartnerMarker.setData({ type: 'delivery_partner' });
-      
+
       // Add info bubble for delivery partner
       deliveryPartnerMarker.addEventListener('tap', () => {
         const lastUpdate = new Date(data.currentLocation.timestamp).toLocaleTimeString();
@@ -292,7 +314,7 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
         }, { position: { lat: data.currentLocation.latitude, lng: data.currentLocation.longitude } });
         map.getViewPort().getDefaultUI().getBubbles().addBubble(bubble);
       });
-      
+
       group.addObject(deliveryPartnerMarker);
     }
 
@@ -301,15 +323,15 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
       try {
         const routeCoordinates = decodePolyline(data.route.polyline);
         const lineString = new window.H.geo.LineString();
-        
+
         routeCoordinates.forEach((coord: { lat: number; lng: number }) => {
           lineString.pushPoint(coord);
         });
-        
+
         const routeLine = new window.H.map.Polyline(lineString, {
           style: { strokeColor: '#3B82F6', lineWidth: 4 }
         });
-        
+
         group.addObject(routeLine);
       } catch (error) {
         console.error('Error displaying route:', error);
@@ -318,7 +340,7 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
 
     map.addObject(group);
     map.getViewPort().resize();
-    
+
     // Set view to show all markers
     const bbox = group.getBoundingBox();
     if (bbox) {
@@ -352,13 +374,13 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
       `),
       { size: { w: 24, h: 24 } }
     );
-    
+
     const currentMarker = new window.H.map.Marker(
       { lat: latitude, lng: longitude },
       { icon: currentIcon }
     );
     currentMarker.setData({ type: 'current_location' });
-    
+
     const group = map.getObjects()[0];
     if (group instanceof window.H.map.Group) {
       group.addObject(currentMarker);
@@ -374,7 +396,7 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
   const updateDeliveryStatus = (status: string, description?: string) => {
     setTrackingData(prev => {
       if (!prev) return null;
-      
+
       return {
         ...prev,
         delivery: { ...prev.delivery, status },
@@ -438,10 +460,10 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
 
   const openGoogleMapsNavigation = (destination: 'pickup' | 'delivery') => {
     if (!trackingData?.route) return;
-    
+
     const { pickupLocation, deliveryLocation } = trackingData.route;
     const targetLocation = destination === 'pickup' ? pickupLocation : deliveryLocation;
-    
+
     // Get current location for navigation
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
@@ -462,7 +484,7 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
 
   const openGoogleMapsRoute = () => {
     if (!trackingData?.route) return;
-    
+
     const { pickupLocation, deliveryLocation } = trackingData.route;
     const url = `https://www.google.com/maps/dir/${pickupLocation.lat},${pickupLocation.lng}/${deliveryLocation.lat},${deliveryLocation.lng}`;
     window.open(url, '_blank');
