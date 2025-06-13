@@ -48,6 +48,7 @@ import DeliveryPartnerDashboard from "@/pages/DeliveryPartnerDashboard";
 import DeliveryPartnerTest from "@/pages/DeliveryPartnerTest";
 import DeliveryPartnerNotifications from "@/pages/DeliveryPartnerNotifications";
 import DeliveryTrackingMap from "@/pages/DeliveryTrackingMap";
+import TrackingDemo from "@/pages/TrackingDemo";
 import DeliveryTrackingDashboard from "@/pages/DeliveryTrackingDashboard";
 import DeliveryPartnerQuickReg from "@/pages/DeliveryPartnerQuickReg";
 import AdminDeliveryPartners from "@/pages/AdminDeliveryPartners";
@@ -108,6 +109,9 @@ function AppRouter() {
         
         {/* Order Tracking Route */}
         <Route path="/orders/:orderId/tracking" component={OrderTracking} />
+        
+        {/* Real-time Tracking Demo */}
+        <Route path="/tracking-demo" component={TrackingDemo} />
         
         <Route component={NotFound} />
       </Switch>

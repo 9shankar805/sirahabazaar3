@@ -9,7 +9,7 @@ import { MapPin, Package, Truck, Users, Clock, Navigation } from 'lucide-react';
 import { DeliveryTrackingMap } from '../components/tracking/DeliveryTrackingMap';
 import { DeliveryPartnerDashboard } from '../components/tracking/DeliveryPartnerDashboard';
 
-export function TrackingDemo() {
+export default function TrackingDemo() {
   const [demoData, setDemoData] = useState({
     deliveries: [],
     deliveryPartners: [],
