@@ -51,12 +51,12 @@ export default function Categories() {
           <h1 className="text-3xl font-bold text-foreground">{pageTitle}</h1>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+        <div className="grid grid-cols-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-4">
           {categories.map((category) => (
             <Link key={category.name} href={category.href}>
-              <div className="category-card text-center hover:shadow-lg transition-shadow">
-                <div className="text-4xl mb-4">{category.icon}</div>
-                <div className="text-sm font-semibold text-foreground">{category.name}</div>
+              <div className="category-card text-center hover:shadow-lg transition-shadow p-2 sm:p-4">
+                <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">{category.icon}</div>
+                <div className="text-xs sm:text-sm font-semibold text-foreground">{category.name}</div>
               </div>
             </Link>
           ))}

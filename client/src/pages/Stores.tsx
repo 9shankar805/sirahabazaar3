@@ -431,20 +431,20 @@ export default function Stores() {
             </CardContent>
           </Card>
         ) : storesLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
             {Array.from({ length: 6 }).map((_, index) => (
               <Card key={index} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="bg-gray-200 h-32 rounded-md mb-4"></div>
-                  <div className="bg-gray-200 h-5 rounded mb-2"></div>
-                  <div className="bg-gray-200 h-4 rounded w-2/3 mb-2"></div>
-                  <div className="bg-gray-200 h-3 rounded w-1/2"></div>
+                <CardContent className="p-3">
+                  <div className="bg-gray-200 h-20 rounded-md mb-2"></div>
+                  <div className="bg-gray-200 h-3 rounded mb-1"></div>
+                  <div className="bg-gray-200 h-2 rounded w-2/3 mb-1"></div>
+                  <div className="bg-gray-200 h-2 rounded w-1/2"></div>
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : filteredStores.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
             {filteredStores.map((store) => (
               <StoreCard
                 key={store.id}

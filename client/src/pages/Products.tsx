@@ -234,13 +234,13 @@ export default function Products() {
                 </Button>
               </div>
             ) : productsLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 lg:gap-6">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3">
                 {Array.from({ length: 12 }).map((_, index) => (
                   <Card key={index} className="animate-pulse">
-                    <CardContent className="p-4">
-                      <div className="bg-gray-200 h-32 rounded-md mb-3"></div>
-                      <div className="bg-gray-200 h-4 rounded mb-2"></div>
-                      <div className="bg-gray-200 h-3 rounded w-3/4"></div>
+                    <CardContent className="p-2">
+                      <div className="bg-gray-200 h-24 rounded-md mb-2"></div>
+                      <div className="bg-gray-200 h-3 rounded mb-1"></div>
+                      <div className="bg-gray-200 h-2 rounded w-3/4"></div>
                     </CardContent>
                   </Card>
                 ))}
@@ -251,7 +251,7 @@ export default function Products() {
                 <p className="text-muted-foreground text-sm mt-2">Try adjusting your filters or search terms.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 lg:gap-6">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
