@@ -48,15 +48,15 @@ interface OrderTracking {
 const OrderTracking = () => {
   const { orderId } = useParams<{ orderId: string }>();
 
-  const { data: order, isLoading: orderLoading } = useQuery<Order>({
-    queryKey: ['/api/orders', orderId],
+  const { data: orderData, isLoading: orderLoading } = useQuery<Order>({
+    queryKey: [`/api/orders/${orderId}/tracking`],
     enabled: !!orderId,
   });
 
-  const { data: tracking, isLoading: trackingLoading } = useQuery<OrderTracking[]>({
-    queryKey: ['/api/orders', orderId, 'tracking'],
-    enabled: !!orderId,
-  });
+  // Extract order and tracking data from the response
+  const order = orderData;
+  const tracking = orderData?.tracking || [];
+  const trackingLoading = orderLoading;
 
   if (orderLoading || trackingLoading) {
     return (

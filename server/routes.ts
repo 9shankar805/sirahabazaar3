@@ -849,9 +849,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/orders/:orderId", async (req, res) => {
     try {
       const orderId = parseInt(req.params.orderId);
+      console.log(`Fetching order with ID: ${orderId}`);
+      
       const order = await storage.getOrder(orderId);
+      console.log(`Order found:`, order ? 'Yes' : 'No');
 
       if (!order) {
+        console.log(`Order ${orderId} not found in database`);
         return res.status(404).json({ error: "Order not found" });
       }
 
@@ -864,8 +868,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
 
+      console.log(`Returning order ${orderId} with ${itemsWithProducts.length} items`);
       res.json({ ...order, items: itemsWithProducts });
     } catch (error) {
+      console.error(`Error fetching order ${req.params.orderId}:`, error);
       res.status(500).json({ error: "Failed to fetch order" });
     }
   });
@@ -2068,6 +2074,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success });
     } catch (error) {
       res.status(500).json({ error: "Failed to mark all notifications as read" });
+    }
+  });
+
+  // Get order tracking information
+  app.get("/api/orders/:orderId/tracking", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      console.log(`Fetching tracking for order ID: ${orderId}`);
+      
+      // Get order details
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        console.log(`Order ${orderId} not found for tracking`);
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Get order items with product details
+      const items = await storage.getOrderItems(orderId);
+      const itemsWithProducts = await Promise.all(
+        items.map(async (item) => {
+          const product = await storage.getProduct(item.productId);
+          return { ...item, product };
+        })
+      );
+
+      // Get tracking history
+      const tracking = await storage.getOrderTracking(orderId);
+
+      console.log(`Returning tracking data for order ${orderId}`);
+      res.json({ 
+        ...order, 
+        items: itemsWithProducts,
+        tracking: tracking || []
+      });
+    } catch (error) {
+      console.error(`Error fetching order tracking ${req.params.orderId}:`, error);
+      res.status(500).json({ error: "Failed to fetch order tracking" });
     }
   });
 
