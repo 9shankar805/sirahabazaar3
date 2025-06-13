@@ -112,7 +112,9 @@ export default function ShopkeeperDashboard() {
     longitude: number;
   } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [selectedDeliveryId, setSelectedDeliveryId] = useState<number | null>(null);
+  const [selectedDeliveryId, setSelectedDeliveryId] = useState<number | null>(
+    null,
+  );
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -163,7 +165,9 @@ export default function ShopkeeperDashboard() {
     queryKey: [`/api/deliveries/store/${currentStore?.id}/active`],
     queryFn: async () => {
       if (!currentStore?.id) return [];
-      const response = await fetch(`/api/deliveries/store/${currentStore.id}/active`);
+      const response = await fetch(
+        `/api/deliveries/store/${currentStore.id}/active`,
+      );
       if (!response.ok) throw new Error("Failed to fetch active deliveries");
       return response.json();
     },
@@ -1707,7 +1711,8 @@ export default function ShopkeeperDashboard() {
                   )}
                 </CardTitle>
                 <p className="text-muted-foreground">
-                  Track delivery partners coming to pick up orders from your store
+                  Track delivery partners coming to pick up orders from your
+                  store
                 </p>
               </CardHeader>
               <CardContent>
@@ -1745,17 +1750,17 @@ export default function ShopkeeperDashboard() {
                                   delivery.status === "en_route_pickup"
                                     ? "default"
                                     : delivery.status === "assigned"
-                                    ? "secondary"
-                                    : "outline"
+                                      ? "secondary"
+                                      : "outline"
                                 }
                               >
                                 {delivery.status === "assigned"
                                   ? "Assigned"
                                   : delivery.status === "en_route_pickup"
-                                  ? "Coming to Store"
-                                  : delivery.status === "picked_up"
-                                  ? "Picked Up"
-                                  : delivery.status}
+                                    ? "Coming to Store"
+                                    : delivery.status === "picked_up"
+                                      ? "Picked Up"
+                                      : delivery.status}
                               </Badge>
                             </div>
                             <div className="space-y-1 text-sm text-muted-foreground">
@@ -1804,7 +1809,8 @@ export default function ShopkeeperDashboard() {
                               Live Tracking - Delivery #{selectedDeliveryId}
                             </CardTitle>
                             <p className="text-muted-foreground">
-                              Watch the delivery partner's real-time location as they come to your store
+                              Watch the delivery partner's real-time location as
+                              they come to your store
                             </p>
                           </CardHeader>
                           <CardContent className="p-0">
