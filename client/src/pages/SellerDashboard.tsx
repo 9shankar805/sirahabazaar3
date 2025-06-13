@@ -47,6 +47,7 @@ import { apiPost, apiPut, apiDelete } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import ImageUpload from "@/components/ImageUpload";
 import { LocationPicker } from "@/components/LocationPicker";
+import { DeliveryTrackingMap } from "@/components/tracking/DeliveryTrackingMap";
 import type {
   Product,
   Order,
@@ -111,6 +112,7 @@ export default function ShopkeeperDashboard() {
     longitude: number;
   } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [selectedDeliveryId, setSelectedDeliveryId] = useState<number | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -154,6 +156,19 @@ export default function ShopkeeperDashboard() {
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+  });
+
+  // Query for active delivery assignments for this store
+  const { data: activeDeliveries = [] } = useQuery<any[]>({
+    queryKey: [`/api/deliveries/store/${currentStore?.id}/active`],
+    queryFn: async () => {
+      if (!currentStore?.id) return [];
+      const response = await fetch(`/api/deliveries/store/${currentStore.id}/active`);
+      if (!response.ok) throw new Error("Failed to fetch active deliveries");
+      return response.json();
+    },
+    enabled: !!currentStore,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   // Form for adding/editing products
@@ -457,7 +472,7 @@ export default function ShopkeeperDashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList
-            className={`grid w-full ${currentStore ? "grid-cols-5" : "grid-cols-2"}`}
+            className={`grid w-full ${currentStore ? "grid-cols-6" : "grid-cols-2"}`}
           >
             <TabsTrigger value="overview">Overview</TabsTrigger>
             {!currentStore && (
@@ -471,6 +486,14 @@ export default function ShopkeeperDashboard() {
                   {editingProduct ? "Edit Product" : "Add Product"}
                 </TabsTrigger>
                 <TabsTrigger value="orders">Orders</TabsTrigger>
+                <TabsTrigger value="tracking">
+                  Delivery Tracking
+                  {activeDeliveries.length > 0 && (
+                    <Badge className="ml-2 bg-blue-500 text-white">
+                      {activeDeliveries.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
               </>
             )}
           </TabsList>
@@ -1664,6 +1687,135 @@ export default function ShopkeeperDashboard() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Delivery Tracking Tab */}
+          <TabsContent value="tracking" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Navigation className="h-5 w-5" />
+                  Delivery Tracking
+                  {activeDeliveries.length > 0 && (
+                    <Badge className="bg-blue-500 text-white">
+                      {activeDeliveries.length} active
+                    </Badge>
+                  )}
+                </CardTitle>
+                <p className="text-muted-foreground">
+                  Track delivery partners coming to pick up orders from your store
+                </p>
+              </CardHeader>
+              <CardContent>
+                {activeDeliveries.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">
+                      No active deliveries at the moment
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Active Deliveries List */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {activeDeliveries.map((delivery) => (
+                        <Card
+                          key={delivery.id}
+                          className={`cursor-pointer transition-all hover:shadow-md ${
+                            selectedDeliveryId === delivery.id
+                              ? "border-blue-500 bg-blue-50"
+                              : ""
+                          }`}
+                          onClick={() => setSelectedDeliveryId(delivery.id)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                <span className="text-sm font-medium">
+                                  Delivery #{delivery.id}
+                                </span>
+                              </div>
+                              <Badge
+                                variant={
+                                  delivery.status === "en_route_pickup"
+                                    ? "default"
+                                    : delivery.status === "assigned"
+                                    ? "secondary"
+                                    : "outline"
+                                }
+                              >
+                                {delivery.status === "assigned"
+                                  ? "Assigned"
+                                  : delivery.status === "en_route_pickup"
+                                  ? "Coming to Store"
+                                  : delivery.status === "picked_up"
+                                  ? "Picked Up"
+                                  : delivery.status}
+                              </Badge>
+                            </div>
+                            <div className="space-y-1 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-2">
+                                <Users className="h-3 w-3" />
+                                <span>{delivery.customerName}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Phone className="h-3 w-3" />
+                                <span>{delivery.customerPhone}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-3 w-3" />
+                                <span className="truncate">
+                                  {delivery.deliveryAddress}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <DollarSign className="h-3 w-3" />
+                                <span>₹{delivery.totalAmount}</span>
+                              </div>
+                              {delivery.deliveryPartner && (
+                                <div className="flex items-center gap-2 mt-2 p-2 bg-blue-100 rounded">
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                  <span className="text-blue-700 font-medium">
+                                    {delivery.deliveryPartner.name}
+                                  </span>
+                                  <span className="text-blue-600">
+                                    {delivery.deliveryPartner.phone}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
+                    {/* Map View */}
+                    {selectedDeliveryId && (
+                      <div className="mt-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <MapPin className="h-5 w-5" />
+                              Live Tracking - Delivery #{selectedDeliveryId}
+                            </CardTitle>
+                            <p className="text-muted-foreground">
+                              Watch the delivery partner's real-time location as they come to your store
+                            </p>
+                          </CardHeader>
+                          <CardContent className="p-0">
+                            <DeliveryTrackingMap
+                              deliveryId={selectedDeliveryId}
+                              userType="shopkeeper"
+                            />
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>

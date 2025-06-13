@@ -3,7 +3,7 @@ import {
   admins, websiteVisits, notifications, orderTracking, returnPolicies, returns,
   promotions, advertisements, productReviews, settlements, storeAnalytics, inventoryLogs,
   paymentTransactions, coupons, banners, supportTickets, siteSettings, deliveryPartners, deliveries,
-  vendorVerifications, fraudAlerts, commissions, productAttributes, adminLogs,
+  vendorVerifications, fraudAlerts, commissions, productAttributes, adminLogs, deliveryZones,
   type User, type InsertUser, type AdminUser, type InsertAdminUser, type Store, type InsertStore, 
   type Category, type InsertCategory, type Product, type InsertProduct,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
@@ -14,7 +14,7 @@ import {
   type Promotion, type InsertPromotion, type Advertisement, type InsertAdvertisement,
   type ProductReview, type InsertProductReview, type Settlement, type InsertSettlement,
   type StoreAnalytics, type InsertStoreAnalytics, type InventoryLog, type InsertInventoryLog,
-  type DeliveryPartner, type InsertDeliveryPartner, type Delivery, type InsertDelivery,
+  type DeliveryPartner, type InsertDeliveryPartner, type Delivery, type InsertDelivery, type DeliveryZone, type InsertDeliveryZone,
   type PaymentTransaction, type Coupon, type InsertCoupon, type Banner, type InsertBanner,
   type SupportTicket, type InsertSupportTicket, type SiteSetting,
   type VendorVerification, type InsertVendorVerification, type FraudAlert, type InsertFraudAlert,
@@ -32,13 +32,13 @@ export interface IStorage {
   getUserByPhone(phone: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined>;
-  
+
   // Admin user operations
   getAdminUser(id: number): Promise<AdminUser | undefined>;
   getAdminUserByEmail(email: string): Promise<AdminUser | undefined>;
   createAdminUser(adminUser: InsertAdminUser): Promise<AdminUser>;
   getAdminUsers(): Promise<AdminUser[]>;
-  
+
   // User approval operations
   getPendingUsers(): Promise<User[]>;
   approveUser(userId: number, adminId: number): Promise<User | undefined>;
@@ -188,7 +188,7 @@ export interface IStorage {
   updateSupportTicket(id: number, updates: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined>;
   getAllSiteSettings(): Promise<SiteSetting[]>;
   updateSiteSetting(key: string, value: string): Promise<SiteSetting | undefined>;
-  
+
   // Enhanced admin features
   getDashboardStats(): Promise<any>;
   getAllVendorVerifications(): Promise<VendorVerification[]>;
@@ -204,7 +204,7 @@ export interface IStorage {
   updateCommission(id: number, updates: Partial<InsertCommission>): Promise<Commission | undefined>;
   getCommissions(status?: string): Promise<Commission[]>;
   updateCommissionStatus(id: number, status: string): Promise<Commission | undefined>;
-  
+
   // Dashboard stats methods
   getTotalUsersCount(): Promise<number>;
   getTotalStoresCount(): Promise<number>;
@@ -242,10 +242,24 @@ export interface IStorage {
   createDelivery(delivery: InsertDelivery): Promise<Delivery>;
   updateDeliveryStatus(id: number, status: string, partnerId?: number): Promise<Delivery | undefined>;
   assignDeliveryToPartner(deliveryId: number, partnerId: number): Promise<Delivery | undefined>;
+  getActiveDeliveriesForStore(storeId: number): Promise<any[]>;
+
+  // Delivery tracking
+  getDeliveryTrackingData(deliveryId: number): Promise<any>;
+  updateDeliveryLocation(deliveryId: number, latitude: number, longitude: number): Promise<void>;
+  updateDeliveryStatus(deliveryId: number, status: string, description?: string): Promise<void>;
+
+  // Delivery Zone methods
+  createDeliveryZone(data: InsertDeliveryZone): Promise<DeliveryZone>;
+  getDeliveryZones(): Promise<DeliveryZone[]>;
+  getAllDeliveryZones(): Promise<DeliveryZone[]>;
+  updateDeliveryZone(id: number, data: Partial<InsertDeliveryZone>): Promise<DeliveryZone>;
+  deleteDeliveryZone(id: number): Promise<void>;
+  calculateDeliveryFee(distance: number): Promise<{ fee: number; zone: DeliveryZone | null }>;
 }
 
 export class DatabaseStorage implements IStorage {
-  
+
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -272,7 +286,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const userId = parseInt(token);
       if (isNaN(userId)) return undefined;
-      
+
       const [user] = await db.select().from(users).where(eq(users.id, userId));
       return user;
     } catch {
@@ -318,7 +332,7 @@ export class DatabaseStorage implements IStorage {
   async approveUser(userId: number, adminId: number): Promise<User | undefined> {
     try {
       console.log(`Attempting to approve user ${userId} by admin ${adminId}`);
-      
+
       // For now, we'll set approvedBy to null to avoid foreign key constraint issues
       // until we properly migrate the database schema
       const [approvedUser] = await db
@@ -331,7 +345,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(users.id, userId))
         .returning();
-      
+
       console.log('User approval successful:', approvedUser);
       return approvedUser;
     } catch (error) {
@@ -343,7 +357,7 @@ export class DatabaseStorage implements IStorage {
   async rejectUser(userId: number, adminId: number): Promise<User | undefined> {
     try {
       console.log(`Attempting to reject user ${userId} by admin ${adminId}`);
-      
+
       const [rejectedUser] = await db
         .update(users)
         .set({
@@ -354,7 +368,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(users.id, userId))
         .returning();
-      
+
       console.log('User rejection successful:', rejectedUser);
       return rejectedUser;
     } catch (error) {
@@ -400,10 +414,10 @@ export class DatabaseStorage implements IStorage {
       .replace(/\s+/g, '-') // Replace spaces with hyphens
       .replace(/-+/g, '-') // Replace multiple hyphens with single
       .trim();
-    
+
     let slug = baseSlug;
     let counter = 1;
-    
+
     // Check if slug exists and make it unique
     while (true) {
       const existingStore = await db.select().from(stores).where(eq(stores.slug, slug)).limit(1);
@@ -413,7 +427,7 @@ export class DatabaseStorage implements IStorage {
       slug = `${baseSlug}-${counter}`;
       counter++;
     }
-    
+
     const storeWithSlug = {
       ...store,
       slug,
@@ -423,7 +437,7 @@ export class DatabaseStorage implements IStorage {
       totalReviews: 0,
       state: store.state || 'Not specified'
     };
-    
+
     const [newStore] = await db.insert(stores).values(storeWithSlug).returning();
     return newStore;
   }
@@ -498,7 +512,7 @@ export class DatabaseStorage implements IStorage {
       const baseSlug = product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       let counter = 1;
       slug = baseSlug;
-      
+
       while (true) {
         const existingProduct = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
         if (existingProduct.length === 0) {
@@ -508,7 +522,7 @@ export class DatabaseStorage implements IStorage {
         counter++;
       }
     }
-    
+
     const productWithDefaults = {
       ...product,
       slug,
@@ -519,7 +533,7 @@ export class DatabaseStorage implements IStorage {
       imageUrl: product.imageUrl || "",
       images: product.images || []
     };
-    
+
     const [newProduct] = await db.insert(products).values(productWithDefaults).returning();
     return newProduct;
   }
@@ -547,18 +561,18 @@ export class DatabaseStorage implements IStorage {
   async getOrdersByStoreId(storeId: number): Promise<Order[]> {
     // Use a simple approach - get all orders and filter on the backend for now
     const allOrders = await db.select().from(orders).orderBy(desc(orders.createdAt));
-    
+
     // Filter orders that have items from this store
     const storeOrders = [];
     for (const order of allOrders) {
       const orderItemsForStore = await db.select().from(orderItems)
         .where(and(eq(orderItems.orderId, order.id), eq(orderItems.storeId, storeId)));
-      
+
       if (orderItemsForStore.length > 0) {
         storeOrders.push(order);
       }
     }
-    
+
     return storeOrders;
   }
 
@@ -834,12 +848,12 @@ export class DatabaseStorage implements IStorage {
   async getStoresWithDistance(userLat: number, userLon: number, storeType?: string): Promise<(Store & { distance: number })[]> {
     try {
       const allStores = await this.getAllStores();
-      
+
       // Filter stores by type if specified
       const filteredStores = storeType 
         ? allStores.filter(store => store.storeType === storeType)
         : allStores;
-      
+
       return filteredStores
         .filter(store => store.latitude && store.longitude) // Only include stores with coordinates
         .map(store => {
@@ -1358,7 +1372,7 @@ export class DatabaseStorage implements IStorage {
       // Calculate growth metrics (last 30 days vs previous 30 days)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
+
       const sixtyDaysAgo = new Date();
       sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
@@ -1514,11 +1528,11 @@ export class DatabaseStorage implements IStorage {
   async getCommissions(status?: string): Promise<Commission[]> {
     try {
       let query = db.select().from(commissions);
-      
+
       if (status) {
         query = query.where(eq(commissions.status, status));
       }
-      
+
       return await query.orderBy(desc(commissions.createdAt));
     } catch {
       return [];
@@ -1570,7 +1584,7 @@ export class DatabaseStorage implements IStorage {
       const result = await db.select({
         total: sql`sum(${orders.totalAmount})`
       }).from(orders).where(eq(orders.status, 'delivered'));
-      
+
       return parseFloat(result[0]?.total || '0');
     } catch {
       return 0;
@@ -1670,7 +1684,7 @@ export class DatabaseStorage implements IStorage {
     return newLog;
   }
 
-  async getAdminLogs(adminId?: number): Promise<AdminLog[]> {
+  asyncgetAdminLogs(adminId?: number): Promise<AdminLog[]> {
     try {
       if (adminId) {
         return await db.select().from(adminLogs).where(eq(adminLogs.adminId, adminId)).orderBy(adminLogs.createdAt);
@@ -1782,7 +1796,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Check if admin already exists
       const existingAdmin = await db.select().from(adminUsers).where(eq(adminUsers.email, 'admin@sirahbazaar.com')).limit(1);
-      
+
       if (existingAdmin.length === 0) {
         // Create default admin account
         await db.insert(adminUsers).values({
@@ -1995,7 +2009,7 @@ export class DatabaseStorage implements IStorage {
           role: admin.role
         };
       }
-      
+
       return null;
     } catch (error) {
       console.error('Admin authentication error:', error);
@@ -2013,7 +2027,7 @@ export class DatabaseStorage implements IStorage {
         isActive: adminUsers.isActive,
         createdAt: adminUsers.createdAt
       }).from(adminUsers);
-      
+
       return admins;
     } catch {
       return [];
@@ -2187,7 +2201,7 @@ export class DatabaseStorage implements IStorage {
       if (partnerId) {
         updates.partnerId = partnerId;
       }
-      
+
       const [updated] = await db.update(deliveries).set(updates).where(eq(deliveries.id, id)).returning();
       return updated || undefined;
     } catch {
@@ -2206,6 +2220,100 @@ export class DatabaseStorage implements IStorage {
     } catch {
       return undefined;
     }
+  }
+
+  // Get active deliveries for a specific store
+  async getActiveDeliveriesForStore(storeId: number) {
+    try {
+      const result = await db
+        .select({
+          id: deliveries.id,
+          status: deliveries.status,
+          customerName: deliveries.customerName,
+          customerPhone: deliveries.customerPhone,
+          deliveryAddress: deliveries.deliveryAddress,
+          totalAmount: deliveries.totalAmount,
+          deliveryPartnerId: deliveries.deliveryPartnerId,
+          createdAt: deliveries.createdAt,
+          // Join delivery partner info
+          deliveryPartnerName: users.fullName,
+          deliveryPartnerPhone: users.phone,
+        })
+        .from(deliveries)
+        .leftJoin(users, eq(deliveries.deliveryPartnerId, users.id))
+        .where(
+          and(
+            eq(deliveries.storeId, storeId),
+            inArray(deliveries.status, ['assigned', 'en_route_pickup', 'picked_up', 'en_route_delivery'])
+          )
+        )
+        .orderBy(desc(deliveries.createdAt));
+
+      // Format the result to include delivery partner info
+      return result.map(delivery => ({
+        ...delivery,
+        deliveryPartner: delivery.deliveryPartnerId ? {
+          id: delivery.deliveryPartnerId,
+          name: delivery.deliveryPartnerName,
+          phone: delivery.deliveryPartnerPhone
+        } : null
+      }));
+    } catch (error) {
+      console.error('Error getting active deliveries for store:', error);
+      throw error;
+    }
+  }
+
+  // Delivery tracking methods
+  async getDeliveryTrackingData(deliveryId: number) {
+    try {
+      const [deliveryResult] = await db
+        .select()
+        .from(deliveries)
+        .where(eq(deliveries.id, deliveryId))
+        .limit(1);
+
+      if (!deliveryResult) {
+        throw new Error('Delivery not found');
+      }
+
+      // Get current location
+      const [locationResult] = await db
+        .select()
+        .from(orderTracking)
+        .where(eq(orderTracking.orderId, deliveryResult.orderId))
+        .orderBy(desc(orderTracking.createdAt))
+        .limit(1);
+
+      // Get status history (from order tracking)
+      const statusHistory = await db
+        .select()
+        .from(orderTracking)
+        .where(eq(orderTracking.orderId, deliveryResult.orderId))
+        .orderBy(desc(orderTracking.createdAt));
+
+      return {
+        delivery: deliveryResult,
+        currentLocation: locationResult ? {
+          latitude: locationResult.location?.split(',')[0],
+          longitude: locationResult.location?.split(',')[1],
+          timestamp: locationResult.createdAt
+        } : null,
+        route: null, // Not implemented
+        statusHistory
+      };
+    } catch (error) {
+      console.error('Error getting delivery tracking data:', error);
+      throw error;
+    }
+  }
+
+  async updateDeliveryLocation(deliveryId: number, latitude: number, longitude: number): Promise<void> {
+    // This is not used anymore in new architecture
+  }
+
+  async updateDeliveryStatus(deliveryId: number, status: string, description?: string): Promise<void> {
+    // This is not used anymore in new architecture
   }
 
   // Delivery Zone methods
@@ -2245,11 +2353,11 @@ export class DatabaseStorage implements IStorage {
         .set(updateData)
         .where(eq(deliveryZones.id, id))
         .returning();
-      
+
       if (!zone) {
         throw new Error(`Delivery zone with id ${id} not found`);
       }
-      
+
       return zone;
     } catch (error) {
       console.error('Error updating delivery zone:', error);
@@ -2266,7 +2374,7 @@ export class DatabaseStorage implements IStorage {
   // Calculate delivery fee based on distance
   async calculateDeliveryFee(distance: number): Promise<{ fee: number; zone: DeliveryZone | null }> {
     const zones = await this.getDeliveryZones();
-    
+
     // Find the appropriate zone for this distance
     const applicableZone = zones.find(zone => {
       const minDist = parseFloat(zone.minDistance);
@@ -2278,14 +2386,14 @@ export class DatabaseStorage implements IStorage {
       // Default fee if no zone found (fallback to furthest zone)
       const furthestZone = zones
         .sort((a, b) => parseFloat(b.maxDistance) - parseFloat(a.maxDistance))[0];
-      
+
       if (furthestZone) {
         const baseFee = parseFloat(furthestZone.baseFee);
         const perKmRate = parseFloat(furthestZone.perKmRate);
         const fee = baseFee + (distance * perKmRate);
         return { fee: Math.round(fee * 100) / 100, zone: furthestZone };
       }
-      
+
       return { fee: 100, zone: null }; // Default fallback fee
     }
 
