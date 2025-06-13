@@ -1658,15 +1658,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const deliveryPartnerData = insertDeliveryPartnerSchema.parse(req.body);
       const partner = await storage.createDeliveryPartner(deliveryPartnerData);
-
-      // Create notification for admin
-      await storage.createNotification({
-        userId: 1, // Admin user ID - you might want to make this dynamic
-        title: "New Delivery Partner Application",
-        message: `A new delivery partner application has been submitted by user ${deliveryPartnerData.userId}`,
-        type: "info"
-      });
-
+      
+      console.log("Delivery partner created successfully:", partner.id);
       res.json(partner);
     } catch (error) {
       console.error("Delivery partner creation error:", error);
