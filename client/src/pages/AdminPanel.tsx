@@ -75,6 +75,11 @@ export default function AdminPanel() {
     enabled: !!adminUser,
   });
 
+  const { data: deliveryPartners = [], isLoading: partnersLoading } = useQuery({
+    queryKey: ["/api/delivery-partners"],
+    enabled: !!adminUser,
+  });
+
   const approveMutation = useMutation({
     mutationFn: async (userId: number) => {
       return await apiRequest(`/api/admin/users/${userId}/approve`, {
@@ -202,6 +207,54 @@ export default function AdminPanel() {
       toast({
         title: "Deletion failed",
         description: "Failed to delete delivery zone.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const approvePartnerMutation = useMutation({
+    mutationFn: async (partnerId: number) => {
+      return await apiRequest(`/api/delivery-partners/${partnerId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser.id }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-partners"] });
+      toast({
+        title: "Partner approved",
+        description: "Delivery partner has been approved successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Approval failed",
+        description: "Failed to approve delivery partner. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const rejectPartnerMutation = useMutation({
+    mutationFn: async ({ partnerId, reason }: { partnerId: number; reason: string }) => {
+      return await apiRequest(`/api/delivery-partners/${partnerId}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser.id, reason }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-partners"] });
+      toast({
+        title: "Partner rejected",
+        description: "Delivery partner application has been rejected.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Rejection failed",
+        description: "Failed to reject delivery partner. Please try again.",
         variant: "destructive",
       });
     },
@@ -342,6 +395,9 @@ export default function AdminPanel() {
             <TabsTrigger value="all">
               All Users ({allUsers.length})
             </TabsTrigger>
+            <TabsTrigger value="delivery-partners">
+              Delivery Partners
+            </TabsTrigger>
             <TabsTrigger value="delivery-zones">
               Delivery Zones
             </TabsTrigger>
@@ -438,6 +494,149 @@ export default function AdminPanel() {
                       ))}
                     </TableBody>
                   </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="delivery-partners">
+            <Card>
+              <CardHeader>
+                <CardTitle>Delivery Partner Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {partnersLoading ? (
+                  <div className="text-center py-8">Loading delivery partners...</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Partner ID</TableHead>
+                        <TableHead>User ID</TableHead>
+                        <TableHead>Vehicle</TableHead>
+                        <TableHead>License</TableHead>
+                        <TableHead>Areas</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Rating</TableHead>
+                        <TableHead>Total Deliveries</TableHead>
+                        <TableHead>Earnings</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(deliveryPartners as any[]).map((partner) => (
+                        <TableRow key={partner.id}>
+                          <TableCell className="font-medium">#{partner.id}</TableCell>
+                          <TableCell>{partner.userId}</TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{partner.vehicleType}</p>
+                              <p className="text-sm text-gray-500">{partner.vehicleNumber}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>{partner.drivingLicense}</TableCell>
+                          <TableCell>
+                            {partner.deliveryAreas && partner.deliveryAreas.length > 0 
+                              ? partner.deliveryAreas.join(', ') 
+                              : 'Not specified'
+                            }
+                          </TableCell>
+                          <TableCell>
+                            {partner.status === 'approved' ? (
+                              <Badge variant="default" className="bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Approved
+                              </Badge>
+                            ) : partner.status === 'pending' ? (
+                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Pending
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                {partner.status}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <span className="font-medium">{partner.rating || '0.00'}</span>
+                              <span className="text-sm text-gray-500 ml-1">/5.00</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{partner.totalDeliveries || 0}</TableCell>
+                          <TableCell>Rs. {partner.totalEarnings || '0.00'}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button size="sm" variant="outline">
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                              {partner.status === 'pending' && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => approvePartnerMutation.mutate(partner.id)}
+                                    disabled={approvePartnerMutation.isPending}
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Approve
+                                  </Button>
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button size="sm" variant="destructive">
+                                        <XCircle className="h-4 w-4 mr-1" />
+                                        Reject
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Reject Delivery Partner</DialogTitle>
+                                        <DialogDescription>
+                                          Are you sure you want to reject this delivery partner application?
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      <div>
+                                        <Textarea
+                                          placeholder="Enter reason for rejection (optional)"
+                                          value={rejectReason}
+                                          onChange={(e) => setRejectReason(e.target.value)}
+                                        />
+                                      </div>
+                                      <DialogFooter>
+                                        <Button variant="outline" onClick={() => setRejectReason("")}>
+                                          Cancel
+                                        </Button>
+                                        <Button
+                                          variant="destructive"
+                                          onClick={() => rejectPartnerMutation.mutate({
+                                            partnerId: partner.id,
+                                            reason: rejectReason
+                                          })}
+                                          disabled={rejectPartnerMutation.isPending}
+                                        >
+                                          Reject Application
+                                        </Button>
+                                      </DialogFooter>
+                                    </DialogContent>
+                                  </Dialog>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+                
+                {(deliveryPartners as any[]).length === 0 && !partnersLoading && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No delivery partners found</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
