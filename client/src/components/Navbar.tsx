@@ -37,7 +37,7 @@ export default function Navbar() {
             <Link href="/" className="flex items-center space-x-1">
               {mode === 'food' ? (
                 <img 
-                  src="/attached_assets/file_00000000fb1c61f8876bfb7fa577e37e.png" 
+                  src="/assets/icon1.png" 
                   alt="Food Delivery" 
                   className="h-8 w-auto"
                 />
