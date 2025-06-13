@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "@/components/ImageUpload";
-import AdminToggle from "@/components/AdminToggle";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -307,12 +306,9 @@ export default function Register() {
       <div className="w-full max-w-md">
         <Card>
           <CardHeader className="text-center">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <Store className="h-8 w-8 text-primary mr-2" />
-                <span className="text-2xl font-bold text-foreground">Siraha Bazaar</span>
-              </div>
-              <AdminToggle />
+            <div className="flex items-center mb-4">
+              <Store className="h-8 w-8 text-primary mr-2" />
+              <span className="text-2xl font-bold text-foreground">Siraha Bazaar</span>
             </div>
             <CardTitle className="text-2xl">Create Account</CardTitle>
             <p className="text-muted-foreground">
