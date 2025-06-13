@@ -5,8 +5,8 @@
  * This script verifies that all essential components are ready for deployment
  */
 
-const https = require('https');
-const http = require('http');
+import https from 'https';
+import http from 'http';
 
 const BASE_URL = 'http://localhost:5000';
 
@@ -17,9 +17,16 @@ async function makeRequest(endpoint, method = 'GET') {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
+        let parsedData = null;
+        try {
+          parsedData = data ? JSON.parse(data) : null;
+        } catch (e) {
+          // If not JSON, treat as HTML/text response
+          parsedData = data;
+        }
         resolve({
           status: res.statusCode,
-          data: data ? JSON.parse(data) : null,
+          data: parsedData,
           headers: res.headers
         });
       });
@@ -145,8 +152,4 @@ async function runDeploymentCheck() {
 }
 
 // Run the deployment check
-if (require.main === module) {
-  runDeploymentCheck().catch(console.error);
-}
-
-module.exports = { runDeploymentCheck };
+runDeploymentCheck().catch(console.error);
