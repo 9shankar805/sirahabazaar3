@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbars across the website while maintaining scroll functionality */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* WebKit browsers (Chrome, Safari, etc.) */
+}
+
+html, body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
 :root {
   --background: 220 14% 98%;
   /* #f8fafc - Cool white background */
