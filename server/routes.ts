@@ -2703,7 +2703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/deliveries/active-tracking", async (req, res) => {
     try {
-      const userId = req.query.User ID || req.headers['user-id'];
+      const userId = req.query.userId || req.headers['user-id'];
       if (!userId) {
         return res.status(400).json({ error: "User ID is required" });
       }
