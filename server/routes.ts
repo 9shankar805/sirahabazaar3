@@ -917,8 +917,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const user =```
-await storage.getUser(id);
+      const user = await storage.getUser(id);
 
       if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -1830,8 +1829,7 @@ await storage.getUser(id);
       const key = req.params.key;
       const { value } = req.body;
       const setting = await storage.updateSiteSetting(key, value);
-      res.json({ setting });
-    } catch (error) {
+      res.json({ setting });    } catch (error) {
       res.status(500).json({ error: "Failed to update setting" });
     }
   });
@@ -2564,7 +2562,7 @@ await storage.getUser(id);
   });
 
   // Delivery Partner Routes
-
+  // Delivery partner application API routes here
   app.post("/api/delivery-partners/signup", async (req, res) => {
     try {
       const deliveryPartnerData = insertDeliveryPartnerSchema.parse(req.body);

@@ -1,11 +1,13 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/use-user";
-import { Truck, Package, DollarSign, Clock, MapPin, CheckCircle } from "lucide-react";
+import { Truck, Package, DollarSign, Clock, MapPin, CheckCircle, Star, Bell, TrendingUp, Calendar, Navigation, Phone, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface DeliveryPartner {
   id: number;
@@ -42,12 +44,25 @@ interface Delivery {
   customerFeedback: string | null;
   customerRating: number | null;
   createdAt: string;
+  customerName?: string;
+  customerPhone?: string;
+  totalAmount?: string;
+}
+
+interface DeliveryPartnerStats {
+  totalDeliveries: number;
+  totalEarnings: number;
+  rating: number;
+  todayDeliveries: number;
+  todayEarnings: number;
+  activeDeliveries: number;
 }
 
 export default function DeliveryPartnerDashboard() {
   const { user } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedTab, setSelectedTab] = useState("dashboard");
 
   const { data: partner, isLoading: partnerLoading, error: partnerError } = useQuery({
     queryKey: ['/api/delivery-partners/user', user?.id],
@@ -55,7 +70,7 @@ export default function DeliveryPartnerDashboard() {
       const response = await fetch(`/api/delivery-partners/user?userId=${user?.id}`);
       if (!response.ok) {
         if (response.status === 404) {
-          return null; // Partner not found is a valid state
+          return null;
         }
         throw new Error('Failed to fetch partner data');
       }
@@ -71,6 +86,26 @@ export default function DeliveryPartnerDashboard() {
       const response = await fetch(`/api/deliveries/partner/${partner?.id}`);
       if (!response.ok) {
         return [];
+      }
+      return response.json();
+    },
+    enabled: !!partner?.id,
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ['/api/delivery-partners/stats', partner?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/delivery-partners/${partner?.id}/stats`);
+      if (!response.ok) {
+        // Return default stats if endpoint doesn't exist
+        return {
+          totalDeliveries: partner?.totalDeliveries || 0,
+          totalEarnings: parseFloat(partner?.totalEarnings || '0'),
+          rating: partner?.rating ? parseFloat(partner.rating.toString()) : 0,
+          todayDeliveries: 0,
+          todayEarnings: 0,
+          activeDeliveries: Array.isArray(deliveries) ? deliveries.filter((d: Delivery) => ['assigned', 'picked_up'].includes(d.status)).length : 0
+        };
       }
       return response.json();
     },
@@ -122,10 +157,11 @@ export default function DeliveryPartnerDashboard() {
 
   if (partnerLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading your dashboard...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
+          <h2 className="text-2xl font-semibold text-gray-700 mb-2">Loading Dashboard</h2>
+          <p className="text-gray-500">Please wait while we fetch your information...</p>
         </div>
       </div>
     );
@@ -133,83 +169,141 @@ export default function DeliveryPartnerDashboard() {
 
   if (!partner) {
     return (
-      <div className="container mx-auto p-6">
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <div className="p-3 bg-primary/10 rounded-full">
-                <Truck className="h-8 w-8 text-primary" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        <div className="container mx-auto">
+          <Card className="max-w-2xl mx-auto shadow-xl border-0">
+            <CardHeader className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+              <div className="flex items-center justify-center mb-4">
+                <div className="p-4 bg-white/20 rounded-full">
+                  <Truck className="h-12 w-12" />
+                </div>
               </div>
-            </div>
-            <CardTitle className="text-2xl">Delivery Partner Access Required</CardTitle>
-            <CardDescription className="text-base">
-              You need to be registered as a delivery partner to access this dashboard.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground">
-              Please contact the administrator to set up your delivery partner account.
-            </p>
-          </CardContent>
-        </Card>
+              <CardTitle className="text-3xl font-bold">Join Our Delivery Team</CardTitle>
+              <CardDescription className="text-blue-100 text-lg">
+                Start earning by delivering orders in your area
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-8 text-center">
+              <div className="space-y-6">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <DollarSign className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                    <p className="font-semibold">Flexible Earnings</p>
+                  </div>
+                  <div>
+                    <Clock className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                    <p className="font-semibold">Work Your Hours</p>
+                  </div>
+                  <div>
+                    <MapPin className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                    <p className="font-semibold">Local Deliveries</p>
+                  </div>
+                </div>
+                <p className="text-gray-600 text-lg">
+                  You need to be registered as a delivery partner to access this dashboard.
+                </p>
+                <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg">
+                  Apply Now
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (partner.status === 'pending') {
     return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-yellow-500" />
-              Application Under Review
-            </CardTitle>
-            <CardDescription>
-              Your delivery partner application is being reviewed by our team.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p>We'll notify you once your application is approved.</p>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <strong>Vehicle Type:</strong> {partner.vehicleType}
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-100 p-6">
+        <div className="container mx-auto">
+          <Card className="max-w-3xl mx-auto shadow-xl border-0">
+            <CardHeader className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-3 text-2xl">
+                <Clock className="h-8 w-8" />
+                Application Under Review
+              </CardTitle>
+              <CardDescription className="text-orange-100 text-lg">
+                Your delivery partner application is being processed by our team
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded">
+                  <p className="text-orange-800">
+                    <strong>Status:</strong> We're reviewing your application and will notify you within 24-48 hours.
+                  </p>
                 </div>
-                <div>
-                  <strong>Vehicle Number:</strong> {partner.vehicleNumber}
-                </div>
-                <div>
-                  <strong>ID Proof:</strong> {partner.idProofType} - {partner.idProofNumber}
-                </div>
-                <div>
-                  <strong>Delivery Areas:</strong> {partner.deliveryAreas.join(', ')}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg text-gray-800">Vehicle Information</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Vehicle Type:</span>
+                        <span className="font-medium capitalize">{partner.vehicleType}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Vehicle Number:</span>
+                        <span className="font-medium">{partner.vehicleNumber}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">License:</span>
+                        <span className="font-medium">{partner.drivingLicense}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg text-gray-800">Service Areas</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {partner.deliveryAreas.map((area, index) => (
+                        <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {area}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (partner.status === 'rejected') {
     return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-red-500" />
-              Application Rejected
-            </CardTitle>
-            <CardDescription>
-              Unfortunately, your delivery partner application was not approved.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Please contact support for more information or to reapply.</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 p-6">
+        <div className="container mx-auto">
+          <Card className="max-w-2xl mx-auto shadow-xl border-0">
+            <CardHeader className="bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-3 text-2xl">
+                <AlertCircle className="h-8 w-8" />
+                Application Not Approved
+              </CardTitle>
+              <CardDescription className="text-red-100 text-lg">
+                Unfortunately, your delivery partner application was not approved
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-8 text-center">
+              <div className="space-y-6">
+                <p className="text-gray-600 text-lg">
+                  Please contact our support team for more information or to reapply with updated documents.
+                </p>
+                <div className="flex gap-4 justify-center">
+                  <Button variant="outline" className="border-gray-300">
+                    Contact Support
+                  </Button>
+                  <Button className="bg-gradient-to-r from-blue-600 to-indigo-600">
+                    Reapply
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -219,268 +313,432 @@ export default function DeliveryPartnerDashboard() {
   const activeDeliveries = deliveriesArray.filter((d: Delivery) => d.status === 'picked_up');
   const completedDeliveries = deliveriesArray.filter((d: Delivery) => d.status === 'delivered');
 
-  const totalEarnings = completedDeliveries.reduce((sum: number, delivery: Delivery) => 
-    sum + parseFloat(delivery.deliveryFee), 0
-  );
+  const currentStats = stats || {
+    totalDeliveries: partner?.totalDeliveries || 0,
+    totalEarnings: parseFloat(partner?.totalEarnings || '0'),
+    rating: partner?.rating ? parseFloat(partner.rating.toString()) : 0,
+    todayDeliveries: 0,
+    todayEarnings: 0,
+    activeDeliveries: pendingDeliveries.length + activeDeliveries.length
+  };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Delivery Partner Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, {user?.fullName}</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Badge variant={partner.isAvailable ? "default" : "secondary"}>
-            {partner.isAvailable ? "Available" : "Offline"}
-          </Badge>
-          <Button
-            variant={partner.isAvailable ? "outline" : "default"}
-            onClick={() => toggleAvailability.mutate(!partner.isAvailable)}
-            disabled={toggleAvailability.isPending}
-          >
-            {partner.isAvailable ? "Go Offline" : "Go Online"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Deliveries</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{partner.totalDeliveries}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₹{totalEarnings.toFixed(2)}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Deliveries</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingDeliveries.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rating</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {partner.rating && partner.rating !== '0.00' ? `${parseFloat(partner.rating).toFixed(1)}★` : "N/A"}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Delivery Tabs */}
-      <Tabs defaultValue="pending" className="w-full">
-        <TabsList>
-          <TabsTrigger value="pending">Pending ({pendingDeliveries.length})</TabsTrigger>
-          <TabsTrigger value="active">Active ({activeDeliveries.length})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({completedDeliveries.length})</TabsTrigger>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="pending" className="space-y-4">
-          {pendingDeliveries.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No pending deliveries</p>
-              </CardContent>
-            </Card>
-          ) : (
-            pendingDeliveries.map((delivery: Delivery) => (
-              <Card key={delivery.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Order #{delivery.orderId}</CardTitle>
-                    <Badge variant="secondary">{delivery.status}</Badge>
-                  </div>
-                  <CardDescription>
-                    Delivery Fee: ₹{delivery.deliveryFee} • Distance: {delivery.estimatedDistance}km
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 text-green-500 mt-1" />
-                      <div>
-                        <p className="font-medium">Pickup</p>
-                        <p className="text-sm text-muted-foreground">{delivery.pickupAddress}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 text-red-500 mt-1" />
-                      <div>
-                        <p className="font-medium">Delivery</p>
-                        <p className="text-sm text-muted-foreground">{delivery.deliveryAddress}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'picked_up' })}
-                        disabled={updateDeliveryStatus.isPending}
-                      >
-                        Accept & Pickup
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </TabsContent>
-
-        <TabsContent value="active" className="space-y-4">
-          {activeDeliveries.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Truck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No active deliveries</p>
-              </CardContent>
-            </Card>
-          ) : (
-            activeDeliveries.map((delivery: Delivery) => (
-              <Card key={delivery.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Order #{delivery.orderId}</CardTitle>
-                    <Badge variant="default">{delivery.status}</Badge>
-                  </div>
-                  <CardDescription>
-                    Delivery Fee: ₹{delivery.deliveryFee} • Distance: {delivery.estimatedDistance}km
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 text-red-500 mt-1" />
-                      <div>
-                        <p className="font-medium">Delivery Address</p>
-                        <p className="text-sm text-muted-foreground">{delivery.deliveryAddress}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => window.open(`/delivery-map/${delivery.id}`, '_blank')}
-                        className="flex-1"
-                      >
-                        <MapPin className="h-4 w-4 mr-2" />
-                        View Route
-                      </Button>
-                      <Button
-                        onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'delivered' })}
-                        disabled={updateDeliveryStatus.isPending}
-                        className="flex-1"
-                      >
-                        Mark as Delivered
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </TabsContent>
-
-        <TabsContent value="completed" className="space-y-4">
-          {completedDeliveries.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No completed deliveries yet</p>
-              </CardContent>
-            </Card>
-          ) : (
-            completedDeliveries.map((delivery: Delivery) => (
-              <Card key={delivery.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Order #{delivery.orderId}</CardTitle>
-                    <Badge variant="outline">Completed</Badge>
-                  </div>
-                  <CardDescription>
-                    Delivered on {new Date(delivery.deliveredAt!).toLocaleDateString()}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Earnings: ₹{delivery.deliveryFee}</p>
-                      {delivery.customerRating && (
-                        <p className="text-sm text-muted-foreground">
-                          Customer Rating: {delivery.customerRating}★
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </TabsContent>
-
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <strong>Vehicle Type:</strong> {partner.vehicleType}
-                </div>
-                <div>
-                  <strong>Vehicle Number:</strong> {partner.vehicleNumber}
-                </div>
-                <div>
-                  <strong>Driving License:</strong> {partner.drivingLicense}
-                </div>
-                <div>
-                  <strong>ID Proof:</strong> {partner.idProofType} - {partner.idProofNumber}
-                </div>
-                <div className="col-span-2">
-                  <strong>Delivery Areas:</strong> {partner.deliveryAreas.join(', ')}
-                </div>
-                <div>
-                  <strong>Emergency Contact:</strong> {partner.emergencyContact}
-                </div>
-                <div>
-                  <strong>Bank Account:</strong> {partner.bankAccountNumber}
-                </div>
-                <div>
-                  <strong>IFSC Code:</strong> {partner.ifscCode}
-                </div>
-                <div>
-                  <strong>Status:</strong> 
-                  <Badge className="ml-2" variant={partner.status === 'approved' ? 'default' : 'secondary'}>
-                    {partner.status}
-                  </Badge>
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full">
+                <Truck className="h-6 w-6 text-white" />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800">Delivery Dashboard</h1>
+                <p className="text-gray-600">Welcome back, {user?.fullName}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <Badge 
+                variant={partner.isAvailable ? "default" : "secondary"}
+                className={`px-4 py-2 text-sm font-medium ${
+                  partner.isAvailable 
+                    ? "bg-green-100 text-green-800 border-green-200" 
+                    : "bg-gray-100 text-gray-800 border-gray-200"
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full mr-2 ${
+                  partner.isAvailable ? "bg-green-500" : "bg-gray-400"
+                }`}></div>
+                {partner.isAvailable ? "Online" : "Offline"}
+              </Badge>
+              <Button
+                variant={partner.isAvailable ? "outline" : "default"}
+                onClick={() => toggleAvailability.mutate(!partner.isAvailable)}
+                disabled={toggleAvailability.isPending}
+                className={partner.isAvailable 
+                  ? "border-red-200 text-red-600 hover:bg-red-50" 
+                  : "bg-green-600 hover:bg-green-700 text-white"
+                }
+              >
+                {partner.isAvailable ? "Go Offline" : "Go Online"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto p-6">
+        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-5 mb-8 bg-white shadow-sm">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="deliveries" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Deliveries ({pendingDeliveries.length + activeDeliveries.length})
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              History
+            </TabsTrigger>
+            <TabsTrigger value="earnings" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              Earnings
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Profile
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium opacity-90">Total Deliveries</CardTitle>
+                  <Package className="h-5 w-5 opacity-80" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{currentStats.totalDeliveries}</div>
+                  <p className="text-xs opacity-80 mt-1">
+                    +{currentStats.todayDeliveries} today
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium opacity-90">Total Earnings</CardTitle>
+                  <DollarSign className="h-5 w-5 opacity-80" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">₹{currentStats.totalEarnings.toFixed(2)}</div>
+                  <p className="text-xs opacity-80 mt-1">
+                    +₹{currentStats.todayEarnings.toFixed(2)} today
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0 shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium opacity-90">Active Deliveries</CardTitle>
+                  <Clock className="h-5 w-5 opacity-80" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{currentStats.activeDeliveries}</div>
+                  <p className="text-xs opacity-80 mt-1">
+                    {pendingDeliveries.length} pending, {activeDeliveries.length} in progress
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium opacity-90">Rating</CardTitle>
+                  <Star className="h-5 w-5 opacity-80" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">
+                    {currentStats.rating > 0 ? `${currentStats.rating.toFixed(1)}★` : "N/A"}
+                  </div>
+                  <p className="text-xs opacity-80 mt-1">
+                    Based on customer feedback
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Actions */}
+            <Card className="shadow-lg border-0">
+              <CardHeader>
+                <CardTitle className="text-xl">Quick Actions</CardTitle>
+                <CardDescription>Common tasks and notifications</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Button className="h-16 flex flex-col gap-2 bg-blue-600 hover:bg-blue-700">
+                    <Bell className="h-5 w-5" />
+                    <span className="text-xs">Notifications</span>
+                  </Button>
+                  <Button variant="outline" className="h-16 flex flex-col gap-2">
+                    <Navigation className="h-5 w-5" />
+                    <span className="text-xs">Navigation</span>
+                  </Button>
+                  <Button variant="outline" className="h-16 flex flex-col gap-2">
+                    <Phone className="h-5 w-5" />
+                    <span className="text-xs">Support</span>
+                  </Button>
+                  <Button variant="outline" className="h-16 flex flex-col gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    <span className="text-xs">Analytics</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="deliveries" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Pending Deliveries */}
+              <Card className="shadow-lg border-0">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-orange-500" />
+                    Pending Deliveries ({pendingDeliveries.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {pendingDeliveries.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No pending deliveries</p>
+                    </div>
+                  ) : (
+                    pendingDeliveries.map((delivery: Delivery) => (
+                      <Card key={delivery.id} className="border border-orange-200 bg-orange-50">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="font-semibold text-lg">Order #{delivery.orderId}</div>
+                            <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+                              ₹{delivery.deliveryFee}
+                            </Badge>
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-start gap-2">
+                              <MapPin className="h-4 w-4 text-green-500 mt-0.5" />
+                              <div>
+                                <p className="font-medium">Pickup</p>
+                                <p className="text-gray-600">{delivery.pickupAddress}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <MapPin className="h-4 w-4 text-red-500 mt-0.5" />
+                              <div>
+                                <p className="font-medium">Delivery</p>
+                                <p className="text-gray-600">{delivery.deliveryAddress}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-4 flex gap-2">
+                            <Button
+                              onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'picked_up' })}
+                              disabled={updateDeliveryStatus.isPending}
+                              className="flex-1 bg-green-600 hover:bg-green-700"
+                            >
+                              Accept & Pickup
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <MapPin className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Active Deliveries */}
+              <Card className="shadow-lg border-0">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Truck className="h-5 w-5 text-blue-500" />
+                    Active Deliveries ({activeDeliveries.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {activeDeliveries.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Truck className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No active deliveries</p>
+                    </div>
+                  ) : (
+                    activeDeliveries.map((delivery: Delivery) => (
+                      <Card key={delivery.id} className="border border-blue-200 bg-blue-50">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="font-semibold text-lg">Order #{delivery.orderId}</div>
+                            <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                              In Progress
+                            </Badge>
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-start gap-2">
+                              <MapPin className="h-4 w-4 text-red-500 mt-0.5" />
+                              <div>
+                                <p className="font-medium">Delivery Address</p>
+                                <p className="text-gray-600">{delivery.deliveryAddress}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-4 flex gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => window.open(`/delivery-map/${delivery.id}`, '_blank')}
+                              className="flex-1"
+                            >
+                              <Navigation className="h-4 w-4 mr-2" />
+                              Navigate
+                            </Button>
+                            <Button
+                              onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'delivered' })}
+                              disabled={updateDeliveryStatus.isPending}
+                              className="flex-1 bg-green-600 hover:bg-green-700"
+                            >
+                              Mark Delivered
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-6">
+            <Card className="shadow-lg border-0">
+              <CardHeader>
+                <CardTitle>Delivery History</CardTitle>
+                <CardDescription>Your completed deliveries</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {completedDeliveries.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg">No completed deliveries yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {completedDeliveries.map((delivery: Delivery) => (
+                      <Card key={delivery.id} className="border border-green-200 bg-green-50">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-semibold text-lg">Order #{delivery.orderId}</div>
+                              <p className="text-sm text-gray-600">
+                                Delivered on {new Date(delivery.deliveredAt!).toLocaleDateString()}
+                              </p>
+                              {delivery.customerRating && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                                  <span className="text-sm font-medium">{delivery.customerRating}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-green-600 text-lg">₹{delivery.deliveryFee}</div>
+                              <Badge variant="outline" className="border-green-300 text-green-700">
+                                Completed
+                              </Badge>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="earnings" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="shadow-lg border-0">
+                <CardHeader>
+                  <CardTitle className="text-lg">Today's Earnings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">₹{currentStats.todayEarnings.toFixed(2)}</div>
+                  <p className="text-sm text-gray-500">{currentStats.todayDeliveries} deliveries</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-lg border-0">
+                <CardHeader>
+                  <CardTitle className="text-lg">This Week</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-blue-600">₹{(currentStats.totalEarnings * 0.3).toFixed(2)}</div>
+                  <p className="text-sm text-gray-500">Estimated</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-lg border-0">
+                <CardHeader>
+                  <CardTitle className="text-lg">Total Lifetime</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-purple-600">₹{currentStats.totalEarnings.toFixed(2)}</div>
+                  <p className="text-sm text-gray-500">{currentStats.totalDeliveries} total deliveries</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="profile">
+            <Card className="shadow-lg border-0">
+              <CardHeader>
+                <CardTitle>Profile Information</CardTitle>
+                <CardDescription>Your delivery partner details</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Vehicle Details</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-gray-600">Vehicle Type:</span>
+                        <span className="font-medium capitalize">{partner.vehicleType}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-gray-600">Vehicle Number:</span>
+                        <span className="font-medium">{partner.vehicleNumber}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-gray-600">Driving License:</span>
+                        <span className="font-medium">{partner.drivingLicense}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Contact & Areas</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-gray-600">Emergency Contact:</span>
+                        <span className="font-medium">{partner.emergencyContact}</span>
+                      </div>
+                      <div className="py-2 border-b">
+                        <span className="text-gray-600">Delivery Areas:</span>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {partner.deliveryAreas.map((area, index) => (
+                            <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700">
+                              {area}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-gray-600">Status:</span>
+                        <Badge 
+                          variant={partner.status === 'approved' ? 'default' : 'secondary'}
+                          className={partner.status === 'approved' ? 'bg-green-100 text-green-800' : ''}
+                        >
+                          {partner.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
