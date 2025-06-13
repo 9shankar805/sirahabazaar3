@@ -17,6 +17,7 @@ export default function Cart() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [showManualAddress, setShowManualAddress] = useState(false);
   const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryDistance, setDeliveryDistance] = useState(0);
@@ -98,6 +99,7 @@ export default function Cart() {
       // Convert coordinates to readable address
       const address = await reverseGeocode(location.latitude, location.longitude);
       setDeliveryAddress(address);
+      setShowManualAddress(true); // Show the address input after getting location
       
       toast({
         title: "Location Found",
@@ -385,41 +387,42 @@ export default function Cart() {
                     <Label htmlFor="delivery-address" className="text-sm font-medium">
                       Delivery Address
                     </Label>
-                    <div className="flex gap-2 mt-1">
-                      <Input
-                        id="delivery-address"
-                        placeholder="Enter delivery address or use location"
-                        value={deliveryAddress}
-                        onChange={(e) => {
-                          setDeliveryAddress(e.target.value);
-                          // Clear user location when manually typing
-                          if (e.target.value !== deliveryAddress) {
-                            setUserLocation(null);
-                          }
-                        }}
-                        className="flex-1"
-                      />
+                    <div className="flex flex-wrap gap-2 mt-1">
                       <Button
                         onClick={getMyLocation}
                         disabled={isGettingLocation}
                         size="sm"
                         variant="outline"
-                        className="min-w-[44px]"
+                        className="flex items-center gap-2"
                       >
                         {isGettingLocation ? (
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                         ) : (
                           <Navigation className="h-4 w-4" />
                         )}
+                        {isGettingLocation ? "Getting Location..." : "Get My Location"}
                       </Button>
                       <Button
-                        onClick={calculateDeliveryFee}
-                        disabled={isCalculatingFee || (!deliveryAddress.trim() && !userLocation)}
+                        onClick={() => setShowManualAddress(!showManualAddress)}
                         size="sm"
                         variant="outline"
+                        className="flex items-center gap-2"
                       >
-                        <Calculator className="h-4 w-4" />
+                        <MapPin className="h-4 w-4" />
+                        Manual Address
                       </Button>
+                      {(showManualAddress || userLocation || deliveryAddress.trim()) && (
+                        <Button
+                          onClick={calculateDeliveryFee}
+                          disabled={isCalculatingFee || (!deliveryAddress.trim() && !userLocation)}
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center gap-2"
+                        >
+                          <Calculator className="h-4 w-4" />
+                          {isCalculatingFee ? "Calculating..." : "Calculate Fee"}
+                        </Button>
+                      )}
                     </div>
                     {userLocation && (
                       <p className="text-xs text-green-600 mt-1">
@@ -432,6 +435,21 @@ export default function Cart() {
                         Distance: {formatDistance(deliveryDistance)}
                         {deliveryInfo && ` • Est. ${deliveryInfo.estimatedTime} mins`}
                       </p>
+                    )}
+                    {showManualAddress && (
+                      <Input
+                        id="delivery-address"
+                        placeholder="Enter your complete delivery address"
+                        value={deliveryAddress}
+                        onChange={(e) => {
+                          setDeliveryAddress(e.target.value);
+                          // Clear user location when manually typing
+                          if (e.target.value !== deliveryAddress) {
+                            setUserLocation(null);
+                          }
+                        }}
+                        className="mt-2"
+                      />
                     )}
                   </div>
                 </div>
