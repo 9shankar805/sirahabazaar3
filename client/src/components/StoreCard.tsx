@@ -140,19 +140,17 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
               variant="outline"
               size="sm"
               onClick={openGoogleMaps}
-              className="flex-1 text-xs h-7"
+              className="flex-1 text-xs h-7 w-7 p-0"
             >
-              <ExternalLink className="h-3 w-3 mr-1" />
-              Maps
+              <ExternalLink className="h-3 w-3" />
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={getDirections}
-              className="flex-1 text-xs h-7"
+              className="flex-1 text-xs h-7 w-7 p-0"
             >
-              <Navigation className="h-3 w-3 mr-1" />
-              Directions
+              <Navigation className="h-3 w-3" />
             </Button>
           </div>
         )}
