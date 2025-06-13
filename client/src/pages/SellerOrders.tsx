@@ -102,6 +102,7 @@ export default function SellerOrders() {
   // Order items query
   const { data: orderItems, isLoading: itemsLoading } = useQuery<OrderItem[]>({
     queryKey: ['/api/order-items', selectedOrder?.id],
+    queryFn: () => fetch(`/api/order-items?orderId=${selectedOrder?.id}`).then(res => res.json()),
     enabled: !!selectedOrder?.id,
   });
 
@@ -413,15 +414,29 @@ export default function SellerOrders() {
                     <CardTitle className="text-lg">Shipping Address</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <p className="flex items-start">
                         <MapPin className="h-4 w-4 mr-2 mt-1" />
                         {selectedOrder.shippingAddress}
                       </p>
                       {selectedOrder.latitude && selectedOrder.longitude && (
-                        <p className="text-sm text-muted-foreground">
-                          Location: {selectedOrder.latitude}, {selectedOrder.longitude}
-                        </p>
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const googleMapsUrl = `https://www.google.com/maps?q=${selectedOrder.latitude},${selectedOrder.longitude}`;
+                              window.open(googleMapsUrl, '_blank');
+                            }}
+                            className="w-fit"
+                          >
+                            <MapPin className="h-4 w-4 mr-2" />
+                            View on Google Maps
+                          </Button>
+                          <p className="text-xs text-muted-foreground">
+                            Coordinates: {selectedOrder.latitude}, {selectedOrder.longitude}
+                          </p>
+                        </div>
                       )}
                     </div>
                   </CardContent>
@@ -440,11 +455,23 @@ export default function SellerOrders() {
                       <div className="space-y-3">
                         {orderItems?.map((item) => (
                           <div key={item.id} className="flex justify-between items-center p-3 border rounded-lg">
-                            <div>
-                              <p className="font-medium">Product ID: {item.productId}</p>
-                              <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
+                            <div className="flex-1">
+                              <p className="font-medium">{item.product?.name || `Product #${item.productId}`}</p>
+                              <p className="text-sm text-muted-foreground">
+                                Quantity: {item.quantity} × ₹{parseFloat(item.price).toFixed(2)}
+                              </p>
+                              {item.product?.description && (
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                                  {item.product.description}
+                                </p>
+                              )}
                             </div>
-                            <p className="font-medium">₹{parseFloat(item.price).toLocaleString()}</p>
+                            <div className="text-right">
+                              <p className="font-medium">₹{(parseFloat(item.price) * item.quantity).toLocaleString()}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Unit: ₹{parseFloat(item.price).toFixed(2)}
+                              </p>
+                            </div>
                           </div>
                         ))}
                       </div>
