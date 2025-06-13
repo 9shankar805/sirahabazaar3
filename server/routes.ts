@@ -1967,10 +1967,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Shopkeeper notification to delivery partners
+  // Enhanced first-accept-first-serve delivery notification system
   app.post("/api/notifications/delivery-assignment", async (req, res) => {
     try {
-      const { orderId, message, storeId, shopkeeperId } = req.body;
+      const { orderId, message, storeId, shopkeeperId, urgent, notificationType } = req.body;
 
       // Find available delivery partners in the area
       const deliveryPartners = await storage.getAllDeliveryPartners();
@@ -1982,21 +1982,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "No available delivery partners found" });
       }
 
-      // Send notification to all available delivery partners
+      // Send first-accept-first-serve notifications to all available delivery partners
+      const notifications = [];
       for (const partner of availablePartners) {
-        await storage.createNotification({
+        const notification = await storage.createNotification({
           userId: partner.userId,
-          title: "New Pickup Request",
+          title: urgent ? "🚨 URGENT PICKUP AVAILABLE" : "📦 New Delivery Available",
           message: message,
-          type: "delivery",
+          type: "delivery_assignment",
           orderId: orderId,
-          isRead: false
+          isRead: false,
+          data: JSON.stringify({
+            urgent,
+            notificationType: notificationType || "first_accept_first_serve",
+            storeId,
+            shopkeeperId,
+            firstAcceptFirstServe: true,
+            canAccept: true
+          })
         });
+        notifications.push(notification);
+      }
+
+      // Send push notifications if service is available
+      try {
+        for (const partner of availablePartners) {
+          await NotificationService.sendDeliveryAssignmentNotification(
+            partner.userId,
+            orderId,
+            `Store pickup for Order #${orderId}`,
+            message
+          );
+        }
+      } catch (pushError) {
+        console.log("Push notification service unavailable:", pushError);
       }
 
       res.json({ 
         success: true, 
-        message: `Notification sent to ${availablePartners.length} delivery partners` 
+        message: `First-accept-first-serve notification sent to ${availablePartners.length} delivery partners`,
+        notificationsSent: notifications.length,
+        urgent: urgent || false
       });
     } catch (error) {
       console.error("Error sending delivery notification:", error);
