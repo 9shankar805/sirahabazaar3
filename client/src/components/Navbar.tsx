@@ -39,13 +39,13 @@ export default function Navbar() {
                 <img 
                   src="/assets/icon1.png" 
                   alt="Food Delivery" 
-                  className="h-8 w-auto"
+                  className="h-8 w-auto rounded-lg"
                 />
               ) : (
                 <img 
                   src="/assets/icon2.png" 
                   alt="Shop" 
-                  className="h-8 w-auto"
+                  className="h-8 w-auto rounded-lg"
                 />
               )}
             </Link>
