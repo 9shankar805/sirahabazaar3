@@ -1684,7 +1684,7 @@ export class DatabaseStorage implements IStorage {
     return newLog;
   }
 
-  asyncgetAdminLogs(adminId?: number): Promise<AdminLog[]> {
+  async getAdminLogs(adminId?: number): Promise<AdminLog[]> {
     try {
       if (adminId) {
         return await db.select().from(adminLogs).where(eq(adminLogs.adminId, adminId)).orderBy(adminLogs.createdAt);
