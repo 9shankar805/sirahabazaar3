@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,69 +17,147 @@ import {
   Phone,
   MessageCircle
 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
 interface DeliveryNotification {
   id: number;
-  deliveryId: number;
+  order_id: number;
+  delivery_partner_id: number;
+  status: string;
+  notification_data: string;
+  created_at: string;
+  customername: string;
+  totalamount: string;
+  shippingaddress: string;
+}
+
+interface NotificationData {
   orderId: number;
-  title: string;
-  message: string;
-  type: 'new_delivery' | 'pickup_reminder' | 'delivery_update' | 'payment_received';
-  isRead: boolean;
-  createdAt: string;
-  deliveryDetails: {
-    customerName: string;
-    customerPhone: string;
-    pickupAddress: string;
-    deliveryAddress: string;
-    deliveryFee: string;
-    estimatedDistance: number;
-    specialInstructions?: string;
-  };
+  customerName: string;
+  customerPhone: string;
+  totalAmount: string;
+  pickupAddress: string;
+  deliveryAddress: string;
+  estimatedDistance: number;
+  estimatedEarnings: number;
+  latitude: string;
+  longitude: string;
+}
+
+interface ActiveDelivery {
+  id: number;
+  orderId: number;
+  status: string;
+  pickupAddress: string;
+  deliveryAddress: string;
+  deliveryFee: string;
+  estimatedTime: number;
+  customerName?: string;
+  customerPhone?: string;
 }
 
 export default function DeliveryPartnerNotifications() {
   const { user } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedNotification, setSelectedNotification] = useState<DeliveryNotification | null>(null);
+  const [acceptingOrder, setAcceptingOrder] = useState<number | null>(null);
 
-  const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ['/api/delivery-notifications', user?.id],
-    enabled: !!user?.id,
-  });
-
-  const { data: activeDeliveries = [] } = useQuery({
-    queryKey: ['/api/deliveries/active', user?.id],
-    enabled: !!user?.id,
-  });
-
-  const acceptDeliveryMutation = useMutation({
-    mutationFn: async (deliveryId: number) => {
-      const response = await fetch(`/api/deliveries/${deliveryId}/accept`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partnerId: user?.id }),
-      });
-      if (!response.ok) throw new Error('Failed to accept delivery');
+  // Get delivery partner details first
+  const { data: partner } = useQuery({
+    queryKey: ['/api/delivery-partners/user', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/delivery-partners/user?userId=${user?.id}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to fetch partner data');
+      }
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/delivery-notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/deliveries/active'] });
-      toast({
-        title: "Delivery Accepted",
-        description: "You have successfully accepted this delivery order.",
-      });
+    enabled: !!user?.id,
+  });
+
+  // Fetch delivery notifications
+  const { data: notifications = [], isLoading: notificationsLoading } = useQuery({
+    queryKey: ['/api/delivery-notifications', partner?.id],
+    queryFn: async () => {
+      const response = await fetch('/api/delivery-notifications');
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications');
+      }
+      const allNotifications = await response.json();
+      // Filter notifications for this specific delivery partner
+      return allNotifications.filter((notification: DeliveryNotification) => 
+        notification.delivery_partner_id === partner?.id && notification.status === 'pending'
+      );
     },
+    enabled: !!partner?.id,
+    refetchInterval: 5000, // Poll every 5 seconds for new orders
+  });
+
+  // Fetch active deliveries
+  const { data: activeDeliveries = [] } = useQuery({
+    queryKey: ['/api/deliveries/active', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/deliveries/active/${user?.id}`);
+      if (!response.ok) {
+        return [];
+      }
+      return response.json();
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch user notifications for history
+  const { data: userNotifications = [] } = useQuery({
+    queryKey: ['/api/notifications/user', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/notifications/user/${user?.id}`);
+      if (!response.ok) {
+        return [];
+      }
+      return response.json();
+    },
+    enabled: !!user?.id,
+  });
+
+  const acceptMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      const response = await fetch(`/api/delivery-notifications/${orderId}/accept`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deliveryPartnerId: partner?.id })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error);
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, orderId) => {
+      toast({
+        title: "Order Accepted!",
+        description: `You have successfully accepted order #${orderId}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/deliveries/active"] });
+      setAcceptingOrder(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Accept Order",
+        description: error.message,
+        variant: "destructive",
+      });
+      setAcceptingOrder(null);
+    }
   });
 
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: number) => {
-      const response = await fetch(`/api/delivery-notifications/${notificationId}/read`, {
+      const response = await fetch(`/api/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -86,64 +165,29 @@ export default function DeliveryPartnerNotifications() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/delivery-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/user'] });
     },
   });
 
-  const updateLocationMutation = useMutation({
-    mutationFn: async ({ deliveryId, location }: { deliveryId: number; location: string }) => {
-      return apiRequest(`/api/deliveries/${deliveryId}/location`, {
-        method: 'PUT',
-        body: { location },
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Location Updated",
-        description: "Your current location has been updated successfully.",
-      });
-    },
-  });
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'new_delivery':
-        return <Package className="h-5 w-5" />;
-      case 'pickup_reminder':
-        return <Clock className="h-5 w-5" />;
-      case 'delivery_update':
-        return <Navigation className="h-5 w-5" />;
-      case 'payment_received':
-        return <DollarSign className="h-5 w-5" />;
-      default:
-        return <Bell className="h-5 w-5" />;
-    }
+  const handleAcceptOrder = (orderId: number) => {
+    setAcceptingOrder(orderId);
+    acceptMutation.mutate(orderId);
   };
 
-  const getNotificationColor = (type: string) => {
-    switch (type) {
-      case 'new_delivery':
-        return "text-blue-600 bg-blue-50";
-      case 'pickup_reminder':
-        return "text-orange-600 bg-orange-50";
-      case 'delivery_update':
-        return "text-green-600 bg-green-50";
-      case 'payment_received':
-        return "text-emerald-600 bg-emerald-50";
-      default:
-        return "text-gray-600 bg-gray-50";
-    }
-  };
+  const unreadCount = userNotifications.filter((n: any) => !n.isRead).length;
 
-  const unreadCount = notifications.filter((n: any) => !n.isRead).length;
-
-  if (isLoading) {
+  if (!partner) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading your notifications...</p>
-        </div>
+      <div className="container mx-auto p-6 max-w-6xl">
+        <Card>
+          <CardContent className="py-12 text-center">
+            <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-orange-500" />
+            <h3 className="text-lg font-semibold mb-2">Delivery Partner Profile Required</h3>
+            <p className="text-muted-foreground">
+              Please complete your delivery partner profile setup to view notifications
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -166,142 +210,153 @@ export default function DeliveryPartnerNotifications() {
               {unreadCount}
             </Badge>
           )}
-          <Button variant="outline" size="sm">
-            <Navigation className="h-4 w-4 mr-2" />
-            Update Location
-          </Button>
+          <Badge 
+            variant={partner.isAvailable ? "default" : "secondary"}
+            className={partner.isAvailable 
+              ? "bg-green-100 text-green-800 border-green-200" 
+              : "bg-gray-100 text-gray-800 border-gray-200"
+            }
+          >
+            {partner.isAvailable ? "Available" : "Offline"}
+          </Badge>
         </div>
       </div>
 
-      <Tabs defaultValue="notifications" className="w-full">
+      <Tabs defaultValue="available" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="notifications">
-            Notifications ({unreadCount})
+          <TabsTrigger value="available">
+            Available Orders ({notifications.length})
           </TabsTrigger>
           <TabsTrigger value="active">
             Active Deliveries ({activeDeliveries.length})
           </TabsTrigger>
           <TabsTrigger value="history">
-            Delivery History
+            Notification History ({unreadCount})
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="notifications" className="space-y-4">
-          {notifications.length === 0 ? (
+        <TabsContent value="available" className="space-y-4">
+          {notificationsLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-6">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded mb-2 w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : notifications.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
-                <Bell className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">No notifications yet</h3>
+                <Package className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-semibold mb-2">No Available Orders</h3>
                 <p className="text-muted-foreground">
-                  You'll receive notifications here when new deliveries are assigned to you
+                  New delivery requests will appear here automatically. Make sure you're marked as available to receive orders.
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4">
-              {notifications.map((notification: any) => (
-                <Card 
-                  key={notification.id}
-                  className={`cursor-pointer transition-all hover:shadow-md ${
-                    !notification.isRead ? 'border-l-4 border-l-blue-500 bg-blue-50/30' : ''
-                  }`}
-                  onClick={() => {
-                    setSelectedNotification(notification);
-                    if (!notification.isRead) {
-                      markAsReadMutation.mutate(notification.id);
-                    }
-                  }}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className={`p-3 rounded-full ${getNotificationColor(notification.type)}`}>
-                        {getNotificationIcon(notification.type)}
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Delivery Orders</h2>
+              
+              {notifications.map((notification: DeliveryNotification) => {
+                let notificationData: NotificationData;
+                try {
+                  notificationData = JSON.parse(notification.notification_data);
+                } catch {
+                  notificationData = {
+                    orderId: notification.order_id,
+                    customerName: notification.customername,
+                    customerPhone: '',
+                    totalAmount: notification.totalamount,
+                    pickupAddress: 'Store Address',
+                    deliveryAddress: notification.shippingaddress,
+                    estimatedDistance: 5,
+                    estimatedEarnings: 50,
+                    latitude: '0',
+                    longitude: '0'
+                  };
+                }
+
+                const isAccepting = acceptingOrder === notification.order_id;
+
+                return (
+                  <Card key={notification.id} className="border-l-4 border-l-blue-500">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">Order #{notification.order_id}</CardTitle>
+                        <Badge variant="secondary">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {new Date(notification.created_at).toLocaleTimeString()}
+                        </Badge>
                       </div>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold text-lg">{notification.title}</h3>
-                          <div className="flex items-center gap-2">
-                            {!notification.isRead && (
-                              <Badge variant="secondary" className="text-xs">New</Badge>
-                            )}
-                            <span className="text-sm text-muted-foreground">
-                              {new Date(notification.createdAt).toLocaleTimeString()}
-                            </span>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <Package className="w-4 h-4 text-gray-600" />
+                            <span className="font-medium">Customer:</span>
+                            <span>{notificationData.customerName}</span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Phone className="w-4 h-4 text-gray-600" />
+                            <span className="font-medium">Phone:</span>
+                            <span>{notificationData.customerPhone || 'Not provided'}</span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <DollarSign className="w-4 h-4 text-gray-600" />
+                            <span className="font-medium">Order Value:</span>
+                            <span className="font-semibold text-green-600">₹{notificationData.totalAmount}</span>
                           </div>
                         </div>
                         
-                        <p className="text-muted-foreground mb-3">{notification.message}</p>
-                        
-                        {notification.deliveryDetails && (
-                          <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-sm">
-                                <MapPin className="h-4 w-4 text-red-500" />
-                                <span className="font-medium">Pickup:</span>
-                                <span className="text-muted-foreground">
-                                  {notification.deliveryDetails.pickupAddress}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm">
-                                <MapPin className="h-4 w-4 text-green-500" />
-                                <span className="font-medium">Delivery:</span>
-                                <span className="text-muted-foreground">
-                                  {notification.deliveryDetails.deliveryAddress}
-                                </span>
-                              </div>
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-sm">
-                                <DollarSign className="h-4 w-4 text-green-600" />
-                                <span className="font-medium">Fee:</span>
-                                <span className="text-green-600 font-semibold">
-                                  ₹{notification.deliveryDetails.deliveryFee}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm">
-                                <Navigation className="h-4 w-4 text-blue-500" />
-                                <span className="font-medium">Distance:</span>
-                                <span className="text-muted-foreground">
-                                  {notification.deliveryDetails.estimatedDistance} km
-                                </span>
-                              </div>
+                        <div className="space-y-3">
+                          <div className="flex items-start space-x-2">
+                            <MapPin className="w-4 h-4 text-gray-600 mt-0.5" />
+                            <div>
+                              <span className="font-medium block">Pickup:</span>
+                              <span className="text-sm text-gray-600">{notificationData.pickupAddress}</span>
                             </div>
                           </div>
-                        )}
-                        
-                        {notification.type === 'new_delivery' && (
-                          <div className="flex gap-2 mt-4">
-                            <Button 
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                acceptDeliveryMutation.mutate(notification.deliveryId);
-                              }}
-                              disabled={acceptDeliveryMutation.isPending}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Accept Delivery
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(`tel:${notification.deliveryDetails.customerPhone}`);
-                              }}
-                            >
-                              <Phone className="h-4 w-4 mr-2" />
-                              Call Customer
-                            </Button>
+                          
+                          <div className="flex items-start space-x-2">
+                            <MapPin className="w-4 h-4 text-gray-600 mt-0.5" />
+                            <div>
+                              <span className="font-medium block">Delivery:</span>
+                              <span className="text-sm text-gray-600">{notificationData.deliveryAddress}</span>
+                            </div>
                           </div>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      
+                      <div className="flex items-center justify-between pt-4 border-t">
+                        <div className="flex space-x-4 text-sm text-gray-600">
+                          <span>Distance: ~{notificationData.estimatedDistance} km</span>
+                          <span>Earnings: ₹{notificationData.estimatedEarnings}</span>
+                        </div>
+                        
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleAcceptOrder(notification.order_id)}
+                            disabled={isAccepting || acceptMutation.isPending}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {isAccepting ? "Accepting..." : "Accept Order"}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
@@ -310,7 +365,7 @@ export default function DeliveryPartnerNotifications() {
           {activeDeliveries.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
-                <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                <Package className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-lg font-semibold mb-2">No active deliveries</h3>
                 <p className="text-muted-foreground">
                   Your active delivery orders will appear here
@@ -319,7 +374,7 @@ export default function DeliveryPartnerNotifications() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {activeDeliveries.map((delivery: any) => (
+              {activeDeliveries.map((delivery: ActiveDelivery) => (
                 <Card key={delivery.id} className="border-l-4 border-l-green-500">
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -351,7 +406,7 @@ export default function DeliveryPartnerNotifications() {
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <Clock className="h-4 w-4 text-blue-500" />
-                          <span>Estimated: {delivery.estimatedTime} mins</span>
+                          <span>Estimated: {delivery.estimatedTime || 30} mins</span>
                         </div>
                       </div>
                     </div>
@@ -379,15 +434,47 @@ export default function DeliveryPartnerNotifications() {
         <TabsContent value="history">
           <Card>
             <CardHeader>
-              <CardTitle>Delivery History</CardTitle>
+              <CardTitle>Notification History</CardTitle>
               <CardDescription>
-                View your completed deliveries and earnings
+                View your delivery notifications and updates
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground text-center py-8">
-                Delivery history will be displayed here
-              </p>
+              {userNotifications.length === 0 ? (
+                <div className="text-center py-8">
+                  <Bell className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                  <p className="text-muted-foreground">No notifications yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {userNotifications.slice(0, 10).map((notification: any) => (
+                    <div 
+                      key={notification.id} 
+                      className={`p-4 rounded-lg border ${
+                        !notification.isRead ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{notification.title}</h4>
+                        <span className="text-sm text-gray-500">
+                          {new Date(notification.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">{notification.message}</p>
+                      {!notification.isRead && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="mt-2"
+                          onClick={() => markAsReadMutation.mutate(notification.id)}
+                        >
+                          Mark as Read
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
