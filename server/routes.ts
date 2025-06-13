@@ -2030,6 +2030,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Broadcast delivery notifications for multiple orders
+  app.post("/api/notifications/broadcast-delivery", async (req, res) => {
+    try {
+      const { message, orderIds, storeId, shopkeeperId } = req.body;
+      
+      // Get all active delivery partners
+      const deliveryPartners = await storage.getAllDeliveryPartners();
+      const availablePartners = deliveryPartners.filter(partner => 
+        partner.status === 'approved' && partner.isAvailable
+      );
+
+      if (availablePartners.length === 0) {
+        return res.status(404).json({ error: "No available delivery partners found" });
+      }
+      
+      // Send broadcast notifications to all delivery partners
+      const notifications = [];
+      for (const partner of availablePartners) {
+        const notification = await storage.createNotification({
+          userId: partner.userId,
+          title: "📢 Multiple Deliveries Available",
+          message: message,
+          type: "delivery_broadcast",
+          isRead: false,
+          data: JSON.stringify({
+            orderIds,
+            storeId,
+            shopkeeperId,
+            broadcast: true,
+            firstAcceptFirstServe: true
+          })
+        });
+        notifications.push(notification);
+      }
+
+      res.json({
+        success: true,
+        message: "Broadcast notifications sent to all delivery partners",
+        notificationsSent: notifications.length,
+        ordersCount: orderIds.length
+      });
+    } catch (error) {
+      console.error("Error sending broadcast notification:", error);
+      res.status(500).json({ error: "Failed to send broadcast notification" });
+    }
+  });
+
+  // Accept delivery assignment (first-accept-first-serve)
+  app.post("/api/delivery/accept-assignment", async (req, res) => {
+    try {
+      const { deliveryPartnerId, orderId, notificationId } = req.body;
+      
+      // Check if order is still available (not already assigned)
+      const existingDeliveries = await storage.getDeliveriesByOrderId(orderId);
+      const assignedDelivery = existingDeliveries.find(d => d.deliveryPartnerId && d.status !== 'cancelled');
+      
+      if (assignedDelivery) {
+        return res.status(409).json({ 
+          error: "Order already assigned to another delivery partner",
+          alreadyAssigned: true
+        });
+      }
+
+      // Create delivery assignment
+      const delivery = await storage.createDelivery({
+        orderId,
+        deliveryPartnerId,
+        status: "assigned",
+        assignedAt: new Date(),
+        estimatedDeliveryTime: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes from now
+      });
+
+      // Update order status
+      await storage.updateOrderStatus(orderId, "assigned_for_delivery");
+
+      // Mark the notification as read/accepted
+      if (notificationId) {
+        await storage.markNotificationAsRead(notificationId);
+      }
+
+      // Notify other delivery partners that this order is no longer available
+      const allDeliveryPartners = await storage.getAllDeliveryPartners();
+      const otherPartners = allDeliveryPartners.filter(partner => partner.id !== deliveryPartnerId);
+      
+      for (const partner of otherPartners) {
+        await storage.createNotification({
+          userId: partner.userId,
+          title: "Delivery Assignment Taken",
+          message: `Order #${orderId} has been accepted by another delivery partner`,
+          type: "delivery_unavailable",
+          isRead: false
+        });
+      }
+
+      // Notify shopkeeper about assignment
+      const order = await storage.getOrder(orderId);
+      if (order) {
+        const deliveryPartner = await storage.getDeliveryPartner(deliveryPartnerId);
+        await storage.createNotification({
+          userId: order.storeId, // Assuming storeId maps to shopkeeper
+          title: "Delivery Partner Assigned",
+          message: `${deliveryPartner?.name || 'A delivery partner'} has accepted Order #${orderId}`,
+          type: "delivery_assigned",
+          orderId,
+          isRead: false
+        });
+      }
+
+      res.json({
+        success: true,
+        delivery,
+        message: "Delivery assignment accepted successfully"
+      });
+    } catch (error) {
+      console.error("Error accepting delivery assignment:", error);
+      res.status(500).json({ error: "Failed to accept delivery assignment" });
+    }
+  });
+
   app.put("/api/notifications/:id/read", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
