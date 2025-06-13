@@ -58,6 +58,18 @@ export default function Checkout() {
     queryKey: ["/api/delivery-zones"],
   });
 
+  const form = useForm<CheckoutForm>({
+    resolver: zodResolver(checkoutSchema),
+    defaultValues: {
+      customerName: user?.fullName || "",
+      phone: user?.phone || "",
+      shippingAddress: "",
+      paymentMethod: "cod",
+      latitude: undefined,
+      longitude: undefined,
+    },
+  });
+
   // Watch for address changes to fetch suggestions
   const currentAddress = form.watch("shippingAddress");
   
@@ -71,18 +83,6 @@ export default function Checkout() {
 
     return () => clearTimeout(timeoutId);
   }, [currentAddress, userLocation]);
-
-  const form = useForm<CheckoutForm>({
-    resolver: zodResolver(checkoutSchema),
-    defaultValues: {
-      customerName: user?.fullName || "",
-      phone: user?.phone || "",
-      shippingAddress: "",
-      paymentMethod: "cod",
-      latitude: undefined,
-      longitude: undefined,
-    },
-  });
 
   // Convert coordinates to address using HERE Maps Reverse Geocoding API
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
