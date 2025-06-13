@@ -278,8 +278,10 @@ export default function Homepage() {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Products</h2>
             <Link href="/products">
-              <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto">
-                View All Products
+              <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </Button>
             </Link>
           </div>
@@ -305,7 +307,16 @@ export default function Homepage() {
       {/* Popular Stores */}
       <section className="py-8 sm:py-12 lg:py-16 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-6 sm:mb-10 text-center">Stores</h2>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Stores</h2>
+            <Link href="/stores">
+              <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Button>
+            </Link>
+          </div>
           {storesError ? (
             <StoresErrorState />
           ) : storesLoading ? (
