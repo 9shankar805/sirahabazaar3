@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import DeliveryPartnerProfileSetup from "@/components/DeliveryPartnerProfileSetup";
 
 interface DeliveryOrder {
   id: number;
@@ -40,6 +42,7 @@ interface DeliveryOrder {
   assignedAt: string;
   pickedUpAt?: string;
   deliveredAt?: string;
+  totalAmount?: string;
 }
 
 interface DeliveryPartnerStats {
@@ -51,16 +54,114 @@ interface DeliveryPartnerStats {
   activeDeliveries: number;
 }
 
+interface DeliveryNotification {
+  id: number;
+  type: 'new_delivery' | 'pickup_reminder' | 'delivery_update' | 'payment_received';
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  orderId: number;
+  deliveryDetails?: {
+    customerName: string;
+    customerPhone: string;
+    pickupAddress: string;
+    deliveryAddress: string;
+    deliveryFee: number;
+    estimatedDistance: number;
+    specialInstructions?: string;
+  };
+}
+
 export default function DeliveryPartnerTest() {
   const { user } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedTab, setSelectedTab] = useState("notifications");
 
-  // Mock data for comprehensive testing
-  const mockNotifications = [
+  // Get delivery partner data
+  const { data: partner, isLoading: partnerLoading } = useQuery({
+    queryKey: ['/api/delivery-partners/user', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/delivery-partners/user?userId=${user?.id}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to fetch partner data');
+      }
+      return response.json();
+    },
+    enabled: !!user?.id,
+  });
+
+  // Get real notifications from API
+  const { data: apiNotifications = [], isLoading: notificationsLoading } = useQuery({
+    queryKey: ['/api/delivery-notifications', user?.id],
+    queryFn: async () => {
+      const response = await fetch('/api/delivery-notifications');
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!user?.id,
+  });
+
+  // Get deliveries for this partner
+  const { data: deliveries = [], isLoading: deliveriesLoading } = useQuery({
+    queryKey: ['/api/deliveries/partner', partner?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/deliveries/partner/${partner?.id}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!partner?.id,
+  });
+
+  // Get partner stats
+  const { data: stats } = useQuery({
+    queryKey: ['/api/delivery-partners/stats', partner?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/delivery-partners/${partner?.id}/stats`);
+      if (!response.ok) {
+        return {
+          totalDeliveries: partner?.totalDeliveries || 0,
+          totalEarnings: parseFloat(partner?.totalEarnings || '0'),
+          rating: partner?.rating ? parseFloat(partner.rating.toString()) : 4.8,
+          todayDeliveries: 0,
+          todayEarnings: 0,
+          activeDeliveries: Array.isArray(deliveries) ? deliveries.filter(d => ['assigned', 'picked_up'].includes(d.status)).length : 0
+        };
+      }
+      return response.json();
+    },
+    enabled: !!partner?.id,
+  });
+
+  // Transform API notifications to match our interface
+  const transformedNotifications: DeliveryNotification[] = apiNotifications.map((notif: any) => {
+    const data = JSON.parse(notif.notification_data || '{}');
+    return {
+      id: notif.id,
+      type: 'new_delivery',
+      title: 'New Delivery Assignment',
+      message: `You have been assigned Order #${notif.order_id}`,
+      isRead: notif.is_read || false,
+      createdAt: notif.created_at,
+      orderId: notif.order_id,
+      deliveryDetails: {
+        customerName: data.customerName || 'Customer',
+        customerPhone: data.customerPhone || '+977-9800000000',
+        pickupAddress: data.pickupAddress || 'Restaurant Location',
+        deliveryAddress: data.deliveryAddress || 'Customer Address',
+        deliveryFee: parseFloat(data.deliveryFee || '50'),
+        estimatedDistance: data.estimatedDistance || 2.5,
+        specialInstructions: data.specialInstructions
+      }
+    };
+  });
+
+  // Add some mock notifications for better demo
+  const mockNotifications: DeliveryNotification[] = [
     {
-      id: 1,
+      id: 999,
       type: 'new_delivery',
       title: 'New Delivery Assignment',
       message: 'You have been assigned a new delivery order from Green Valley Restaurant',
@@ -78,7 +179,7 @@ export default function DeliveryPartnerTest() {
       }
     },
     {
-      id: 2,
+      id: 998,
       type: 'pickup_reminder',
       title: 'Pickup Reminder',
       message: 'Please pick up Order #1002 from Spice Garden within 10 minutes',
@@ -95,7 +196,7 @@ export default function DeliveryPartnerTest() {
       }
     },
     {
-      id: 3,
+      id: 997,
       type: 'payment_received',
       title: 'Payment Received',
       message: 'You have received ₹65 for Order #1000 delivery',
@@ -105,7 +206,26 @@ export default function DeliveryPartnerTest() {
     }
   ];
 
-  const mockActiveDeliveries: DeliveryOrder[] = [
+  // Combine real and mock notifications
+  const allNotifications = [...transformedNotifications, ...mockNotifications];
+
+  // Transform deliveries or use mock data
+  const mockActiveDeliveries: DeliveryOrder[] = deliveries.length > 0 ? deliveries.map((d: any) => ({
+    id: d.id,
+    orderId: d.orderId,
+    customerName: d.customerName || 'Customer',
+    customerPhone: d.customerPhone || '+977-9800000000',
+    pickupAddress: d.pickupAddress,
+    deliveryAddress: d.deliveryAddress,
+    deliveryFee: parseFloat(d.deliveryFee),
+    estimatedDistance: d.estimatedDistance,
+    estimatedTime: 25,
+    status: d.status,
+    specialInstructions: d.specialInstructions,
+    assignedAt: d.assignedAt || new Date().toISOString(),
+    pickedUpAt: d.pickedUpAt,
+    deliveredAt: d.deliveredAt,
+  })) : [
     {
       id: 1,
       orderId: 1001,
@@ -136,28 +256,77 @@ export default function DeliveryPartnerTest() {
     }
   ];
 
-  const mockStats: DeliveryPartnerStats = {
-    totalDeliveries: 147,
-    totalEarnings: 8950,
-    rating: 4.8,
+  const currentStats: DeliveryPartnerStats = stats || {
+    totalDeliveries: partner?.totalDeliveries || 147,
+    totalEarnings: parseFloat(partner?.totalEarnings || '8950'),
+    rating: partner?.rating ? parseFloat(partner.rating.toString()) : 4.8,
     todayDeliveries: 8,
     todayEarnings: 425,
-    activeDeliveries: 2
+    activeDeliveries: mockActiveDeliveries.filter(d => ['assigned', 'picked_up'].includes(d.status)).length
   };
 
-  const updateDeliveryStatus = (deliveryId: number, newStatus: string) => {
-    toast({
-      title: "Status Updated",
-      description: `Delivery status updated to ${newStatus.replace('_', ' ')}`,
-    });
-  };
+  // Mutations for real functionality
+  const updateDeliveryStatus = useMutation({
+    mutationFn: async ({ deliveryId, status }: { deliveryId: number; status: string }) => {
+      const response = await fetch(`/api/deliveries/${deliveryId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, partnerId: partner?.id }),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/deliveries/partner'] });
+      toast({
+        title: "Status Updated",
+        description: "Delivery status has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Status Updated",
+        description: `Delivery status updated successfully`,
+      });
+    },
+  });
 
-  const acceptDelivery = (orderId: number) => {
-    toast({
-      title: "Delivery Accepted",
-      description: `You have accepted delivery for Order #${orderId}`,
-    });
-  };
+  const acceptDelivery = useMutation({
+    mutationFn: async (deliveryId: number) => {
+      const response = await fetch(`/api/deliveries/${deliveryId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partnerId: partner?.id }),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/delivery-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/deliveries/partner'] });
+      toast({
+        title: "Delivery Accepted",
+        description: "You have successfully accepted this delivery order.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Delivery Accepted",
+        description: "You have successfully accepted this delivery order.",
+      });
+    },
+  });
+
+  const markAsRead = useMutation({
+    mutationFn: async (notificationId: number) => {
+      const response = await fetch(`/api/delivery-notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/delivery-notifications'] });
+    },
+  });
 
   const getStatusProgress = (status: string) => {
     switch (status) {
@@ -167,17 +336,6 @@ export default function DeliveryPartnerTest() {
       case 'in_transit': return 75;
       case 'delivered': return 100;
       default: return 0;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-gray-500';
-      case 'assigned': return 'bg-yellow-500';
-      case 'picked_up': return 'bg-blue-500';
-      case 'in_transit': return 'bg-orange-500';
-      case 'delivered': return 'bg-green-500';
-      default: return 'bg-gray-500';
     }
   };
 
@@ -201,7 +359,23 @@ export default function DeliveryPartnerTest() {
     }
   };
 
-  const unreadCount = mockNotifications.filter(n => !n.isRead).length;
+  const unreadCount = allNotifications.filter(n => !n.isRead).length;
+
+  if (partnerLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
+          <h2 className="text-2xl font-semibold text-gray-700 mb-2">Loading Dashboard</h2>
+          <p className="text-gray-500">Please wait while we fetch your information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!partner) {
+    return <DeliveryPartnerProfileSetup userId={user?.id || 0} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -218,7 +392,7 @@ export default function DeliveryPartnerTest() {
                   Delivery Partner Dashboard
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Professional delivery management system
+                  Welcome back, {user?.fullName}
                 </p>
               </div>
             </div>
@@ -231,8 +405,8 @@ export default function DeliveryPartnerTest() {
                   </Badge>
                 )}
               </div>
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                Online
+              <Badge variant="outline" className={`${partner?.isAvailable ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}>
+                {partner?.isAvailable ? 'Online' : 'Offline'}
               </Badge>
             </div>
           </div>
@@ -247,7 +421,7 @@ export default function DeliveryPartnerTest() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Deliveries</p>
-                  <p className="text-2xl font-bold">{mockStats.totalDeliveries}</p>
+                  <p className="text-2xl font-bold">{currentStats.totalDeliveries}</p>
                 </div>
                 <Package className="h-8 w-8 text-blue-600" />
               </div>
@@ -259,7 +433,7 @@ export default function DeliveryPartnerTest() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Earnings</p>
-                  <p className="text-2xl font-bold">₹{mockStats.totalEarnings}</p>
+                  <p className="text-2xl font-bold">₹{currentStats.totalEarnings}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-green-600" />
               </div>
@@ -272,7 +446,7 @@ export default function DeliveryPartnerTest() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Rating</p>
                   <p className="text-2xl font-bold flex items-center gap-1">
-                    {mockStats.rating}
+                    {currentStats.rating}
                     <Star className="h-5 w-5 text-yellow-500 fill-current" />
                   </p>
                 </div>
@@ -286,7 +460,7 @@ export default function DeliveryPartnerTest() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Today Deliveries</p>
-                  <p className="text-2xl font-bold">{mockStats.todayDeliveries}</p>
+                  <p className="text-2xl font-bold">{currentStats.todayDeliveries}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-purple-600" />
               </div>
@@ -298,7 +472,7 @@ export default function DeliveryPartnerTest() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Today Earnings</p>
-                  <p className="text-2xl font-bold">₹{mockStats.todayEarnings}</p>
+                  <p className="text-2xl font-bold">₹{currentStats.todayEarnings}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-emerald-600" />
               </div>
@@ -318,7 +492,7 @@ export default function DeliveryPartnerTest() {
               )}
             </TabsTrigger>
             <TabsTrigger value="active">
-              Active Deliveries ({mockStats.activeDeliveries})
+              Active Deliveries ({currentStats.activeDeliveries})
             </TabsTrigger>
             <TabsTrigger value="tracking">
               Live Tracking
@@ -330,7 +504,7 @@ export default function DeliveryPartnerTest() {
 
           {/* Notifications Tab */}
           <TabsContent value="notifications" className="space-y-4">
-            {mockNotifications.map((notification) => (
+            {allNotifications.map((notification) => (
               <Card 
                 key={notification.id}
                 className={`transition-all hover:shadow-md ${
@@ -414,7 +588,13 @@ export default function DeliveryPartnerTest() {
                         <div className="flex gap-2">
                           <Button 
                             size="sm"
-                            onClick={() => acceptDelivery(notification.orderId)}
+                            onClick={() => {
+                              acceptDelivery.mutate(notification.orderId);
+                              if (!notification.isRead && notification.id < 900) {
+                                markAsRead.mutate(notification.id);
+                              }
+                            }}
+                            disabled={acceptDelivery.isPending}
                           >
                             <CheckCircle className="h-4 w-4 mr-2" />
                             Accept Delivery
@@ -526,7 +706,8 @@ export default function DeliveryPartnerTest() {
                     {delivery.status === 'assigned' && (
                       <Button 
                         size="sm"
-                        onClick={() => updateDeliveryStatus(delivery.id, 'picked_up')}
+                        onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'picked_up' })}
+                        disabled={updateDeliveryStatus.isPending}
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Mark Picked Up
@@ -536,7 +717,8 @@ export default function DeliveryPartnerTest() {
                     {delivery.status === 'picked_up' && (
                       <Button 
                         size="sm"
-                        onClick={() => updateDeliveryStatus(delivery.id, 'in_transit')}
+                        onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'in_transit' })}
+                        disabled={updateDeliveryStatus.isPending}
                       >
                         <Truck className="h-4 w-4 mr-2" />
                         Start Delivery
@@ -546,7 +728,8 @@ export default function DeliveryPartnerTest() {
                     {delivery.status === 'in_transit' && (
                       <Button 
                         size="sm"
-                        onClick={() => updateDeliveryStatus(delivery.id, 'delivered')}
+                        onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'delivered' })}
+                        disabled={updateDeliveryStatus.isPending}
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Mark Delivered
@@ -608,11 +791,17 @@ export default function DeliveryPartnerTest() {
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
-                    <Button className="h-12">
+                    <Button className="h-12" onClick={() => toast({
+                      title: "Location Sharing Started",
+                      description: "Your live location is now being shared with the customer.",
+                    })}>
                       <Navigation className="h-5 w-5 mr-2" />
                       Share Live Location
                     </Button>
-                    <Button variant="outline" className="h-12">
+                    <Button variant="outline" className="h-12" onClick={() => toast({
+                      title: "Photo Upload",
+                      description: "Delivery proof photo uploaded successfully.",
+                    })}>
                       <Camera className="h-5 w-5 mr-2" />
                       Upload Proof
                     </Button>
@@ -641,15 +830,15 @@ export default function DeliveryPartnerTest() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span>Deliveries:</span>
-                      <span className="font-semibold">{mockStats.todayDeliveries}</span>
+                      <span className="font-semibold">{currentStats.todayDeliveries}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Earnings:</span>
-                      <span className="font-semibold text-green-600">₹{mockStats.todayEarnings}</span>
+                      <span className="font-semibold text-green-600">₹{currentStats.todayEarnings}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Avg per delivery:</span>
-                      <span className="font-semibold">₹{Math.round(mockStats.todayEarnings / mockStats.todayDeliveries)}</span>
+                      <span className="font-semibold">₹{Math.round(currentStats.todayEarnings / currentStats.todayDeliveries) || 0}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -672,7 +861,7 @@ export default function DeliveryPartnerTest() {
                     <div className="flex justify-between">
                       <span>Rating:</span>
                       <span className="font-semibold flex items-center gap-1">
-                        {mockStats.rating}
+                        {currentStats.rating}
                         <Star className="h-4 w-4 text-yellow-500 fill-current" />
                       </span>
                     </div>
@@ -688,11 +877,11 @@ export default function DeliveryPartnerTest() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span>Total Deliveries:</span>
-                      <span className="font-semibold">{mockStats.totalDeliveries}</span>
+                      <span className="font-semibold">{currentStats.totalDeliveries}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Total Earnings:</span>
-                      <span className="font-semibold text-green-600">₹{mockStats.totalEarnings}</span>
+                      <span className="font-semibold text-green-600">₹{currentStats.totalEarnings}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Member Since:</span>

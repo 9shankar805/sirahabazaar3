@@ -98,11 +98,11 @@ function AppRouter() {
         <Route path="/seller/products/add" component={AddProduct} />
 
         {/* Delivery Partner Routes */}
-        <Route path="/delivery-partner-dashboard" component={DeliveryPartnerDashboard} />
+        <Route path="/delivery-partner-dashboard" component={DeliveryPartnerTest} />
         <Route path="/delivery-partner/test" component={DeliveryPartnerTest} />
         <Route path="/delivery-partner/notifications" component={DeliveryPartnerNotifications} />
         <Route path="/delivery-partner/register" component={DeliveryPartnerQuickReg} />
-        <Route path="/delivery-partner/dashboard" component={DeliveryPartnerDashboard} />
+        <Route path="/delivery-partner/dashboard" component={DeliveryPartnerTest} />
 
         <Route path="/delivery-map/:id" component={DeliveryMap} />
         <Route path="/admin/delivery-partners" component={AdminDeliveryPartners} />
