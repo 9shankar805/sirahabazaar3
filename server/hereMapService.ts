@@ -49,10 +49,11 @@ export class HereMapService {
   private baseUrl = 'https://router.hereapi.com/v8';
 
   constructor() {
-    if (!process.env.HERE_API_KEY) {
-      throw new Error('HERE_API_KEY environment variable is required');
-    }
-    this.apiKey = process.env.HERE_API_KEY;
+    this.apiKey = process.env.HERE_API_KEY || '';
+  }
+
+  isConfigured(): boolean {
+    return !!this.apiKey;
   }
 
   /**
@@ -63,6 +64,10 @@ export class HereMapService {
     destination: { lat: number; lng: number },
     transportMode: string = 'bicycle' // bicycle for delivery partners
   ): Promise<RouteInfo> {
+    if (!this.isConfigured()) {
+      throw new Error('HERE Maps API key not configured');
+    }
+
     try {
       const url = `${this.baseUrl}/routes`;
       const params = new URLSearchParams({
@@ -170,6 +175,11 @@ export class HereMapService {
    * Get geocoding for address
    */
   async geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+    if (!this.isConfigured()) {
+      console.warn('HERE Maps API key not configured for geocoding');
+      return null;
+    }
+
     try {
       const url = 'https://geocode.search.hereapi.com/v1/geocode';
       const params = new URLSearchParams({
