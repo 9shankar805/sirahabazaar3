@@ -26,74 +26,6 @@ import {
 // Initialize real-time tracking service
 const realTimeTrackingService = new RealTimeTrackingService();
 
-// Function to notify available delivery partners
-async function notifyAvailableDeliveryPartners(order: any, orderData: any, orderItems: any[]) {
-  try {
-    // Get all available delivery partners (status: approved, isAvailable: true)
-    const result = await pool.query(`
-      SELECT dp.*, u.fullName, u.phone 
-      FROM delivery_partners dp 
-      JOIN users u ON dp.userId = u.id 
-      WHERE dp.status = 'approved' 
-      AND dp.isAvailable = true
-    `);
-
-    const partners = result.rows;
-
-    if (partners.length === 0) {
-      console.log('No available delivery partners found');
-      return;
-    }
-
-    // Calculate store locations and delivery distance
-    const storeLocations = await Promise.all(
-      orderItems.map(async (item) => {
-        const store = await storage.getStore(item.storeId);
-        return store;
-      })
-    );
-
-    // Create delivery notification for each available partner
-    for (const partner of partners) {
-      await storage.createNotification({
-        userId: Number(partner.userid),
-        title: "New Delivery Request",
-        message: `Order #${order.id} - Rs.${orderData.totalAmount} - ${orderData.shippingAddress}`,
-        type: "delivery_request",
-        orderId: order.id,
-        isRead: false
-      });
-
-      // Also create a delivery notification record for tracking
-      await pool.query(`
-        INSERT INTO delivery_notifications (
-          order_id, delivery_partner_id, status, notification_data, created_at
-        ) VALUES ($1, $2, $3, $4, NOW())
-      `, [
-        order.id, 
-        partner.id, 
-        'pending', 
-        JSON.stringify({
-          orderId: order.id,
-          customerName: orderData.customerName,
-          customerPhone: orderData.phone,
-          totalAmount: orderData.totalAmount,
-          pickupAddress: storeLocations[0]?.address || 'Store Address',
-          deliveryAddress: orderData.shippingAddress,
-          estimatedDistance: 5,
-          estimatedEarnings: 50,
-          latitude: orderData.latitude,
-          longitude: orderData.longitude
-        })
-      ]);
-    }
-
-    console.log(`Notified ${partners.length} delivery partners about order #${order.id}`);
-  } catch (error) {
-    console.error('Error notifying delivery partners:', error);
-  }
-}
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to track website visits
   app.use(async (req, res, next) => {
@@ -884,13 +816,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderData.totalAmount,
         orderItems
       );
-
-      // Notify available delivery partners in the area
-      try {
-        await notifyAvailableDeliveryPartners(createdOrder, orderData, orderItems);
-      } catch (error) {
-        console.error('Failed to notify delivery partners:', error);
-      }
 
       // Send payment confirmation to customer
       await NotificationService.sendPaymentConfirmation(
@@ -2046,6 +1971,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(notifications);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  // Shopkeeper notification to delivery partners
+  app.post("/api/notifications/delivery-assignment", async (req, res) => {
+    try {
+      const { orderId, message, storeId, shopkeeperId } = req.body;
+
+      // Find available delivery partners in the area
+      const deliveryPartners = await storage.getAllDeliveryPartners();
+      const availablePartners = deliveryPartners.filter(partner => 
+        partner.status === 'approved' && partner.isAvailable
+      );
+
+      if (availablePartners.length === 0) {
+        return res.status(404).json({ error: "No available delivery partners found" });
+      }
+
+      // Send notification to all available delivery partners
+      for (const partner of availablePartners) {
+        await storage.createNotification({
+          userId: partner.userId,
+          title: "New Pickup Request",
+          message: message,
+          type: "delivery",
+          orderId: orderId,
+          isRead: false
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Notification sent to ${availablePartners.length} delivery partners` 
+      });
+    } catch (error) {
+      console.error("Error sending delivery notification:", error);
+      res.status(500).json({ error: "Failed to send notification" });
     }
   });
 
@@ -3646,144 +3608,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Unsubscribe error:", error);
       res.status(500).json({ error: "Failed to unsubscribe" });
-    }
-  });
-
-  // Delivery partner notifications and acceptance endpoints
-  app.get("/api/delivery-notifications", async (req, res) => {
-    try {
-      const result = await pool.query(`
-        SELECT dn.*, o.customerName, o.totalAmount, o.shippingAddress
-        FROM delivery_notifications dn
-        JOIN orders o ON dn.order_id = o.id
-        WHERE dn.status = 'pending'
-        ORDER BY dn.created_at DESC
-      `);
-      res.json(result.rows);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch delivery notifications" });
-    }
-  });
-
-  // Accept delivery order (first-accept-first-serve)
-  app.post("/api/delivery-notifications/:orderId/accept", async (req, res) => {
-    try {
-      const { orderId } = req.params;
-      const { deliveryPartnerId } = req.body;
-
-      // Check if order is still available
-      const orderCheck = await pool.query(`
-        SELECT * FROM delivery_notifications 
-        WHERE order_id = $1 AND status = 'pending'
-      `, [orderId]);
-
-      if (orderCheck.rows.length === 0) {
-        return res.status(409).json({ error: "Order already accepted by another delivery partner" });
-      }
-
-      // Start transaction
-      await pool.query('BEGIN');
-
-      try {
-        // Mark all notifications for this order as rejected except the accepting one
-        await pool.query(`
-          UPDATE delivery_notifications 
-          SET status = 'rejected' 
-          WHERE order_id = $1 AND delivery_partner_id != $2
-        `, [orderId, deliveryPartnerId]);
-
-        // Mark the accepting partner's notification as accepted
-        await pool.query(`
-          UPDATE delivery_notifications 
-          SET status = 'accepted' 
-          WHERE order_id = $1 AND delivery_partner_id = $2
-        `, [orderId, deliveryPartnerId]);
-
-        // Create delivery record
-        const deliveryResult = await pool.query(`
-          INSERT INTO deliveries (
-            order_id, delivery_partner_id, status, created_at
-          ) VALUES ($1, $2, 'assigned', NOW())
-          RETURNING *
-        `, [orderId, deliveryPartnerId]);
-
-        // Update order status
-        await pool.query(`
-          UPDATE orders 
-          SET status = 'assigned_for_delivery' 
-          WHERE id = $1
-        `, [orderId]);
-
-        // Get order and delivery partner details
-        const orderDetails = await pool.query(`
-          SELECT o.*, u.fullName as customerName
-          FROM orders o
-          JOIN users u ON o.customerId = u.id
-          WHERE o.id = $1
-        `, [orderId]);
-
-        const partnerDetails = await pool.query(`
-          SELECT dp.*, u.fullName, u.phone
-          FROM delivery_partners dp
-          JOIN users u ON dp.userId = u.id
-          WHERE dp.id = $1
-        `, [deliveryPartnerId]);
-
-        // Notify customer about delivery partner assignment
-        await storage.createNotification({
-          userId: orderDetails.rows[0].customerid,
-          title: "Delivery Partner Assigned",
-          message: `${partnerDetails.rows[0].fullname} will deliver your order #${orderId}`,
-          type: "delivery_assigned",
-          orderId: parseInt(orderId),
-          isRead: false
-        });
-
-        // Notify delivery partner about acceptance
-        await storage.createNotification({
-          userId: partnerDetails.rows[0].userid,
-          title: "Delivery Accepted",
-          message: `You have accepted delivery for order #${orderId}`,
-          type: "delivery_accepted",
-          orderId: parseInt(orderId),
-          isRead: false
-        });
-
-        // Commit transaction
-        await pool.query('COMMIT');
-
-        res.json({ 
-          success: true, 
-          delivery: deliveryResult.rows[0],
-          message: "Order accepted successfully"
-        });
-
-      } catch (error) {
-        await pool.query('ROLLBACK');
-        throw error;
-      }
-
-    } catch (error) {
-      console.error('Error accepting delivery:', error);
-      res.status(500).json({ error: "Failed to accept delivery" });
-    }
-  });
-
-  // Reject delivery order
-  app.post("/api/delivery-notifications/:orderId/reject", async (req, res) => {
-    try {
-      const { orderId } = req.params;
-      const { deliveryPartnerId } = req.body;
-
-      await pool.query(`
-        UPDATE delivery_notifications 
-        SET status = 'rejected' 
-        WHERE order_id = $1 AND delivery_partner_id = $2
-      `, [orderId, deliveryPartnerId]);
-
-      res.json({ success: true, message: "Order rejected" });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to reject delivery" });
     }
   });
 
