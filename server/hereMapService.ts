@@ -209,6 +209,54 @@ export class HereMapService {
       return null;
     }
   }
+
+  /**
+   * Generate Google Maps navigation link as fallback
+   */
+  generateGoogleMapsLink(origin: { lat: number; lng: number }, destination: { lat: number; lng: number }): string {
+    const originStr = `${origin.lat},${origin.lng}`;
+    const destinationStr = `${destination.lat},${destination.lng}`;
+    return `https://www.google.com/maps/dir/${originStr}/${destinationStr}`;
+  }
+
+  /**
+   * Calculate ETA based on route information
+   */
+  calculateETA(route: any, currentLocation?: { lat: number; lng: number }): { eta: number; estimatedArrival: Date } {
+    // If route has duration information, use it
+    let durationSeconds = 0;
+    
+    if (route.routes && route.routes[0] && route.routes[0].sections && route.routes[0].sections[0]) {
+      durationSeconds = route.routes[0].sections[0].summary.duration;
+    } else if (route.duration) {
+      durationSeconds = route.duration;
+    } else {
+      // Fallback: estimate based on distance (assuming 15 km/h for bicycle)
+      const distance = route.distance || 0;
+      durationSeconds = Math.round((distance / 1000) * 240); // 240 seconds per km at 15 km/h
+    }
+
+    const now = new Date();
+    const estimatedArrival = new Date(now.getTime() + durationSeconds * 1000);
+
+    return {
+      eta: durationSeconds,
+      estimatedArrival
+    };
+  }
+
+  /**
+   * Get route coordinates from polyline
+   */
+  getRouteCoordinates(route: any): Array<{ lat: number; lng: number }> {
+    if (route.routes && route.routes[0] && route.routes[0].sections && route.routes[0].sections[0]) {
+      const polyline = route.routes[0].sections[0].polyline;
+      return this.decodePolyline(polyline);
+    } else if (route.polyline) {
+      return this.decodePolyline(route.polyline);
+    }
+    return [];
+  }
 }
 
 export const hereMapService = new HereMapService();

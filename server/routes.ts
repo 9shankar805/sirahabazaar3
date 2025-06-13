@@ -9,6 +9,7 @@ import { NotificationService } from "./notificationService";
 import { webSocketService } from "./websocketService";
 import { trackingService } from "./trackingService";
 import { hereMapService } from "./hereMapService";
+import { RealTimeTrackingService } from "./services/realTimeTrackingService";
 
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
@@ -20,6 +21,9 @@ import {
   insertProductAttributeSchema, insertVendorVerificationSchema, insertAdminLogSchema,
   insertDeliveryPartnerSchema, insertDeliverySchema
 } from "@shared/schema";
+
+// Initialize real-time tracking service
+const realTimeTrackingService = new RealTimeTrackingService();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to track website visits
@@ -3386,7 +3390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const route = await hereMapService.calculateRoute({ origin: startPoint, destination: endPoint });
+      const route = await hereMapService.calculateRoute(startPoint, endPoint, 'bicycle');
       
       if (!route) {
         return res.status(404).json({ 
@@ -3395,9 +3399,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const eta = hereMapService.calculateETA(route, origin);
-      const coordinates = route.routes[0]?.sections[0]?.polyline 
-        ? hereMapService.decodePolyline(route.routes[0].sections[0].polyline)
+      const eta = hereMapService.calculateETA(route, startPoint);
+      const coordinates = route.polyline 
+        ? hereMapService.decodePolyline(route.polyline)
         : [];
       
       res.json({
@@ -3504,65 +3508,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   
-  // Initialize WebSocket service
+  // Initialize WebSocket service for real-time tracking
   webSocketService.initialize(httpServer);
-  
-  // WebSocket Server for real-time tracking
-  const wss = new WebSocketServer({ 
-    server: httpServer, 
-    path: '/ws'
-  });
-
-  wss.on('connection', (ws, req) => {
-    console.log('WebSocket connection established');
-    
-    ws.on('message', async (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        
-        if (data.type === 'auth') {
-          const { userId, userType, token } = data;
-          
-          // TODO: Add proper authentication validation here
-          // For now, we'll register the connection with the provided user info
-          const sessionId = await realTimeTrackingService.registerWebSocketConnection(
-            ws, 
-            userId, 
-            userType
-          );
-          
-          ws.send(JSON.stringify({
-            type: 'auth_success',
-            sessionId,
-            message: 'Successfully connected to real-time tracking'
-          }));
-        }
-        
-        if (data.type === 'location_update') {
-          await realTimeTrackingService.updateDeliveryLocation(data.payload);
-        }
-        
-        if (data.type === 'status_update') {
-          await realTimeTrackingService.updateDeliveryStatus(data.payload);
-        }
-        
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-        ws.send(JSON.stringify({
-          type: 'error',
-          message: 'Invalid message format'
-        }));
-      }
-    });
-
-    ws.on('close', () => {
-      console.log('WebSocket connection closed');
-    });
-
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-    });
-  });
 
   return httpServer;
 }
