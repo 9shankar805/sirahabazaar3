@@ -587,7 +587,7 @@ export default function DeliveryPartnerDashboard() {
                       <div className="py-2 border-b">
                         <span className="text-gray-600">Delivery Areas:</span>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {partner.deliveryAreas.map((area, index) => (
+                          {partner.deliveryAreas.map((area: string, index: number) => (
                             <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700">
                               {area}
                             </Badge>
