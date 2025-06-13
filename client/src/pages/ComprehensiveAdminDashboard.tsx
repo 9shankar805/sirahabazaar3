@@ -712,7 +712,7 @@ export default function ComprehensiveAdminDashboard() {
                                       </AnimatePresence>
                                     </Button>
                                   </motion.div>
-                                  
+
                                   <motion.div
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
@@ -763,7 +763,7 @@ export default function ComprehensiveAdminDashboard() {
                             </CardContent>
                           </Card>
                         ))}
-                      
+
                       {allUsers.filter((user: any) => user.role === 'shopkeeper' && user.status === 'pending').length === 0 && (
                         <div className="text-center py-8 text-muted-foreground">
                           <Store className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -800,6 +800,8 @@ export default function ComprehensiveAdminDashboard() {
                                       <Truck className="h-5 w-5 text-green-600" />
                                     </div>
                                     <div>
+                                      ```text
+
                                       <h4 className="font-semibold">Delivery Partner #{partner.id}</h4>
                                       <p className="text-sm text-muted-foreground">User ID: {partner.userId}</p>
                                     </div>
@@ -852,7 +854,7 @@ export default function ComprehensiveAdminDashboard() {
                             </CardContent>
                           </Card>
                         ))}
-                      
+
                       {(deliveryPartners as any[]).filter((partner: any) => partner.status === 'pending').length === 0 && (
                         <div className="text-center py-8 text-muted-foreground">
                           <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -903,7 +905,7 @@ export default function ComprehensiveAdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -917,7 +919,7 @@ export default function ComprehensiveAdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -931,7 +933,7 @@ export default function ComprehensiveAdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -1712,7 +1714,7 @@ export default function ComprehensiveAdminDashboard() {
                     ))}
                   </TableBody>
                 </Table>
-                
+
                 {/* Delivery Fee Preview */}
                 <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                   <h3 className="font-semibold mb-3">Delivery Fee Calculator Preview</h3>

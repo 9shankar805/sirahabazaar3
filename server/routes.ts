@@ -1642,6 +1642,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delivery Partner Management API endpoints
+  app.post("/api/delivery-partners/signup", async (req, res) => {
+    try {
+      const deliveryPartnerData = insertDeliveryPartnerSchema.parse(req.body);
+      const partner = await storage.createDeliveryPartner(deliveryPartnerData);
+      
+      // Create notification for admin
+      await storage.createNotification({
+        userId: 1, // Admin user ID - you might want to make this dynamic
+        title: "New Delivery Partner Application",
+        message: `A new delivery partner application has been submitted by user ${deliveryPartnerData.userId}`,
+        type: "info"
+      });
+      
+      res.json(partner);
+    } catch (error) {
+      console.error("Delivery partner creation error:", error);
+      res.status(400).json({ error: "Failed to create delivery partner application" });
+    }
+  });
+
+  app.get("/api/delivery-partners", async (req, res) => {
+    try {
+      const partners = await storage.getAllDeliveryPartners();
+      res.json(partners);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch delivery partners" });
+    }
+  });
+
+  app.get("/api/delivery-partners/pending", async (req, res) => {
+    try {
+      const pendingPartners = await storage.getPendingDeliveryPartners();
+      res.json(pendingPartners);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch pending delivery partners" });
+    }
+  });
+
+  app.get("/api/delivery-partners/user", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      
+      const partner = await storage.getDeliveryPartnerByUserId(parseInt(userId as string));
+      if (!partner) {
+        return res.status(404).json({ error: "Delivery partner not found" });
+      }
+      
+      res.json(partner);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch delivery partner" });
+    }
+  });
+
+  app.post("/api/delivery-partners/:id/approve", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { adminId } = req.body;
+      
+      if (!adminId) {
+        return res.status(400).json({ error: "Admin ID is required" });
+      }
+      
+      const approvedPartner = await storage.approveDeliveryPartner(id, adminId);
+      
+      if (!approvedPartner) {
+        return res.status(404).json({ error: "Delivery partner not found" });
+      }
+      
+      // Send notification to the delivery partner
+      await storage.createNotification({
+        userId: approvedPartner.userId,
+        title: "Application Approved",
+        message: "Your delivery partner application has been approved! You can now start receiving delivery assignments.",
+        type: "success"
+      });
+      
+      res.json(approvedPartner);
+    } catch (error) {
+      console.error("Error approving delivery partner:", error);
+      res.status(500).json({ error: "Failed to approve delivery partner" });
+    }
+  });
+
+  app.post("/api/delivery-partners/:id/reject", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { adminId, reason } = req.body;
+      
+      if (!adminId) {
+        return res.status(400).json({ error: "Admin ID is required" });
+      }
+      
+      const rejectedPartner = await storage.rejectDeliveryPartner(id, adminId, reason || "Application does not meet requirements");
+      
+      if (!rejectedPartner) {
+        return res.status(404).json({ error: "Delivery partner not found" });
+      }
+      
+      // Send notification to the delivery partner
+      const message = reason 
+        ? `Your delivery partner application has been rejected. Reason: ${reason}`
+        : "Your delivery partner application has been rejected. Please contact support for more information.";
+        
+      await storage.createNotification({
+        userId: rejectedPartner.userId,
+        title: "Application Rejected",
+        message: message,
+        type: "error"
+      });
+      
+      res.json(rejectedPartner);
+    } catch (error) {
+      console.error("Error rejecting delivery partner:", error);
+      res.status(500).json({ error: "Failed to reject delivery partner" });
+    }
+  });
+
+  app.put("/api/delivery-partners/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const partner = await storage.updateDeliveryPartner(id, updates);
+      
+      if (!partner) {
+        return res.status(404).json({ error: "Delivery partner not found" });
+      }
+      
+      res.json(partner);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update delivery partner" });
+    }
+  });
+
   app.get("/api/admin/analytics/revenue", async (req, res) => {
     try {
       const days = parseInt(req.query.days as string) || 30;
