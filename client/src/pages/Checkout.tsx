@@ -36,7 +36,7 @@ export default function Checkout() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isCalculatingFee, setIsCalculatingFee] = useState(false);
-  const [showManualAddress, setShowManualAddress] = useState(false);
+  const [showManualAddress, setShowManualAddress] = useState(true);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryDistance, setDeliveryDistance] = useState(0);
   const [estimatedDeliveryTime, setEstimatedDeliveryTime] = useState(0);
@@ -577,7 +577,7 @@ export default function Checkout() {
                                 {deliveryInfo && ` • Est. ${deliveryInfo.estimatedTime} mins`}
                               </p>
                             )}
-                            {showManualAddress && (
+                            {(showManualAddress || !userLocation) && (
                               <div className="relative">
                                 <FormControl>
                                   <Textarea 
@@ -724,9 +724,12 @@ export default function Checkout() {
                 <Button 
                   type="submit" 
                   className="w-full btn-primary"
-                  disabled={isLoading}
+                  disabled={isLoading || (!userLocation && !form.getValues("shippingAddress")?.trim()) || (deliveryFee === 0 && deliveryDistance === 0)}
                 >
-                  {isLoading ? "Placing Order..." : "Place Order"}
+                  {isLoading ? "Placing Order..." : 
+                   (!userLocation && !form.getValues("shippingAddress")?.trim()) ? "Enter Delivery Address" :
+                   (deliveryFee === 0 && deliveryDistance === 0) ? "Calculate Delivery Fee" :
+                   "Place Order"}
                 </Button>
               </form>
             </Form>
@@ -759,8 +762,8 @@ export default function Checkout() {
                   
                   <div className="flex justify-between">
                     <span>Delivery Fee</span>
-                    <span className={deliveryFee > 0 ? "text-foreground" : "text-accent"}>
-                      {deliveryFee > 0 ? `₹${deliveryFee.toLocaleString()}` : "FREE"}
+                    <span className={deliveryFee > 0 ? "text-foreground" : "text-muted-foreground"}>
+                      {deliveryFee > 0 ? `₹${deliveryFee.toLocaleString()}` : "Enter address to calculate"}
                     </span>
                   </div>
                   
@@ -779,7 +782,12 @@ export default function Checkout() {
                   
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
-                    <span>₹{(totalAmount + deliveryFee).toLocaleString()}</span>
+                    <span>
+                      {deliveryFee > 0 || (userLocation || form.getValues("shippingAddress")?.trim()) ? 
+                        `₹${(totalAmount + deliveryFee).toLocaleString()}` : 
+                        "Enter address for total"
+                      }
+                    </span>
                   </div>
                 </div>
                 
