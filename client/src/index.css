@@ -4,20 +4,7 @@
 
 @layer utilities {
   /* Border Radius Utilities */
-  .radius-xs { border-radius: 2px; }
-  .radius-sm { border-radius: 4px; }
-  .radius-md { border-radius: 6px; }
-  .radius-lg { border-radius: 8px; }
-  .radius-xl { border-radius: 12px; }
-  .radius-2xl { border-radius: 16px; }
-  .radius-3xl { border-radius: 24px; }
-  .radius-full { border-radius: 9999px; }
-  
-  /* Card specific radius */
-  .card-radius { border-radius: 12px; }
-  .button-radius { border-radius: 6px; }
-  .input-radius { border-radius: 8px; }
-}
+
 
 /* Hide scrollbars across the website while maintaining scroll functionality */
 * {
