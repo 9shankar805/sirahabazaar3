@@ -1,6 +1,6 @@
 import webpush from 'web-push';
 import { db } from './db';
-import { notifications, users } from '@shared/schema';
+import { notifications, users as usersTable } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
 export interface PushSubscription {
@@ -262,10 +262,10 @@ export class PushNotificationService {
     payload: DeliveryNotificationPayload
   ): Promise<number> {
     try {
-      const users = await db.select().from(users).where(eq(users.role, role));
+      const userList = await db.select().from(usersTable).where(eq(usersTable.role, role));
       let successCount = 0;
 
-      for (const user of users) {
+      for (const user of userList) {
         const success = await this.sendPushNotification(user.id, payload);
         if (success) successCount++;
       }

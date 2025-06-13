@@ -10,6 +10,7 @@ import { webSocketService } from "./websocketService";
 import { trackingService } from "./trackingService";
 import { hereMapService } from "./hereMapService";
 import { RealTimeTrackingService } from "./services/realTimeTrackingService";
+import PushNotificationService from "./pushNotificationService";
 
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
@@ -3503,6 +3504,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting travel time:", error);
       res.status(500).json({ error: "Failed to get travel time" });
+    }
+  });
+
+  // Push Notification API endpoints
+  app.post("/api/notifications/subscribe", async (req, res) => {
+    try {
+      const { userId, subscription } = req.body;
+      const success = await PushNotificationService.subscribeToPushNotifications(userId, subscription);
+      
+      if (success) {
+        res.json({ success: true, message: "Subscribed to push notifications" });
+      } else {
+        res.status(500).json({ success: false, message: "Failed to subscribe" });
+      }
+    } catch (error) {
+      console.error("Push subscription error:", error);
+      res.status(500).json({ error: "Failed to subscribe to push notifications" });
+    }
+  });
+
+  app.post("/api/notifications/push", async (req, res) => {
+    try {
+      const { userId, title, body, data } = req.body;
+      
+      const success = await PushNotificationService.sendOrderStatusUpdateNotification(
+        userId,
+        data?.orderId || 0,
+        data?.status || 'update',
+        body
+      );
+      
+      res.json({ success, message: success ? "Notification sent" : "Failed to send notification" });
+    } catch (error) {
+      console.error("Push notification error:", error);
+      res.status(500).json({ error: "Failed to send push notification" });
+    }
+  });
+
+  app.get("/api/notifications/vapid-public-key", (req, res) => {
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    if (publicKey) {
+      res.json({ publicKey });
+    } else {
+      res.status(503).json({ error: "VAPID public key not configured" });
+    }
+  });
+
+  app.delete("/api/notifications/unsubscribe/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const success = PushNotificationService.removeSubscription(userId);
+      res.json({ success, message: success ? "Unsubscribed" : "No subscription found" });
+    } catch (error) {
+      console.error("Unsubscribe error:", error);
+      res.status(500).json({ error: "Failed to unsubscribe" });
     }
   });
 
