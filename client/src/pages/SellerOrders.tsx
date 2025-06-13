@@ -295,7 +295,7 @@ export default function SellerOrders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Order ID</TableHead>
+                    <TableHead>Order & Products</TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
@@ -306,7 +306,23 @@ export default function SellerOrders() {
                 <TableBody>
                   {filteredOrders.map((order) => (
                     <TableRow key={order.id}>
-                      <TableCell className="font-mono">#{order.id}</TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <p className="font-mono text-sm">#{order.id}</p>
+                          {order.items && order.items.length > 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              {order.items.slice(0, 2).map((item, index) => (
+                                <div key={index} className="truncate">
+                                  {item.product?.name || `Product #${item.productId}`}
+                                  {index === 0 && order.items.length > 1 && (
+                                    <span className="ml-1">+{order.items.length - 1} more</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{order.customerName}</p>
@@ -453,27 +469,61 @@ export default function SellerOrders() {
                       <p>Loading order items...</p>
                     ) : (
                       <div className="space-y-3">
-                        {orderItems?.map((item) => (
-                          <div key={item.id} className="flex justify-between items-center p-3 border rounded-lg">
-                            <div className="flex-1">
-                              <p className="font-medium">{item.product?.name || `Product #${item.productId}`}</p>
-                              <p className="text-sm text-muted-foreground">
-                                Quantity: {item.quantity} × ₹{parseFloat(item.price).toFixed(2)}
-                              </p>
-                              {item.product?.description && (
-                                <p className="text-xs text-gray-500 mt-1 line-clamp-1">
-                                  {item.product.description}
+                        {orderItems && orderItems.length > 0 ? (
+                          orderItems.map((item) => (
+                            <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                              {/* Product Image */}
+                              <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                                {item.product?.imageUrl ? (
+                                  <img 
+                                    src={item.product.imageUrl} 
+                                    alt={item.product.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                      e.currentTarget.nextElementSibling.style.display = 'flex';
+                                    }}
+                                  />
+                                ) : null}
+                                <Package className="h-8 w-8 text-gray-400" />
+                              </div>
+                              
+                              {/* Product Details */}
+                              <div className="flex-1">
+                                <p className="font-medium text-base">{item.product?.name || `Product #${item.productId}`}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Quantity: {item.quantity} × ₹{parseFloat(item.price).toFixed(2)}
                                 </p>
-                              )}
+                                {item.product?.description && (
+                                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                    {item.product.description}
+                                  </p>
+                                )}
+                                {item.product?.category && (
+                                  <p className="text-xs text-blue-600 mt-1">
+                                    Category: {item.product.category}
+                                  </p>
+                                )}
+                              </div>
+                              
+                              {/* Price Details */}
+                              <div className="text-right">
+                                <p className="font-medium text-lg">₹{(parseFloat(item.price) * item.quantity).toLocaleString()}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Unit Price: ₹{parseFloat(item.price).toFixed(2)}
+                                </p>
+                                <p className="text-xs text-green-600">
+                                  Qty: {item.quantity}
+                                </p>
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <p className="font-medium">₹{(parseFloat(item.price) * item.quantity).toLocaleString()}</p>
-                              <p className="text-xs text-muted-foreground">
-                                Unit: ₹{parseFloat(item.price).toFixed(2)}
-                              </p>
-                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8">
+                            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-500">No items found in this order</p>
                           </div>
-                        ))}
+                        )}
                       </div>
                     )}
                   </CardContent>
