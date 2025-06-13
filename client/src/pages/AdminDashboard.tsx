@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -26,7 +27,16 @@ import {
   CreditCard,
   FileText,
   Ban,
-  RefreshCw
+  RefreshCw,
+  Download,
+  Search,
+  Filter,
+  MapPin,
+  Phone,
+  Mail,
+  Calendar,
+  UserMinus,
+  Edit
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +60,10 @@ export default function AdminDashboard() {
   const [adminUser, setAdminUser] = useState<any>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterRole, setFilterRole] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [showUserDetails, setShowUserDetails] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("adminUser");
@@ -61,7 +75,7 @@ export default function AdminDashboard() {
   }, [setLocation]);
 
   // Fetch dashboard data
-  const { data: allUsers = [] } = useQuery({
+  const { data: allUsers = [], refetch: refetchUsers } = useQuery({
     queryKey: ["/api/admin/users"],
     enabled: !!adminUser,
   });
@@ -160,6 +174,22 @@ export default function AdminDashboard() {
     },
   });
 
+  const banUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await apiRequest("PUT", `/api/admin/users/${userId}/ban`, { 
+        reason: "Banned by admin" 
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "User banned",
+        description: "User has been banned successfully.",
+      });
+    },
+  });
+
   const handleLogout = () => {
     localStorage.removeItem("adminUser");
     setLocation("/admin/login");
@@ -167,6 +197,70 @@ export default function AdminDashboard() {
       title: "Logged out",
       description: "You have been logged out successfully.",
     });
+  };
+
+  const handleRefresh = async () => {
+    try {
+      await refetchUsers();
+      toast({
+        title: "Data refreshed",
+        description: "User data has been refreshed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh failed",
+        description: "Failed to refresh data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExport = () => {
+    try {
+      const filteredUsers = getFilteredUsers();
+      const csvData = [
+        // CSV Header
+        ['ID', 'Full Name', 'Username', 'Email', 'Phone', 'Role', 'Status', 'City', 'State', 'Address', 'Created Date', 'Approval Date', 'Approved By', 'Rejection Reason'].join(','),
+        // CSV Data
+        ...filteredUsers.map(user => [
+          user.id,
+          `"${user.fullName}"`,
+          `"${user.username || ''}"`,
+          `"${user.email}"`,
+          `"${user.phone || ''}"`,
+          user.role,
+          user.status,
+          `"${user.city || ''}"`,
+          `"${user.state || ''}"`,
+          `"${user.address || ''}"`,
+          new Date(user.createdAt).toLocaleDateString(),
+          user.approvalDate ? new Date(user.approvalDate).toLocaleDateString() : '',
+          user.approvedBy || '',
+          `"${user.rejectionReason || ''}"`
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvData], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Export successful",
+        description: `Exported ${filteredUsers.length} users to CSV file.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: "Failed to export data. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -177,6 +271,8 @@ export default function AdminDashboard() {
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
       case "rejected":
         return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
+      case "suspended":
+        return <Badge variant="destructive" className="bg-red-100 text-red-800"><Ban className="h-3 w-3 mr-1" />Banned</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -194,6 +290,21 @@ export default function AdminDashboard() {
 
   const formatCurrency = (amount: string | number) => {
     return `Rs. ${parseFloat(amount.toString()).toLocaleString()}`;
+  };
+
+  const getFilteredUsers = () => {
+    return allUsers.filter((user: User) => {
+      const matchesSearch = !searchTerm || 
+        user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.phone?.includes(searchTerm);
+      
+      const matchesRole = filterRole === "all" || user.role === filterRole;
+      const matchesStatus = filterStatus === "all" || user.status === filterStatus;
+      
+      return matchesSearch && matchesRole && matchesStatus;
+    });
   };
 
   if (!adminUser) {
@@ -281,459 +392,400 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Tabs for different management sections */}
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8">
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="products" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Products
-            </TabsTrigger>
-            <TabsTrigger value="orders" className="flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4" />
-              Orders
-            </TabsTrigger>
-            <TabsTrigger value="transactions" className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Payments
-            </TabsTrigger>
-            <TabsTrigger value="coupons" className="flex items-center gap-2">
-              <Ticket className="h-4 w-4" />
-              Coupons
-            </TabsTrigger>
-            <TabsTrigger value="banners" className="flex items-center gap-2">
-              <Image className="h-4 w-4" />
-              Banners
-            </TabsTrigger>
-            <TabsTrigger value="support" className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Support
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
-          </TabsList>
-
-          {/* User Management Tab */}
-          <TabsContent value="users" className="space-y-6">
+        {/* Enhanced User Management Section */}
+        <Card>
+          <CardHeader>
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">User Management</h2>
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  User Management
+                </CardTitle>
+                <p className="text-sm text-gray-600 mt-1">Manage all users and their details</p>
+              </div>
               <div className="flex gap-2">
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                  {pendingUsers.length} Pending Approval
-                </Badge>
-                <Badge variant="default" className="bg-green-100 text-green-800">
-                  {activeShopkeepers} Active Shopkeepers
-                </Badge>
+                <Button variant="outline" size="sm" onClick={handleRefresh}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="flex-1">
+                <Input
+                  placeholder="Search by name, email, username, or phone..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <Select value={filterRole} onValueChange={setFilterRole}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="customer">Customers</SelectItem>
+                  <SelectItem value="shopkeeper">Shopkeepers</SelectItem>
+                  <SelectItem value="delivery_partner">Delivery Partners</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="suspended">Banned</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-blue-600">Total Users</p>
+                <p className="text-xl font-bold text-blue-900">{getFilteredUsers().length}</p>
+              </div>
+              <div className="bg-green-50 p-3 rounded-lg">
+                <p className="text-sm text-green-600">Active</p>
+                <p className="text-xl font-bold text-green-900">
+                  {getFilteredUsers().filter(u => u.status === 'active').length}
+                </p>
+              </div>
+              <div className="bg-yellow-50 p-3 rounded-lg">
+                <p className="text-sm text-yellow-600">Pending</p>
+                <p className="text-xl font-bold text-yellow-900">
+                  {getFilteredUsers().filter(u => u.status === 'pending').length}
+                </p>
+              </div>
+              <div className="bg-red-50 p-3 rounded-lg">
+                <p className="text-sm text-red-600">Banned</p>
+                <p className="text-xl font-bold text-red-900">
+                  {getFilteredUsers().filter(u => u.status === 'suspended').length}
+                </p>
               </div>
             </div>
 
-            {pendingUsers.length > 0 && (
-              <Alert>
-                <Clock className="h-4 w-4" />
-                <AlertDescription>
-                  You have {pendingUsers.length} shopkeeper account(s) waiting for approval.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <Card>
-              <CardHeader>
-                <CardTitle>All Users</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Registration Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {allUsers.map((user: User) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.fullName}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Badge variant={user.role === "shopkeeper" ? "default" : "secondary"}>
-                            {user.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(user.status)}</TableCell>
-                        <TableCell>{formatDate(user.createdAt)}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            {user.status === "pending" && user.role === "shopkeeper" && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  onClick={() => approveMutation.mutate(user.id)}
-                                  disabled={approveMutation.isPending}
-                                  className="bg-green-600 hover:bg-green-700"
-                                >
-                                  <UserCheck className="h-3 w-3 mr-1" />
-                                  Approve
-                                </Button>
-                                <Dialog>
-                                  <DialogTrigger asChild>
+            {/* Users Table */}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {getFilteredUsers().map((user: User) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Users className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{user.fullName}</p>
+                            <p className="text-sm text-gray-500">@{user.username}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-3 w-3 text-gray-400" />
+                            <span className="text-sm">{user.email}</span>
+                          </div>
+                          {user.phone && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-3 w-3 text-gray-400" />
+                              <span className="text-sm">{user.phone}</span>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={
+                            user.role === 'customer' ? 'default' :
+                            user.role === 'shopkeeper' ? 'secondary' :
+                            user.role === 'delivery_partner' ? 'outline' : 'default'
+                          }
+                        >
+                          {user.role.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(user.status)}</TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          {user.city && (
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-3 w-3 text-gray-400" />
+                              <span className="text-sm">{user.city}{user.state && `, ${user.state}`}</span>
+                            </div>
+                          )}
+                          {user.address && (
+                            <p className="text-xs text-gray-500 truncate max-w-32" title={user.address}>
+                              {user.address}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-3 w-3 text-gray-400" />
+                          <span className="text-sm">{formatDate(user.createdAt)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-1">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowUserDetails(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {user.status === 'pending' && user.role === 'shopkeeper' && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => approveMutation.mutate(user.id)}
+                                disabled={approveMutation.isPending}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => setSelectedUser(user)}
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Reject User Application</DialogTitle>
+                                    <DialogDescription>
+                                      Are you sure you want to reject {user.fullName}'s application?
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <Textarea
+                                      placeholder="Reason for rejection..."
+                                      value={rejectReason}
+                                      onChange={(e) => setRejectReason(e.target.value)}
+                                    />
+                                  </div>
+                                  <DialogFooter>
                                     <Button
-                                      size="sm"
                                       variant="destructive"
-                                      onClick={() => setSelectedUser(user)}
+                                      onClick={() => rejectMutation.mutate({ userId: user.id, reason: rejectReason })}
+                                      disabled={rejectMutation.isPending}
                                     >
-                                      <UserX className="h-3 w-3 mr-1" />
-                                      Reject
+                                      Reject Application
                                     </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>Reject Shopkeeper Application</DialogTitle>
-                                      <DialogDescription>
-                                        Are you sure you want to reject {user.fullName}'s application?
-                                        Please provide a reason for rejection.
-                                      </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4">
-                                      <Textarea
-                                        placeholder="Reason for rejection..."
-                                        value={rejectReason}
-                                        onChange={(e) => setRejectReason(e.target.value)}
-                                      />
-                                    </div>
-                                    <DialogFooter>
-                                      <Button
-                                        variant="destructive"
-                                        onClick={() => rejectMutation.mutate({ userId: user.id, reason: rejectReason })}
-                                        disabled={rejectMutation.isPending}
-                                      >
-                                        Reject Application
-                                      </Button>
-                                    </DialogFooter>
-                                  </DialogContent>
-                                </Dialog>
-                              </>
-                            )}
-                            <Button size="sm" variant="outline">
-                              <Eye className="h-3 w-3 mr-1" />
-                              View
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                            </>
+                          )}
+                          {user.status === 'active' && user.role !== 'customer' && (
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => banUserMutation.mutate(user.id)}
+                              disabled={banUserMutation.isPending}
+                            >
+                              <Ban className="h-4 w-4" />
                             </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Product Management Tab */}
-          <TabsContent value="products" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Product Management</h2>
-              <Button>
-                <Package className="h-4 w-4 mr-2" />
-                Add Product
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <Package className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-                    <p className="text-2xl font-bold">{allProducts.length}</p>
-                    <p className="text-sm text-gray-600">Total Products</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <CheckCircle className="h-8 w-8 mx-auto text-green-600 mb-2" />
-                    <p className="text-2xl font-bold">{allProducts.filter((p: Product) => p.isActive).length}</p>
-                    <p className="text-sm text-gray-600">Active Products</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <AlertCircle className="h-8 w-8 mx-auto text-yellow-600 mb-2" />
-                    <p className="text-2xl font-bold">{allProducts.filter((p: Product) => p.stock && p.stock < 10).length}</p>
-                    <p className="text-sm text-gray-600">Low Stock</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>All Products</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Store</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Stock</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {allProducts.slice(0, 10).map((product: Product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell>{product.storeId}</TableCell>
-                        <TableCell>{formatCurrency(product.price)}</TableCell>
-                        <TableCell>
-                          <Badge variant={product.stock && product.stock < 10 ? "destructive" : "default"}>
-                            {product.stock || 0}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={product.isActive ? "default" : "secondary"}>
-                            {product.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline">
-                              <Eye className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                            <Button size="sm" variant="outline">
-                              Edit
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Orders Management Tab */}
-          <TabsContent value="orders" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Order Management</h2>
-              <Button variant="outline">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <ShoppingCart className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-                    <p className="text-2xl font-bold">{allOrders.length}</p>
-                    <p className="text-sm text-gray-600">Total Orders</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <Clock className="h-8 w-8 mx-auto text-yellow-600 mb-2" />
-                    <p className="text-2xl font-bold">{allOrders.filter((o: Order) => o.status === "pending").length}</p>
-                    <p className="text-sm text-gray-600">Pending</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <CheckCircle className="h-8 w-8 mx-auto text-green-600 mb-2" />
-                    <p className="text-2xl font-bold">{allOrders.filter((o: Order) => o.status === "delivered").length}</p>
-                    <p className="text-sm text-gray-600">Delivered</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <XCircle className="h-8 w-8 mx-auto text-red-600 mb-2" />
-                    <p className="text-2xl font-bold">{allOrders.filter((o: Order) => o.status === "cancelled").length}</p>
-                    <p className="text-sm text-gray-600">Cancelled</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Orders</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order ID</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {allOrders.slice(0, 10).map((order: Order) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">#{order.id}</TableCell>
-                        <TableCell>{order.customerName}</TableCell>
-                        <TableCell>{formatCurrency(order.totalAmount)}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={
-                              order.status === "delivered" ? "default" :
-                              order.status === "pending" ? "secondary" :
-                              order.status === "cancelled" ? "destructive" : "outline"
-                            }
-                          >
-                            {order.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatDate(order.createdAt)}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline">
-                              <Eye className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                            <Select defaultValue={order.status}>
-                              <SelectTrigger className="w-24 h-8">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="processing">Processing</SelectItem>
-                                <SelectItem value="shipped">Shipped</SelectItem>
-                                <SelectItem value="delivered">Delivered</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Payment Transactions Tab */}
-          <TabsContent value="transactions" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Payment Management</h2>
-              <div className="flex gap-2">
-                <Badge variant="default" className="bg-green-100 text-green-800">
-                  {formatCurrency(totalRevenue)} Total Revenue
-                </Badge>
+            {getFilteredUsers().length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No users found matching your criteria</p>
               </div>
-            </div>
+            )}
+          </CardContent>
+        </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <CreditCard className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-                    <p className="text-2xl font-bold">{transactions.length}</p>
-                    <p className="text-sm text-gray-600">Total Transactions</p>
+        {/* User Details Dialog */}
+        <Dialog open={showUserDetails} onOpenChange={setShowUserDetails}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                User Details
+              </DialogTitle>
+            </DialogHeader>
+            {selectedUser && (
+              <div className="space-y-6">
+                {/* Basic Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-sm text-gray-500 mb-1">Full Name</h4>
+                    <p className="text-sm font-medium">{selectedUser.fullName}</p>
                   </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <CheckCircle className="h-8 w-8 mx-auto text-green-600 mb-2" />
-                    <p className="text-2xl font-bold">{transactions.filter((t: PaymentTransaction) => t.status === "completed").length}</p>
-                    <p className="text-sm text-gray-600">Completed</p>
+                  <div>
+                    <h4 className="font-medium text-sm text-gray-500 mb-1">Username</h4>
+                    <p className="text-sm">{selectedUser.username || 'Not set'}</p>
                   </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <Clock className="h-8 w-8 mx-auto text-yellow-600 mb-2" />
-                    <p className="text-2xl font-bold">{transactions.filter((t: PaymentTransaction) => t.status === "pending").length}</p>
-                    <p className="text-sm text-gray-600">Pending</p>
+                  <div>
+                    <h4 className="font-medium text-sm text-gray-500 mb-1">Email</h4>
+                    <p className="text-sm">{selectedUser.email}</p>
                   </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-center">
-                    <XCircle className="h-8 w-8 mx-auto text-red-600 mb-2" />
-                    <p className="text-2xl font-bold">{transactions.filter((t: PaymentTransaction) => t.status === "failed").length}</p>
-                    <p className="text-sm text-gray-600">Failed</p>
+                  <div>
+                    <h4 className="font-medium text-sm text-gray-500 mb-1">Phone</h4>
+                    <p className="text-sm">{selectedUser.phone || 'Not provided'}</p>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <div>
+                    <h4 className="font-medium text-sm text-gray-500 mb-1">Role</h4>
+                    <Badge variant="secondary">{selectedUser.role.replace('_', ' ')}</Badge>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm text-gray-500 mb-1">Status</h4>
+                    {getStatusBadge(selectedUser.status)}
+                  </div>
+                </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Transaction ID</TableHead>
-                      <TableHead>Order ID</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.slice(0, 10).map((transaction: PaymentTransaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell className="font-medium">{transaction.transactionId || `TXN-${transaction.id}`}</TableCell>
-                        <TableCell>#{transaction.orderId}</TableCell>
-                        <TableCell>{formatCurrency(transaction.amount)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{transaction.paymentMethod}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={
-                              transaction.status === "completed" ? "default" :
-                              transaction.status === "pending" ? "secondary" :
-                              transaction.status === "failed" ? "destructive" : "outline"
-                            }
-                          >
-                            {transaction.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatDate(transaction.createdAt)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                {/* Location Info */}
+                {(selectedUser.address || selectedUser.city || selectedUser.state) && (
+                  <div>
+                    <h4 className="font-medium text-sm text-gray-500 mb-2">Location Information</h4>
+                    <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                      {selectedUser.address && (
+                        <div>
+                          <span className="text-xs font-medium text-gray-500">Address:</span>
+                          <p className="text-sm">{selectedUser.address}</p>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-4">
+                        {selectedUser.city && (
+                          <div>
+                            <span className="text-xs font-medium text-gray-500">City:</span>
+                            <p className="text-sm">{selectedUser.city}</p>
+                          </div>
+                        )}
+                        {selectedUser.state && (
+                          <div>
+                            <span className="text-xs font-medium text-gray-500">State:</span>
+                            <p className="text-sm">{selectedUser.state}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-          {/* Other tabs would continue with similar structure for coupons, banners, support, and analytics */}
-        </Tabs>
+                {/* Account Info */}
+                <div>
+                  <h4 className="font-medium text-sm text-gray-500 mb-2">Account Information</h4>
+                  <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-xs font-medium text-gray-500">User ID:</span>
+                        <p className="text-sm">#{selectedUser.id}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-gray-500">Registration Date:</span>
+                        <p className="text-sm">{formatDate(selectedUser.createdAt)}</p>
+                      </div>
+                      {selectedUser.approvalDate && (
+                        <div>
+                          <span className="text-xs font-medium text-gray-500">Approval Date:</span>
+                          <p className="text-sm">{formatDate(selectedUser.approvalDate)}</p>
+                        </div>
+                      )}
+                      {selectedUser.approvedBy && (
+                        <div>
+                          <span className="text-xs font-medium text-gray-500">Approved By:</span>
+                          <p className="text-sm">Admin #{selectedUser.approvedBy}</p>
+                        </div>
+                      )}
+                    </div>
+                    {selectedUser.rejectionReason && (
+                      <div>
+                        <span className="text-xs font-medium text-gray-500">Rejection Reason:</span>
+                        <p className="text-sm text-red-600">{selectedUser.rejectionReason}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-4 border-t">
+                  {selectedUser.status === 'pending' && selectedUser.role === 'shopkeeper' && (
+                    <>
+                      <Button
+                        onClick={() => {
+                          approveMutation.mutate(selectedUser.id);
+                          setShowUserDetails(false);
+                        }}
+                        disabled={approveMutation.isPending}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Approve User
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          setShowUserDetails(false);
+                          // Open reject dialog
+                        }}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Reject User
+                      </Button>
+                    </>
+                  )}
+                  {selectedUser.status === 'active' && selectedUser.role !== 'customer' && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        banUserMutation.mutate(selectedUser.id);
+                        setShowUserDetails(false);
+                      }}
+                      disabled={banUserMutation.isPending}
+                    >
+                      <Ban className="h-4 w-4 mr-2" />
+                      Ban User
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
