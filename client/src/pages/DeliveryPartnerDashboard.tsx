@@ -167,142 +167,14 @@ export default function DeliveryPartnerDashboard() {
     );
   }
 
+  // Show dashboard for all partners (approved status is handled by admin approval process)
   if (!partner) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-        <div className="container mx-auto">
-          <Card className="max-w-2xl mx-auto shadow-xl border-0">
-            <CardHeader className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
-              <div className="flex items-center justify-center mb-4">
-                <div className="p-4 bg-white/20 rounded-full">
-                  <Truck className="h-12 w-12" />
-                </div>
-              </div>
-              <CardTitle className="text-3xl font-bold">Join Our Delivery Team</CardTitle>
-              <CardDescription className="text-blue-100 text-lg">
-                Start earning by delivering orders in your area
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-8 text-center">
-              <div className="space-y-6">
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <DollarSign className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                    <p className="font-semibold">Flexible Earnings</p>
-                  </div>
-                  <div>
-                    <Clock className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                    <p className="font-semibold">Work Your Hours</p>
-                  </div>
-                  <div>
-                    <MapPin className="h-8 w-8 text-red-500 mx-auto mb-2" />
-                    <p className="font-semibold">Local Deliveries</p>
-                  </div>
-                </div>
-                <p className="text-gray-600 text-lg">
-                  You need to be registered as a delivery partner to access this dashboard.
-                </p>
-                <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg">
-                  Apply Now
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (partner.status === 'pending') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-100 p-6">
-        <div className="container mx-auto">
-          <Card className="max-w-3xl mx-auto shadow-xl border-0">
-            <CardHeader className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-t-lg">
-              <CardTitle className="flex items-center gap-3 text-2xl">
-                <Clock className="h-8 w-8" />
-                Application Under Review
-              </CardTitle>
-              <CardDescription className="text-orange-100 text-lg">
-                Your delivery partner application is being processed by our team
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded">
-                  <p className="text-orange-800">
-                    <strong>Status:</strong> We're reviewing your application and will notify you within 24-48 hours.
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg text-gray-800">Vehicle Information</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Vehicle Type:</span>
-                        <span className="font-medium capitalize">{partner.vehicleType}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Vehicle Number:</span>
-                        <span className="font-medium">{partner.vehicleNumber}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">License:</span>
-                        <span className="font-medium">{partner.drivingLicense}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg text-gray-800">Service Areas</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {partner.deliveryAreas.map((area, index) => (
-                        <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {area}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (partner.status === 'rejected') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 p-6">
-        <div className="container mx-auto">
-          <Card className="max-w-2xl mx-auto shadow-xl border-0">
-            <CardHeader className="bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-t-lg">
-              <CardTitle className="flex items-center gap-3 text-2xl">
-                <AlertCircle className="h-8 w-8" />
-                Application Not Approved
-              </CardTitle>
-              <CardDescription className="text-red-100 text-lg">
-                Unfortunately, your delivery partner application was not approved
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-8 text-center">
-              <div className="space-y-6">
-                <p className="text-gray-600 text-lg">
-                  Please contact our support team for more information or to reapply with updated documents.
-                </p>
-                <div className="flex gap-4 justify-center">
-                  <Button variant="outline" className="border-gray-300">
-                    Contact Support
-                  </Button>
-                  <Button className="bg-gradient-to-r from-blue-600 to-indigo-600">
-                    Reapply
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
+          <h2 className="text-2xl font-semibold text-gray-700 mb-2">Setting up Dashboard</h2>
+          <p className="text-gray-500">Please wait while we prepare your delivery partner account...</p>
         </div>
       </div>
     );

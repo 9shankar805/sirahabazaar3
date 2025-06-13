@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "@/components/ImageUpload";
-import AdminVerificationPanel from "@/components/AdminVerificationPanel";
 import AdminToggle from "@/components/AdminToggle";
 
 const registerSchema = z.object({
@@ -26,12 +25,36 @@ const registerSchema = z.object({
   role: z.enum(["customer", "shopkeeper", "delivery_partner"]),
   address: z.string().optional(),
   
-  // Delivery partner specific fields
+  // Comprehensive Delivery partner verification fields
   vehicleType: z.string().optional(),
   vehicleNumber: z.string().optional(),
-  deliveryArea: z.string().optional(),
+  vehicleBrand: z.string().optional(),
+  vehicleModel: z.string().optional(),
+  vehicleYear: z.string().optional(),
+  vehicleColor: z.string().optional(),
+  drivingLicense: z.string().optional(),
+  licenseExpiryDate: z.string().optional(),
+  idProofType: z.string().optional(),
+  idProofNumber: z.string().optional(),
+  bankAccountNumber: z.string().optional(),
+  ifscCode: z.string().optional(),
+  bankName: z.string().optional(),
+  accountHolderName: z.string().optional(),
+  emergencyContactName: z.string().optional(),
+  emergencyContactPhone: z.string().optional(),
+  emergencyContactRelation: z.string().optional(),
+  deliveryAreas: z.array(z.string()).optional(),
+  workingHours: z.string().optional(),
+  experience: z.string().optional(),
+  previousEmployment: z.string().optional(),
+  references: z.string().optional(),
+  medicalCertificate: z.string().optional(),
+  policeClearance: z.string().optional(),
   idProofUrl: z.string().optional(),
   drivingLicenseUrl: z.string().optional(),
+  vehicleRegistrationUrl: z.string().optional(),
+  insuranceUrl: z.string().optional(),
+  photoUrl: z.string().optional(),
   termsAccepted: z.boolean().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -42,7 +65,7 @@ const registerSchema = z.object({
   }
   return true;
 }, {
-  message: "Vehicle type is required",
+  message: "Vehicle type is required for delivery partners",
   path: ["vehicleType"],
 }).refine((data) => {
   if (data.role === "delivery_partner") {
@@ -50,24 +73,64 @@ const registerSchema = z.object({
   }
   return true;
 }, {
-  message: "Vehicle number is required",
+  message: "Vehicle number is required for delivery partners",
   path: ["vehicleNumber"],
 }).refine((data) => {
   if (data.role === "delivery_partner") {
-    return data.deliveryArea && data.deliveryArea.length > 0;
+    return data.drivingLicense && data.drivingLicense.length > 0;
   }
   return true;
 }, {
-  message: "Delivery area is required",
-  path: ["deliveryArea"],
+  message: "Driving license number is required for delivery partners",
+  path: ["drivingLicense"],
 }).refine((data) => {
   if (data.role === "delivery_partner") {
-    return data.idProofUrl && data.idProofUrl.length > 0;
+    return data.idProofType && data.idProofType.length > 0;
   }
   return true;
 }, {
-  message: "ID proof is required",
-  path: ["idProofUrl"],
+  message: "ID proof type is required for delivery partners",
+  path: ["idProofType"],
+}).refine((data) => {
+  if (data.role === "delivery_partner") {
+    return data.idProofNumber && data.idProofNumber.length > 0;
+  }
+  return true;
+}, {
+  message: "ID proof number is required for delivery partners",
+  path: ["idProofNumber"],
+}).refine((data) => {
+  if (data.role === "delivery_partner") {
+    return data.bankAccountNumber && data.bankAccountNumber.length > 0;
+  }
+  return true;
+}, {
+  message: "Bank account number is required for delivery partners",
+  path: ["bankAccountNumber"],
+}).refine((data) => {
+  if (data.role === "delivery_partner") {
+    return data.ifscCode && data.ifscCode.length > 0;
+  }
+  return true;
+}, {
+  message: "IFSC code is required for delivery partners",
+  path: ["ifscCode"],
+}).refine((data) => {
+  if (data.role === "delivery_partner") {
+    return data.emergencyContactName && data.emergencyContactName.length > 0;
+  }
+  return true;
+}, {
+  message: "Emergency contact name is required for delivery partners",
+  path: ["emergencyContactName"],
+}).refine((data) => {
+  if (data.role === "delivery_partner") {
+    return data.emergencyContactPhone && data.emergencyContactPhone.length > 0;
+  }
+  return true;
+}, {
+  message: "Emergency contact phone is required for delivery partners",
+  path: ["emergencyContactPhone"],
 }).refine((data) => {
   if (data.role === "delivery_partner") {
     return data.termsAccepted === true;
@@ -84,7 +147,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
+
   const [, setLocation] = useLocation();
   const { register, user } = useAuth();
   const { toast } = useToast();
@@ -104,9 +167,33 @@ export default function Register() {
       address: "",
       vehicleType: "",
       vehicleNumber: "",
-      deliveryArea: "",
+      vehicleBrand: "",
+      vehicleModel: "",
+      vehicleYear: "",
+      vehicleColor: "",
+      drivingLicense: "",
+      licenseExpiryDate: "",
+      idProofType: "",
+      idProofNumber: "",
+      bankAccountNumber: "",
+      ifscCode: "",
+      bankName: "",
+      accountHolderName: "",
+      emergencyContactName: "",
+      emergencyContactPhone: "",
+      emergencyContactRelation: "",
+      deliveryAreas: [],
+      workingHours: "",
+      experience: "",
+      previousEmployment: "",
+      references: "",
+      medicalCertificate: "",
+      policeClearance: "",
       idProofUrl: "",
       drivingLicenseUrl: "",
+      vehicleRegistrationUrl: "",
+      insuranceUrl: "",
+      photoUrl: "",
       termsAccepted: false,
     },
   });
@@ -595,18 +682,7 @@ export default function Register() {
                 </Link>
               </div>
               
-              {isAdmin && (
-                <div className="mt-4 pt-4 border-t">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowAdminPanel(!showAdminPanel)}
-                    className="w-full"
-                  >
-                    {showAdminPanel ? "Hide" : "Show"} Delivery Partner Verifications
-                  </Button>
-                </div>
-              )}
+
             </div>
 
             {selectedRole === "shopkeeper" && (
@@ -636,20 +712,7 @@ export default function Register() {
           </CardContent>
         </Card>
         
-        {/* Admin Verification Panel */}
-        {isAdmin && showAdminPanel && (
-          <div className="mt-6">
-            <AdminVerificationPanel 
-              isAdmin={isAdmin}
-              onVerificationComplete={() => {
-                toast({
-                  title: "Verification Complete",
-                  description: "Delivery partner status has been updated.",
-                });
-              }}
-            />
-          </div>
-        )}
+
       </div>
     </div>
   );
