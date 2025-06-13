@@ -276,7 +276,7 @@ export default function Homepage() {
       <section className="py-8 sm:py-12 lg:py-16 bg-secondary/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Featured Products</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Products</h2>
             <Link href="/products">
               <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto">
                 View All Products
@@ -305,7 +305,7 @@ export default function Homepage() {
       {/* Popular Stores */}
       <section className="py-8 sm:py-12 lg:py-16 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-6 sm:mb-10 text-center">Popular Local Stores</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-6 sm:mb-10 text-center">Stores</h2>
           {storesError ? (
             <StoresErrorState />
           ) : storesLoading ? (
