@@ -3161,22 +3161,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // HERE Maps integration endpoints
   app.post("/api/maps/route", async (req, res) => {
     try {
-      const { origin, destination } = req.body;
+      const { origin, destination, start, end } = req.body;
+      
+      // Support both parameter formats
+      const startPoint = origin || start;
+      const endPoint = destination || end;
+      
+      if (!startPoint || !endPoint) {
+        return res.status(400).json({ 
+          error: "Missing origin/start and destination/end coordinates" 
+        });
+      }
       
       if (!hereMapService.isConfigured()) {
         return res.status(503).json({ 
           error: "HERE Maps service not configured",
           fallback: true,
-          googleMapsLink: hereMapService.generateGoogleMapsLink(origin, destination)
+          googleMapsLink: hereMapService.generateGoogleMapsLink(startPoint, endPoint)
         });
       }
       
-      const route = await hereMapService.calculateRoute({ origin, destination });
+      const route = await hereMapService.calculateRoute({ origin: startPoint, destination: endPoint });
       
       if (!route) {
         return res.status(404).json({ 
           error: "Route not found",
-          googleMapsLink: hereMapService.generateGoogleMapsLink(origin, destination)
+          googleMapsLink: hereMapService.generateGoogleMapsLink(startPoint, endPoint)
         });
       }
       

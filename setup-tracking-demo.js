@@ -58,10 +58,7 @@ async function setupTrackingDemo() {
         $1, 26.6593, 86.1924, 26.6600, 86.1930,
         'LINESTRING(86.1924 26.6593, 86.1930 26.6600)',
         1200, 420
-      )
-      ON CONFLICT (delivery_id) DO UPDATE SET
-        route_geometry = EXCLUDED.route_geometry,
-        distance_meters = EXCLUDED.distance_meters;
+      );
     `, [deliveryId]);
 
     // Add status history
@@ -70,8 +67,7 @@ async function setupTrackingDemo() {
         delivery_id, status, description, timestamp
       ) VALUES 
         ($1, 'assigned', 'Order assigned to delivery partner', NOW() - INTERVAL '5 minutes'),
-        ($1, 'picked_up', 'Package picked up from store', NOW() - INTERVAL '2 minutes')
-      ON CONFLICT DO NOTHING;
+        ($1, 'picked_up', 'Package picked up from store', NOW() - INTERVAL '2 minutes');
     `, [deliveryId]);
 
     console.log('✅ Demo data setup complete!');
