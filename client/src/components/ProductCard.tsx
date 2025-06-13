@@ -77,21 +77,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.name}
           </h3>
           
-          <div className="flex items-center mb-1">
-            <div className="flex text-yellow-400 mr-1">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-2.5 w-2.5 ${
-                    i < Math.floor(Number(product.rating)) ? "fill-current" : ""
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="text-xs text-muted-foreground">
-              ({product.totalReviews})
-            </span>
-          </div>
+          
           
           <div className="flex items-center space-x-1 mb-2">
             <span className="text-sm font-bold text-foreground">
