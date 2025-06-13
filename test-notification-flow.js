@@ -131,11 +131,11 @@ async function testNotificationFlow() {
     // Step 4: Create test delivery partner
     console.log('\n=== STEP 4: Creating Test Delivery Partner ===');
     const deliveryPartnerData = {
-      username: `delivery_partner_${Date.now()}`,
-      email: `delivery_${Date.now()}@test.com`,
+      username: `delivery_partner_${timestamp}`,
+      email: `delivery_${timestamp}@test.com`,
       password: 'password123',
       fullName: 'Test Delivery Partner',
-      phone: '+1234567893',
+      phone: `+12347${timestamp.toString().slice(-5)}`,
       address: '789 Delivery Street',
       role: 'delivery_partner'
     };
@@ -163,7 +163,7 @@ async function testNotificationFlow() {
       isAvailable: true
     };
 
-    const partnerProfileRes = await makeRequest('/api/delivery-partners', 'POST', partnerProfileData);
+    const partnerProfileRes = await makeRequest('/api/delivery-partners/signup', 'POST', partnerProfileData);
     if (!partnerProfileRes.ok) {
       logResult('Delivery Partner Profile', false, partnerProfileRes.data.error);
       return;
