@@ -139,6 +139,11 @@
     @apply border-border;
   }
 
+  html, body {
+    overflow-y: hidden;
+    height: 100vh;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: "Inter", system-ui, -apple-system, sans-serif;
@@ -171,20 +176,26 @@
   }
 }
 
-/* Custom scrollbar */
+/* Hide scrollbar completely */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 0px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground));
-  border-radius: 3px;
+  background: transparent;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--foreground));
+/* For Firefox */
+html {
+  scrollbar-width: none;
+}
+
+/* For Internet Explorer and Edge */
+body {
+  -ms-overflow-style: none;
 }
