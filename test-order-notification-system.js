@@ -54,12 +54,13 @@ async function createTestUsers() {
   console.log('\n=== STEP 1: Creating Test Users ===');
   
   // Create customer
+  const timestamp = Date.now();
   const customerData = {
-    username: `customer_${Date.now()}`,
+    username: `customer_${timestamp}`,
     fullName: 'Test Customer',
-    email: `customer_${Date.now()}@test.com`,
+    email: `customer_${timestamp}@test.com`,
     password: 'password123',
-    phone: '+1234567890',
+    phone: `+123456${timestamp.toString().slice(-4)}`,
     role: 'customer'
   };
 
