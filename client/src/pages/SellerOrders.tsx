@@ -29,6 +29,19 @@ interface Order {
   latitude: string;
   longitude: string;
   createdAt: string;
+  items?: Array<{
+    id: number;
+    productId: number;
+    quantity: number;
+    price: string;
+    product?: {
+      id: number;
+      name: string;
+      imageUrl?: string;
+      description?: string;
+      category?: string;
+    };
+  }>;
 }
 
 interface OrderItem {
@@ -92,10 +105,16 @@ export default function SellerOrders() {
     );
   }
 
-  // Orders query
+  // Orders query with items included
   const { data: orders, isLoading: ordersLoading } = useQuery<Order[]>({
     queryKey: ['/api/orders/store', user?.id],
-    queryFn: () => fetch(`/api/orders/store?userId=${user?.id}`).then(res => res.json()),
+    queryFn: async () => {
+      const response = await fetch(`/api/orders/store?userId=${user?.id}`);
+      const ordersData = await response.json();
+      
+      // Each order should already include items from the server
+      return ordersData;
+    },
     enabled: !!user?.id,
   });
 
@@ -469,28 +488,40 @@ export default function SellerOrders() {
                       <p>Loading order items...</p>
                     ) : (
                       <div className="space-y-3">
-                        {orderItems && orderItems.length > 0 ? (
+                        {itemsLoading ? (
+                          <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                            <p className="text-gray-500">Loading order items...</p>
+                          </div>
+                        ) : orderItems && orderItems.length > 0 ? (
                           orderItems.map((item) => (
                             <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
                               {/* Product Image */}
-                              <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                              <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center relative">
                                 {item.product?.imageUrl ? (
-                                  <img 
-                                    src={item.product.imageUrl} 
-                                    alt={item.product.name}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
-                                      e.currentTarget.nextElementSibling.style.display = 'flex';
-                                    }}
-                                  />
-                                ) : null}
-                                <Package className="h-8 w-8 text-gray-400" />
+                                  <>
+                                    <img 
+                                      src={item.product.imageUrl} 
+                                      alt={item.product.name || 'Product'}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon');
+                                        if (fallback) fallback.style.display = 'flex';
+                                      }}
+                                    />
+                                    <Package className="fallback-icon h-8 w-8 text-gray-400 absolute inset-0 m-auto hidden" />
+                                  </>
+                                ) : (
+                                  <Package className="h-8 w-8 text-gray-400" />
+                                )}
                               </div>
                               
                               {/* Product Details */}
                               <div className="flex-1">
-                                <p className="font-medium text-base">{item.product?.name || `Product #${item.productId}`}</p>
+                                <p className="font-medium text-base">
+                                  {item.product?.name || `Product #${item.productId}`}
+                                </p>
                                 <p className="text-sm text-muted-foreground">
                                   Quantity: {item.quantity} × ₹{parseFloat(item.price).toFixed(2)}
                                 </p>
@@ -502,6 +533,11 @@ export default function SellerOrders() {
                                 {item.product?.category && (
                                   <p className="text-xs text-blue-600 mt-1">
                                     Category: {item.product.category}
+                                  </p>
+                                )}
+                                {!item.product && (
+                                  <p className="text-xs text-red-500 mt-1">
+                                    Product details unavailable
                                   </p>
                                 )}
                               </div>
@@ -522,6 +558,9 @@ export default function SellerOrders() {
                           <div className="text-center py-8">
                             <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                             <p className="text-gray-500">No items found in this order</p>
+                            <p className="text-xs text-gray-400 mt-2">
+                              This order may have been created before product details were properly linked.
+                            </p>
                           </div>
                         )}
                       </div>
