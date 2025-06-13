@@ -1,10 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer } from 'ws';
 import { storage } from "./storage";
 import { pool } from "./db";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { NotificationService } from "./notificationService";
+import { realTimeTrackingService } from "./services/realTimeTrackingService";
+import { hereMapService } from "./services/hereMapService";
 
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
@@ -3081,6 +3084,177 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Real-time delivery tracking API endpoints
+  app.post("/api/tracking/location", async (req, res) => {
+    try {
+      const { deliveryId, deliveryPartnerId, latitude, longitude, heading, speed, accuracy } = req.body;
+      
+      await realTimeTrackingService.updateDeliveryLocation({
+        deliveryId,
+        deliveryPartnerId,
+        latitude,
+        longitude,
+        heading,
+        speed,
+        accuracy
+      });
+      
+      res.json({ success: true, message: "Location updated successfully" });
+    } catch (error) {
+      console.error('Location update error:', error);
+      res.status(500).json({ error: "Failed to update location" });
+    }
+  });
+
+  app.patch("/api/tracking/status/:deliveryId", async (req, res) => {
+    try {
+      const deliveryId = parseInt(req.params.deliveryId);
+      const { status, description, latitude, longitude, updatedBy, metadata } = req.body;
+      
+      await realTimeTrackingService.updateDeliveryStatus({
+        deliveryId,
+        status,
+        description,
+        latitude,
+        longitude,
+        updatedBy,
+        metadata
+      });
+      
+      res.json({ success: true, message: "Status updated successfully" });
+    } catch (error) {
+      console.error('Status update error:', error);
+      res.status(500).json({ error: "Failed to update status" });
+    }
+  });
+
+  app.get("/api/tracking/:deliveryId", async (req, res) => {
+    try {
+      const deliveryId = parseInt(req.params.deliveryId);
+      const trackingData = await realTimeTrackingService.getDeliveryTrackingData(deliveryId);
+      
+      res.json(trackingData);
+    } catch (error) {
+      console.error('Get tracking data error:', error);
+      res.status(500).json({ error: "Failed to get tracking data" });
+    }
+  });
+
+  app.post("/api/tracking/route/:deliveryId", async (req, res) => {
+    try {
+      const deliveryId = parseInt(req.params.deliveryId);
+      const { pickupLocation, deliveryLocation } = req.body;
+      
+      await realTimeTrackingService.calculateAndStoreRoute(
+        deliveryId,
+        pickupLocation,
+        deliveryLocation
+      );
+      
+      res.json({ success: true, message: "Route calculated successfully" });
+    } catch (error) {
+      console.error('Route calculation error:', error);
+      res.status(500).json({ error: "Failed to calculate route" });
+    }
+  });
+
+  // HERE Maps integration endpoints
+  app.post("/api/maps/route", async (req, res) => {
+    try {
+      const { origin, destination } = req.body;
+      
+      if (!hereMapService.isConfigured()) {
+        return res.status(503).json({ 
+          error: "HERE Maps service not configured",
+          fallback: true,
+          googleMapsLink: hereMapService.generateGoogleMapsLink(origin, destination)
+        });
+      }
+      
+      const route = await hereMapService.calculateRoute({ origin, destination });
+      
+      if (!route) {
+        return res.status(404).json({ 
+          error: "Route not found",
+          googleMapsLink: hereMapService.generateGoogleMapsLink(origin, destination)
+        });
+      }
+      
+      const eta = hereMapService.calculateETA(route, origin);
+      const coordinates = route.routes[0]?.sections[0]?.polyline 
+        ? hereMapService.decodePolyline(route.routes[0].sections[0].polyline)
+        : [];
+      
+      res.json({
+        route,
+        eta,
+        coordinates,
+        googleMapsLink: hereMapService.generateGoogleMapsLink(origin, destination)
+      });
+    } catch (error) {
+      console.error('Route calculation error:', error);
+      res.status(500).json({ error: "Failed to calculate route" });
+    }
+  });
+
   const httpServer = createServer(app);
+  
+  // WebSocket Server for real-time tracking
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws'
+  });
+
+  wss.on('connection', (ws, req) => {
+    console.log('WebSocket connection established');
+    
+    ws.on('message', async (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        if (data.type === 'auth') {
+          const { userId, userType, token } = data;
+          
+          // TODO: Add proper authentication validation here
+          // For now, we'll register the connection with the provided user info
+          const sessionId = await realTimeTrackingService.registerWebSocketConnection(
+            ws, 
+            userId, 
+            userType
+          );
+          
+          ws.send(JSON.stringify({
+            type: 'auth_success',
+            sessionId,
+            message: 'Successfully connected to real-time tracking'
+          }));
+        }
+        
+        if (data.type === 'location_update') {
+          await realTimeTrackingService.updateDeliveryLocation(data.payload);
+        }
+        
+        if (data.type === 'status_update') {
+          await realTimeTrackingService.updateDeliveryStatus(data.payload);
+        }
+        
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+        ws.send(JSON.stringify({
+          type: 'error',
+          message: 'Invalid message format'
+        }));
+      }
+    });
+
+    ws.on('close', () => {
+      console.log('WebSocket connection closed');
+    });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
+
   return httpServer;
 }
