@@ -19,6 +19,7 @@ import { apiPost } from "@/lib/api";
 import { DeliveryCalculator } from "@/components/DeliveryCalculator";
 import { calculateDistance, getCoordinatesFromAddress, geocodeAddressWithValidation, getCurrentUserLocation, formatDistance } from "@/lib/distance";
 import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 
 const checkoutSchema = z.object({
   customerName: z.string().min(1, "Name is required"),
@@ -44,6 +45,10 @@ export default function Checkout() {
     zone: any;
     estimatedTime: number;
   } | null>(null);
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
   const [, setLocation] = useLocation();
   const { cartItems, totalAmount, clearCart } = useCart();
   const { user } = useAuth();
@@ -52,6 +57,20 @@ export default function Checkout() {
   const { data: deliveryZones = [] } = useQuery({
     queryKey: ["/api/delivery-zones"],
   });
+
+  // Watch for address changes to fetch suggestions
+  const currentAddress = form.watch("shippingAddress");
+  
+  // Debounced address suggestion fetching
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (currentAddress && !userLocation) {
+        fetchAddressSuggestions(currentAddress);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [currentAddress, userLocation]);
 
   const form = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
@@ -92,6 +111,94 @@ export default function Checkout() {
     } catch (error) {
       console.error('Reverse geocoding error:', error);
       return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+  };
+
+  // Fetch address suggestions from HERE Maps
+  const fetchAddressSuggestions = async (query: string) => {
+    if (!query.trim() || query.length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const apiKey = import.meta.env.VITE_HERE_API_KEY;
+      if (!apiKey) {
+        console.warn('HERE Maps API key not configured');
+        return;
+      }
+
+      const response = await fetch(
+        `https://autosuggest.search.hereapi.com/v1/autosuggest?q=${encodeURIComponent(query)}&apikey=${apiKey}&lang=en&limit=5&resultTypes=address,place`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch suggestions');
+      }
+
+      const data = await response.json();
+      
+      if (data.items && data.items.length > 0) {
+        setAddressSuggestions(data.items);
+        setShowSuggestions(true);
+        setSelectedSuggestionIndex(-1);
+      } else {
+        setAddressSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error('Error fetching address suggestions:', error);
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // Handle suggestion selection
+  const handleSuggestionSelect = (suggestion: any) => {
+    const address = suggestion.title || suggestion.address?.label || '';
+    form.setValue("shippingAddress", address);
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    
+    // Set coordinates if available
+    if (suggestion.position) {
+      setUserLocation({
+        latitude: suggestion.position.lat,
+        longitude: suggestion.position.lng
+      });
+      form.setValue("latitude", suggestion.position.lat);
+      form.setValue("longitude", suggestion.position.lng);
+    }
+  };
+
+  // Handle keyboard navigation for suggestions
+  const handleAddressKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || addressSuggestions.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev < addressSuggestions.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev > 0 ? prev - 1 : addressSuggestions.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0) {
+          handleSuggestionSelect(addressSuggestions[selectedSuggestionIndex]);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+        break;
     }
   };
 
@@ -471,20 +578,65 @@ export default function Checkout() {
                               </p>
                             )}
                             {showManualAddress && (
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Enter your complete delivery address"
-                                  className="min-h-20"
-                                  {...field}
-                                  onChange={(e) => {
-                                    field.onChange(e);
-                                    // Clear user location when manually typing
-                                    if (e.target.value !== field.value) {
-                                      setUserLocation(null);
-                                    }
-                                  }}
-                                />
-                              </FormControl>
+                              <div className="relative">
+                                <FormControl>
+                                  <Textarea 
+                                    placeholder="Enter your complete delivery address"
+                                    className="min-h-20"
+                                    {...field}
+                                    onChange={(e) => {
+                                      field.onChange(e);
+                                      // Clear user location when manually typing
+                                      if (e.target.value !== field.value) {
+                                        setUserLocation(null);
+                                      }
+                                    }}
+                                    onKeyDown={handleAddressKeyDown}
+                                    onFocus={() => {
+                                      if (addressSuggestions.length > 0) {
+                                        setShowSuggestions(true);
+                                      }
+                                    }}
+                                    onBlur={() => {
+                                      // Delay hiding suggestions to allow for clicks
+                                      setTimeout(() => setShowSuggestions(false), 200);
+                                    }}
+                                  />
+                                </FormControl>
+                                
+                                {/* Address Suggestions Dropdown */}
+                                {showSuggestions && addressSuggestions.length > 0 && (
+                                  <div 
+                                    ref={suggestionsRef}
+                                    className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
+                                  >
+                                    {addressSuggestions.map((suggestion, index) => (
+                                      <div
+                                        key={index}
+                                        className={`px-3 py-2 cursor-pointer text-sm hover:bg-muted transition-colors ${
+                                          index === selectedSuggestionIndex ? 'bg-muted' : ''
+                                        }`}
+                                        onClick={() => handleSuggestionSelect(suggestion)}
+                                        onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                                      >
+                                        <div className="font-medium">
+                                          {suggestion.title}
+                                        </div>
+                                        {suggestion.address?.label && suggestion.address.label !== suggestion.title && (
+                                          <div className="text-xs text-muted-foreground">
+                                            {suggestion.address.label}
+                                          </div>
+                                        )}
+                                        {suggestion.resultType && (
+                                          <div className="text-xs text-primary mt-1">
+                                            {suggestion.resultType === 'place' ? '📍 Place' : '🏠 Address'}
+                                          </div>
+                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </div>
                           <FormMessage />
