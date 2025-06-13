@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Minus, Plus, X, ShoppingBag, MapPin, Calculator } from "lucide-react";
+import { Minus, Plus, X, ShoppingBag, MapPin, Calculator, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -9,7 +9,7 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { calculateDistance, getCoordinatesFromAddress, formatDistance } from "@/lib/distance";
+import { calculateDistance, getCoordinatesFromAddress, formatDistance, getCurrentUserLocation } from "@/lib/distance";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Cart() {
@@ -17,9 +17,11 @@ export default function Cart() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryDistance, setDeliveryDistance] = useState(0);
   const [isCalculatingFee, setIsCalculatingFee] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [deliveryInfo, setDeliveryInfo] = useState<{
     zone: any;
     estimatedTime: number;
@@ -28,6 +30,36 @@ export default function Cart() {
   const { data: deliveryZones = [] } = useQuery({
     queryKey: ["/api/delivery-zones"],
   });
+
+  // Convert coordinates to address using HERE Maps Reverse Geocoding API
+  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    try {
+      const apiKey = import.meta.env.VITE_HERE_API_KEY;
+      if (!apiKey) {
+        throw new Error('HERE Maps API key not configured');
+      }
+
+      const response = await fetch(
+        `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat},${lng}&apikey=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to reverse geocode location');
+      }
+
+      const data = await response.json();
+      
+      if (data.items && data.items.length > 0) {
+        const address = data.items[0];
+        return address.title || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      }
+      
+      return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+  };
 
   const handleUpdateQuantity = async (cartItemId: number, newQuantity: number) => {
     try {
@@ -57,7 +89,96 @@ export default function Cart() {
     }
   };
 
+  const getMyLocation = async () => {
+    setIsGettingLocation(true);
+    try {
+      const location = await getCurrentUserLocation();
+      setUserLocation(location);
+      
+      // Convert coordinates to readable address
+      const address = await reverseGeocode(location.latitude, location.longitude);
+      setDeliveryAddress(address);
+      
+      toast({
+        title: "Location Found",
+        description: `Your location has been set to: ${address}`,
+      });
+      
+      // Automatically calculate delivery fee
+      await calculateDeliveryFeeWithLocation(location);
+      
+    } catch (error) {
+      console.error("Error getting location:", error);
+      toast({
+        title: "Location Error",
+        description: error instanceof Error ? error.message : "Failed to get your location. Please ensure location permission is granted.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
+  const calculateDeliveryFeeWithLocation = async (location: {latitude: number, longitude: number}) => {
+    if (cartItems.length === 0) return;
+
+    setIsCalculatingFee(true);
+    try {
+      // Get store address from first item (assuming single store for now)
+      const firstItem = cartItems[0];
+      if (!firstItem?.product) {
+        throw new Error("Product information not available");
+      }
+
+      // For demo purposes, using mock store coordinates
+      // In real implementation, you'd get this from the store data
+      const storeCoords = { latitude: 26.6618, longitude: 86.2025 }; // Siraha, Nepal
+
+      // Calculate distance
+      const distance = calculateDistance(storeCoords, location);
+      setDeliveryDistance(distance);
+
+      // Calculate fee using API
+      const response = await fetch("/api/calculate-delivery-fee", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ distance }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to calculate delivery fee");
+      }
+
+      const result = await response.json();
+      setDeliveryFee(result.fee);
+      setDeliveryInfo({
+        zone: result.zone,
+        estimatedTime: Math.round(30 + (distance * 10)) // Base 30min + 10min per km
+      });
+
+      toast({
+        title: "Delivery Fee Calculated",
+        description: `₹${result.fee} for ${formatDistance(distance)} delivery`,
+      });
+
+    } catch (error) {
+      console.error("Error calculating delivery fee:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to calculate delivery fee",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCalculatingFee(false);
+    }
+  };
+
   const calculateDeliveryFee = async () => {
+    if (userLocation) {
+      await calculateDeliveryFeeWithLocation(userLocation);
+      return;
+    }
+
     if (!deliveryAddress.trim() || cartItems.length === 0) return;
 
     setIsCalculatingFee(true);
@@ -267,20 +388,45 @@ export default function Cart() {
                     <div className="flex gap-2 mt-1">
                       <Input
                         id="delivery-address"
-                        placeholder="Enter delivery address"
+                        placeholder="Enter delivery address or use location"
                         value={deliveryAddress}
-                        onChange={(e) => setDeliveryAddress(e.target.value)}
+                        onChange={(e) => {
+                          setDeliveryAddress(e.target.value);
+                          // Clear user location when manually typing
+                          if (e.target.value !== deliveryAddress) {
+                            setUserLocation(null);
+                          }
+                        }}
                         className="flex-1"
                       />
                       <Button
+                        onClick={getMyLocation}
+                        disabled={isGettingLocation}
+                        size="sm"
+                        variant="outline"
+                        className="min-w-[44px]"
+                      >
+                        {isGettingLocation ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        ) : (
+                          <Navigation className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
                         onClick={calculateDeliveryFee}
-                        disabled={isCalculatingFee || !deliveryAddress.trim()}
+                        disabled={isCalculatingFee || (!deliveryAddress.trim() && !userLocation)}
                         size="sm"
                         variant="outline"
                       >
                         <Calculator className="h-4 w-4" />
                       </Button>
                     </div>
+                    {userLocation && (
+                      <p className="text-xs text-green-600 mt-1">
+                        <MapPin className="h-3 w-3 inline mr-1" />
+                        Using your current location
+                      </p>
+                    )}
                     {deliveryDistance > 0 && (
                       <p className="text-xs text-muted-foreground mt-1">
                         Distance: {formatDistance(deliveryDistance)}

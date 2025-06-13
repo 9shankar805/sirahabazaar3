@@ -11,8 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
-import { Truck, Upload, FileText, CreditCard } from "lucide-react";
+import { Truck, Upload, FileText, CreditCard, Navigation, MapPin } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { getCurrentUserLocation } from "@/lib/distance";
 
 const deliveryPartnerApplicationSchema = z.object({
   vehicleType: z.string().min(1, "Vehicle type is required"),
@@ -27,6 +28,7 @@ const deliveryPartnerApplicationSchema = z.object({
   termsAccepted: z.boolean().refine(val => val === true, {
     message: "You must accept the terms and conditions"
   }),
+  address: z.string().min(1, "Address is required"),
 });
 
 type DeliveryPartnerApplicationForm = z.infer<typeof deliveryPartnerApplicationSchema>;
@@ -39,6 +41,8 @@ export default function DeliveryPartnerApplication({ onSuccess }: DeliveryPartne
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useUser();
   const { toast } = useToast();
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
 
   const form = useForm<DeliveryPartnerApplicationForm>({
     resolver: zodResolver(deliveryPartnerApplicationSchema),
@@ -53,8 +57,65 @@ export default function DeliveryPartnerApplication({ onSuccess }: DeliveryPartne
       bankAccountNumber: "",
       ifscCode: "",
       termsAccepted: false,
+      address: "",
     },
   });
+
+  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    try {
+      const apiKey = import.meta.env.VITE_HERE_API_KEY;
+      if (!apiKey) {
+        throw new Error('HERE Maps API key not configured');
+      }
+
+      const response = await fetch(
+        `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat},${lng}&apikey=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to reverse geocode location');
+      }
+
+      const data = await response.json();
+
+      if (data.items && data.items.length > 0) {
+        const address = data.items[0];
+        return address.title || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      }
+
+      return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+  };
+
+  const getMyLocation = async () => {
+    setIsGettingLocation(true);
+    try {
+      const location = await getCurrentUserLocation();
+      setUserLocation(location);
+
+      const address = await reverseGeocode(location.latitude, location.longitude);
+      form.setValue("address", address);
+
+      toast({
+        title: "Location Found",
+        description: `Your address has been set to: ${address}`,
+      });
+
+    } catch (error) {
+      console.error("Error getting location:", error);
+      toast({
+        title: "Location Error",
+        description: error instanceof Error ? error.message : "Failed to get your location. Please ensure location permission is granted.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
 
   const onSubmit = async (data: DeliveryPartnerApplicationForm) => {
     if (!user?.id) {
@@ -79,6 +140,7 @@ export default function DeliveryPartnerApplication({ onSuccess }: DeliveryPartne
         emergencyContact: data.emergencyContact,
         bankAccountNumber: data.bankAccountNumber,
         ifscCode: data.ifscCode,
+        address: data.address,
       };
 
       const response = await fetch('/api/delivery-partners/signup', {
@@ -133,7 +195,7 @@ export default function DeliveryPartnerApplication({ onSuccess }: DeliveryPartne
                   <Truck className="h-5 w-5 text-primary" />
                   <h3 className="text-lg font-semibold">Vehicle Information</h3>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -195,7 +257,7 @@ export default function DeliveryPartnerApplication({ onSuccess }: DeliveryPartne
                   <FileText className="h-5 w-5 text-primary" />
                   <h3 className="text-lg font-semibold">Identity Information</h3>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -243,7 +305,7 @@ export default function DeliveryPartnerApplication({ onSuccess }: DeliveryPartne
                   <Upload className="h-5 w-5 text-primary" />
                   <h3 className="text-lg font-semibold">Service Information</h3>
                 </div>
-                
+
                 <FormField
                   control={form.control}
                   name="deliveryAreas"
@@ -282,7 +344,7 @@ export default function DeliveryPartnerApplication({ onSuccess }: DeliveryPartne
                   <CreditCard className="h-5 w-5 text-primary" />
                   <h3 className="text-lg font-semibold">Banking Information</h3>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -314,6 +376,52 @@ export default function DeliveryPartnerApplication({ onSuccess }: DeliveryPartne
                 </div>
               </div>
 
+              {/* Address Information */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">Address Information</h3>
+                </div>
+
+                <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Address</FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Textarea
+                              placeholder="Enter your full address or use current location"
+                              className="flex-1"
+                              {...field}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            onClick={getMyLocation}
+                            disabled={isGettingLocation}
+                            variant="outline"
+                            className="min-w-[44px] self-start mt-0"
+                          >
+                            {isGettingLocation ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            ) : (
+                              <Navigation className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                        {userLocation && (
+                          <FormMessage>
+                            Using your current location ({userLocation.latitude.toFixed(6)}, {userLocation.longitude.toFixed(6)})
+                          </FormMessage>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              </div>
+
               {/* Terms and Conditions */}
               <FormField
                 control={form.control}
@@ -336,7 +444,7 @@ export default function DeliveryPartnerApplication({ onSuccess }: DeliveryPartne
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || isGettingLocation}>
                 {isLoading ? "Submitting Application..." : "Submit Application"}
               </Button>
             </form>
