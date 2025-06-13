@@ -20,8 +20,11 @@ import {
   insertStoreAnalyticsSchema, insertInventoryLogSchema, insertCouponSchema, insertBannerSchema,
   insertSupportTicketSchema, insertSiteSettingSchema, insertFraudAlertSchema, insertCommissionSchema,
   insertProductAttributeSchema, insertVendorVerificationSchema, insertAdminLogSchema,
-  insertDeliveryPartnerSchema, insertDeliverySchema
+  insertDeliveryPartnerSchema, insertDeliverySchema,
+  users, orders, deliveries, deliveryPartners
 } from "@shared/schema";
+
+import { eq } from "drizzle-orm";
 
 // Initialize real-time tracking service
 const realTimeTrackingService = new RealTimeTrackingService();
@@ -134,6 +137,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ user: userWithoutPassword });
     } catch (error) {
       res.status(500).json({ error: "Failed to refresh user data" });
+    }
+  });
+
+  // User lookup by email endpoint
+  app.get("/api/users/by-email", async (req, res) => {
+    try {
+      const { email } = req.query;
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ error: "Email parameter is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Don't send password back
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error('Error fetching user by email:', error);
+      res.status(500).json({ error: "Failed to fetch user" });
     }
   });
 
@@ -1744,8 +1769,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delivery Partner Management API endpoints
   app.post("/api/delivery-partners/signup", async (req, res) => {
     try {
-      const deliveryPartnerData = insertDeliveryPartnerSchema.parse(req.body);
-      const partner = await storage.createDeliveryPartner(deliveryPartnerData);
+      console.log("=== DELIVERY PARTNER SIGNUP DEBUG ===");
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
+      
+      // Handle both direct delivery partner signup and combined user+partner signup
+      let deliveryPartnerData = req.body;
+      
+      // If no userId provided, try to create user first
+      if (!deliveryPartnerData.userId && deliveryPartnerData.email) {
+        console.log("No userId provided, creating user first");
+        try {
+          // Check if user already exists
+          let user = await storage.getUserByEmail(deliveryPartnerData.email);
+          console.log("Existing user lookup result:", user ? "Found" : "Not found");
+          
+          if (!user) {
+            // Create user account first
+            const userData = {
+              email: deliveryPartnerData.email,
+              username: deliveryPartnerData.email.split('@')[0],
+              password: deliveryPartnerData.password || 'temp123',
+              fullName: deliveryPartnerData.fullName || 'Delivery Partner',
+              phone: deliveryPartnerData.phone,
+              address: deliveryPartnerData.address,
+              role: 'delivery_partner',
+              status: 'pending'
+            };
+            
+            console.log("Creating new user with data:", userData);
+            user = await storage.createUser(userData);
+            console.log("Created user with ID:", user.id);
+          }
+          
+          deliveryPartnerData.userId = user.id;
+          console.log("Set userId to:", deliveryPartnerData.userId);
+        } catch (userError) {
+          console.error("Error creating user for delivery partner:", userError);
+          return res.status(400).json({ error: "Failed to create user account" });
+        }
+      }
+
+      // Clean up data for delivery partner schema
+      const partnerData = {
+        userId: deliveryPartnerData.userId,
+        vehicleType: deliveryPartnerData.vehicleType,
+        vehicleNumber: deliveryPartnerData.vehicleNumber,
+        drivingLicense: deliveryPartnerData.drivingLicense || deliveryPartnerData.drivingLicenseUrl || 'N/A',
+        idProofType: deliveryPartnerData.idProofType || 'aadhar',
+        idProofNumber: deliveryPartnerData.idProofNumber || deliveryPartnerData.idProofUrl || 'TEMP123',
+        deliveryAreas: Array.isArray(deliveryPartnerData.deliveryAreas) ? deliveryPartnerData.deliveryAreas : [deliveryPartnerData.deliveryArea || 'City Center'],
+        emergencyContact: deliveryPartnerData.emergencyContact || deliveryPartnerData.phone || '9999999999',
+        bankAccountNumber: deliveryPartnerData.bankAccountNumber || '1234567890123456',
+        ifscCode: deliveryPartnerData.ifscCode || 'SBIN0000123'
+      };
+
+      console.log("Final partner data for validation:", JSON.stringify(partnerData, null, 2));
+
+      const validatedData = insertDeliveryPartnerSchema.parse(partnerData);
+      const partner = await storage.createDeliveryPartner(validatedData);
       
       console.log("Delivery partner created successfully:", partner.id);
       res.json(partner);
@@ -3789,8 +3870,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tracking/:deliveryId", async (req, res) => {
     try {
       const deliveryId = parseInt(req.params.deliveryId);
+      if (isNaN(deliveryId)) {
+        return res.status(400).json({ error: "Invalid delivery ID" });
+      }
+      
       const trackingData = await realTimeTrackingService.getDeliveryTrackingData(deliveryId);
-
       res.json(trackingData);
     } catch (error) {
       console.error('Get tracking data error:', error);
