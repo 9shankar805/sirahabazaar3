@@ -257,12 +257,12 @@ export default function Homepage() {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-5 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-4">
             {categories.map((category) => (
               <Link key={category.name} href={category.href}>
-                <div className="category-card text-center p-4 sm:p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                  <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">{category.icon}</div>
-                  <div className="text-xs sm:text-sm font-semibold text-foreground">{category.name}</div>
+                <div className="category-card text-center p-2 sm:p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                  <div className="text-lg sm:text-2xl mb-1 sm:mb-2">{category.icon}</div>
+                  <div className="text-xs font-semibold text-foreground">{category.name}</div>
                 </div>
               </Link>
             ))}
@@ -291,7 +291,7 @@ export default function Homepage() {
               <p className="text-muted-foreground text-sm mt-2">Check back later for new arrivals</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3">
               {featuredProducts.map((product: any) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -314,7 +314,7 @@ export default function Homepage() {
               <p className="text-muted-foreground text-sm mt-2">Check back later for new stores</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
               {popularStores.map((store: any) => (
                 <StoreCard key={store.id} store={store} />
               ))}

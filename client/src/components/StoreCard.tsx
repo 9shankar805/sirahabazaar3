@@ -40,10 +40,8 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
         .then((location) => {
           setUserLocation(location);
           const dist = calculateDistance(
-            location.latitude,
-            location.longitude,
-            parseFloat(store.latitude!),
-            parseFloat(store.longitude!)
+            location,
+            { latitude: parseFloat(store.latitude!), longitude: parseFloat(store.longitude!) }
           );
           setDistance(dist);
         })
@@ -72,20 +70,20 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
 
   return (
     <Card className="hover:shadow-lg transition-shadow duration-200">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2 p-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <Link href={`/store/${store.id}`}>
-              <h3 className="font-semibold text-lg hover:text-primary cursor-pointer">
+              <h3 className="font-semibold text-sm hover:text-primary cursor-pointer line-clamp-1">
                 {store.name}
               </h3>
             </Link>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant={store.storeType === 'restaurant' ? 'default' : 'secondary'}>
+            <div className="flex items-center gap-1 mt-1">
+              <Badge variant={store.storeType === 'restaurant' ? 'default' : 'secondary'} className="text-xs px-1 py-0">
                 {store.storeType === 'restaurant' ? 'Restaurant' : 'Retail'}
               </Badge>
               {store.cuisineType && (
-                <Badge variant="outline">{store.cuisineType}</Badge>
+                <Badge variant="outline" className="text-xs px-1 py-0">{store.cuisineType}</Badge>
               )}
             </div>
           </div>
@@ -93,79 +91,74 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
             <img
               src={store.logo}
               alt={`${store.name} logo`}
-              className="w-12 h-12 rounded-lg object-cover"
+              className="w-8 h-8 rounded object-cover"
             />
           )}
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2 p-3 pt-0">
         {store.coverImage && (
           <img
             src={store.coverImage}
             alt={`${store.name} cover`}
-            className="w-full h-32 rounded-lg object-cover"
+            className="w-full h-20 rounded object-cover"
           />
         )}
 
-        {store.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {store.description}
-          </p>
-        )}
-
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
             <span>{parseFloat(store.rating).toFixed(1)}</span>
             <span>({store.totalReviews})</span>
           </div>
           
           {store.deliveryTime && (
             <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
+              <Clock className="h-3 w-3" />
               <span>{store.deliveryTime}</span>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-sm">
-          <MapPin className="h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-1 text-xs">
+          <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
           <span className="text-muted-foreground flex-1 line-clamp-1">
             {store.address}
           </span>
-          {distance !== null && (
-            <Badge variant="outline" className="ml-auto">
-              {formatDistance(distance)} away
-            </Badge>
-          )}
         </div>
 
+        {distance !== null && (
+          <Badge variant="outline" className="text-xs w-full justify-center">
+            {formatDistance(distance)} away
+          </Badge>
+        )}
+
         {store.latitude && store.longitude && (
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-1 pt-1">
             <Button
               variant="outline"
               size="sm"
               onClick={openGoogleMaps}
-              className="flex-1"
+              className="flex-1 text-xs h-7"
             >
-              <ExternalLink className="h-4 w-4 mr-1" />
-              View on Maps
+              <ExternalLink className="h-3 w-3 mr-1" />
+              Maps
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={getDirections}
-              className="flex-1"
+              className="flex-1 text-xs h-7"
             >
-              <Navigation className="h-4 w-4 mr-1" />
-              Get Directions
+              <Navigation className="h-3 w-3 mr-1" />
+              Directions
             </Button>
           </div>
         )}
 
         {store.isDeliveryAvailable && (
-          <Badge className="w-full justify-center">
+          <Badge className="w-full justify-center text-xs py-1">
             Delivery Available
           </Badge>
         )}

@@ -63,7 +63,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <img
             src={product.images?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300"}
             alt={product.name}
-            className="w-full h-32 md:h-48 object-cover"
+            className="w-full h-24 sm:h-32 md:h-40 object-cover"
           />
           {discount > 0 && (
             <Badge className="absolute top-2 left-2 bg-red-500 text-white">
@@ -95,17 +95,17 @@ export default function ProductCard({ product }: ProductCardProps) {
           </Tooltip>
         </div>
         
-        <div className="p-2 md:p-4">
-          <h3 className="font-medium text-foreground text-xs md:text-sm mb-1 md:mb-2 line-clamp-2">
+        <div className="p-2">
+          <h3 className="font-medium text-foreground text-xs mb-1 line-clamp-2">
             {product.name}
           </h3>
           
-          <div className="flex items-center mb-2">
-            <div className="flex text-yellow-400 text-xs mr-1">
+          <div className="flex items-center mb-1">
+            <div className="flex text-yellow-400 mr-1">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
                   key={i}
-                  className={`h-3 w-3 ${
+                  className={`h-2.5 w-2.5 ${
                     i < Math.floor(Number(product.rating)) ? "fill-current" : ""
                   }`}
                 />
@@ -116,33 +116,25 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
           
-          <div className="flex items-center space-x-1 md:space-x-2 mb-2 md:mb-3">
-            <span className="text-sm md:text-lg font-bold text-foreground">
+          <div className="flex items-center space-x-1 mb-2">
+            <span className="text-sm font-bold text-foreground">
               ₹{Number(product.price).toLocaleString()}
             </span>
             {product.originalPrice && (
-              <span className="text-xs md:text-sm text-muted-foreground line-through">
+              <span className="text-xs text-muted-foreground line-through">
                 ₹{Number(product.originalPrice).toLocaleString()}
               </span>
             )}
           </div>
           
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleAddToCart}
-                className="w-full btn-secondary text-xs md:text-sm"
-                size="sm"
-              >
-                <ShoppingCart className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                <span className="hidden md:inline">Add to Cart</span>
-                <span className="md:hidden">Add</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Add {product.name} to cart</p>
-            </TooltipContent>
-          </Tooltip>
+          <Button
+            onClick={handleAddToCart}
+            className="w-full btn-secondary text-xs py-1 h-8"
+            size="sm"
+          >
+            <ShoppingCart className="h-3 w-3 mr-1" />
+            Add
+          </Button>
         </div>
       </div>
     </Link>
