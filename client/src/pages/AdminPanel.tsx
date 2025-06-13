@@ -50,6 +50,7 @@ export default function AdminPanel() {
     perKmRate: "",
     isActive: true
   });
+  const [activeTab, setActiveTab] = useState("pending");
 
   useEffect(() => {
     const storedAdmin = localStorage.getItem("adminUser");
@@ -386,22 +387,93 @@ export default function AdminPanel() {
           </Alert>
         )}
 
-        {/* Tabs */}
-        <Tabs defaultValue="pending" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="pending">
-              Pending Approvals ({pendingUsers.length})
-            </TabsTrigger>
-            <TabsTrigger value="all">
-              All Users ({allUsers.length})
-            </TabsTrigger>
-            <TabsTrigger value="delivery-partners">
-              Delivery Partners
-            </TabsTrigger>
-            <TabsTrigger value="delivery-zones">
-              Delivery Zones
-            </TabsTrigger>
-          </TabsList>
+        {/* Navigation Sidebar */}
+        <div className="flex gap-6">
+          {/* Sidebar */}
+          <div className="w-64 bg-white shadow-sm rounded-lg p-4 h-fit">
+            <nav className="space-y-2">
+              <h3 className="font-semibold text-gray-900 mb-4">Admin Navigation</h3>
+              <div className="space-y-1">
+                <button
+                  onClick={() => setActiveTab("pending")}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === "pending" 
+                      ? "bg-blue-100 text-blue-700 border-l-4 border-blue-700" 
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <Clock className="h-4 w-4" />
+                  Pending Approvals
+                  {pendingUsers.length > 0 && (
+                    <Badge variant="secondary" className="ml-auto">
+                      {pendingUsers.length}
+                    </Badge>
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => setActiveTab("delivery-partners")}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === "delivery-partners" 
+                      ? "bg-green-100 text-green-700 border-l-4 border-green-700" 
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Delivery Partners
+                  {deliveryPartners.filter((p: any) => p.status === 'pending').length > 0 && (
+                    <Badge variant="secondary" className="ml-auto bg-orange-100 text-orange-800">
+                      {deliveryPartners.filter((p: any) => p.status === 'pending').length}
+                    </Badge>
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => setActiveTab("all")}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === "all" 
+                      ? "bg-purple-100 text-purple-700 border-l-4 border-purple-700" 
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <Users className="h-4 w-4" />
+                  All Users
+                  <Badge variant="outline" className="ml-auto">
+                    {allUsers.length}
+                  </Badge>
+                </button>
+                
+                <button
+                  onClick={() => setActiveTab("delivery-zones")}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === "delivery-zones" 
+                      ? "bg-indigo-100 text-indigo-700 border-l-4 border-indigo-700" 
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <MapPin className="h-4 w-4" />
+                  Delivery Zones
+                  <Badge variant="outline" className="ml-auto">
+                    {deliveryZones.length}
+                  </Badge>
+                </button>
+              </div>
+            </nav>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1">
+            <Tabs value={activeTab} className="space-y-6">
+              <div className="hidden">
+                <TabsList>
+                  <TabsTrigger value="pending">Pending Approvals</TabsTrigger>
+                  <TabsTrigger value="all">All Users</TabsTrigger>
+                  <TabsTrigger value="delivery-partners">Delivery Partners</TabsTrigger>
+                  <TabsTrigger value="delivery-zones">Delivery Zones</TabsTrigger>
+                </TabsList>
+              </div>
 
           <TabsContent value="pending">
             <Card>
@@ -502,11 +574,34 @@ export default function AdminPanel() {
           <TabsContent value="delivery-partners">
             <Card>
               <CardHeader>
-                <CardTitle>Delivery Partner Management</CardTitle>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0V6a2 2 0 012-2h2a2 2 0 012 2v1m-6 0h6m0 0v.5a2 2 0 01-2 2H10a2 2 0 01-2-2V7m8 4l3 3-3 3m-3-3h12" />
+                      </svg>
+                      Delivery Partner Management
+                    </CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Review and manage delivery partner applications
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                      {deliveryPartners.filter((p: any) => p.status === 'pending').length} Pending
+                    </Badge>
+                    <Badge variant="default" className="bg-green-100 text-green-800">
+                      {deliveryPartners.filter((p: any) => p.status === 'approved').length} Approved
+                    </Badge>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {partnersLoading ? (
-                  <div className="text-center py-8">Loading delivery partners...</div>
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p>Loading delivery partners...</p>
+                  </div>
                 ) : (
                   <Table>
                     <TableHeader>
@@ -969,7 +1064,9 @@ export default function AdminPanel() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
+            </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
