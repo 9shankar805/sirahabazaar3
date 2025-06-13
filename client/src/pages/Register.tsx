@@ -75,12 +75,12 @@ const registerSchema = z.object({
   message: "Vehicle number is required for delivery partners",
   path: ["vehicleNumber"],
 }).refine((data) => {
-  if (data.role === "delivery_partner") {
+  if (data.role === "delivery_partner" && data.vehicleType !== "bicycle") {
     return data.drivingLicense && data.drivingLicense.length > 0;
   }
   return true;
 }, {
-  message: "Driving license number is required for delivery partners",
+  message: "Driving license number is required for motorized vehicles",
   path: ["drivingLicense"],
 }).refine((data) => {
   if (data.role === "delivery_partner") {
@@ -198,6 +198,7 @@ export default function Register() {
   });
 
   const selectedRole = form.watch("role");
+  const selectedVehicleType = form.watch("vehicleType");
 
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
@@ -708,33 +709,45 @@ export default function Register() {
                         License & Documents
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="drivingLicense"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Driving License Number *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter license number" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+{selectedVehicleType !== "bicycle" && (
+                          <>
+                            <FormField
+                              control={form.control}
+                              name="drivingLicense"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Driving License Number *</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter license number" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
 
-                        <FormField
-                          control={form.control}
-                          name="licenseExpiryDate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>License Expiry Date</FormLabel>
-                              <FormControl>
-                                <Input type="date" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                            <FormField
+                              control={form.control}
+                              name="licenseExpiryDate"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>License Expiry Date</FormLabel>
+                                  <FormControl>
+                                    <Input type="date" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </>
+                        )}
+
+                        {selectedVehicleType === "bicycle" && (
+                          <div className="col-span-2 p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                            <p className="text-sm text-green-800 dark:text-green-200">
+                              <strong>Note:</strong> Driving license is not required for bicycle delivery partners.
+                            </p>
+                          </div>
+                        )}
 
                         <FormField
                           control={form.control}
@@ -963,52 +976,54 @@ export default function Register() {
                           )}
                         />
 
-                        <FormField
-                          control={form.control}
-                          name="drivingLicenseUrl"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Driving License Document</FormLabel>
-                              <FormControl>
-                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                                  <div className="text-center">
-                                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                                    <div className="mt-4">
-                                      <Input
-                                        type="file"
-                                        accept="image/*,.pdf"
-                                        onChange={(e) => {
-                                          const file = e.target.files?.[0];
-                                          if (file) {
-                                            field.onChange(`/uploads/license_${Date.now()}.${file.name.split('.').pop()}`);
-                                          }
-                                        }}
-                                        className="hidden"
-                                        id="drivingLicense"
-                                      />
-                                      <label
-                                        htmlFor="drivingLicense"
-                                        className="cursor-pointer text-sm font-medium text-primary hover:text-primary/80"
-                                      >
-                                        Upload Driving License
-                                      </label>
-                                      <p className="text-xs text-muted-foreground mt-1">
-                                        PNG, JPG, PDF up to 10MB
-                                      </p>
+{selectedVehicleType !== "bicycle" && (
+                          <FormField
+                            control={form.control}
+                            name="drivingLicenseUrl"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Driving License Document</FormLabel>
+                                <FormControl>
+                                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                                    <div className="text-center">
+                                      <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                                      <div className="mt-4">
+                                        <Input
+                                          type="file"
+                                          accept="image/*,.pdf"
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                              field.onChange(`/uploads/license_${Date.now()}.${file.name.split('.').pop()}`);
+                                            }
+                                          }}
+                                          className="hidden"
+                                          id="drivingLicense"
+                                        />
+                                        <label
+                                          htmlFor="drivingLicense"
+                                          className="cursor-pointer text-sm font-medium text-primary hover:text-primary/80"
+                                        >
+                                          Upload Driving License
+                                        </label>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          PNG, JPG, PDF up to 10MB
+                                        </p>
+                                      </div>
                                     </div>
+                                    {field.value && (
+                                      <div className="mt-2 flex items-center text-sm text-green-600">
+                                        <CheckCircle className="h-4 w-4 mr-1" />
+                                        Document uploaded
+                                      </div>
+                                    )}
                                   </div>
-                                  {field.value && (
-                                    <div className="mt-2 flex items-center text-sm text-green-600">
-                                      <CheckCircle className="h-4 w-4 mr-1" />
-                                      Document uploaded
-                                    </div>
-                                  )}
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
 
                         <FormField
                           control={form.control}
