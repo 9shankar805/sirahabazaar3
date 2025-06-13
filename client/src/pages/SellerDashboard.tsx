@@ -2,29 +2,88 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  Store, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown,
-  Users, Star, Eye, BarChart3, PieChart, Activity, Settings,
-  Plus, Edit, Trash2, Search, Filter, Download, Calendar, UtensilsCrossed,
-  ChefHat, Clock, Coffee, Utensils, MapPin, Phone, Mail, Globe,
-  CheckCircle, XCircle, AlertCircle, Timer, Receipt, Truck
+import {
+  Store,
+  Package,
+  ShoppingCart,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Star,
+  Eye,
+  BarChart3,
+  PieChart,
+  Activity,
+  Settings,
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  Filter,
+  Download,
+  Calendar,
+  UtensilsCrossed,
+  ChefHat,
+  Clock,
+  Coffee,
+  Utensils,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Timer,
+  Receipt,
+  Truck,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "@/components/ImageUpload";
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -34,7 +93,10 @@ const productSchema = z.object({
   categoryId: z.number().min(1, "Category is required"),
   stock: z.number().min(0, "Stock must be 0 or greater"),
   imageUrl: z.string().optional(),
-  images: z.array(z.string()).min(1, "At least 1 image is required").max(6, "Maximum 6 images allowed"),
+  images: z
+    .array(z.string())
+    .min(1, "At least 1 image is required")
+    .max(6, "Maximum 6 images allowed"),
   isFastSell: z.boolean().default(false),
   isOnOffer: z.boolean().default(false),
   offerPercentage: z.number().min(0).max(100).default(0),
@@ -97,12 +159,12 @@ interface Store {
   storeType?: string;
 }
 
-const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00'];
+const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#00ff00"];
 
 export default function SellerDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedPeriod, setSelectedPeriod] = useState('30');
+  const [selectedPeriod, setSelectedPeriod] = useState("30");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userStore, setUserStore] = useState<Store | null>(null);
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -111,11 +173,80 @@ export default function SellerDashboard() {
   const { user } = useAuth();
 
   // Check if this is a restaurant or retail store
-  const isRestaurant = userStore?.storeType === 'restaurant';
-  const dashboardTitle = isRestaurant ? 'Restaurant Dashboard' : 'Store Dashboard';
+  const isRestaurant = userStore?.storeType === "restaurant";
+  const dashboardTitle = isRestaurant
+    ? "Restaurant Dashboard"
+    : "Store Dashboard";
   const dashboardIcon = isRestaurant ? ChefHat : Store;
 
-  // Form for adding/editing products
+  // Fetch current store
+  const { data: stores = [] } = useQuery({
+    queryKey: [`/api/stores/owner`, currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id) return [];
+      const response = await fetch(`/api/stores/owner/${currentUser.id}`);
+      if (!response.ok) throw new Error("Failed to fetch stores");
+      return response.json();
+    },
+    enabled: !!currentUser,
+  });
+
+  const currentStore = stores[0];
+
+  useEffect(() => {
+    if (user) {
+      setCurrentUser(user);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (currentStore) {
+      setUserStore(currentStore);
+    }
+  }, [currentStore]);
+
+  // Fetch products for current store
+  const {
+    data: products = [],
+    isLoading: productsLoading,
+    error: productsError,
+    refetch: refetchProducts,
+  } = useQuery({
+    queryKey: [`/api/products/store/${currentStore?.id}`],
+    queryFn: async () => {
+      if (!currentStore?.id) return [];
+      const response = await fetch(`/api/products/store/${currentStore.id}`);
+      if (!response.ok) throw new Error("Failed to fetch store products");
+      return response.json();
+    },
+    enabled: !!currentStore,
+  });
+
+  // Fetch orders for current store
+  const {
+    data: orders = [],
+    isLoading: ordersLoading,
+    refetch: refetchOrders,
+    error: ordersError,
+  } = useQuery({
+    queryKey: [`/api/orders/store/${currentStore?.id}`],
+    queryFn: async () => {
+      if (!currentStore?.id) return [];
+      const response = await fetch(`/api/orders/store/${currentStore.id}`);
+      if (!response.ok) throw new Error("Failed to fetch store orders");
+      return response.json();
+    },
+    enabled: !!currentStore,
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
+  });
+
+  // Fetch categories
+  const { data: categories = [] } = useQuery({
+    queryKey: ["/api/categories"],
+  });
+
+  // Product form
   const productForm = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -141,98 +272,51 @@ export default function SellerDashboard() {
     },
   });
 
-  useEffect(() => {
-    if (user) {
-      setCurrentUser(user);
-    }
-  }, [user]);
-
-  // Store query to get current store info
-  const { data: stores = [] } = useQuery({
-    queryKey: [`/api/stores/owner`, currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      const response = await fetch(`/api/stores/owner/${currentUser.id}`);
-      if (!response.ok) throw new Error('Failed to fetch stores');
-      return response.json();
-    },
-    enabled: !!currentUser,
-  });
-
-  const currentStore = stores[0]; // Assuming one store per shopkeeper
-
-  useEffect(() => {
-    if (currentStore) {
-      setUserStore(currentStore);
-    }
-  }, [currentStore]);
-
   // Dashboard stats query with optimized caching
-  const { data: dashboardStats, isLoading: statsLoading, refetch: refetchStats, error: statsError } = useQuery<RestaurantStats>({
-    queryKey: ['/api/seller/dashboard', currentUser?.id],
+  const {
+    data: dashboardStats,
+    isLoading: statsLoading,
+    refetch: refetchStats,
+    error: statsError,
+  } = useQuery<RestaurantStats>({
+    queryKey: ["/api/seller/dashboard", currentUser?.id],
     queryFn: async () => {
-      if (!currentUser?.id) throw new Error('User ID required');
-      const response = await fetch(`/api/seller/dashboard?userId=${currentUser.id}`);
-      if (!response.ok) throw new Error(`Failed to fetch dashboard stats: ${response.statusText}`);
+      if (!currentUser?.id) throw new Error("User ID required");
+      const response = await fetch(
+        `/api/seller/dashboard?userId=${currentUser.id}`,
+      );
+      if (!response.ok)
+        throw new Error(
+          `Failed to fetch dashboard stats: ${response.statusText}`,
+        );
       return response.json();
     },
     enabled: !!currentUser?.id,
     staleTime: 60000, // 1 minute
     refetchInterval: 120000, // Refetch every 2 minutes
     refetchOnWindowFocus: false,
-    retry: 2
+    retry: 2,
   });
 
   // Analytics query with improved error handling
-  const { data: analytics, isLoading: analyticsLoading, error: analyticsError } = useQuery<StoreAnalytics[]>({
-    queryKey: ['/api/seller/analytics', currentUser?.id, selectedPeriod],
+  const {
+    data: analytics,
+    isLoading: analyticsLoading,
+    error: analyticsError,
+  } = useQuery<StoreAnalytics[]>({
+    queryKey: ["/api/seller/analytics", currentUser?.id, selectedPeriod],
     queryFn: async () => {
-      if (!currentUser?.id) throw new Error('User ID required');
-      const response = await fetch(`/api/seller/analytics?userId=${currentUser.id}&days=${selectedPeriod}`);
-      if (!response.ok) throw new Error(`Failed to fetch analytics: ${response.statusText}`);
+      if (!currentUser?.id) throw new Error("User ID required");
+      const response = await fetch(
+        `/api/seller/analytics?userId=${currentUser.id}&days=${selectedPeriod}`,
+      );
+      if (!response.ok)
+        throw new Error(`Failed to fetch analytics: ${response.statusText}`);
       return response.json();
     },
     enabled: !!currentUser?.id,
     staleTime: 300000, // 5 minutes for analytics
-    refetchOnWindowFocus: false
-  });
-
-  // Products query with fast loading
-  const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useQuery({
-    queryKey: ['/api/products/store', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      const response = await fetch(`/api/products/store?userId=${currentUser.id}`);
-      if (!response.ok) throw new Error(`Failed to fetch products: ${response.statusText}`);
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    },
-    enabled: !!currentUser?.id,
-    staleTime: 30000, // 30 seconds
     refetchOnWindowFocus: false,
-    retry: 2
-  });
-
-  // Orders query with efficient updates
-  const { data: orders = [], isLoading: ordersLoading, refetch: refetchOrders, error: ordersError } = useQuery({
-    queryKey: ['/api/orders/store', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      const response = await fetch(`/api/orders/store?userId=${currentUser.id}`);
-      if (!response.ok) throw new Error(`Failed to fetch orders: ${response.statusText}`);
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    },
-    enabled: !!currentUser?.id,
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Refetch every minute for orders
-    refetchOnWindowFocus: false,
-    retry: 2
-  });
-
-  // Categories query
-  const { data: categories = [] } = useQuery({
-    queryKey: ["/api/categories"],
   });
 
   // Product management functions
@@ -251,44 +335,65 @@ export default function SellerDashboard() {
         isOnOffer: data.isOnOffer || false,
         offerPercentage: data.offerPercentage || 0,
         offerEndDate: data.offerEndDate || undefined,
-        productType: currentStore.storeType === 'restaurant' ? 'food' : 'retail',
+        productType:
+          currentStore.storeType === "restaurant" ? "food" : "retail",
         // Food-specific fields for restaurants
-        preparationTime: currentStore.storeType === 'restaurant' ? data.preparationTime || null : null,
-        ingredients: currentStore.storeType === 'restaurant' ? data.ingredients || [] : [],
-        allergens: currentStore.storeType === 'restaurant' ? data.allergens || [] : [],
-        spiceLevel: currentStore.storeType === 'restaurant' ? data.spiceLevel || null : null,
-        isVegetarian: currentStore.storeType === 'restaurant' ? data.isVegetarian || false : false,
-        isVegan: currentStore.storeType === 'restaurant' ? data.isVegan || false : false,
-        nutritionInfo: currentStore.storeType === 'restaurant' ? data.nutritionInfo || null : null,
+        preparationTime:
+          currentStore.storeType === "restaurant"
+            ? data.preparationTime || null
+            : null,
+        ingredients:
+          currentStore.storeType === "restaurant" ? data.ingredients || [] : [],
+        allergens:
+          currentStore.storeType === "restaurant" ? data.allergens || [] : [],
+        spiceLevel:
+          currentStore.storeType === "restaurant"
+            ? data.spiceLevel || null
+            : null,
+        isVegetarian:
+          currentStore.storeType === "restaurant"
+            ? data.isVegetarian || false
+            : false,
+        isVegan:
+          currentStore.storeType === "restaurant"
+            ? data.isVegan || false
+            : false,
+        nutritionInfo:
+          currentStore.storeType === "restaurant"
+            ? data.nutritionInfo || null
+            : null,
       };
 
       if (editingProduct) {
         const response = await fetch(`/api/products/${editingProduct.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(productData)
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productData),
         });
-        if (!response.ok) throw new Error('Failed to update product');
+        if (!response.ok) throw new Error("Failed to update product");
         toast({ title: "Product updated successfully" });
       } else {
         const response = await fetch("/api/products", {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(productData)
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productData),
         });
-        if (!response.ok) throw new Error('Failed to create product');
+        if (!response.ok) throw new Error("Failed to create product");
         toast({ title: "Product added successfully" });
       }
 
       productForm.reset();
       setEditingProduct(null);
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: [`/api/products/store/${currentStore.id}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/products/store/${currentStore.id}`],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save product",
+        description:
+          error instanceof Error ? error.message : "Failed to save product",
         variant: "destructive",
       });
     }
@@ -317,12 +422,16 @@ export default function SellerDashboard() {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      const response = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete product');
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete product");
       toast({ title: "Product deleted successfully" });
       // Invalidate queries to refresh data
       if (currentStore) {
-        queryClient.invalidateQueries({ queryKey: [`/api/products/store/${currentStore.id}`] });
+        queryClient.invalidateQueries({
+          queryKey: [`/api/products/store/${currentStore.id}`],
+        });
         queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       }
     } catch (error) {
@@ -334,12 +443,14 @@ export default function SellerDashboard() {
     }
   };
 
-  if (!currentUser || currentUser.role !== 'shopkeeper') {
+  if (!currentUser || currentUser.role !== "shopkeeper") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-center text-red-600">Access Denied</CardTitle>
+            <CardTitle className="text-center text-red-600">
+              Access Denied
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-center text-muted-foreground">
@@ -357,32 +468,39 @@ export default function SellerDashboard() {
   }
 
   // Check if shopkeeper is approved by admin
-  if (currentUser.role === 'shopkeeper' && (currentUser as any).status !== 'active') {
+  if (
+    currentUser.role === "shopkeeper" &&
+    (currentUser as any).status !== "active"
+  ) {
     const getStatusMessage = () => {
       switch ((currentUser as any).status) {
-        case 'pending':
+        case "pending":
           return {
-            title: 'Pending Admin Approval',
-            message: 'Your seller account is pending approval from our admin team. You will receive an email notification once your account is approved.',
-            color: 'text-yellow-600'
+            title: "Pending Admin Approval",
+            message:
+              "Your seller account is pending approval from our admin team. You will receive an email notification once your account is approved.",
+            color: "text-yellow-600",
           };
-        case 'suspended':
+        case "suspended":
           return {
-            title: 'Account Suspended',
-            message: 'Your seller account has been suspended. Please contact support for assistance.',
-            color: 'text-red-600'
+            title: "Account Suspended",
+            message:
+              "Your seller account has been suspended. Please contact support for assistance.",
+            color: "text-red-600",
           };
-        case 'rejected':
+        case "rejected":
           return {
-            title: 'Account Rejected',
-            message: 'Your seller account application was rejected. Please contact support for more information.',
-            color: 'text-red-600'
+            title: "Account Rejected",
+            message:
+              "Your seller account application was rejected. Please contact support for more information.",
+            color: "text-red-600",
           };
         default:
           return {
-            title: 'Account Under Review',
-            message: 'Your seller account is currently under review. Please check back later.',
-            color: 'text-gray-600'
+            title: "Account Under Review",
+            message:
+              "Your seller account is currently under review. Please check back later.",
+            color: "text-gray-600",
           };
       }
     };
@@ -401,19 +519,13 @@ export default function SellerDashboard() {
             <div className="mx-auto w-16 h-16 rounded-full bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
               <Clock className="h-8 w-8 text-yellow-600" />
             </div>
-            <p className="text-muted-foreground">
-              {statusInfo.message}
-            </p>
+            <p className="text-muted-foreground">{statusInfo.message}</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/">
-                <Button variant="outline">
-                  Go to Homepage
-                </Button>
+                <Button variant="outline">Go to Homepage</Button>
               </Link>
               <Link href="/account">
-                <Button variant="default">
-                  View Account Status
-                </Button>
+                <Button variant="default">View Account Status</Button>
               </Link>
             </div>
           </CardContent>
@@ -431,8 +543,12 @@ export default function SellerDashboard() {
             <div className="flex items-center space-x-3">
               <Store className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Seller Hub</h1>
-                <p className="text-sm text-muted-foreground">{userStore?.name}</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Seller Hub
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {userStore?.name}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -446,8 +562,8 @@ export default function SellerDashboard() {
                   <SelectItem value="90">Last 90 days</SelectItem>
                 </SelectContent>
               </Select>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => {
                   refetchStats();
@@ -477,10 +593,13 @@ export default function SellerDashboard() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="add-product">
-              {editingProduct 
-                ? (isRestaurant ? "Edit Menu Item" : "Edit Product")
-                : (isRestaurant ? "Add Menu Item" : "Add Product")
-              }
+              {editingProduct
+                ? isRestaurant
+                  ? "Edit Menu Item"
+                  : "Edit Product"
+                : isRestaurant
+                  ? "Add Menu Item"
+                  : "Add Product"}
             </TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
@@ -494,10 +613,16 @@ export default function SellerDashboard() {
                   <CardTitle className="text-sm font-medium">
                     {isRestaurant ? "Menu Items" : "Total Products"}
                   </CardTitle>
-                  {isRestaurant ? <UtensilsCrossed className="h-4 w-4 text-muted-foreground" /> : <Package className="h-4 w-4 text-muted-foreground" />}
+                  {isRestaurant ? (
+                    <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                  )}
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dashboardStats?.totalProducts || 0}</div>
+                  <div className="text-2xl font-bold">
+                    {dashboardStats?.totalProducts || 0}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     <TrendingUp className="h-3 w-3 inline mr-1" />
                     +2 from last month
@@ -507,14 +632,18 @@ export default function SellerDashboard() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Orders
+                  </CardTitle>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dashboardStats?.totalOrders || 0}</div>
+                  <div className="text-2xl font-bold">
+                    {dashboardStats?.totalOrders || 0}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     <TrendingUp className="h-3 w-3 inline mr-1" />
                     {dashboardStats?.pendingOrders || 0} pending orders
@@ -524,11 +653,15 @@ export default function SellerDashboard() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Revenue
+                  </CardTitle>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₹{dashboardStats?.totalRevenue?.toLocaleString() || 0}</div>
+                  <div className="text-2xl font-bold">
+                    ₹{dashboardStats?.totalRevenue?.toLocaleString() || 0}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     <TrendingUp className="h-3 w-3 inline mr-1" />
                     +8% from last month
@@ -538,11 +671,17 @@ export default function SellerDashboard() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Store Rating</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Store Rating
+                  </CardTitle>
                   <Star className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dashboardStats?.averageRating ? Number(dashboardStats.averageRating).toFixed(1) : '0.0'}</div>
+                  <div className="text-2xl font-bold">
+                    {dashboardStats?.averageRating
+                      ? Number(dashboardStats.averageRating).toFixed(1)
+                      : "0.0"}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     Based on {dashboardStats?.totalReviews || 0} reviews
                   </p>
@@ -563,7 +702,13 @@ export default function SellerDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-orange-600 dark:text-orange-300">
-                        You have <strong>{dashboardStats?.pendingOrders ?? 0}</strong> pending order{(dashboardStats?.pendingOrders ?? 0) > 1 ? 's' : ''} that need{(dashboardStats?.pendingOrders ?? 0) === 1 ? 's' : ''} your attention.
+                        You have{" "}
+                        <strong>{dashboardStats?.pendingOrders ?? 0}</strong>{" "}
+                        pending order
+                        {(dashboardStats?.pendingOrders ?? 0) > 1 ? "s" : ""}{" "}
+                        that need
+                        {(dashboardStats?.pendingOrders ?? 0) === 1 ? "s" : ""}{" "}
+                        your attention.
                       </p>
                       <p className="text-sm text-orange-500 dark:text-orange-400 mt-1">
                         Click below to view and process these orders.
@@ -587,12 +732,23 @@ export default function SellerDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                  <Button onClick={() => setActiveTab("add-product")} className="w-full">
+                  <Button
+                    onClick={() => setActiveTab("add-product")}
+                    className="w-full"
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     {isRestaurant ? "Add Menu Item" : "Add Product"}
                   </Button>
-                  <Button onClick={() => setActiveTab("products")} variant="outline" className="w-full">
-                    {isRestaurant ? <UtensilsCrossed className="h-4 w-4 mr-2" /> : <Package className="h-4 w-4 mr-2" />}
+                  <Button
+                    onClick={() => setActiveTab("products")}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {isRestaurant ? (
+                      <UtensilsCrossed className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Package className="h-4 w-4 mr-2" />
+                    )}
                     {isRestaurant ? "View Menu" : "View Products"}
                   </Button>
                   <Link href="/seller/orders" className="w-full">
@@ -601,7 +757,11 @@ export default function SellerDashboard() {
                       Manage Orders
                     </Button>
                   </Link>
-                  <Button onClick={() => setActiveTab("analytics")} variant="outline" className="w-full">
+                  <Button
+                    onClick={() => setActiveTab("analytics")}
+                    variant="outline"
+                    className="w-full"
+                  >
                     <BarChart3 className="h-4 w-4 mr-2" />
                     View Analytics
                   </Button>
@@ -614,39 +774,64 @@ export default function SellerDashboard() {
           <TabsContent value="products" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>{isRestaurant ? "Your Menu Items" : "Your Products"}</CardTitle>
+                <CardTitle>
+                  {isRestaurant ? "Your Menu Items" : "Your Products"}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Array.isArray(products) ? products.map((product: any) => (
-                    <div key={product.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
-                          {product.images?.[0] ? (
-                            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Package className="h-6 w-6 text-gray-400" />
-                            </div>
-                          )}
+                  {Array.isArray(products) ? (
+                    products.map((product: any) => (
+                      <div
+                        key={product.id}
+                        className="flex items-center justify-between p-4 border rounded-lg"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                            {product.images?.[0] ? (
+                              <img
+                                src={product.images[0]}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Package className="h-6 w-6 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{product.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              ₹{product.price}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Stock: {product.stock || 0}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-medium">{product.name}</h3>
-                          <p className="text-sm text-muted-foreground">₹{product.price}</p>
-                          <p className="text-sm text-muted-foreground">Stock: {product.stock || 0}</p>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            onClick={() => handleEditProduct(product)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteProduct(product.id)}
+                            variant="destructive"
+                            size="sm"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Button onClick={() => handleEditProduct(product)} variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button onClick={() => handleDeleteProduct(product.id)} variant="destructive" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )) : (
-                    <p className="text-muted-foreground text-center py-8">No products available</p>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8">
+                      No products available
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -658,31 +843,55 @@ export default function SellerDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  {isRestaurant ? <UtensilsCrossed className="h-5 w-5" /> : <Package className="h-5 w-5" />}
-                  {editingProduct 
-                    ? (isRestaurant ? "Edit Menu Item" : "Edit Product")
-                    : (isRestaurant ? "Add New Menu Item" : "Add New Product")
-                  }
+                  {isRestaurant ? (
+                    <UtensilsCrossed className="h-5 w-5" />
+                  ) : (
+                    <Package className="h-5 w-5" />
+                  )}
+                  {editingProduct
+                    ? isRestaurant
+                      ? "Edit Menu Item"
+                      : "Edit Product"
+                    : isRestaurant
+                      ? "Add New Menu Item"
+                      : "Add New Product"}
                 </CardTitle>
                 <p className="text-muted-foreground">
-                  {editingProduct 
-                    ? (isRestaurant ? "Update menu item information" : "Update product information")
-                    : (isRestaurant ? "Add items to your restaurant menu" : "Add products to your store inventory")
-                  }
+                  {editingProduct
+                    ? isRestaurant
+                      ? "Update menu item information"
+                      : "Update product information"
+                    : isRestaurant
+                      ? "Add items to your restaurant menu"
+                      : "Add products to your store inventory"}
                 </p>
               </CardHeader>
               <CardContent>
                 <Form {...productForm}>
-                  <form onSubmit={productForm.handleSubmit(handleAddProduct)} className="space-y-6">
+                  <form
+                    onSubmit={productForm.handleSubmit(handleAddProduct)}
+                    className="space-y-6"
+                  >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={productForm.control}
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{isRestaurant ? "Menu Item Name *" : "Product Name *"}</FormLabel>
+                            <FormLabel>
+                              {isRestaurant
+                                ? "Menu Item Name *"
+                                : "Product Name *"}
+                            </FormLabel>
                             <FormControl>
-                              <Input placeholder={isRestaurant ? "Enter menu item name" : "Enter product name"} {...field} />
+                              <Input
+                                placeholder={
+                                  isRestaurant
+                                    ? "Enter menu item name"
+                                    : "Enter product name"
+                                }
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -695,18 +904,27 @@ export default function SellerDashboard() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Category *</FormLabel>
-                            <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
+                            <Select
+                              onValueChange={(value) =>
+                                field.onChange(parseInt(value))
+                              }
+                              defaultValue={field.value?.toString()}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select category" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {Array.isArray(categories) && categories.map((category: any) => (
-                                  <SelectItem key={category.id} value={category.id.toString()}>
-                                    {category.name}
-                                  </SelectItem>
-                                ))}
+                                {Array.isArray(categories) &&
+                                  categories.map((category: any) => (
+                                    <SelectItem
+                                      key={category.id}
+                                      value={category.id.toString()}
+                                    >
+                                      {category.name}
+                                    </SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -722,10 +940,10 @@ export default function SellerDashboard() {
                         <FormItem>
                           <FormLabel>Description</FormLabel>
                           <FormControl>
-                            <Textarea 
+                            <Textarea
                               placeholder="Enter product description"
                               className="min-h-24"
-                              {...field} 
+                              {...field}
                             />
                           </FormControl>
                           <FormMessage />
@@ -741,8 +959,8 @@ export default function SellerDashboard() {
                           <FormItem>
                             <FormLabel>Price *</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
+                              <Input
+                                type="number"
                                 placeholder="0.00"
                                 {...field}
                               />
@@ -759,8 +977,8 @@ export default function SellerDashboard() {
                           <FormItem>
                             <FormLabel>Original Price</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
+                              <Input
+                                type="number"
                                 placeholder="0.00"
                                 {...field}
                               />
@@ -777,11 +995,13 @@ export default function SellerDashboard() {
                           <FormItem>
                             <FormLabel>Stock Quantity *</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
+                              <Input
+                                type="number"
                                 placeholder="Enter quantity"
                                 {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                onChange={(e) =>
+                                  field.onChange(parseInt(e.target.value) || 0)
+                                }
                               />
                             </FormControl>
                             <FormMessage />
@@ -815,7 +1035,7 @@ export default function SellerDashboard() {
                             <UtensilsCrossed className="h-5 w-5 mr-2" />
                             Food-Specific Information
                           </h3>
-                          
+
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <FormField
                               control={productForm.control}
@@ -824,7 +1044,10 @@ export default function SellerDashboard() {
                                 <FormItem>
                                   <FormLabel>Preparation Time</FormLabel>
                                   <FormControl>
-                                    <Input placeholder="e.g., 15-20 minutes" {...field} />
+                                    <Input
+                                      placeholder="e.g., 15-20 minutes"
+                                      {...field}
+                                    />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -837,7 +1060,10 @@ export default function SellerDashboard() {
                               render={({ field }) => (
                                 <FormItem>
                                   <FormLabel>Spice Level</FormLabel>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                  >
                                     <FormControl>
                                       <SelectTrigger>
                                         <SelectValue placeholder="Select spice level" />
@@ -845,9 +1071,13 @@ export default function SellerDashboard() {
                                     </FormControl>
                                     <SelectContent>
                                       <SelectItem value="mild">Mild</SelectItem>
-                                      <SelectItem value="medium">Medium</SelectItem>
+                                      <SelectItem value="medium">
+                                        Medium
+                                      </SelectItem>
                                       <SelectItem value="hot">Hot</SelectItem>
-                                      <SelectItem value="very-hot">Very Hot</SelectItem>
+                                      <SelectItem value="very-hot">
+                                        Very Hot
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                   <FormMessage />
@@ -863,7 +1093,9 @@ export default function SellerDashboard() {
                               render={({ field }) => (
                                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                                   <div className="space-y-0.5">
-                                    <FormLabel className="text-base">Vegetarian</FormLabel>
+                                    <FormLabel className="text-base">
+                                      Vegetarian
+                                    </FormLabel>
                                     <div className="text-sm text-muted-foreground">
                                       Mark if this item is vegetarian
                                     </div>
@@ -886,7 +1118,9 @@ export default function SellerDashboard() {
                               render={({ field }) => (
                                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                                   <div className="space-y-0.5">
-                                    <FormLabel className="text-base">Vegan</FormLabel>
+                                    <FormLabel className="text-base">
+                                      Vegan
+                                    </FormLabel>
                                     <div className="text-sm text-muted-foreground">
                                       Mark if this item is vegan
                                     </div>
@@ -924,7 +1158,9 @@ export default function SellerDashboard() {
                 <CardTitle>Store Analytics</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Analytics data will be displayed here when available.</p>
+                <p className="text-muted-foreground">
+                  Analytics data will be displayed here when available.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>

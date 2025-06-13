@@ -1,191 +1,358 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { 
-  Package, Plus, Edit, Trash2, Search, Filter, Download, Upload,
-  AlertTriangle, TrendingUp, TrendingDown, BarChart3, Eye, Clock
+import { useAuth } from "@/hooks/useAuth";
+import {
+  Package,
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  Filter,
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Eye,
+  BarChart3,
+  Download,
+  Upload,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import ImageUpload from "@/components/ImageUpload";
 
-const stockUpdateSchema = z.object({
-  productId: z.number(),
-  quantity: z.number().min(0),
-  type: z.enum(['stock_in', 'stock_out', 'adjustment']),
-  reason: z.string().optional()
+const productSchema = z.object({
+  name: z.string().min(1, "Product name is required"),
+  description: z.string().optional(),
+  price: z.string().min(1, "Price is required"),
+  originalPrice: z.string().optional(),
+  categoryId: z.number().min(1, "Category is required"),
+  stock: z.number().min(0, "Stock must be 0 or greater"),
+  imageUrl: z.string().optional(),
+  images: z
+    .array(z.string())
+    .min(1, "At least 1 image is required")
+    .max(6, "Maximum 6 images allowed"),
+  isFastSell: z.boolean().default(false),
+  isOnOffer: z.boolean().default(false),
+  offerPercentage: z.number().min(0).max(100).default(0),
+  offerEndDate: z.string().optional(),
+  // Food-specific fields
+  preparationTime: z.string().optional(),
+  ingredients: z.array(z.string()).default([]),
+  allergens: z.array(z.string()).default([]),
+  spiceLevel: z.string().optional(),
+  isVegetarian: z.boolean().default(false),
+  isVegan: z.boolean().default(false),
+  nutritionInfo: z.string().optional(),
 });
 
-export default function SellerInventory() {
+type ProductForm = z.infer<typeof productSchema>;
+
+interface Product {
+  id: number;
+  name: string;
+  description?: string;
+  price: string;
+  originalPrice?: string;
+  stock: number;
+  images?: string[];
+  categoryId: number;
+  storeId: number;
+  isActive: boolean;
+  isFastSell?: boolean;
+  isOnOffer?: boolean;
+  offerPercentage?: number;
+  productType?: string;
+  preparationTime?: string;
+  spiceLevel?: string;
+  isVegetarian?: boolean;
+  isVegan?: boolean;
+}
+
+export default function InventoryManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showAddProduct, setShowAddProduct] = useState(false);
+
   const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [stockFilter, setStockFilter] = useState('all');
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof stockUpdateSchema>>({
-    resolver: zodResolver(stockUpdateSchema),
+  // Form for adding/editing products
+  const productForm = useForm<ProductForm>({
+    resolver: zodResolver(productSchema),
     defaultValues: {
-      quantity: 0,
-      type: 'stock_in',
-      reason: ''
-    }
-  });
-
-  // Products query with enhanced error handling and data validation
-  const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useQuery({
-    queryKey: ['/api/products/store', user?.id],
-    queryFn: async () => {
-      if (!user?.id) throw new Error('User ID required');
-      const response = await fetch(`/api/products/store?userId=${user.id}`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      name: "",
+      description: "",
+      price: "",
+      originalPrice: "",
+      categoryId: 1,
+      stock: 0,
+      imageUrl: "",
+      images: [],
+      isFastSell: false,
+      isOnOffer: false,
+      offerPercentage: 0,
+      offerEndDate: "",
+      preparationTime: "",
+      ingredients: [],
+      allergens: [],
+      spiceLevel: "",
+      isVegetarian: false,
+      isVegan: false,
+      nutritionInfo: "",
     },
-    enabled: !!user?.id,
-    staleTime: 30000, // 30 seconds
-    refetchOnWindowFocus: false,
-    retry: (failureCount, error) => {
-      if (failureCount < 3) return true;
-      console.error('Products fetch failed:', error);
-      return false;
-    }
   });
 
-  // Inventory logs query with enhanced error handling
-  const { data: inventoryLogs = [], isLoading: logsLoading, refetch: refetchLogs } = useQuery({
-    queryKey: ['/api/seller/inventory', user?.id],
+  // Categories query
+  const { data: categories = [] } = useQuery({
+    queryKey: ["/api/categories"],
+  });
+
+  // Store query to get current store info
+  const { data: stores = [] } = useQuery({
+    queryKey: [`/api/stores/owner`, user?.id],
     queryFn: async () => {
-      if (!user?.id) throw new Error('User ID required');
-      const response = await fetch(`/api/seller/inventory?userId=${user.id}`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    },
-    enabled: !!user?.id,
-    staleTime: 30000,
-    refetchOnWindowFocus: false
-  });
-
-  // Stock update mutation with enhanced error handling and immediate refresh
-  const updateStockMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof stockUpdateSchema>) => {
-      const response = await fetch('/api/seller/inventory/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update stock');
-      }
+      if (!user?.id) return [];
+      const response = await fetch(`/api/stores/owner/${user.id}`);
+      if (!response.ok) throw new Error("Failed to fetch stores");
       return response.json();
     },
-    onSuccess: async () => {
-      toast({
-        title: "Stock Updated",
-        description: "Product inventory has been updated successfully",
-      });
-      
-      // Force immediate data refresh
-      await Promise.all([
-        refetchProducts(),
-        refetchLogs()
-      ]);
-      
-      setIsUpdateDialogOpen(false);
-      form.reset();
-    },
-    onError: (error: Error) => {
-      console.error('Stock update error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update stock",
-        variant: "destructive"
-      });
-    }
+    enabled: !!user,
   });
 
-  const handleStockUpdate = (data: z.infer<typeof stockUpdateSchema>) => {
-    updateStockMutation.mutate(data);
+  const currentStore = stores[0]; // Assuming one store per shopkeeper
+
+  // Products query
+  const { data: products = [], isLoading: productsLoading } = useQuery<
+    Product[]
+  >({
+    queryKey: [`/api/products/store/${currentStore?.id}`],
+    queryFn: async () => {
+      if (!currentStore?.id) return [];
+      const response = await fetch(`/api/products/store/${currentStore.id}`);
+      if (!response.ok) throw new Error("Failed to fetch store products");
+      return response.json();
+    },
+    enabled: !!currentStore,
+  });
+
+  // Filter products
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "all" ||
+      product.categoryId.toString() === selectedCategory;
+    const matchesStock =
+      stockFilter === "all" ||
+      (stockFilter === "low" && product.stock <= 5) ||
+      (stockFilter === "out" && product.stock === 0) ||
+      (stockFilter === "available" && product.stock > 5);
+
+    return matchesSearch && matchesCategory && matchesStock;
+  });
+
+  // Low stock products
+  const lowStockProducts = products.filter(
+    (product) => product.stock <= 5 && product.stock > 0,
+  );
+  const outOfStockProducts = products.filter((product) => product.stock === 0);
+
+  // Product management functions
+  const handleAddProduct = async (data: ProductForm) => {
+    if (!currentStore) return;
+
+    try {
+      const productData = {
+        ...data,
+        storeId: currentStore.id,
+        price: data.price,
+        originalPrice: data.originalPrice || undefined,
+        images: data.images || [],
+        imageUrl: data.images?.[0] || undefined,
+        isFastSell: data.isFastSell || false,
+        isOnOffer: data.isOnOffer || false,
+        offerPercentage: data.offerPercentage || 0,
+        offerEndDate: data.offerEndDate || undefined,
+        productType:
+          currentStore.storeType === "restaurant" ? "food" : "retail",
+        // Food-specific fields for restaurants
+        preparationTime:
+          currentStore.storeType === "restaurant"
+            ? data.preparationTime || null
+            : null,
+        ingredients:
+          currentStore.storeType === "restaurant" ? data.ingredients || [] : [],
+        allergens:
+          currentStore.storeType === "restaurant" ? data.allergens || [] : [],
+        spiceLevel:
+          currentStore.storeType === "restaurant"
+            ? data.spiceLevel || null
+            : null,
+        isVegetarian:
+          currentStore.storeType === "restaurant"
+            ? data.isVegetarian || false
+            : false,
+        isVegan:
+          currentStore.storeType === "restaurant"
+            ? data.isVegan || false
+            : false,
+        nutritionInfo:
+          currentStore.storeType === "restaurant"
+            ? data.nutritionInfo || null
+            : null,
+      };
+
+      if (editingProduct) {
+        const response = await fetch(`/api/products/${editingProduct.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productData),
+        });
+        if (!response.ok) throw new Error("Failed to update product");
+        toast({ title: "Product updated successfully" });
+      } else {
+        const response = await fetch("/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productData),
+        });
+        if (!response.ok) throw new Error("Failed to create product");
+        toast({ title: "Product added successfully" });
+      }
+
+      productForm.reset();
+      setEditingProduct(null);
+      setShowAddProduct(false);
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({
+        queryKey: [`/api/products/store/${currentStore.id}`],
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to save product",
+        variant: "destructive",
+      });
+    }
   };
 
-  const openUpdateDialog = (product: any) => {
-    setSelectedProduct(product);
-    form.setValue('productId', product.id);
-    setIsUpdateDialogOpen(true);
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    productForm.reset({
+      name: product.name,
+      description: product.description || "",
+      price: product.price,
+      originalPrice: product.originalPrice || "",
+      categoryId: product.categoryId || 1,
+      stock: product.stock || 0,
+      imageUrl: product.images?.[0] || "",
+      images: product.images || [],
+      isFastSell: product.isFastSell || false,
+      isOnOffer: product.isOnOffer || false,
+      offerPercentage: product.offerPercentage || 0,
+      offerEndDate: "",
+      preparationTime: product.preparationTime || "",
+      spiceLevel: product.spiceLevel || "",
+      isVegetarian: product.isVegetarian || false,
+      isVegan: product.isVegan || false,
+    });
+    setShowAddProduct(true);
   };
 
-  // Filter products based on search and stock level
-  const filteredProducts = Array.isArray(products) ? products.filter((product: any) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStock = stockFilter === 'all' || 
-      (stockFilter === 'low' && (product.stock || 0) < 10) ||
-      (stockFilter === 'out' && (product.stock || 0) === 0) ||
-      (stockFilter === 'available' && (product.stock || 0) > 0);
-    
-    return matchesSearch && matchesStock;
-  }) : [];
+  const handleDeleteProduct = async (productId: number) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
 
-  const lowStockCount = Array.isArray(products) ? products.filter((p: any) => (p.stock || 0) < 10).length : 0;
-  const outOfStockCount = Array.isArray(products) ? products.filter((p: any) => (p.stock || 0) === 0).length : 0;
-  const totalValue = Array.isArray(products) ? products.reduce((sum: number, p: any) => sum + ((p.stock || 0) * parseFloat(p.price)), 0) : 0;
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete product");
+      toast({ title: "Product deleted successfully" });
+      // Invalidate queries to refresh data
+      if (currentStore) {
+        queryClient.invalidateQueries({
+          queryKey: [`/api/products/store/${currentStore.id}`],
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
+  };
 
-  // Check authentication and admin approval
-  if (!user || user.role !== 'shopkeeper') {
+  if (!user || user.role !== "shopkeeper") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-center text-red-600">Access Denied</CardTitle>
+            <CardTitle className="text-center text-red-600">
+              Access Denied
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-center text-muted-foreground">
               You need to be a shopkeeper to access inventory management.
             </p>
+            <div className="mt-4 text-center">
+              <Link href="/" className="text-primary hover:underline">
+                Go back to homepage
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (user.role === 'shopkeeper' && (user as any).status !== 'active') {
+  if (!currentStore) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <Card className="w-full max-w-lg">
+        <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-center text-yellow-600">Pending Admin Approval</CardTitle>
+            <CardTitle className="text-center">No Store Found</CardTitle>
           </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 rounded-full bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
-              <Clock className="h-8 w-8 text-yellow-600" />
-            </div>
-            <p className="text-muted-foreground">
-              Your seller account is pending approval from our admin team. You cannot access inventory management until approved.
+          <CardContent className="text-center">
+            <p className="text-muted-foreground mb-4">
+              You need to create a store before managing inventory.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/">
-                <Button variant="outline">Go to Homepage</Button>
-              </Link>
-            </div>
+            <Link href="/seller/store">
+              <Button>Create Store</Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -201,18 +368,23 @@ export default function SellerInventory() {
             <div className="flex items-center space-x-3">
               <Package className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Inventory Management</h1>
-                <p className="text-sm text-muted-foreground">Manage your product stock and inventory</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Inventory Management
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {currentStore.name}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Link href="/seller/products/add">
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Product
-                </Button>
-              </Link>
-              <Button variant="outline">
+              <Button
+                onClick={() => setShowAddProduct(true)}
+                className="bg-primary"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </Button>
+              <Button variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
@@ -223,368 +395,387 @@ export default function SellerInventory() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Inventory Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Products
+              </CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{Array.isArray(products) ? products.length : 0}</div>
+              <div className="text-2xl font-bold">{products.length}</div>
+              <p className="text-xs text-muted-foreground">
+                <TrendingUp className="h-3 w-3 inline mr-1" />
+                Active inventory items
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              <CardTitle className="text-sm font-medium">
+                Low Stock Alert
+              </CardTitle>
+              <AlertTriangle className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{lowStockCount}</div>
-              <p className="text-xs text-muted-foreground">Items below 10 units</p>
+              <div className="text-2xl font-bold text-orange-600">
+                {lowStockProducts.length}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Items with ≤5 units remaining
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Out of Stock
+              </CardTitle>
               <TrendingDown className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{outOfStockCount}</div>
-              <p className="text-xs text-muted-foreground">Items need restocking</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Inventory Value</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₹{totalValue.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">Total stock value</p>
+              <div className="text-2xl font-bold text-red-600">
+                {outOfStockProducts.length}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Items requiring restocking
+              </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Filters and Search */}
         <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <CardHeader>
+            <CardTitle>Product Management</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Search products..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+                <Input
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
               </div>
-              <Select value={stockFilter} onValueChange={setStockFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Products</SelectItem>
-                  <SelectItem value="available">In Stock</SelectItem>
-                  <SelectItem value="low">Low Stock</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {Array.isArray(categories) &&
+                    categories.map((category: any) => (
+                      <SelectItem
+                        key={category.id}
+                        value={category.id.toString()}
+                      >
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <Select value={stockFilter} onValueChange={setStockFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Stock Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Stock</SelectItem>
+                  <SelectItem value="available">Available ({">"}5)</SelectItem>
+                  <SelectItem value="low">Low Stock (≤5)</SelectItem>
                   <SelectItem value="out">Out of Stock</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Products Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              Product Inventory
-              {productsLoading && (
-                <div className="text-sm text-muted-foreground">Loading...</div>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {productsError && (
-              <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <div className="text-red-800 dark:text-red-200 font-medium">Error loading products</div>
-                <div className="text-red-600 dark:text-red-400 text-sm mt-1">
-                  {productsError.message}
-                </div>
-                <Button 
-                  onClick={() => refetchProducts()} 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                >
-                  Retry
-                </Button>
-              </div>
-            )}
-            
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Current Stock</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {productsLoading ? (
-                    Array.from({ length: 5 }).map((_, index) => (
-                      <TableRow key={index}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
-                            <div>
-                              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32"></div>
-                              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48 mt-1"></div>
-                            </div>
+            {/* Products List */}
+            <div className="space-y-4">
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                        {product.images?.[0] ? (
+                          <img
+                            src={product.images[0]}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="h-6 w-6 text-gray-400" />
                           </div>
-                        </TableCell>
-                        <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div></TableCell>
-                        <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-12"></div></TableCell>
-                        <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div></TableCell>
-                        <TableCell><div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20"></div></TableCell>
-                        <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-16"></div></TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                            <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : filteredProducts.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
-                        <div className="text-muted-foreground">
-                          {searchTerm || stockFilter !== 'all' ? 'No products match your filters' : 'No products found'}
-                        </div>
-                        {!searchTerm && stockFilter === 'all' && (
-                          <Link href="/seller/products/add" className="inline-block mt-2">
-                            <Button size="sm">Add Your First Product</Button>
-                          </Link>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredProducts.map((product: any) => {
-                    const stock = product.stock || 0;
-                    const value = stock * parseFloat(product.price);
-                    
-                    return (
-                      <TableRow key={product.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                              <Package className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                            <div>
-                              <p className="font-medium">{product.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {product.description?.substring(0, 50)}...
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          PRD{product.id.toString().padStart(4, '0')}
-                        </TableCell>
-                        <TableCell>₹{product.price}</TableCell>
-                        <TableCell>
-                          <span className={`font-medium ${
-                            stock === 0 ? 'text-red-600' : 
-                            stock < 10 ? 'text-yellow-600' : 
-                            'text-green-600'
-                          }`}>
-                            {stock} units
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={
-                            stock === 0 ? 'destructive' : 
-                            stock < 10 ? 'secondary' : 
-                            'default'
-                          }>
-                            {stock === 0 ? 'Out of Stock' : 
-                             stock < 10 ? 'Low Stock' : 
-                             'In Stock'}
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{product.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          ₹{product.price}
+                        </p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Badge
+                            variant={
+                              product.stock === 0
+                                ? "destructive"
+                                : product.stock <= 5
+                                  ? "secondary"
+                                  : "default"
+                            }
+                          >
+                            Stock: {product.stock}
                           </Badge>
-                        </TableCell>
-                        <TableCell>₹{value.toLocaleString()}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openUpdateDialog(product)}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Link href={`/products/${product.id}`}>
-                              <Button size="sm" variant="outline">
-                                <Eye className="h-3 w-3" />
-                              </Button>
-                            </Link>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Inventory Logs */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Recent Inventory Changes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {Array.isArray(inventoryLogs) ? inventoryLogs.slice(0, 10).map((log: any) => (
-                <div key={log.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      log.type === 'stock_in' ? 'bg-green-100 dark:bg-green-900' :
-                      log.type === 'stock_out' ? 'bg-red-100 dark:bg-red-900' :
-                      'bg-blue-100 dark:bg-blue-900'
-                    }`}>
-                      {log.type === 'stock_in' ? (
-                        <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      ) : log.type === 'stock_out' ? (
-                        <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
-                      ) : (
-                        <Edit className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                      )}
+                          {product.isOnOffer && (
+                            <Badge variant="outline" className="text-green-600">
+                              {product.offerPercentage}% OFF
+                            </Badge>
+                          )}
+                          {product.isFastSell && (
+                            <Badge variant="outline" className="text-blue-600">
+                              Fast Sell
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">
-                        {log.type === 'stock_in' ? 'Stock Added' :
-                         log.type === 'stock_out' ? 'Stock Removed' :
-                         'Stock Adjusted'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {log.reason || 'No reason provided'}
-                      </p>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        onClick={() => handleEditProduct(product)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteProduct(product.id)}
+                        variant="destructive"
+                        size="sm"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">
-                      {log.type === 'stock_in' ? '+' : log.type === 'stock_out' ? '-' : '±'}
-                      {Math.abs(log.quantity)} units
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(log.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    {searchTerm ||
+                    selectedCategory !== "all" ||
+                    stockFilter !== "all"
+                      ? "No products match your filters"
+                      : "No products in inventory"}
+                  </p>
+                  {!showAddProduct && (
+                    <Button
+                      onClick={() => setShowAddProduct(true)}
+                      className="mt-4"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Your First Product
+                    </Button>
+                  )}
                 </div>
-              )) : (
-                <p className="text-center text-muted-foreground">No inventory changes yet</p>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Add/Edit Product Form */}
+        {showAddProduct && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                {editingProduct ? "Edit Product" : "Add New Product"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Form {...productForm}>
+                <form
+                  onSubmit={productForm.handleSubmit(handleAddProduct)}
+                  className="space-y-6"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={productForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Product Name *</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter product name"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={productForm.control}
+                      name="categoryId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Category *</FormLabel>
+                          <Select
+                            onValueChange={(value) =>
+                              field.onChange(parseInt(value))
+                            }
+                            defaultValue={field.value?.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Array.isArray(categories) &&
+                                categories.map((category: any) => (
+                                  <SelectItem
+                                    key={category.id}
+                                    value={category.id.toString()}
+                                  >
+                                    {category.name}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={productForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter product description"
+                            className="min-h-24"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <FormField
+                      control={productForm.control}
+                      name="price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Price *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="0.00"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={productForm.control}
+                      name="originalPrice"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Original Price</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="0.00"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={productForm.control}
+                      name="stock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Stock Quantity *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Enter quantity"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value) || 0)
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={productForm.control}
+                    name="images"
+                    render={({ field }) => (
+                      <FormItem>
+                        <ImageUpload
+                          label="Product Images"
+                          maxImages={6}
+                          minImages={1}
+                          onImagesChange={field.onChange}
+                          initialImages={field.value || []}
+                          className="col-span-full"
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end space-x-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowAddProduct(false);
+                        setEditingProduct(null);
+                        productForm.reset();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      <Plus className="h-4 w-4 mr-2" />
+                      {editingProduct ? "Update Product" : "Add Product"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        )}
       </div>
-
-      {/* Stock Update Dialog */}
-      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Stock - {selectedProduct?.name}</DialogTitle>
-            <DialogDescription>
-              Adjust the inventory quantity for this product. Choose whether to add, remove, or adjust stock.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleStockUpdate)} className="space-y-4">
-              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <p className="text-sm text-muted-foreground">Current Stock</p>
-                <p className="text-2xl font-bold">{selectedProduct?.stock || 0} units</p>
-              </div>
-
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Update Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="stock_in">Add Stock</SelectItem>
-                        <SelectItem value="stock_out">Remove Stock</SelectItem>
-                        <SelectItem value="adjustment">Adjust to Exact Amount</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {form.watch('type') === 'adjustment' ? 'New Stock Amount' : 'Quantity'}
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="reason"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reason (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., New shipment, Damaged goods, Inventory count" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsUpdateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateStockMutation.isPending}>
-                  {updateStockMutation.isPending ? 'Updating...' : 'Update Stock'}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

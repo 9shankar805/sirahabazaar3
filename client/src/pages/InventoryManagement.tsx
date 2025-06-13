@@ -2,18 +2,42 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  Package, Plus, Edit, Trash2, Search, Filter, AlertTriangle,
-  TrendingUp, TrendingDown, Eye, BarChart3, Download, Upload
+import {
+  Package,
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  Filter,
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Eye,
+  BarChart3,
+  Download,
+  Upload,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,7 +52,10 @@ const productSchema = z.object({
   categoryId: z.number().min(1, "Category is required"),
   stock: z.number().min(0, "Stock must be 0 or greater"),
   imageUrl: z.string().optional(),
-  images: z.array(z.string()).min(1, "At least 1 image is required").max(6, "Maximum 6 images allowed"),
+  images: z
+    .array(z.string())
+    .min(1, "At least 1 image is required")
+    .max(6, "Maximum 6 images allowed"),
   isFastSell: z.boolean().default(false),
   isOnOffer: z.boolean().default(false),
   offerPercentage: z.number().min(0).max(100).default(0),
@@ -114,7 +141,7 @@ export default function InventoryManagement() {
     queryFn: async () => {
       if (!user?.id) return [];
       const response = await fetch(`/api/stores/owner/${user.id}`);
-      if (!response.ok) throw new Error('Failed to fetch stores');
+      if (!response.ok) throw new Error("Failed to fetch stores");
       return response.json();
     },
     enabled: !!user,
@@ -123,12 +150,14 @@ export default function InventoryManagement() {
   const currentStore = stores[0]; // Assuming one store per shopkeeper
 
   // Products query
-  const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
+  const { data: products = [], isLoading: productsLoading } = useQuery<
+    Product[]
+  >({
     queryKey: [`/api/products/store/${currentStore?.id}`],
     queryFn: async () => {
       if (!currentStore?.id) return [];
       const response = await fetch(`/api/products/store/${currentStore.id}`);
-      if (!response.ok) throw new Error('Failed to fetch store products');
+      if (!response.ok) throw new Error("Failed to fetch store products");
       return response.json();
     },
     enabled: !!currentStore,
@@ -136,20 +165,26 @@ export default function InventoryManagement() {
 
   // Filter products
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || product.categoryId.toString() === selectedCategory;
-    const matchesStock = 
+    const matchesSearch = product.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "all" ||
+      product.categoryId.toString() === selectedCategory;
+    const matchesStock =
       stockFilter === "all" ||
       (stockFilter === "low" && product.stock <= 5) ||
       (stockFilter === "out" && product.stock === 0) ||
       (stockFilter === "available" && product.stock > 5);
-    
+
     return matchesSearch && matchesCategory && matchesStock;
   });
 
   // Low stock products
-  const lowStockProducts = products.filter(product => product.stock <= 5 && product.stock > 0);
-  const outOfStockProducts = products.filter(product => product.stock === 0);
+  const lowStockProducts = products.filter(
+    (product) => product.stock <= 5 && product.stock > 0,
+  );
+  const outOfStockProducts = products.filter((product) => product.stock === 0);
 
   // Product management functions
   const handleAddProduct = async (data: ProductForm) => {
@@ -167,32 +202,50 @@ export default function InventoryManagement() {
         isOnOffer: data.isOnOffer || false,
         offerPercentage: data.offerPercentage || 0,
         offerEndDate: data.offerEndDate || undefined,
-        productType: currentStore.storeType === 'restaurant' ? 'food' : 'retail',
+        productType:
+          currentStore.storeType === "restaurant" ? "food" : "retail",
         // Food-specific fields for restaurants
-        preparationTime: currentStore.storeType === 'restaurant' ? data.preparationTime || null : null,
-        ingredients: currentStore.storeType === 'restaurant' ? data.ingredients || [] : [],
-        allergens: currentStore.storeType === 'restaurant' ? data.allergens || [] : [],
-        spiceLevel: currentStore.storeType === 'restaurant' ? data.spiceLevel || null : null,
-        isVegetarian: currentStore.storeType === 'restaurant' ? data.isVegetarian || false : false,
-        isVegan: currentStore.storeType === 'restaurant' ? data.isVegan || false : false,
-        nutritionInfo: currentStore.storeType === 'restaurant' ? data.nutritionInfo || null : null,
+        preparationTime:
+          currentStore.storeType === "restaurant"
+            ? data.preparationTime || null
+            : null,
+        ingredients:
+          currentStore.storeType === "restaurant" ? data.ingredients || [] : [],
+        allergens:
+          currentStore.storeType === "restaurant" ? data.allergens || [] : [],
+        spiceLevel:
+          currentStore.storeType === "restaurant"
+            ? data.spiceLevel || null
+            : null,
+        isVegetarian:
+          currentStore.storeType === "restaurant"
+            ? data.isVegetarian || false
+            : false,
+        isVegan:
+          currentStore.storeType === "restaurant"
+            ? data.isVegan || false
+            : false,
+        nutritionInfo:
+          currentStore.storeType === "restaurant"
+            ? data.nutritionInfo || null
+            : null,
       };
 
       if (editingProduct) {
         const response = await fetch(`/api/products/${editingProduct.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(productData)
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productData),
         });
-        if (!response.ok) throw new Error('Failed to update product');
+        if (!response.ok) throw new Error("Failed to update product");
         toast({ title: "Product updated successfully" });
       } else {
         const response = await fetch("/api/products", {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(productData)
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(productData),
         });
-        if (!response.ok) throw new Error('Failed to create product');
+        if (!response.ok) throw new Error("Failed to create product");
         toast({ title: "Product added successfully" });
       }
 
@@ -200,12 +253,15 @@ export default function InventoryManagement() {
       setEditingProduct(null);
       setShowAddProduct(false);
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: [`/api/products/store/${currentStore.id}`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/products/store/${currentStore.id}`],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save product",
+        description:
+          error instanceof Error ? error.message : "Failed to save product",
         variant: "destructive",
       });
     }
@@ -238,12 +294,16 @@ export default function InventoryManagement() {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      const response = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete product');
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete product");
       toast({ title: "Product deleted successfully" });
       // Invalidate queries to refresh data
       if (currentStore) {
-        queryClient.invalidateQueries({ queryKey: [`/api/products/store/${currentStore.id}`] });
+        queryClient.invalidateQueries({
+          queryKey: [`/api/products/store/${currentStore.id}`],
+        });
         queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       }
     } catch (error) {
@@ -255,12 +315,14 @@ export default function InventoryManagement() {
     }
   };
 
-  if (!user || user.role !== 'shopkeeper') {
+  if (!user || user.role !== "shopkeeper") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-center text-red-600">Access Denied</CardTitle>
+            <CardTitle className="text-center text-red-600">
+              Access Denied
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-center text-muted-foreground">
@@ -306,12 +368,19 @@ export default function InventoryManagement() {
             <div className="flex items-center space-x-3">
               <Package className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Inventory Management</h1>
-                <p className="text-sm text-muted-foreground">{currentStore.name}</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Inventory Management
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {currentStore.name}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Button onClick={() => setShowAddProduct(true)} className="bg-primary">
+              <Button
+                onClick={() => setShowAddProduct(true)}
+                className="bg-primary"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Product
               </Button>
@@ -329,7 +398,9 @@ export default function InventoryManagement() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Products
+              </CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -343,11 +414,15 @@ export default function InventoryManagement() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Low Stock Alert</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Low Stock Alert
+              </CardTitle>
               <AlertTriangle className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{lowStockProducts.length}</div>
+              <div className="text-2xl font-bold text-orange-600">
+                {lowStockProducts.length}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Items with ≤5 units remaining
               </p>
@@ -356,11 +431,15 @@ export default function InventoryManagement() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Out of Stock
+              </CardTitle>
               <TrendingDown className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{outOfStockProducts.length}</div>
+              <div className="text-2xl font-bold text-red-600">
+                {outOfStockProducts.length}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Items requiring restocking
               </p>
@@ -383,17 +462,24 @@ export default function InventoryManagement() {
                   className="w-full"
                 />
               </div>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
                 <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {Array.isArray(categories) && categories.map((category: any) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
+                  {Array.isArray(categories) &&
+                    categories.map((category: any) => (
+                      <SelectItem
+                        key={category.id}
+                        value={category.id.toString()}
+                      >
+                        {category.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
               <Select value={stockFilter} onValueChange={setStockFilter}>
@@ -413,14 +499,17 @@ export default function InventoryManagement() {
             <div className="space-y-4">
               {filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => (
-                  <div key={product.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow"
+                  >
                     <div className="flex items-center space-x-4">
                       <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
                         {product.images?.[0] ? (
-                          <img 
-                            src={product.images[0]} 
-                            alt={product.name} 
-                            className="w-full h-full object-cover" 
+                          <img
+                            src={product.images[0]}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
@@ -430,12 +519,17 @@ export default function InventoryManagement() {
                       </div>
                       <div>
                         <h3 className="font-medium">{product.name}</h3>
-                        <p className="text-sm text-muted-foreground">₹{product.price}</p>
+                        <p className="text-sm text-muted-foreground">
+                          ₹{product.price}
+                        </p>
                         <div className="flex items-center space-x-2 mt-1">
-                          <Badge 
+                          <Badge
                             variant={
-                              product.stock === 0 ? "destructive" : 
-                              product.stock <= 5 ? "secondary" : "default"
+                              product.stock === 0
+                                ? "destructive"
+                                : product.stock <= 5
+                                  ? "secondary"
+                                  : "default"
                             }
                           >
                             Stock: {product.stock}
@@ -454,16 +548,16 @@ export default function InventoryManagement() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button 
-                        onClick={() => handleEditProduct(product)} 
-                        variant="outline" 
+                      <Button
+                        onClick={() => handleEditProduct(product)}
+                        variant="outline"
                         size="sm"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        onClick={() => handleDeleteProduct(product.id)} 
-                        variant="destructive" 
+                      <Button
+                        onClick={() => handleDeleteProduct(product.id)}
+                        variant="destructive"
                         size="sm"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -475,12 +569,17 @@ export default function InventoryManagement() {
                 <div className="text-center py-8">
                   <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-muted-foreground">
-                    {searchTerm || selectedCategory !== "all" || stockFilter !== "all" 
-                      ? "No products match your filters" 
+                    {searchTerm ||
+                    selectedCategory !== "all" ||
+                    stockFilter !== "all"
+                      ? "No products match your filters"
                       : "No products in inventory"}
                   </p>
                   {!showAddProduct && (
-                    <Button onClick={() => setShowAddProduct(true)} className="mt-4">
+                    <Button
+                      onClick={() => setShowAddProduct(true)}
+                      className="mt-4"
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Your First Product
                     </Button>
@@ -502,7 +601,10 @@ export default function InventoryManagement() {
             </CardHeader>
             <CardContent>
               <Form {...productForm}>
-                <form onSubmit={productForm.handleSubmit(handleAddProduct)} className="space-y-6">
+                <form
+                  onSubmit={productForm.handleSubmit(handleAddProduct)}
+                  className="space-y-6"
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={productForm.control}
@@ -511,7 +613,10 @@ export default function InventoryManagement() {
                         <FormItem>
                           <FormLabel>Product Name *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter product name" {...field} />
+                            <Input
+                              placeholder="Enter product name"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -524,18 +629,27 @@ export default function InventoryManagement() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Category *</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
+                          <Select
+                            onValueChange={(value) =>
+                              field.onChange(parseInt(value))
+                            }
+                            defaultValue={field.value?.toString()}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select category" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {Array.isArray(categories) && categories.map((category: any) => (
-                                <SelectItem key={category.id} value={category.id.toString()}>
-                                  {category.name}
-                                </SelectItem>
-                              ))}
+                              {Array.isArray(categories) &&
+                                categories.map((category: any) => (
+                                  <SelectItem
+                                    key={category.id}
+                                    value={category.id.toString()}
+                                  >
+                                    {category.name}
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -551,10 +665,10 @@ export default function InventoryManagement() {
                       <FormItem>
                         <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <Textarea 
+                          <Textarea
                             placeholder="Enter product description"
                             className="min-h-24"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -570,8 +684,8 @@ export default function InventoryManagement() {
                         <FormItem>
                           <FormLabel>Price *</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
+                            <Input
+                              type="number"
                               placeholder="0.00"
                               {...field}
                             />
@@ -588,8 +702,8 @@ export default function InventoryManagement() {
                         <FormItem>
                           <FormLabel>Original Price</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
+                            <Input
+                              type="number"
                               placeholder="0.00"
                               {...field}
                             />
@@ -606,11 +720,13 @@ export default function InventoryManagement() {
                         <FormItem>
                           <FormLabel>Stock Quantity *</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
+                            <Input
+                              type="number"
                               placeholder="Enter quantity"
                               {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value) || 0)
+                              }
                             />
                           </FormControl>
                           <FormMessage />
@@ -638,9 +754,9 @@ export default function InventoryManagement() {
                   />
 
                   <div className="flex justify-end space-x-4">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={() => {
                         setShowAddProduct(false);
                         setEditingProduct(null);
