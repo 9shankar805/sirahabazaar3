@@ -1,17 +1,22 @@
 # Siraha Bazaar - Multi-Vendor E-commerce Platform
 
-A comprehensive e-commerce marketplace built with React, Node.js, and PostgreSQL.
+A comprehensive multi-vendor e-commerce marketplace built with modern web technologies. The platform enables multiple vendors to sell products through a unified marketplace while providing customers with a seamless shopping experience, real-time order tracking, and delivery management.
 
 ## Features
 
-- **Multi-vendor marketplace** - Multiple stores can sell products
-- **Product catalog** - Browse products by categories and stores
-- **Shopping cart & wishlist** - Save items for later purchase
-- **Order management** - Track orders from placement to delivery
-- **Store locator** - Find nearby stores with map integration
-- **User authentication** - Secure login and registration
-- **Responsive design** - Works on desktop and mobile devices
-- **Admin dashboard** - Manage products, orders, and analytics
+### Core Functionality
+- **Multi-vendor Support** - Separate dashboards for store owners and customers
+- **Real-time Order Tracking** - GPS-based delivery tracking with WebSocket updates
+- **Advanced Admin Panel** - Comprehensive platform management and analytics
+- **Payment Integration** - Stripe and PayPal support for secure transactions
+- **Notification System** - Real-time push notifications and email alerts
+- **Responsive Design** - Mobile-first design with progressive web app features
+
+### User Roles
+- **Customers** - Browse, shop, track orders, manage wishlist
+- **Store Owners** - Manage inventory, process orders, view analytics
+- **Delivery Partners** - Accept deliveries, track routes, update status
+- **Administrators** - Platform oversight, user management, system configuration
 
 ## Quick Start for VS Code
 
@@ -102,14 +107,59 @@ For testing purposes, you can create an admin account or use the registration fo
 - Try deleting `node_modules` and running `npm install` again
 - Ensure you're using Node.js version 18 or higher
 
+## Production Deployment
+
+### Deployment Readiness Check
+Before deploying, run the verification script:
+```bash
+node deployment-check.js
+```
+
+### Environment Variables for Production
+```env
+# Required
+DATABASE_URL=postgresql://user:pass@host:5432/database
+NODE_ENV=production
+
+# Optional Services (Enhance functionality)
+HERE_API_KEY=your_here_maps_api_key
+STRIPE_SECRET_KEY=sk_live_...
+SENDGRID_API_KEY=SG.xxx
+VAPID_PUBLIC_KEY=your_vapid_public_key
+VAPID_PRIVATE_KEY=your_vapid_private_key
+```
+
+### Build and Deploy
+1. **Build for production**:
+   ```bash
+   npm run build
+   ```
+
+2. **Start production server**:
+   ```bash
+   npm run start
+   ```
+
+### Default Admin Access
+- **URL**: `/admin-login`
+- **Email**: admin@sirabazaar.com
+- **Password**: admin123
+- **Important**: Change these credentials immediately in production
+
 ## Support
 
 If you encounter any issues:
-1. Check the console for error messages
-2. Verify all prerequisites are installed correctly
-3. Ensure your database is running and accessible
-4. Review the environment variables in your `.env` file
+1. Run `node deployment-check.js` to verify system status
+2. Check console logs for error messages
+3. Verify database connectivity and environment variables
+4. Ensure all required services are properly configured
+
+## Documentation
+
+- **Architecture**: See `replit.md` for comprehensive technical documentation
+- **API Reference**: Endpoints documented in `server/routes.ts`
+- **Database Schema**: Full schema in `shared/schema.ts`
 
 ---
 
-Built with ❤️ for local businesses in Nepal
+Built with modern web technologies for scalable e-commerce solutions
