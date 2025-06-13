@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "@/components/ImageUpload";
+import AdminVerificationPanel from "@/components/AdminVerificationPanel";
+import AdminToggle from "@/components/AdminToggle";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -82,9 +84,13 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [, setLocation] = useLocation();
-  const { register } = useAuth();
+  const { register, user } = useAuth();
   const { toast } = useToast();
+  
+  // Check if current user is admin
+  const isAdmin = user?.role === 'admin' || user?.email?.includes('admin') || localStorage.getItem('isAdmin') === 'true';
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -192,9 +198,12 @@ export default function Register() {
       <div className="w-full max-w-md">
         <Card>
           <CardHeader className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <Store className="h-8 w-8 text-primary mr-2" />
-              <span className="text-2xl font-bold text-foreground">Siraha Bazaar</span>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <Store className="h-8 w-8 text-primary mr-2" />
+                <span className="text-2xl font-bold text-foreground">Siraha Bazaar</span>
+              </div>
+              <AdminToggle />
             </div>
             <CardTitle className="text-2xl">Create Account</CardTitle>
             <p className="text-muted-foreground">
@@ -385,6 +394,12 @@ export default function Register() {
                     <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200">
                       Delivery Partner Information
                     </h3>
+                    
+                    <div className="bg-yellow-50 dark:bg-yellow-950 p-3 rounded-md border border-yellow-200 dark:border-yellow-800">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                        <strong>Note:</strong> Your application will be reviewed by our admin team. You'll receive a notification once approved.
+                      </p>
+                    </div>
                     
                     <FormField
                       control={form.control}
@@ -579,6 +594,19 @@ export default function Register() {
                   Sign in
                 </Link>
               </div>
+              
+              {isAdmin && (
+                <div className="mt-4 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowAdminPanel(!showAdminPanel)}
+                    className="w-full"
+                  >
+                    {showAdminPanel ? "Hide" : "Show"} Delivery Partner Verifications
+                  </Button>
+                </div>
+              )}
             </div>
 
             {selectedRole === "shopkeeper" && (
@@ -607,6 +635,21 @@ export default function Register() {
             )}
           </CardContent>
         </Card>
+        
+        {/* Admin Verification Panel */}
+        {isAdmin && showAdminPanel && (
+          <div className="mt-6">
+            <AdminVerificationPanel 
+              isAdmin={isAdmin}
+              onVerificationComplete={() => {
+                toast({
+                  title: "Verification Complete",
+                  description: "Delivery partner status has been updated.",
+                });
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
