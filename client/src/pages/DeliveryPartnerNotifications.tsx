@@ -36,10 +36,17 @@ interface NotificationData {
   customerName: string;
   customerPhone: string;
   totalAmount: string;
+  deliveryFee?: string;
   pickupAddress: string;
   deliveryAddress: string;
   estimatedDistance: number;
+  estimatedTime?: number;
   estimatedEarnings: number;
+  platformCommission?: number;
+  paymentMethod?: string;
+  specialInstructions?: string;
+  orderItems?: number;
+  urgent?: boolean;
   latitude: string;
   longitude: string;
 }
@@ -286,7 +293,12 @@ export default function DeliveryPartnerNotifications() {
                   <Card key={notification.id} className="border-l-4 border-l-blue-500">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">Order #{notification.order_id}</CardTitle>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          Order #{notification.order_id}
+                          {notificationData.urgent && (
+                            <Badge variant="destructive" className="text-xs">URGENT</Badge>
+                          )}
+                        </CardTitle>
                         <Badge variant="secondary">
                           <Clock className="w-3 h-3 mr-1" />
                           {new Date(notification.created_at).toLocaleTimeString()}
@@ -314,6 +326,14 @@ export default function DeliveryPartnerNotifications() {
                             <span className="font-medium">Order Value:</span>
                             <span className="font-semibold text-green-600">₹{notificationData.totalAmount}</span>
                           </div>
+
+                          {notificationData.paymentMethod && (
+                            <div className="flex items-center space-x-2">
+                              <Package className="w-4 h-4 text-gray-600" />
+                              <span className="font-medium">Payment:</span>
+                              <span className="capitalize">{notificationData.paymentMethod}</span>
+                            </div>
+                          )}
                         </div>
 
                         <div className="space-y-3">
@@ -335,13 +355,71 @@ export default function DeliveryPartnerNotifications() {
                         </div>
                       </div>
 
+                      {/* Enhanced Delivery Details */}
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-blue-800 mb-3">Delivery Details</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          <div className="text-center">
+                            <div className="font-semibold text-blue-700">{notificationData.estimatedDistance} km</div>
+                            <div className="text-blue-600">Distance</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-semibold text-green-700">₹{notificationData.deliveryFee || notificationData.estimatedEarnings}</div>
+                            <div className="text-green-600">Delivery Fee</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-semibold text-orange-700">₹{notificationData.estimatedEarnings}</div>
+                            <div className="text-orange-600">Your Earnings</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-semibold text-purple-700">{notificationData.estimatedTime || 45} min</div>
+                            <div className="text-purple-600">Est. Time</div>
+                          </div>
+                        </div>
+                        
+                        {notificationData.platformCommission && (
+                          <div className="mt-2 text-xs text-gray-500 text-center">
+                            Platform commission: ₹{notificationData.platformCommission} (15%)
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Order Items */}
+                      {notificationData.orderItems && (
+                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                          <Package className="w-4 h-4" />
+                          <span>{notificationData.orderItems} item{notificationData.orderItems > 1 ? 's' : ''} in this order</span>
+                        </div>
+                      )}
+
+                      {/* Special Instructions */}
+                      {notificationData.specialInstructions && (
+                        <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                            <div>
+                              <span className="font-medium text-yellow-800">Special Instructions:</span>
+                              <p className="text-sm text-yellow-700 mt-1">{notificationData.specialInstructions}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between pt-4 border-t">
                         <div className="flex space-x-4 text-sm text-gray-600">
-                          <span>Distance: ~{notificationData.estimatedDistance} km</span>
-                          <span>Earnings: ₹{notificationData.estimatedEarnings}</span>
+                          <span className="font-medium">First-Accept-First-Serve</span>
+                          {notificationData.urgent && <span className="text-red-600 font-medium">⚡ Urgent</span>}
                         </div>
 
                         <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(notificationData.deliveryAddress)}`, '_blank')}
+                          >
+                            <Navigation className="w-4 h-4 mr-1" />
+                            View Map
+                          </Button>
                           <Button
                             size="sm"
                             onClick={() => handleAcceptOrder(notification.order_id)}

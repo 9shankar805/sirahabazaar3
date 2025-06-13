@@ -842,28 +842,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       if (availablePartners.length > 0) {
+        // Calculate actual distance and delivery fee if coordinates are available
+        let actualDistance = 5; // Default 5km
+        let deliveryFee = orderData.deliveryFee ? parseFloat(orderData.deliveryFee) : 50;
+        let pickupAddress = 'Store Location';
+        let formattedDeliveryAddress = orderData.shippingAddress;
+
+        // Get store details for the first item to get pickup address
+        if (orderItems.length > 0) {
+          try {
+            const firstItem = orderItems[0];
+            const store = await storage.getStore(firstItem.storeId);
+            if (store) {
+              pickupAddress = `${store.name}, ${store.address || 'Store Location'}`;
+            }
+          } catch (error) {
+            console.log('Could not get store details for pickup address');
+          }
+        }
+
+        // Parse coordinates from shipping address if available
+        if (orderData.latitude && orderData.longitude) {
+          try {
+            // Store coordinates (Siraha, Nepal as default)
+            const storeCoords = { latitude: 26.6618, longitude: 86.2025 };
+            const customerCoords = { latitude: orderData.latitude, longitude: orderData.longitude };
+            
+            // Calculate actual distance using Haversine formula
+            const R = 6371; // Earth's radius in kilometers
+            const dLat = (customerCoords.latitude - storeCoords.latitude) * Math.PI / 180;
+            const dLon = (customerCoords.longitude - storeCoords.longitude) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                     Math.cos(storeCoords.latitude * Math.PI / 180) * Math.cos(customerCoords.latitude * Math.PI / 180) *
+                     Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            actualDistance = Math.round((R * c) * 100) / 100; // Round to 2 decimal places
+
+            // Format delivery address with coordinates
+            formattedDeliveryAddress = `${orderData.shippingAddress} (${customerCoords.latitude.toFixed(4)}, ${customerCoords.longitude.toFixed(4)})`;
+          } catch (error) {
+            console.log('Distance calculation failed, using default');
+          }
+        }
+
+        // Calculate earnings (delivery fee - platform commission)
+        const platformCommission = 0.15; // 15% commission
+        const estimatedEarnings = Math.round(deliveryFee * (1 - platformCommission));
+
         // Send first-accept-first-serve notifications to all available delivery partners
         for (const partner of availablePartners) {
           await storage.createNotification({
             userId: partner.userId,
             title: "📦 New Delivery Available",
-            message: `Order #${createdOrder.id} from ${orderData.customerName}. Amount: ₹${orderData.totalAmount}. Accept to claim this delivery!`,
+            message: `Order #${createdOrder.id} from ${orderData.customerName}. Distance: ${actualDistance}km, Earn: ₹${estimatedEarnings}`,
             type: "delivery_assignment",
             orderId: createdOrder.id,
             isRead: false,
             data: JSON.stringify({
               orderId: createdOrder.id,
               customerName: orderData.customerName,
-              customerPhone: orderData.phone,
+              customerPhone: orderData.phone || 'Not provided',
               totalAmount: orderData.totalAmount,
-              pickupAddress: 'Store Location',
-              deliveryAddress: orderData.shippingAddress,
-              estimatedDistance: 5,
-              estimatedEarnings: Math.round(parseFloat(orderData.totalAmount) * 0.1),
+              deliveryFee: deliveryFee.toFixed(2),
+              pickupAddress,
+              deliveryAddress: formattedDeliveryAddress,
+              estimatedDistance: actualDistance,
+              estimatedTime: Math.round(30 + (actualDistance * 8)), // 30 min base + 8 min per km
+              estimatedEarnings,
+              platformCommission: Math.round(deliveryFee * platformCommission),
+              paymentMethod: orderData.paymentMethod,
+              specialInstructions: orderData.specialInstructions || null,
+              orderItems: orderItems.length,
               firstAcceptFirstServe: true,
               canAccept: true,
-              urgent: false,
-              notificationType: "first_accept_first_serve"
+              urgent: actualDistance > 15 || orderItems.length > 5,
+              notificationType: "first_accept_first_serve",
+              createdAt: new Date().toISOString()
             })
           });
         }
