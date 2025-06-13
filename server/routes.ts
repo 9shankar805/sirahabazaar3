@@ -38,7 +38,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionId: (req as any).sessionID || 'anonymous',
         userId: req.body?.userId || null
       };
-      
+
       await storage.recordVisit(visitData);
     } catch (error) {
       // Continue even if visit tracking fails
@@ -54,33 +54,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         username: req.body.username || req.body.email.split('@')[0]
       };
-      
+
       // Validate role and set appropriate status
       const validRoles = ['customer', 'shopkeeper', 'delivery_partner'];
       if (userData.role && !validRoles.includes(userData.role)) {
         return res.status(400).json({ error: "Invalid role specified" });
       }
-      
+
       // Set default role if not provided
       if (!userData.role) {
         userData.role = 'customer';
       }
-      
+
       // Set status based on role - customers are active by default, others need approval
       if (userData.role === 'customer') {
         userData.status = 'active';
       } else {
         userData.status = 'pending'; // shopkeepers and delivery_partners need approval
       }
-      
+
       const validatedData = insertUserSchema.parse(userData);
-      
+
       // Check if user already exists by email or phone
       const existingUser = await storage.getUserByEmail(validatedData.email);
       if (existingUser) {
         return res.status(400).json({ error: "User already exists with this email" });
       }
-      
+
       // Check for phone number duplication if provided
       if (validatedData.phone) {
         const existingPhone = await storage.getUserByPhone(validatedData.phone);
@@ -88,9 +88,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: "User already exists with this phone number" });
         }
       }
-      
+
       const user = await storage.createUser(validatedData);
-      
+
       // Don't send password back
       const { password, ...userWithoutPassword } = user;
       res.json({ user: userWithoutPassword });
@@ -103,12 +103,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      
+
       const user = await storage.getUserByEmail(email);
       if (!user || user.password !== password) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
-      
+
       // Don't send password back
       const { password: _, ...userWithoutPassword } = user;
       res.json({ user: userWithoutPassword });
@@ -123,12 +123,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(400).json({ error: "User ID required" });
       }
-      
+
       const user = await storage.getUser(parseInt(userId as string));
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       // Don't send password back
       const { password: _, ...userWithoutPassword } = user;
       res.json({ user: userWithoutPassword });
@@ -146,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const query = q.toLowerCase();
-      
+
       // Get products and stores that match the query
       const [allProducts, allStores] = await Promise.all([
         storage.getAllProducts(),
@@ -190,16 +190,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { ownerId, userId } = req.query;
       const id = ownerId || userId;
-      
+
       if (!id) {
         return res.status(400).json({ error: "Owner ID or User ID is required" });
       }
-      
+
       const parsedId = parseInt(id as string);
       if (isNaN(parsedId)) {
         return res.status(400).json({ error: "Invalid owner ID" });
       }
-      
+
       const stores = await storage.getStoresByOwnerId(parsedId);
       res.json(stores);
     } catch (error) {
@@ -225,16 +225,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/stores/owner", async (req, res) => {
     try {
       const { userId, ownerId } = req.query;
-      
+
       if (!userId && !ownerId) {
         return res.status(400).json({ error: "Owner ID or User ID is required" });
       }
-      
+
       const id = parseInt((userId || ownerId) as string);
       if (isNaN(id)) {
         return res.status(400).json({ error: "Invalid ID" });
       }
-      
+
       const stores = await storage.getStoresByOwnerId(id);
       res.json(stores);
     } catch (error) {
@@ -254,9 +254,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-+|-+$/g, '') + '-' + Date.now();
       }
-      
+
       const storeData = insertStoreSchema.parse(req.body);
-      
+
       // Check if user already has a store
       const existingStores = await storage.getStoresByOwnerId(storeData.ownerId);
       if (existingStores.length > 0) {
@@ -264,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: "You can only create one store per account" 
         });
       }
-      
+
       // Check if store name already exists
       const allStores = await storage.getAllStores();
       const nameExists = allStores.some(store => 
@@ -275,7 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: "A store with this name already exists" 
         });
       }
-      
+
       const store = await storage.createStore(storeData);
       res.json(store);
     } catch (error) {
@@ -292,11 +292,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const updates = req.body;
       const store = await storage.updateStore(id, updates);
-      
+
       if (!store) {
         return res.status(404).json({ error: "Store not found" });
       }
-      
+
       res.json(store);
     } catch (error) {
       console.error("Store update error:", error);
@@ -311,13 +311,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/products", async (req, res) => {
     try {
       const { search, category, storeId } = req.query;
-      
+
       console.log(`[Products API] Request received with params:`, { 
         search: search || 'undefined', 
         category: category || 'undefined', 
         storeId: storeId || 'undefined' 
       });
-      
+
       let products;
       if (search) {
         console.log(`[Products API] Searching products with query: "${search}"`);
@@ -332,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Products API] Fetching all products`);
         products = await storage.getAllProducts();
       }
-      
+
       console.log(`[Products API] Successfully fetched ${products.length} products`);
       res.json(products);
     } catch (error) {
@@ -353,11 +353,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const product = await storage.getProduct(id);
-      
+
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
       }
-      
+
       res.json(product);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch product" });
@@ -367,7 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/products", async (req, res) => {
     try {
       const productData = insertProductSchema.parse(req.body);
-      
+
       // Auto-generate slug if not provided
       if (!productData.slug && productData.name) {
         productData.slug = productData.name
@@ -375,7 +375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-+|-+$/g, '') + '-' + Date.now();
       }
-      
+
       const product = await storage.createProduct(productData);
       res.json(product);
     } catch (error) {
@@ -392,11 +392,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const updates = req.body;
       const product = await storage.updateProduct(id, updates);
-      
+
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
       }
-      
+
       res.json(product);
     } catch (error) {
       res.status(400).json({ error: "Failed to update product" });
@@ -407,11 +407,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const deleted = await storage.deleteProduct(id);
-      
+
       if (!deleted) {
         return res.status(404).json({ error: "Product not found" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete product" });
@@ -422,23 +422,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/products/store", async (req, res) => {
     try {
       const { userId } = req.query;
-      
+
       if (!userId) {
         return res.status(400).json({ error: "User ID is required" });
       }
-      
+
       const userIdNum = parseInt(userId as string);
       if (isNaN(userIdNum)) {
         return res.status(400).json({ error: "Invalid user ID" });
       }
-      
+
       // Get user's stores first
       const userStores = await storage.getStoresByOwnerId(userIdNum);
-      
+
       if (userStores.length === 0) {
         return res.json([]);
       }
-      
+
       // Get products for all user's stores
       const allProducts = [];
       for (const store of userStores) {
@@ -450,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }));
         allProducts.push(...productsWithStore);
       }
-      
+
       res.json(allProducts);
     } catch (error) {
       console.error("Products/store error:", error);
@@ -468,7 +468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(storeId)) {
         return res.status(400).json({ error: "Invalid store ID" });
       }
-      
+
       const products = await storage.getProductsByStoreId(storeId);
       res.json(products);
     } catch (error) {
@@ -506,11 +506,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const updates = req.body;
       const category = await storage.updateCategory(id, updates);
-      
+
       if (!category) {
         return res.status(404).json({ error: "Category not found" });
       }
-      
+
       res.json(category);
     } catch (error) {
       res.status(400).json({ error: "Failed to update category" });
@@ -521,11 +521,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const deleted = await storage.deleteCategory(id);
-      
+
       if (!deleted) {
         return res.status(404).json({ error: "Category not found" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete category" });
@@ -537,7 +537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const cartItems = await storage.getCartItems(userId);
-      
+
       // Get product details for each cart item
       const cartWithProducts = await Promise.all(
         cartItems.map(async (item) => {
@@ -545,7 +545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return { ...item, product };
         })
       );
-      
+
       res.json(cartWithProducts);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch cart" });
@@ -556,7 +556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Extract user from session or token if available
       let userId = req.body.userId;
-      
+
       // If no userId provided, try to get from auth token
       if (!userId && req.headers.authorization) {
         const token = req.headers.authorization.replace('Bearer ', '');
@@ -594,11 +594,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const { quantity } = req.body;
       const cartItem = await storage.updateCartItem(id, quantity);
-      
+
       if (!cartItem) {
         return res.status(404).json({ error: "Cart item not found" });
       }
-      
+
       res.json(cartItem);
     } catch (error) {
       res.status(400).json({ error: "Failed to update cart item" });
@@ -609,11 +609,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const deleted = await storage.removeFromCart(id);
-      
+
       if (!deleted) {
         return res.status(404).json({ error: "Cart item not found" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to remove cart item" });
@@ -624,11 +624,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const cleared = await storage.clearCart(userId);
-      
+
       if (!cleared) {
         return res.status(404).json({ error: "Failed to clear cart" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to clear cart" });
@@ -660,11 +660,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const deleted = await storage.removeFromWishlist(id);
-      
+
       if (!deleted) {
         return res.status(404).json({ error: "Wishlist item not found" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to remove wishlist item" });
@@ -687,12 +687,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const customerId = parseInt(req.params.customerId);
       const orders = await storage.getOrdersByCustomerId(customerId);
-      
+
       // Get order items with product details for each order
       const ordersWithItems = await Promise.all(
         orders.map(async (order) => {
           const items = await storage.getOrderItems(order.id);
-          
+
           // Get product details for each item
           const itemsWithProducts = await Promise.all(
             items.map(async (item) => {
@@ -700,11 +700,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return { ...item, product };
             })
           );
-          
+
           return { ...order, items: itemsWithProducts };
         })
       );
-      
+
       res.json(ordersWithItems);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch orders" });
@@ -718,13 +718,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(400).json({ error: "User ID is required" });
       }
-      
+
       // Get the user's stores first
       const stores = await storage.getStoresByOwnerId(parseInt(userId as string));
       if (stores.length === 0) {
         return res.json([]);
       }
-      
+
       // Get orders for all stores owned by this user
       const allOrders = [];
       for (const store of stores) {
@@ -741,7 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           allOrders.push({ ...order, items: itemsWithProducts });
         }
       }
-      
+
       res.json(allOrders);
     } catch (error) {
       console.error("Error fetching store orders:", error);
@@ -753,7 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const storeId = parseInt(req.params.storeId);
       const orders = await storage.getOrdersByStoreId(storeId);
-      
+
       // Get order items with product details for each order
       const ordersWithItems = await Promise.all(
         orders.map(async (order) => {
@@ -767,7 +767,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return { ...order, items: itemsWithProducts };
         })
       );
-      
+
       res.json(ordersWithItems);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch orders" });
@@ -778,11 +778,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { order, items } = req.body;
       console.log("Order request:", { order, items });
-      
+
       // Create order with location data
       const orderData = insertOrderSchema.parse(order);
       const createdOrder = await storage.createOrder(orderData);
-      
+
       // Create order items and collect store owners for notifications
       const storeOwners = new Set<number>();
       const orderItems = await Promise.all(
@@ -791,24 +791,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...item,
             orderId: createdOrder.id
           });
-          
+
           // Get store info for notifications
           const store = await storage.getStore(item.storeId);
           if (store) {
             storeOwners.add(store.ownerId);
           }
-          
+
           return orderItem;
         })
       );
-      
+
       // Create order tracking
       await storage.createOrderTracking({
         orderId: createdOrder.id,
         status: "pending",
         description: "Order placed successfully"
       });
-      
+
       // Send notifications using the notification service
       await NotificationService.sendOrderNotificationToShopkeepers(
         createdOrder.id,
@@ -816,7 +816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderData.totalAmount,
         orderItems
       );
-      
+
       // Send payment confirmation to customer
       await NotificationService.sendPaymentConfirmation(
         orderData.customerId,
@@ -824,7 +824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderData.totalAmount,
         orderData.paymentMethod
       );
-      
+
       // Send order confirmation to customer
       await storage.createNotification({
         userId: orderData.customerId,
@@ -834,10 +834,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderId: createdOrder.id,
         isRead: false
       });
-      
+
       // Clear user's cart
       await storage.clearCart(order.customerId);
-      
+
       res.json({ order: createdOrder, items: orderItems });
     } catch (error) {
       console.error("Order creation error:", error);
@@ -850,11 +850,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const orderId = parseInt(req.params.orderId);
       const order = await storage.getOrder(orderId);
-      
+
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
       }
-      
+
       // Get order items with product details
       const items = await storage.getOrderItems(orderId);
       const itemsWithProducts = await Promise.all(
@@ -863,7 +863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return { ...item, product };
         })
       );
-      
+
       res.json({ ...order, items: itemsWithProducts });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch order" });
@@ -874,16 +874,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { status, description, location } = req.body;
-      
+
       const order = await storage.updateOrderStatus(id, status);
-      
+
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
       }
-      
+
       // Create tracking entry for the status update
       await storage.updateOrderTracking(id, status, description, location);
-      
+
       // Send notification to customer
       await NotificationService.sendOrderStatusUpdateToCustomer(
         order.customerId,
@@ -891,7 +891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status,
         description
       );
-      
+
       res.json(order);
     } catch (error) {
       res.status(400).json({ error: "Failed to update order status" });
@@ -917,12 +917,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const user = await storage.getUser(id);
-      
+      const user =```
+await storage.getUser(id);
+
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       // Don't send password back
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
@@ -936,11 +937,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const updates = req.body;
       const user = await storage.updateUser(id, updates);
-      
+
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       // Don't send password back
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
@@ -953,17 +954,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      
+
       if (!email || !password) {
         return res.status(400).json({ error: "Email and password are required" });
       }
-      
+
       const admin = await storage.authenticateAdmin(email, password);
-      
+
       if (!admin) {
         return res.status(401).json({ error: "Invalid admin credentials" });
       }
-      
+
       res.json({ admin });
     } catch (error) {
       console.error("Admin login error:", error);
@@ -994,17 +995,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const { adminId } = req.body;
-      
+
       if (!adminId) {
         return res.status(400).json({ error: "Admin ID is required" });
       }
-      
+
       const approvedUser = await storage.approveUser(userId, adminId);
-      
+
       if (!approvedUser) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       // Send notification to approved user
       await storage.createNotification({
         userId: userId,
@@ -1012,7 +1013,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Your shopkeeper account has been approved! You can now start creating your store and adding products.",
         type: "success"
       });
-      
+
       res.json(approvedUser);
     } catch (error) {
       console.error("Error in approve user route:", error);
@@ -1024,29 +1025,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const { adminId, reason } = req.body;
-      
+
       if (!adminId) {
         return res.status(400).json({ error: "Admin ID is required" });
       }
-      
+
       const rejectedUser = await storage.rejectUser(userId, adminId);
-      
+
       if (!rejectedUser) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       // Send notification to rejected user
       const message = reason 
         ? `Your shopkeeper account application has been rejected. Reason: ${reason}`
         : "Your shopkeeper account application has been rejected. Please contact support for more information.";
-        
+
       await storage.createNotification({
         userId: userId,
         title: "Account Rejected",
         message: message,
         type: "error"
       });
-      
+
       res.json(rejectedUser);
     } catch (error) {
       res.status(500).json({ error: "Failed to reject user" });
@@ -1058,9 +1059,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const productId = parseInt(req.params.productId);
       const { minRating, maxRating, limit = 10, offset = 0 } = req.query;
-      
+
       let reviews = await storage.getProductReviews(productId);
-      
+
       // Filter by rating if specified
       if (minRating) {
         reviews = reviews.filter(review => review.rating >= parseInt(minRating as string));
@@ -1068,12 +1069,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (maxRating) {
         reviews = reviews.filter(review => review.rating <= parseInt(maxRating as string));
       }
-      
+
       // Apply pagination
       const startIndex = parseInt(offset as string);
       const endIndex = startIndex + parseInt(limit as string);
       const paginatedReviews = reviews.slice(startIndex, endIndex);
-      
+
       // Get user details for each review
       const reviewsWithUsers = await Promise.all(
         paginatedReviews.map(async (review) => {
@@ -1088,7 +1089,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
       );
-      
+
       res.json(reviewsWithUsers);
     } catch (error) {
       console.error("Error fetching product reviews:", error);
@@ -1103,7 +1104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isApproved: true, // Auto-approve reviews for now
         isVerifiedPurchase: false // TODO: Check if user actually purchased the product
       };
-      
+
       // Validate the review data
       const validatedData = {
         productId: reviewData.productId,
@@ -1116,17 +1117,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isVerifiedPurchase: reviewData.isVerifiedPurchase,
         isApproved: reviewData.isApproved
       };
-      
+
       // Check if user already reviewed this product
       const existingReviews = await storage.getProductReviews(validatedData.productId);
       const userAlreadyReviewed = existingReviews.some(review => review.customerId === validatedData.customerId);
-      
+
       if (userAlreadyReviewed) {
         return res.status(400).json({ error: "You have already reviewed this product" });
       }
-      
+
       const review = await storage.createProductReview(validatedData);
-      
+
       // Get user details for response
       const user = await storage.getUser(review.customerId);
       const reviewWithUser = {
@@ -1137,7 +1138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           fullName: user.fullName
         } : null
       };
-      
+
       res.json(reviewWithUser);
     } catch (error) {
       console.error("Error creating review:", error);
@@ -1149,13 +1150,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const reviewId = parseInt(req.params.reviewId);
       const updates = req.body;
-      
+
       const updatedReview = await storage.updateProductReview(reviewId, updates);
-      
+
       if (!updatedReview) {
         return res.status(404).json({ error: "Review not found" });
       }
-      
+
       res.json(updatedReview);
     } catch (error) {
       console.error("Error updating review:", error);
@@ -1166,14 +1167,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/reviews/:reviewId", async (req, res) => {
     try {
       const reviewId = parseInt(req.params.reviewId);
-      
+
       // TODO: Add authorization check to ensure user can delete this review
       const success = await storage.deleteProductReview(reviewId);
-      
+
       if (!success) {
         return res.status(404).json({ error: "Review not found" });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting review:", error);
@@ -1185,7 +1186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const storeId = parseInt(req.params.storeId);
       const reviews = await storage.getStoreReviews(storeId);
-      
+
       // Get user details for each review
       const reviewsWithUsers = await Promise.all(
         reviews.map(async (review) => {
@@ -1200,7 +1201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
       );
-      
+
       res.json(reviewsWithUsers);
     } catch (error) {
       console.error("Error fetching store reviews:", error);
@@ -1209,7 +1210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced admin API routes for comprehensive management
-  
+
   // All orders for admin
   app.get("/api/admin/orders", async (req, res) => {
     try {
@@ -1384,14 +1385,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const { reason } = req.body;
       const user = await storage.updateUser(id, { status: "suspended" });
-      
+
       await storage.createNotification({
         userId: id,
         title: "Account Suspended",
         message: reason || "Your account has been suspended. Please contact support.",
         type: "error"
       });
-      
+
       res.json(user);
     } catch (error) {
       res.status(500).json({ error: "Failed to ban user" });
@@ -1402,14 +1403,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const user = await storage.updateUser(id, { status: "active" });
-      
+
       await storage.createNotification({
         userId: id,
         title: "Account Restored",
         message: "Your account has been restored and is now active.",
         type: "success"
       });
-      
+
       res.json(user);
     } catch (error) {
       res.status(500).json({ error: "Failed to unban user" });
@@ -1417,7 +1418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced Admin Panel API Routes
-  
+
   // Dashboard stats
   app.get("/api/admin/dashboard/stats", async (req, res) => {
     try {
@@ -1636,7 +1637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storage.getUsersAnalytics(),
         storage.getInventoryAlerts()
       ]);
-      
+
       res.json({
         revenue,
         users,
@@ -1652,7 +1653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const deliveryPartnerData = insertDeliveryPartnerSchema.parse(req.body);
       const partner = await storage.createDeliveryPartner(deliveryPartnerData);
-      
+
       // Create notification for admin
       await storage.createNotification({
         userId: 1, // Admin user ID - you might want to make this dynamic
@@ -1660,7 +1661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `A new delivery partner application has been submitted by user ${deliveryPartnerData.userId}`,
         type: "info"
       });
-      
+
       res.json(partner);
     } catch (error) {
       console.error("Delivery partner creation error:", error);
@@ -1677,27 +1678,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/delivery-partners/pending", async (req, res) => {
-    try {
-      const pendingPartners = await storage.getPendingDeliveryPartners();
-      res.json(pendingPartners);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch pending delivery partners" });
-    }
-  });
-
   app.get("/api/delivery-partners/user", async (req, res) => {
     try {
       const { userId } = req.query;
       if (!userId) {
         return res.status(400).json({ error: "User ID is required" });
       }
-      
+
       const partner = await storage.getDeliveryPartnerByUserId(parseInt(userId as string));
       if (!partner) {
         return res.status(404).json({ error: "Delivery partner not found" });
       }
-      
+
       res.json(partner);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch delivery partner" });
@@ -1708,17 +1700,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { adminId } = req.body;
-      
+
       if (!adminId) {
         return res.status(400).json({ error: "Admin ID is required" });
       }
-      
+
       const approvedPartner = await storage.approveDeliveryPartner(id, adminId);
-      
+
       if (!approvedPartner) {
         return res.status(404).json({ error: "Delivery partner not found" });
       }
-      
+
       // Send notification to the delivery partner
       await storage.createNotification({
         userId: approvedPartner.userId,
@@ -1726,7 +1718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Your delivery partner application has been approved! You can now start receiving delivery assignments.",
         type: "success"
       });
-      
+
       res.json(approvedPartner);
     } catch (error) {
       console.error("Error approving delivery partner:", error);
@@ -1738,29 +1730,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { adminId, reason } = req.body;
-      
+
       if (!adminId) {
         return res.status(400).json({ error: "Admin ID is required" });
       }
-      
+
       const rejectedPartner = await storage.rejectDeliveryPartner(id, adminId, reason || "Application does not meet requirements");
-      
+
       if (!rejectedPartner) {
         return res.status(404).json({ error: "Delivery partner not found" });
       }
-      
+
       // Send notification to the delivery partner
       const message = reason 
         ? `Your delivery partner application has been rejected. Reason: ${reason}`
         : "Your delivery partner application has been rejected. Please contact support for more information.";
-        
+
       await storage.createNotification({
         userId: rejectedPartner.userId,
         title: "Application Rejected",
         message: message,
         type: "error"
       });
-      
+
       res.json(rejectedPartner);
     } catch (error) {
       console.error("Error rejecting delivery partner:", error);
@@ -1773,11 +1765,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const updates = req.body;
       const partner = await storage.updateDeliveryPartner(id, updates);
-      
+
       if (!partner) {
         return res.status(404).json({ error: "Delivery partner not found" });
       }
-      
+
       res.json(partner);
     } catch (error) {
       res.status(500).json({ error: "Failed to update delivery partner" });
@@ -1838,7 +1830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const key = req.params.key;
       const { value } = req.body;
       const setting = await storage.updateSiteSetting(key, value);
-      res.json(setting);
+      res.json({ setting });
     } catch (error) {
       res.status(500).json({ error: "Failed to update setting" });
     }
@@ -2086,9 +2078,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const orderId = parseInt(req.params.orderId);
       const { status, description, location } = req.body;
-      
+
       const tracking = await storage.updateOrderTracking(orderId, status, description, location);
-      
+
       // Create notification for customer
       const order = await storage.getOrder(orderId);
       if (order) {
@@ -2100,7 +2092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           orderId: orderId
         });
       }
-      
+
       res.json(tracking);
     } catch (error) {
       res.status(500).json({ error: "Failed to update order tracking" });
@@ -2155,7 +2147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const returnData = insertReturnSchema.parse(req.body);
       const returnItem = await storage.createReturn(returnData);
-      
+
       // Create notification for store owner
       const orderItem = await storage.getOrderItems(returnData.orderId);
       if (orderItem.length > 0) {
@@ -2170,7 +2162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       res.json(returnItem);
     } catch (error) {
       res.status(400).json({ error: "Failed to create return request" });
@@ -2202,7 +2194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const { status } = req.body;
       const returnItem = await storage.updateReturnStatus(id, status);
-      
+
       if (returnItem) {
         // Create notification for customer
         await storage.createNotification({
@@ -2213,7 +2205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           orderId: returnItem.orderId
         });
       }
-      
+
       res.json(returnItem);
     } catch (error) {
       res.status(500).json({ error: "Failed to update return status" });
@@ -2224,18 +2216,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/stores/nearby", async (req, res) => {
     try {
       const { lat, lon, storeType } = req.query;
-      
+
       if (!lat || !lon) {
         return res.status(400).json({ error: "Latitude and longitude are required" });
       }
-      
+
       const userLat = parseFloat(lat as string);
       const userLon = parseFloat(lon as string);
-      
+
       if (isNaN(userLat) || isNaN(userLon)) {
         return res.status(400).json({ error: "Invalid coordinates" });
       }
-      
+
       const storesWithDistance = await storage.getStoresWithDistance(userLat, userLon, storeType as string);
       res.json(storesWithDistance);
     } catch (error) {
@@ -2250,11 +2242,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const store = await storage.getStore(id);
-      
+
       if (!store) {
         return res.status(404).json({ error: "Store not found" });
       }
-      
+
       res.json(store);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch store" });
@@ -2269,7 +2261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(400).json({ error: "User ID is required" });
       }
-      
+
       // Get the user's store first
       const stores = await storage.getStoresByOwnerId(parseInt(userId as string));
       if (stores.length === 0) {
@@ -2282,7 +2274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalReviews: 0
         });
       }
-      
+
       const storeId = stores[0].id;
       const stats = await storage.getSellerDashboardStats(storeId);
       res.json(stats);
@@ -2298,13 +2290,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(400).json({ error: "User ID is required" });
       }
-      
+
       // Get the user's store first
       const stores = await storage.getStoresByOwnerId(parseInt(userId as string));
       if (stores.length === 0) {
         return res.json([]);
       }
-      
+
       const storeId = stores[0].id;
       const analytics = await storage.getStoreAnalytics(storeId, parseInt(days as string) || 30);
       res.json(analytics);
@@ -2469,13 +2461,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(400).json({ error: "User ID is required" });
       }
-      
+
       // Get the user's store first
       const stores = await storage.getStoresByOwnerId(parseInt(userId as string));
       if (stores.length === 0) {
         return res.json([]);
       }
-      
+
       const storeId = stores[0].id;
       const logs = await storage.getInventoryLogs(storeId, productId ? parseInt(productId as string) : undefined);
       res.json(logs);
@@ -2512,10 +2504,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { order, items } = req.body;
       const orderData = insertOrderSchema.parse(order);
-      
+
       // Create the order
       const createdOrder = await storage.createOrder(orderData);
-      
+
       // Create order items and notify store owners
       const storeOwners = new Set<number>();
       for (const item of items) {
@@ -2526,24 +2518,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           price: item.price,
           storeId: item.storeId
         });
-        
+
         // Track store owners for notifications
         const store = await storage.getStore(item.storeId);
         if (store) {
           storeOwners.add(store.ownerId);
         }
       }
-      
+
       // Clear customer's cart
       await storage.clearCart(orderData.customerId);
-      
+
       // Create order tracking
       await storage.createOrderTracking({
         orderId: createdOrder.id,
         status: "pending",
         description: "Order placed successfully"
       });
-      
+
       // Send notifications to store owners
       for (const ownerId of Array.from(storeOwners)) {
         await storage.createNotification({
@@ -2554,7 +2546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           orderId: createdOrder.id
         });
       }
-      
+
       // Send confirmation notification to customer
       await storage.createNotification({
         userId: orderData.customerId,
@@ -2563,7 +2555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: "success",
         orderId: createdOrder.id
       });
-      
+
       res.json({ order: createdOrder, success: true });
     } catch (error) {
       console.error("Enhanced order creation error:", error);
@@ -2572,11 +2564,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delivery Partner Routes
+
   app.post("/api/delivery-partners/signup", async (req, res) => {
     try {
       const deliveryPartnerData = insertDeliveryPartnerSchema.parse(req.body);
       const partner = await storage.createDeliveryPartner(deliveryPartnerData);
-      
+
       res.json(partner);
     } catch (error) {
       console.error("Delivery partner signup error:", error);
@@ -2593,28 +2586,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/delivery-partners/pending", async (req, res) => {
-    try {
-      const pendingPartners = await storage.getPendingDeliveryPartners();
-      res.json(pendingPartners);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch pending delivery partners" });
-    }
-  });
-
-  app.get("/api/delivery-partners/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const partner = await storage.getDeliveryPartner(id);
-      if (!partner) {
-        return res.status(404).json({ error: "Delivery partner not found" });
-      }
-      res.json(partner);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch delivery partner" });
-    }
-  });
-
   app.get("/api/delivery-partners/user", async (req, res) => {
     console.log("=== DELIVERY PARTNER USER ROUTE HIT ===");
     console.log("Query params:", req.query);
@@ -2622,23 +2593,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.query.userId || req.headers['user-id'];
       console.log("Extracted userId:", userId, "Type:", typeof userId);
-      
+
       if (!userId) {
         console.log("No userId provided");
         return res.status(400).json({ error: "User ID is required" });
       }
-      
+
       const parsedUserId = parseInt(userId as string);
       console.log("Parsed userId:", parsedUserId);
-      
+
       const partner = await storage.getDeliveryPartnerByUserId(parsedUserId);
       console.log("Partner result:", partner);
-      
+
       if (!partner) {
         console.log("No partner found for userId:", parsedUserId);
         return res.status(404).json({ error: "Delivery partner not found" });
       }
-      
+
       console.log("Returning partner:", partner);
       res.json(partner);
     } catch (error) {
@@ -2663,7 +2634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const { adminId } = req.body;
       const partner = await storage.approveDeliveryPartner(id, adminId);
-      
+
       if (partner) {
         // Create notification for delivery partner
         await storage.createNotification({
@@ -2673,7 +2644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: "success"
         });
       }
-      
+
       res.json(partner);
     } catch (error) {
       res.status(500).json({ error: "Failed to approve delivery partner" });
@@ -2685,7 +2656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const { adminId, reason } = req.body;
       const partner = await storage.rejectDeliveryPartner(id, adminId, reason);
-      
+
       if (partner) {
         // Create notification for delivery partner
         await storage.createNotification({
@@ -2695,7 +2666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: "error"
         });
       }
-      
+
       res.json(partner);
     } catch (error) {
       res.status(500).json({ error: "Failed to reject delivery partner" });
@@ -2734,17 +2705,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/deliveries/active-tracking", async (req, res) => {
     try {
-      const userId = req.query.userId || req.headers['user-id'];
+      const userId = req.query.User ID || req.headers['user-id'];
       if (!userId) {
         return res.status(400).json({ error: "User ID is required" });
       }
-      
+
       // Get delivery partner by user ID first
       const partner = await storage.getDeliveryPartnerByUserId(parseInt(userId as string));
       if (!partner) {
         return res.json([]); // No partner means no active deliveries
       }
-      
+
       const activeDeliveries = await storage.getActiveDeliveries(partner.id);
       res.json(activeDeliveries);
     } catch (error) {
@@ -2817,7 +2788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const { status, partnerId } = req.body;
       const delivery = await storage.updateDeliveryStatus(id, status, partnerId);
-      
+
       if (delivery) {
         // Create notification for customer about delivery status update
         const order = await storage.getOrder(delivery.orderId);
@@ -2831,7 +2802,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       res.json(delivery);
     } catch (error) {
       res.status(500).json({ error: "Failed to update delivery status" });
@@ -2843,7 +2814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deliveryId = parseInt(req.params.deliveryId);
       const partnerId = parseInt(req.params.partnerId);
       const delivery = await storage.assignDeliveryToPartner(deliveryId, partnerId);
-      
+
       if (delivery) {
         // Create notification for delivery partner
         const partner = await storage.getDeliveryPartner(partnerId);
@@ -2856,7 +2827,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       res.json(delivery);
     } catch (error) {
       res.status(500).json({ error: "Failed to assign delivery" });
@@ -2908,12 +2879,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!partner) {
         return res.json([]);
       }
-      
+
       const deliveries = await storage.getDeliveriesByPartnerId(partner.id);
       const activeDeliveries = deliveries.filter(d => 
         ['assigned', 'picked_up', 'in_transit'].includes(d.status)
       );
-      
+
       res.json(activeDeliveries);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch active deliveries" });
@@ -2927,12 +2898,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!partner) {
         return res.json(null);
       }
-      
+
       const deliveries = await storage.getDeliveriesByPartnerId(partner.id);
       const activeDelivery = deliveries.find(d => 
         ['assigned', 'picked_up', 'in_transit'].includes(d.status)
       );
-      
+
       res.json(activeDelivery || null);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch active delivery tracking" });
@@ -2943,9 +2914,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { partnerId } = req.body;
-      
+
       const delivery = await storage.updateDeliveryStatus(id, 'assigned', partnerId);
-      
+
       if (delivery) {
         await storage.createNotification({
           userId: partnerId,
@@ -2954,7 +2925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: "success"
         });
       }
-      
+
       res.json({ success: true, delivery });
     } catch (error) {
       res.status(500).json({ error: "Failed to accept delivery" });
@@ -2975,7 +2946,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { location } = req.body;
-      
+
       // Simplified location update - just return success for now
       res.json({ success: true, message: "Location tracking will be available soon" });
     } catch (error) {
@@ -3124,7 +3095,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/geocode-address", async (req, res) => {
     try {
       const { address } = req.body;
-      
+
       if (!address || typeof address !== 'string') {
         return res.status(400).json({ error: "Address is required" });
       }
@@ -3146,18 +3117,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const data = await response.json();
-      
+
       if (data.items && data.items.length > 0) {
         const item = data.items[0];
         const location = item.position;
-        
+
         // Determine confidence based on scoring and match quality
         let confidence = 'low';
         if (item.scoring && item.scoring.queryScore) {
           if (item.scoring.queryScore >= 0.8) confidence = 'high';
           else if (item.scoring.queryScore >= 0.6) confidence = 'medium';
         }
-        
+
         res.json({
           coordinates: {
             latitude: location.lat,
@@ -3194,7 +3165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (typeof distance !== 'number' || distance < 0) {
         return res.status(400).json({ error: "Invalid distance value" });
       }
-      
+
       // Use mock zones for calculation
       const mockZones = [
         { id: 1, name: "Inner City", minDistance: "0", maxDistance: "5", baseFee: "30.00", perKmRate: "5.00", isActive: true },
@@ -3202,7 +3173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { id: 3, name: "Rural", minDistance: "15.01", maxDistance: "30", baseFee: "80.00", perKmRate: "12.00", isActive: true },
         { id: 4, name: "Extended Rural", minDistance: "30.01", maxDistance: "100", baseFee: "120.00", perKmRate: "15.00", isActive: true }
       ];
-      
+
       // Find applicable zone
       const applicableZone = mockZones.find(zone => {
         const minDist = parseFloat(zone.minDistance);
@@ -3212,7 +3183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let fee = 100; // Default fee
       let zone = null;
-      
+
       if (applicableZone) {
         const baseFee = parseFloat(applicableZone.baseFee);
         const perKmRate = parseFloat(applicableZone.perKmRate);
@@ -3247,7 +3218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/notifications/test', async (req, res) => {
     try {
       const { userId, type = 'order' } = req.body;
-      
+
       if (!userId) {
         return res.status(400).json({ error: 'User ID is required' });
       }
@@ -3286,7 +3257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a random test notification
       const randomNotification = testNotifications[Math.floor(Math.random() * testNotifications.length)];
       const notification = await storage.createNotification(randomNotification);
-      
+
       res.json({ success: true, notification });
     } catch (error) {
       console.error('Test notification error:', error);
@@ -3298,7 +3269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tracking/location", async (req, res) => {
     try {
       const { deliveryId, deliveryPartnerId, latitude, longitude, heading, speed, accuracy } = req.body;
-      
+
       await realTimeTrackingService.updateDeliveryLocation({
         deliveryId,
         deliveryPartnerId,
@@ -3308,7 +3279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         speed,
         accuracy
       });
-      
+
       res.json({ success: true, message: "Location updated successfully" });
     } catch (error) {
       console.error('Location update error:', error);
@@ -3320,7 +3291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const deliveryId = parseInt(req.params.deliveryId);
       const { status, description, latitude, longitude, updatedBy, metadata } = req.body;
-      
+
       await realTimeTrackingService.updateDeliveryStatus({
         deliveryId,
         status,
@@ -3330,7 +3301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedBy,
         metadata
       });
-      
+
       res.json({ success: true, message: "Status updated successfully" });
     } catch (error) {
       console.error('Status update error:', error);
@@ -3342,7 +3313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const deliveryId = parseInt(req.params.deliveryId);
       const trackingData = await realTimeTrackingService.getDeliveryTrackingData(deliveryId);
-      
+
       res.json(trackingData);
     } catch (error) {
       console.error('Get tracking data error:', error);
@@ -3354,13 +3325,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const deliveryId = parseInt(req.params.deliveryId);
       const { pickupLocation, deliveryLocation } = req.body;
-      
+
       await realTimeTrackingService.calculateAndStoreRoute(
         deliveryId,
         pickupLocation,
         deliveryLocation
       );
-      
+
       res.json({ success: true, message: "Route calculated successfully" });
     } catch (error) {
       console.error('Route calculation error:', error);
@@ -3372,17 +3343,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/maps/route", async (req, res) => {
     try {
       const { origin, destination, start, end } = req.body;
-      
+
       // Support both parameter formats
       const startPoint = origin || start;
       const endPoint = destination || end;
-      
+
       if (!startPoint || !endPoint) {
         return res.status(400).json({ 
           error: "Missing origin/start and destination/end coordinates" 
         });
       }
-      
+
       if (!hereMapService.isConfigured()) {
         return res.status(503).json({ 
           error: "HERE Maps service not configured",
@@ -3390,21 +3361,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           googleMapsLink: hereMapService.generateGoogleMapsLink(startPoint, endPoint)
         });
       }
-      
+
       const route = await hereMapService.calculateRoute(startPoint, endPoint, 'bicycle');
-      
+
       if (!route) {
         return res.status(404).json({ 
           error: "Route not found",
           googleMapsLink: hereMapService.generateGoogleMapsLink(startPoint, endPoint)
         });
       }
-      
+
       const eta = hereMapService.calculateETA(route, startPoint);
       const coordinates = route.polyline 
         ? hereMapService.decodePolyline(route.polyline)
         : [];
-      
+
       res.json({
         route,
         eta,
@@ -3512,7 +3483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId, subscription } = req.body;
       const success = await PushNotificationService.subscribeToPushNotifications(userId, subscription);
-      
+
       if (success) {
         res.json({ success: true, message: "Subscribed to push notifications" });
       } else {
@@ -3527,14 +3498,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/notifications/push", async (req, res) => {
     try {
       const { userId, title, body, data } = req.body;
-      
+
       const success = await PushNotificationService.sendOrderStatusUpdateNotification(
         userId,
         data?.orderId || 0,
         data?.status || 'update',
         body
       );
-      
+
       res.json({ success, message: success ? "Notification sent" : "Failed to send notification" });
     } catch (error) {
       console.error("Push notification error:", error);
@@ -3563,7 +3534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-  
+
   // Initialize WebSocket service for real-time tracking
   webSocketService.initialize(httpServer);
 
