@@ -3,13 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { 
-  Package, 
-  ShoppingCart, 
-  DollarSign, 
-  Star, 
-  Plus, 
-  Edit, 
+import {
+  Package,
+  ShoppingCart,
+  DollarSign,
+  Star,
+  Plus,
+  Edit,
   Trash2,
   Eye,
   TrendingUp,
@@ -23,7 +23,8 @@ import {
   CheckCircle,
   AlertCircle,
   Timer,
-  Truck
+  Truck,
+  Phone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +42,8 @@ import { queryClient } from "@/lib/queryClient";
 import ImageUpload from "@/components/ImageUpload";
 import { LocationPicker } from "@/components/LocationPicker";
 import type { Product, Order, OrderItem, Store, Category } from "@shared/schema";
+import { DeliveryTrackingMap } from "@/components/tracking/DeliveryTrackingMap";
+import { LocationTracker } from "@/components/LocationTracker";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -177,14 +180,14 @@ export default function ShopkeeperDashboard() {
           };
           setStoreLocation(location);
           setLocationLoading(false);
-          toast({ 
+          toast({
             title: "Location captured successfully",
             description: `Lat: ${location.latitude.toFixed(6)}, Lon: ${location.longitude.toFixed(6)}`
           });
         },
         (error) => {
           setLocationLoading(false);
-          toast({ 
+          toast({
             title: "Location access denied",
             description: "Please enable location access or enter coordinates manually",
             variant: "destructive"
@@ -193,7 +196,7 @@ export default function ShopkeeperDashboard() {
         }
       );
     } else {
-      toast({ 
+      toast({
         title: "Location not supported",
         description: "Your browser doesn't support geolocation",
         variant: "destructive"
@@ -358,12 +361,12 @@ export default function ShopkeeperDashboard() {
     try {
       await apiPut(`/api/orders/${orderId}/status`, { status });
       toast({ title: "Order status updated successfully" });
-      
+
       // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: [`/api/orders/store/${currentStore?.id}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/orders/store`] });
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      
+
       // Force refetch immediately
       if (currentStore?.id) {
         queryClient.refetchQueries({ queryKey: [`/api/orders/store/${currentStore.id}`] });
@@ -388,7 +391,7 @@ export default function ShopkeeperDashboard() {
         urgent,
         notificationType: "first_accept_first_serve"
       });
-      
+
       // Add to notification history
       const newNotification = {
         id: Date.now(),
@@ -400,8 +403,8 @@ export default function ShopkeeperDashboard() {
         acceptedBy: null
       };
       setNotificationHistory(prev => [newNotification, ...prev]);
-      
-      toast({ 
+
+      toast({
         title: urgent ? "Urgent delivery notification sent" : "Delivery notification sent",
         description: "All available delivery partners have been notified"
       });
@@ -422,8 +425,8 @@ export default function ShopkeeperDashboard() {
         storeId: currentStore?.id,
         shopkeeperId: user?.id
       });
-      
-      toast({ 
+
+      toast({
         title: "Broadcast notification sent",
         description: `Notified delivery partners about ${targetOrders.length} orders`
       });
@@ -635,10 +638,10 @@ export default function ShopkeeperDashboard() {
                         <FormItem>
                           <FormLabel>Description</FormLabel>
                           <FormControl>
-                            <Textarea 
+                            <Textarea
                               placeholder="Enter product description"
                               className="min-h-24"
-                              {...field} 
+                              {...field}
                             />
                           </FormControl>
                           <FormMessage />
@@ -654,8 +657,8 @@ export default function ShopkeeperDashboard() {
                           <FormItem>
                             <FormLabel>Price *</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
+                              <Input
+                                type="number"
                                 placeholder="0.00"
                                 {...field}
                               />
@@ -672,8 +675,8 @@ export default function ShopkeeperDashboard() {
                           <FormItem>
                             <FormLabel>Original Price</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
+                              <Input
+                                type="number"
                                 placeholder="0.00"
                                 {...field}
                               />
@@ -690,8 +693,8 @@ export default function ShopkeeperDashboard() {
                           <FormItem>
                             <FormLabel>Stock Quantity *</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
+                              <Input
+                                type="number"
                                 placeholder="Enter quantity"
                                 {...field}
                                 onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
@@ -1110,7 +1113,7 @@ export default function ShopkeeperDashboard() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Category</FormLabel>
-                            <Select 
+                            <Select
                               onValueChange={(value) => field.onChange(parseInt(value))}
                               value={field.value?.toString()}
                             >
@@ -1167,8 +1170,8 @@ export default function ShopkeeperDashboard() {
                           <FormItem>
                             <FormLabel>Stock Quantity</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
+                              <Input
+                                type="number"
                                 placeholder="Enter quantity"
                                 {...field}
                                 onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
@@ -1205,10 +1208,10 @@ export default function ShopkeeperDashboard() {
                         <FormItem>
                           <FormLabel>Description</FormLabel>
                           <FormControl>
-                            <Textarea 
+                            <Textarea
                               placeholder="Enter product description"
                               className="min-h-20"
-                              {...field} 
+                              {...field}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1222,7 +1225,7 @@ export default function ShopkeeperDashboard() {
                         <TrendingUp className="h-5 w-5" />
                         Special Features
                       </h3>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -1284,8 +1287,8 @@ export default function ShopkeeperDashboard() {
                               <FormItem>
                                 <FormLabel>Discount Percentage (%)</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    type="number" 
+                                  <Input
+                                    type="number"
                                     placeholder="Enter discount percentage"
                                     min="0"
                                     max="100"
@@ -1305,7 +1308,7 @@ export default function ShopkeeperDashboard() {
                               <FormItem>
                                 <FormLabel>Offer End Date</FormLabel>
                                 <FormControl>
-                                  <Input 
+                                  <Input
                                     type="date"
                                     {...field}
                                   />
@@ -1325,7 +1328,7 @@ export default function ShopkeeperDashboard() {
                           <UtensilsCrossed className="h-5 w-5" />
                           Food Item Details
                         </h3>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
@@ -1426,10 +1429,10 @@ export default function ShopkeeperDashboard() {
                             <FormItem>
                               <FormLabel>Nutrition Information (Optional)</FormLabel>
                               <FormControl>
-                                <Textarea 
+                                <Textarea
                                   placeholder="e.g., Calories: 350, Protein: 15g, Carbs: 45g, Fat: 12g"
                                   className="min-h-20"
-                                  {...field} 
+                                  {...field}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1444,8 +1447,8 @@ export default function ShopkeeperDashboard() {
                         {editingProduct ? "Update Product" : "Add Product"}
                       </Button>
                       {editingProduct && (
-                        <Button 
-                          type="button" 
+                        <Button
+                          type="button"
                           variant="outline"
                           onClick={() => {
                             setEditingProduct(null);
@@ -1514,7 +1517,7 @@ export default function ShopkeeperDashboard() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleNotifyDeliveryPartner(
-                                    order.id, 
+                                    order.id,
                                     `Order #${order.id} is ready for pickup from ${currentStore?.name}`
                                   )}
                                 >
@@ -1525,9 +1528,9 @@ export default function ShopkeeperDashboard() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <Separator className="my-3" />
-                        
+
                         <div>
                           <p className="text-sm font-medium mb-2">Delivery Address:</p>
                           <p className="text-sm text-muted-foreground">{order.shippingAddress}</p>
@@ -1647,7 +1650,7 @@ export default function ShopkeeperDashboard() {
                             <h4 className="font-medium">Order #{order.id}</h4>
                             <p className="text-sm text-muted-foreground">{order.customerName}</p>
                             <p className="text-xs text-muted-foreground">{order.phone}</p>
-                            <Badge 
+                            <Badge
                               variant={order.status === "ready_for_pickup" ? "default" : "secondary"}
                               className={order.status === "ready_for_pickup" ? "bg-green-100 text-green-800" : ""}
                             >
@@ -1661,11 +1664,11 @@ export default function ShopkeeperDashboard() {
                             </p>
                           </div>
                         </div>
-                        
+
                         <div className="text-sm text-muted-foreground">
                           <p className="truncate">📍 {order.shippingAddress}</p>
                         </div>
-                        
+
                         <div className="space-y-2">
                           <Button
                             size="sm"
@@ -1679,7 +1682,7 @@ export default function ShopkeeperDashboard() {
                             <AlertCircle className="h-4 w-4 mr-2" />
                             Send Urgent Alert (First Accept First Serve)
                           </Button>
-                          
+
                           <Button
                             size="sm"
                             variant="outline"
@@ -1694,10 +1697,18 @@ export default function ShopkeeperDashboard() {
                             Send Standard Notification
                           </Button>
                         </div>
+                        {/* Display Delivery Tracking Map if a delivery partner is assigned */}
+                        {order.deliveryPartner && (
+                          <div className="mt-4">
+                            <h5 className="font-semibold">Delivery Tracking</h5>
+                            <DeliveryTrackingMap orderId={order.id} deliveryPartnerId={order.deliveryPartner.id} />
+                            <p>Contact Delivery Partner: <a href={`tel:${order.deliveryPartner.phone}`}><Phone className="inline h-4 w-4 mr-1"/>{order.deliveryPartner.phone}</a></p>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
-                  
+
                   {orders.filter(order => order.status === "processing" || order.status === "ready_for_pickup").length === 0 && (
                     <div className="text-center py-8">
                       <Truck className="h-16 w-16 text-muted-foreground mx-auto mb-4" />

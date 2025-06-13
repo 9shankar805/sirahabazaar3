@@ -198,19 +198,20 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
 
     const group = new window.H.map.Group();
 
-    // Add pickup marker (shop/store)
+    // Add pickup marker (shop/store) - Enhanced for shopkeeper view
     const pickupIcon = new window.H.map.Icon(
       'data:image/svg+xml;base64,' + btoa(`
-        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="20" r="18" fill="#10B981" stroke="white" stroke-width="3"/>
-          <g transform="translate(20,20)">
-            <rect x="-8" y="-6" width="16" height="12" fill="white" rx="2"/>
-            <rect x="-6" y="-8" width="12" height="4" fill="white" rx="1"/>
-            <circle cx="0" cy="0" r="2" fill="#10B981"/>
+        <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="25" cy="25" r="22" fill="#10B981" stroke="white" stroke-width="4"/>
+          <g transform="translate(25,25)">
+            <rect x="-10" y="-8" width="20" height="16" fill="white" rx="3"/>
+            <rect x="-8" y="-10" width="16" height="6" fill="white" rx="2"/>
+            <circle cx="0" cy="0" r="3" fill="#10B981"/>
+            <text x="0" y="15" text-anchor="middle" font-size="8" fill="#10B981" font-weight="bold">STORE</text>
           </g>
         </svg>
       `),
-      { size: { w: 40, h: 40 } }
+      { size: { w: 50, h: 50 } }
     );
     
     const pickupMarker = new window.H.map.Marker(data.route.pickupLocation, { icon: pickupIcon });
@@ -226,21 +227,22 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
     
     group.addObject(pickupMarker);
 
-    // Add delivery marker (customer)
+    // Add delivery marker (customer) - Enhanced for shopkeeper view
     const deliveryIcon = new window.H.map.Icon(
       'data:image/svg+xml;base64,' + btoa(`
-        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="20" r="18" fill="#EF4444" stroke="white" stroke-width="3"/>
-          <g transform="translate(20,20)">
-            <rect x="-6" y="-8" width="12" height="10" fill="white" rx="1"/>
-            <rect x="-4" y="-6" width="8" height="3" fill="#EF4444"/>
-            <rect x="-5" y="2" width="10" height="6" fill="white" rx="1"/>
-            <rect x="-3" y="4" width="2" height="2" fill="#EF4444"/>
-            <rect x="1" y="4" width="2" height="2" fill="#EF4444"/>
+        <svg width="46" height="46" viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="23" cy="23" r="20" fill="#EF4444" stroke="white" stroke-width="4"/>
+          <g transform="translate(23,23)">
+            <rect x="-8" y="-10" width="16" height="12" fill="white" rx="2"/>
+            <rect x="-6" y="-8" width="12" height="4" fill="#EF4444"/>
+            <rect x="-7" y="2" width="14" height="8" fill="white" rx="2"/>
+            <rect x="-4" y="4" width="3" height="3" fill="#EF4444"/>
+            <rect x="1" y="4" width="3" height="3" fill="#EF4444"/>
+            <text x="0" y="18" text-anchor="middle" font-size="7" fill="#EF4444" font-weight="bold">CUSTOMER</text>
           </g>
         </svg>
       `),
-      { size: { w: 40, h: 40 } }
+      { size: { w: 46, h: 46 } }
     );
     
     const deliveryMarker = new window.H.map.Marker(data.route.deliveryLocation, { icon: deliveryIcon });
@@ -260,18 +262,20 @@ export function DeliveryTrackingMap({ deliveryId, userType, onStatusUpdate }: De
     if (data.currentLocation) {
       const deliveryPartnerIcon = new window.H.map.Icon(
         'data:image/svg+xml;base64,' + btoa(`
-          <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="18" cy="18" r="16" fill="#3B82F6" stroke="white" stroke-width="3"/>
-            <g transform="translate(18,18)">
-              <circle cx="0" cy="-4" r="4" fill="white"/>
-              <rect x="-6" y="0" width="12" height="8" fill="white" rx="2"/>
-              <circle cx="-3" cy="6" r="2" fill="#3B82F6"/>
-              <circle cx="3" cy="6" r="2" fill="#3B82F6"/>
-              <path d="M-4 2 L4 2 L2 -2 L-2 -2 Z" fill="#3B82F6"/>
+          <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="20" fill="#3B82F6" stroke="white" stroke-width="4"/>
+            <g transform="translate(24,24)">
+              <circle cx="0" cy="-6" r="5" fill="white"/>
+              <rect x="-8" y="0" width="16" height="10" fill="white" rx="3"/>
+              <circle cx="-4" cy="8" r="3" fill="#3B82F6"/>
+              <circle cx="4" cy="8" r="3" fill="#3B82F6"/>
+              <path d="M-6 2 L6 2 L4 -4 L-4 -4 Z" fill="#3B82F6"/>
+              ${userType === 'shopkeeper' ? '<text x="0" y="20" text-anchor="middle" font-size="7" fill="#3B82F6" font-weight="bold">PARTNER</text>' : ''}
+              ${data.currentLocation.heading ? `<path d="M0 -18 L-3 -12 L3 -12 Z" fill="#FF4444" transform="rotate(${data.currentLocation.heading || 0})"/>` : ''}
             </g>
           </svg>
         `),
-        { size: { w: 36, h: 36 } }
+        { size: { w: 48, h: 48 } }
       );
       
       const deliveryPartnerMarker = new window.H.map.Marker(
