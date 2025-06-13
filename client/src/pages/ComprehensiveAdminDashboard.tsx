@@ -508,11 +508,12 @@ export default function ComprehensiveAdminDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-13">
+          <TabsList className="grid w-full grid-cols-14">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="approvals">Approvals</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="delivery-partners">🚴 Delivery</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="vendors">Vendors</TabsTrigger>
             <TabsTrigger value="coupons">Coupons</TabsTrigger>
@@ -577,13 +578,23 @@ export default function ComprehensiveAdminDashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("orders")}>
                 <div className="flex items-center">
                   <ShoppingCart className="h-6 w-6 text-purple-600" />
                   <div className="ml-3">
                     <p className="font-medium">Pending Orders</p>
                     <p className="text-sm text-gray-500">{dashboardStats?.pendingOrders || 0} orders awaiting processing</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("delivery-partners")}>
+                <div className="flex items-center">
+                  <div className="h-6 w-6 text-green-600 flex items-center justify-center text-lg">🚴</div>
+                  <div className="ml-3">
+                    <p className="font-medium">Delivery Partners</p>
+                    <p className="text-sm text-gray-500">{(allUsers.filter((u: any) => u.role === 'delivery_partner') || []).length} active partners</p>
                   </div>
                 </div>
               </Card>
