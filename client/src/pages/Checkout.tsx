@@ -17,7 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiPost } from "@/lib/api";
 import { DeliveryCalculator } from "@/components/DeliveryCalculator";
-import { calculateDistance, getCoordinatesFromAddress } from "@/lib/distance";
+import { calculateDistance, getCoordinatesFromAddress, getCurrentUserLocation, formatDistance } from "@/lib/distance";
 import { useQuery } from "@tanstack/react-query";
 
 const checkoutSchema = z.object({
@@ -34,13 +34,23 @@ type CheckoutForm = z.infer<typeof checkoutSchema>;
 export default function Checkout() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isCalculatingFee, setIsCalculatingFee] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryDistance, setDeliveryDistance] = useState(0);
   const [estimatedDeliveryTime, setEstimatedDeliveryTime] = useState(0);
+  const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
+  const [deliveryInfo, setDeliveryInfo] = useState<{
+    zone: any;
+    estimatedTime: number;
+  } | null>(null);
   const [, setLocation] = useLocation();
   const { cartItems, totalAmount, clearCart } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const { data: deliveryZones = [] } = useQuery({
+    queryKey: ["/api/delivery-zones"],
+  });
 
   const form = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
@@ -54,64 +64,187 @@ export default function Checkout() {
     },
   });
 
-  const handleGetLocation = async () => {
-    if (!navigator.geolocation) {
-      toast({
-        title: "Location not supported",
-        description: "Your browser doesn't support location services.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGettingLocation(true);
+  // Convert coordinates to address using HERE Maps Reverse Geocoding API
+  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000,
-        });
-      });
-
-      const { latitude, longitude } = position.coords;
-      form.setValue("latitude", latitude);
-      form.setValue("longitude", longitude);
-
-      // Use Nominatim (OpenStreetMap) for reverse geocoding - free and reliable
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.display_name) {
-            form.setValue("shippingAddress", data.display_name);
-          } else {
-            // Fallback: use coordinates as address
-            form.setValue("shippingAddress", `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`);
-          }
-        } else {
-          form.setValue("shippingAddress", `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`);
-        }
-      } catch (geocodeError) {
-        // Fallback: use coordinates as address if geocoding fails
-        form.setValue("shippingAddress", `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`);
+      const apiKey = import.meta.env.VITE_HERE_API_KEY;
+      if (!apiKey) {
+        throw new Error('HERE Maps API key not configured');
       }
 
-      toast({
-        title: "Location captured",
-        description: "Your location has been automatically filled.",
-      });
+      const response = await fetch(
+        `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat},${lng}&apikey=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to reverse geocode location');
+      }
+
+      const data = await response.json();
+      
+      if (data.items && data.items.length > 0) {
+        const address = data.items[0];
+        return address.title || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      }
+      
+      return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+  };
+
+  const handleGetLocation = async () => {
+    setIsGettingLocation(true);
+    try {
+      const location = await getCurrentUserLocation();
+      setUserLocation(location);
+      
+      // Set coordinates in form
+      form.setValue("latitude", location.latitude);
+      form.setValue("longitude", location.longitude);
+      
+      // Convert coordinates to readable address using HERE Maps
+      const address = await reverseGeocode(location.latitude, location.longitude);
+      form.setValue("shippingAddress", address);
+      
       toast({
-        title: "Location access denied",
-        description: "Please enter your address manually or enable location permissions.",
+        title: "Location Found",
+        description: `Your location has been set to: ${address}`,
+      });
+      
+      // Automatically calculate delivery fee
+      await calculateDeliveryFeeWithLocation(location);
+      
+    } catch (error) {
+      console.error("Error getting location:", error);
+      toast({
+        title: "Location Error",
+        description: error instanceof Error ? error.message : "Failed to get your location. Please ensure location permission is granted.",
         variant: "destructive",
       });
     } finally {
       setIsGettingLocation(false);
+    }
+  };
+
+  const calculateDeliveryFeeWithLocation = async (location: {latitude: number, longitude: number}) => {
+    if (cartItems.length === 0) return;
+
+    setIsCalculatingFee(true);
+    try {
+      // Get store address from first item (assuming single store for now)
+      const firstItem = cartItems[0];
+      if (!firstItem?.product) {
+        throw new Error("Product information not available");
+      }
+
+      // For demo purposes, using mock store coordinates
+      // In real implementation, you'd get this from the store data
+      const storeCoords = { latitude: 26.6618, longitude: 86.2025 }; // Siraha, Nepal
+
+      // Calculate distance
+      const distance = calculateDistance(storeCoords, location);
+      setDeliveryDistance(distance);
+
+      // Calculate fee using API
+      const response = await fetch("/api/calculate-delivery-fee", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ distance }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to calculate delivery fee");
+      }
+
+      const result = await response.json();
+      setDeliveryFee(result.fee);
+      setDeliveryInfo({
+        zone: result.zone,
+        estimatedTime: Math.round(30 + (distance * 10)) // Base 30min + 10min per km
+      });
+
+      toast({
+        title: "Delivery Fee Calculated",
+        description: `₹${result.fee} for ${formatDistance(distance)} delivery`,
+      });
+
+    } catch (error) {
+      console.error("Error calculating delivery fee:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to calculate delivery fee",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCalculatingFee(false);
+    }
+  };
+
+  const calculateDeliveryFee = async () => {
+    const shippingAddress = form.getValues("shippingAddress");
+    
+    if (userLocation) {
+      await calculateDeliveryFeeWithLocation(userLocation);
+      return;
+    }
+
+    if (!shippingAddress.trim() || cartItems.length === 0) return;
+
+    setIsCalculatingFee(true);
+    try {
+      // Get store address from first item (assuming single store for now)
+      const firstItem = cartItems[0];
+      if (!firstItem?.product) {
+        throw new Error("Product information not available");
+      }
+
+      // For demo purposes, using mock store coordinates
+      // In real implementation, you'd get this from the store data
+      const storeCoords = { latitude: 26.6618, longitude: 86.2025 }; // Siraha, Nepal
+      const customerCoords = await getCoordinatesFromAddress(shippingAddress);
+
+      if (!customerCoords) {
+        throw new Error("Could not find location coordinates for the delivery address");
+      }
+
+      // Calculate distance
+      const distance = calculateDistance(storeCoords, customerCoords);
+      setDeliveryDistance(distance);
+
+      // Calculate fee using API
+      const response = await fetch("/api/calculate-delivery-fee", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ distance }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to calculate delivery fee");
+      }
+
+      const result = await response.json();
+      setDeliveryFee(result.fee);
+      setDeliveryInfo({
+        zone: result.zone,
+        estimatedTime: Math.round(30 + (distance * 10)) // Base 30min + 10min per km
+      });
+
+      toast({
+        title: "Delivery Fee Calculated",
+        description: `₹${result.fee} for ${formatDistance(distance)} delivery`,
+      });
+
+    } catch (error) {
+      console.error("Error calculating delivery fee:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to calculate delivery fee",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCalculatingFee(false);
     }
   };
 
@@ -120,9 +253,11 @@ export default function Checkout() {
 
     setIsLoading(true);
     try {
+      const finalTotal = totalAmount + deliveryFee;
       const orderData = {
         customerId: user.id,
-        totalAmount: totalAmount.toString(),
+        totalAmount: finalTotal.toString(),
+        deliveryFee: deliveryFee.toString(),
         status: "pending",
         ...data,
       };
@@ -231,7 +366,7 @@ export default function Checkout() {
                         <FormItem>
                           <FormLabel>Complete Address</FormLabel>
                           <div className="space-y-3">
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                               <Button
                                 type="button"
                                 variant="outline"
@@ -239,18 +374,48 @@ export default function Checkout() {
                                 disabled={isGettingLocation}
                                 className="flex items-center gap-2"
                               >
-                                <Navigation className="h-4 w-4" />
+                                {isGettingLocation ? (
+                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                ) : (
+                                  <Navigation className="h-4 w-4" />
+                                )}
                                 {isGettingLocation ? "Getting Location..." : "Get My Location"}
                               </Button>
-                              <span className="text-sm text-muted-foreground flex items-center">
-                                Auto-fill your current address
-                              </span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={calculateDeliveryFee}
+                                disabled={isCalculatingFee || (!field.value?.trim() && !userLocation)}
+                                className="flex items-center gap-2"
+                              >
+                                <Calculator className="h-4 w-4" />
+                                {isCalculatingFee ? "Calculating..." : "Calculate Fee"}
+                              </Button>
                             </div>
+                            {userLocation && (
+                              <p className="text-xs text-green-600">
+                                <MapPin className="h-3 w-3 inline mr-1" />
+                                Using your current location
+                              </p>
+                            )}
+                            {deliveryDistance > 0 && (
+                              <p className="text-xs text-muted-foreground">
+                                Distance: {formatDistance(deliveryDistance)}
+                                {deliveryInfo && ` • Est. ${deliveryInfo.estimatedTime} mins`}
+                              </p>
+                            )}
                             <FormControl>
                               <Textarea 
                                 placeholder="Enter your complete delivery address or use 'Get My Location'"
                                 className="min-h-20"
-                                {...field} 
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  // Clear user location when manually typing
+                                  if (e.target.value !== field.value) {
+                                    setUserLocation(null);
+                                  }
+                                }}
                               />
                             </FormControl>
                           </div>
@@ -374,8 +539,16 @@ export default function Checkout() {
                   
                   <div className="flex justify-between">
                     <span>Delivery Fee</span>
-                    <span className="text-accent">FREE</span>
+                    <span className={deliveryFee > 0 ? "text-foreground" : "text-accent"}>
+                      {deliveryFee > 0 ? `₹${deliveryFee.toLocaleString()}` : "FREE"}
+                    </span>
                   </div>
+                  
+                  {deliveryInfo?.zone && (
+                    <div className="text-xs text-muted-foreground">
+                      Zone: {deliveryInfo.zone.name}
+                    </div>
+                  )}
                   
                   <div className="flex justify-between">
                     <span>Tax</span>
@@ -386,7 +559,7 @@ export default function Checkout() {
                   
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
-                    <span>₹{totalAmount.toLocaleString()}</span>
+                    <span>₹{(totalAmount + deliveryFee).toLocaleString()}</span>
                   </div>
                 </div>
                 
