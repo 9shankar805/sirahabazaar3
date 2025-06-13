@@ -44,9 +44,9 @@ import SellerPromotions from "@/pages/SellerPromotions";
 import SellerOrders from "@/pages/SellerOrders";
 import SellerStore from "@/pages/SellerStore";
 import AddProduct from "@/pages/AddProduct";
-import DeliveryPartnerDashboard from "@/pages/DeliveryPartnerDashboard";
-import DeliveryPartnerTest from "@/pages/DeliveryPartnerTest";
-import DeliveryPartnerNotifications from "@/pages/DeliveryPartnerNotifications";
+import DeliveryPartnerDashboard from "./pages/DeliveryPartnerDashboard";
+import DeliveryPartnerTest from "./pages/DeliveryPartnerTest";
+import DeliveryPartnerNotifications from "./pages/DeliveryPartnerNotifications";
 import DeliveryTrackingMap from "@/pages/DeliveryTrackingMap";
 import TrackingDemo from "@/pages/TrackingDemo";
 import DeliveryTrackingDashboard from "@/pages/DeliveryTrackingDashboard";
@@ -57,7 +57,7 @@ import DeliveryMap from "@/pages/DeliveryMap";
 
 function AppRouter() {
   const { mode } = useAppMode();
-  
+
   return (
     <div className="relative">
       <Switch>
@@ -88,7 +88,7 @@ function AppRouter() {
         <Route path="/store-maps" component={StoreMaps} />
         <Route path="/restaurant-maps" component={RestaurantMaps} />
         <Route path="/wishlist" component={Wishlist} />
-        
+
         {/* Seller Hub Routes */}
         <Route path="/seller/dashboard" component={SellerDashboard} />
         <Route path="/seller/store" component={SellerStore} />
@@ -96,23 +96,23 @@ function AppRouter() {
         <Route path="/seller/promotions" component={SellerPromotions} />
         <Route path="/seller/orders" component={SellerOrders} />
         <Route path="/seller/products/add" component={AddProduct} />
-        
+
         {/* Delivery Partner Routes */}
         <Route path="/delivery-partner-dashboard" component={DeliveryPartnerDashboard} />
-        <Route path="/delivery-partner/dashboard" component={DeliveryPartnerDashboard} />
         <Route path="/delivery-partner/test" component={DeliveryPartnerTest} />
         <Route path="/delivery-partner/notifications" component={DeliveryPartnerNotifications} />
-        <Route path="/delivery-partner/tracking" component={DeliveryTrackingMap} />
         <Route path="/delivery-partner/register" component={DeliveryPartnerQuickReg} />
+        <Route path="/delivery-partner/dashboard" component={DeliveryPartnerDashboard} />
+
         <Route path="/delivery-map/:id" component={DeliveryMap} />
         <Route path="/admin/delivery-partners" component={AdminDeliveryPartners} />
-        
+
         {/* Order Tracking Route */}
         <Route path="/orders/:orderId/tracking" component={OrderTracking} />
-        
+
         {/* Real-time Tracking Demo */}
         <Route path="/tracking-demo" component={TrackingDemo} />
-        
+
         <Route component={NotFound} />
       </Switch>
     </div>
