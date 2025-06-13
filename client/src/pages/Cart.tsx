@@ -644,8 +644,8 @@ export default function Cart() {
                   </div>
                   <div className="flex justify-between">
                     <span>Delivery Fee</span>
-                    <span className={deliveryFee > 0 ? "text-foreground" : "text-accent"}>
-                      {deliveryFee > 0 ? `₹${deliveryFee.toLocaleString()}` : "FREE"}
+                    <span className={deliveryFee > 0 ? "text-foreground" : "text-muted-foreground"}>
+                      {deliveryFee > 0 ? `₹${deliveryFee.toLocaleString()}` : "Enter address to calculate"}
                     </span>
                   </div>
                   {deliveryInfo?.zone && (
@@ -656,7 +656,12 @@ export default function Cart() {
                   <Separator />
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
-                    <span>₹{(totalAmount + deliveryFee).toLocaleString()}</span>
+                    <span>
+                      {deliveryFee > 0 || (userLocation || deliveryAddress.trim()) ? 
+                        `₹${(totalAmount + deliveryFee).toLocaleString()}` : 
+                        "Enter address for total"
+                      }
+                    </span>
                   </div>
                 </div>
                 
