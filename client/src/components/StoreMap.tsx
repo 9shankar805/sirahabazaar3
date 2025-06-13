@@ -359,10 +359,9 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
                               e.stopPropagation();
                               window.open(getDirectionsUrl(store), "_blank");
                             }}
-                            className="flex-1 sm:flex-none"
+                            className="w-8 h-8 p-0"
                           >
-                            <Navigation className="h-4 w-4 mr-1" />
-                            Directions
+                            <Navigation className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
