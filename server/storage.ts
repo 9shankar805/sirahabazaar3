@@ -107,6 +107,7 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   getUserNotifications(userId: number): Promise<Notification[]>;
   getNotificationsByUserId(userId: number): Promise<Notification[]>;
+  getNotificationsByType(type: string): Promise<Notification[]>;
   markNotificationAsRead(id: number): Promise<Notification>;
   markAllNotificationsAsRead(userId: number): Promise<boolean>;
 
@@ -747,6 +748,12 @@ export class DatabaseStorage implements IStorage {
   async getNotificationsByUserId(userId: number): Promise<Notification[]> {
     return await db.select().from(notifications)
       .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async getNotificationsByType(type: string): Promise<Notification[]> {
+    return await db.select().from(notifications)
+      .where(eq(notifications.type, type))
       .orderBy(desc(notifications.createdAt));
   }
 

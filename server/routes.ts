@@ -4248,6 +4248,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/notifications/delivery-partners", async (req, res) => {
+    try {
+      // Get notifications for all delivery partners or system-wide delivery notifications
+      const notifications = await storage.getNotificationsByType('delivery_partner');
+      res.json(notifications || []);
+    } catch (error) {
+      console.error("Delivery partner notifications error:", error);
+      res.status(500).json({ error: "Failed to fetch delivery partner notifications" });
+    }
+  });
+
   app.get("/api/notifications/vapid-public-key", (req, res) => {
     const publicKey = process.env.VAPID_PUBLIC_KEY;
     if (publicKey) {

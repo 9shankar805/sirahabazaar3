@@ -331,6 +331,11 @@ export class RealTimeTrackingService {
   // Get delivery tracking data
   async getDeliveryTrackingData(deliveryId: number) {
     try {
+      // Validate deliveryId
+      if (!deliveryId || isNaN(deliveryId) || deliveryId <= 0) {
+        throw new Error('Invalid delivery ID provided');
+      }
+
       // Get delivery info
       const delivery = await db.select()
         .from(deliveries)
