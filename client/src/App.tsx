@@ -17,13 +17,14 @@ import NotificationTestButton from "@/components/NotificationTestButton";
 import Homepage from "@/pages/Homepage";
 import FoodHomepage from "@/pages/FoodHomepage";
 import Products from "@/pages/Products";
-import ProductDetail from "@/pages/ProductDetail";
-import Cart from "@/pages/Cart";
+import ProductDetail from "./pages/ProductDetail";
+import StoreDetail from "./pages/StoreDetail";
+import RestaurantDetail from "./pages/RestaurantDetail";
+import Cart from "./pages/Cart";
 import Checkout from "@/pages/Checkout";
 import OrderConfirmation from "@/pages/OrderConfirmation";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
-import StoreDetail from "@/pages/StoreDetail";
 import Stores from "@/pages/Stores";
 import Account from "@/pages/Account";
 import ShopkeeperDashboard from "@/pages/ShopkeeperDashboard";
@@ -77,7 +78,7 @@ function AppRouter() {
         <Route path="/stores/:id" component={StoreDetail} />
         <Route path="/restaurants/:id" component={StoreDetail} />
         <Route path="/store/:id" component={StoreDetail} />
-        <Route path="/restaurant/:id" component={StoreDetail} />
+        <Route path="/restaurant/:id" component={RestaurantDetail} />
         <Route path="/account" component={Account} />
         <Route path="/shopkeeper-dashboard" component={ShopkeeperDashboard} />
         <Route path="/customer-dashboard" component={CustomerDashboard} />
