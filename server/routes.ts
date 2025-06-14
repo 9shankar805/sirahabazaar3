@@ -21,10 +21,10 @@ import {
   insertSupportTicketSchema, insertSiteSettingSchema, insertFraudAlertSchema, insertCommissionSchema,
   insertProductAttributeSchema, insertVendorVerificationSchema, insertAdminLogSchema,
   insertDeliveryPartnerSchema, insertDeliverySchema,
-  users, orders, deliveries, deliveryPartners
+  users, orders, deliveries, deliveryPartners, notifications
 } from "@shared/schema";
 
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 // Initialize real-time tracking service
 const realTimeTrackingService = new RealTimeTrackingService();
@@ -4250,9 +4250,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/notifications/delivery-partners", async (req, res) => {
     try {
-      // Get notifications for all delivery partners or system-wide delivery notifications
-      const notifications = await storage.getNotificationsByType('delivery_partner');
-      res.json(notifications || []);
+      // Get all notifications for delivery partners
+      const allNotifications = await db.select().from(notifications)
+        .where(eq(notifications.type, 'delivery_partner'))
+        .orderBy(desc(notifications.createdAt));
+      res.json(allNotifications || []);
     } catch (error) {
       console.error("Delivery partner notifications error:", error);
       res.status(500).json({ error: "Failed to fetch delivery partner notifications" });
