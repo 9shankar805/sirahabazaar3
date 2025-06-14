@@ -53,10 +53,10 @@ export default function BackToDashboard({
       <Button 
         variant={variant} 
         size={size} 
-        className={`flex items-center gap-2 ${className}`}
+        className={`flex items-center ${className}`}
+        title={`Back to ${getDashboardLabel()}`}
       >
         <ArrowLeft className="h-4 w-4" />
-        <span>Back to {getDashboardLabel()}</span>
       </Button>
     </Link>
   );
