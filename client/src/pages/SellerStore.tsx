@@ -266,11 +266,7 @@ export default function SellerStore() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Link href="/seller/dashboard">
-                <Button variant="outline">
-                  Back to Dashboard
-                </Button>
-              </Link>
+              <BackToDashboard />
             </div>
           </div>
         </div>
