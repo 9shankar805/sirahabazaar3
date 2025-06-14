@@ -16,7 +16,10 @@ import {
   Users,
   Clock,
   MapPin,
-  UtensilsCrossed,
+  Store,
+  ChefHat,
+  Bell,
+  ArrowLeft,
   Navigation,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,6 +58,8 @@ import type {
   Store,
   Category,
 } from "@shared/schema";
+import Link from "next/link";
+import { Phone } from "lucide-react";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -1630,6 +1635,15 @@ export default function ShopkeeperDashboard() {
                 <CardTitle>Order Management</CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+              <Link href="/seller/dashboard">
+                <Button variant="outline" size="sm" title="Back to Dashboard">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+                </div>
                 {orders.length === 0 ? (
                   <div className="text-center py-8">
                     <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
