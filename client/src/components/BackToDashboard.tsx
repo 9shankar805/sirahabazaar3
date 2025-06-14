@@ -1,4 +1,3 @@
-
 import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ interface BackToDashboardProps {
   size?: "default" | "sm" | "lg" | "icon";
 }
 
-export default function BackToDashboard({ 
+export function BackToDashboard({ 
   className = "", 
   variant = "outline", 
   size = "sm" 
@@ -20,7 +19,7 @@ export default function BackToDashboard({
   // Determine the appropriate dashboard URL based on user role
   const getDashboardUrl = () => {
     if (!user) return "/";
-    
+
     switch (user.role) {
       case "shopkeeper":
         return "/seller/dashboard";
@@ -35,7 +34,7 @@ export default function BackToDashboard({
 
   const getDashboardLabel = () => {
     if (!user) return "Home";
-    
+
     switch (user.role) {
       case "shopkeeper":
         return "Seller Dashboard";
