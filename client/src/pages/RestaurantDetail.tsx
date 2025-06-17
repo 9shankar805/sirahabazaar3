@@ -11,20 +11,46 @@ import type { Store, Product } from "@shared/schema";
 export default function RestaurantDetail() {
   const { id } = useParams();
 
-  const { data: restaurant, isLoading: restaurantLoading } = useQuery<Store>({
+  const { data: restaurant, isLoading: restaurantLoading, error: restaurantError } = useQuery<Store>({
     queryKey: [`/api/stores/${id}`],
     enabled: !!id,
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const { data: menuItems = [], isLoading: menuLoading } = useQuery<Product[]>({
+  const { data: menuItems = [], isLoading: menuLoading, error: menuError } = useQuery<Product[]>({
     queryKey: [`/api/products/store/${id}`],
-    enabled: !!id,
+    enabled: !!id && !!restaurant,
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   if (restaurantLoading) {
     return (
       <div className="min-h-screen bg-muted flex items-center justify-center">
-        <div>Loading restaurant...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg font-medium">Loading restaurant details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (restaurantError) {
+    return (
+      <div className="min-h-screen bg-muted flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4 text-red-600">Error Loading Restaurant</h2>
+          <p className="text-gray-600 mb-4">There was an error loading the restaurant details.</p>
+          <div className="flex gap-3 justify-center">
+            <Link href="/restaurants">
+              <Button variant="outline">Back to Restaurants</Button>
+            </Link>
+            <Link href="/">
+              <Button>Go to Home</Button>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -34,9 +60,15 @@ export default function RestaurantDetail() {
       <div className="min-h-screen bg-muted flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Restaurant not found</h2>
-          <Link href="/">
-            <Button>Back to Home</Button>
-          </Link>
+          <p className="text-gray-600 mb-4">The restaurant you're looking for doesn't exist or has been removed.</p>
+          <div className="flex gap-3 justify-center">
+            <Link href="/restaurants">
+              <Button variant="outline">Browse Restaurants</Button>
+            </Link>
+            <Link href="/">
+              <Button>Back to Home</Button>
+            </Link>
+          </div>
         </div>
       </div>
     );

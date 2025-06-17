@@ -106,16 +106,24 @@ export default function SellerOrders() {
   }
 
   // Orders query with items included
-  const { data: orders, isLoading: ordersLoading } = useQuery<Order[]>({
+  const { data: orders, isLoading: ordersLoading, error: ordersError } = useQuery<Order[]>({
     queryKey: ['/api/orders/store', user?.id],
     queryFn: async () => {
+      if (!user?.id) {
+        throw new Error('User ID is required');
+      }
       const response = await fetch(`/api/orders/store?userId=${user?.id}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch orders: ${response.status}`);
+      }
       const ordersData = await response.json();
       
-      // Each order should already include items from the server
-      return ordersData;
+      // Ensure we return an array
+      return Array.isArray(ordersData) ? ordersData : [];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && user.role === 'shopkeeper' && user.status === 'active',
+    retry: 2,
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   // Order items query
@@ -318,8 +326,25 @@ export default function SellerOrders() {
             <CardTitle>Customer Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
+            {ordersError ? (
+              <div className="text-center py-8">
+                <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <p className="text-red-600 mb-4">Failed to load orders</p>
+                <Button 
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/orders/store', user?.id] })}
+                  variant="outline"
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : ordersLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-gray-500">Loading orders...</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Order & Products</TableHead>
@@ -395,9 +420,23 @@ export default function SellerOrders() {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredOrders.length === 0 && !ordersLoading && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8">
+                        <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500">No orders found</p>
+                        {statusFilter !== 'all' && (
+                          <p className="text-sm text-gray-400 mt-2">
+                            Try changing the filter or search term
+                          </p>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
-            </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

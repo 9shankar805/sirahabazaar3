@@ -1,256 +1,258 @@
-import { useState, useEffect, useMemo } from 'react';
-import { X, ChevronDown, ChevronUp } from 'lucide-react';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { Bell, X, CheckCircle, AlertCircle, Info, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useNotifications } from '@/hooks/useNotifications';
-import { formatDistanceToNow } from 'date-fns';
+import { Card, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/hooks/useAuth';
 
-interface MobileNotificationBarProps {
-  className?: string;
+interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
+  orderId?: number;
+  productId?: number;
+  data?: string;
 }
 
-export default function MobileNotificationBar({ className = '' }: MobileNotificationBarProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [currentNotification, setCurrentNotification] = useState(0);
-  const { notifications, markAsRead, markAllAsRead, previousCount, setPreviousCount } = useNotifications();
+const MobileNotificationBar: React.FC = () => {
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastFetchTime, setLastFetchTime] = useState(Date.now());
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Get unread notifications
-  const unreadNotifications = useMemo(() => 
-    notifications.filter(n => !n.isRead), 
-    [notifications]
-  );
+  // Always call hooks at the top level - no conditional hooks
+  const unreadCount = useMemo(() => {
+    return notifications.filter(n => !n.isRead).length;
+  }, [notifications]);
 
-  // Reset current notification when unread notifications change
-  useEffect(() => {
-    if (unreadNotifications.length > 0) {
-      setCurrentNotification(0);
-      setIsExpanded(false);
+  const fetchNotifications = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch(`/api/notifications/user/${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(Array.isArray(data) ? data : []);
+        setLastFetchTime(Date.now());
+      } else {
+        setError('Failed to fetch notifications');
+      }
+    } catch (err) {
+      setError('Network error');
+      console.error('Notification fetch error:', err);
+    } finally {
+      setIsLoading(false);
     }
-  }, [unreadNotifications.length]);
+  };
 
-  // Auto-rotate through notifications
-  useEffect(() => {
-    if (unreadNotifications.length > 1 && !isExpanded) {
-      const interval = setInterval(() => {
-        setCurrentNotification(prev => 
-          prev + 1 >= unreadNotifications.length ? 0 : prev + 1
+  const markAsRead = async (notificationId: number) => {
+    try {
+      const response = await fetch(`/api/notifications/${notificationId}/read`, {
+        method: 'PUT',
+      });
+      if (response.ok) {
+        setNotifications(prev => 
+          prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
         );
-      }, 4000);
-
-      return () => clearInterval(interval);
-    }
-  }, [unreadNotifications.length, isExpanded]);
-
-  const handleNotificationClick = () => {
-    if (unreadNotifications.length === 1) {
-      markAsRead(unreadNotifications[0].id);
-    } else {
-      setIsExpanded(!isExpanded);
+      }
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
     }
   };
 
-  const handleMarkAsRead = (notificationId: number, event: React.MouseEvent) => {
-    event.stopPropagation();
-    markAsRead(notificationId);
-  };
-
-  const handleDismissAll = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    markAllAsRead();
-    setIsExpanded(false);
+  const markAllAsRead = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const response = await fetch(`/api/notifications/user/${user.id}/read-all`, {
+        method: 'PUT',
+      });
+      if (response.ok) {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      }
+    } catch (err) {
+      console.error('Error marking all notifications as read:', err);
+    }
   };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'order': return '🛍️';
-      case 'delivery': return '🚚';
-      case 'payment': return '💳';
-      case 'product': return '📦';
-      case 'store': return '🏪';
-      case 'system': return '⚙️';
-      case 'success': return '✅';
-      case 'error': return '❌';
-      default: return '🔔';
+      case 'success': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'error': return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'warning': return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case 'offer': return <Gift className="h-4 w-4 text-purple-500" />;
+      default: return <Info className="h-4 w-4 text-blue-500" />;
     }
   };
 
-  const getNotificationColor = (type: string) => {
-    switch (type) {
-      case 'order': return 'bg-blue-500';
-      case 'delivery': return 'bg-green-500';
-      case 'payment': return 'bg-purple-500';
-      case 'product': return 'bg-orange-500';
-      case 'store': return 'bg-indigo-500';
-      case 'error': return 'bg-red-500';
-      case 'success': return 'bg-emerald-500';
-      default: return 'bg-gray-600';
+  const playNotificationSound = () => {
+    if (soundEnabled) {
+      try {
+        const audio = new Audio('/notification.mp3');
+        audio.volume = 0.3;
+        audio.play().catch(() => {
+          // Ignore audio play errors (autoplay restrictions)
+        });
+      } catch (err) {
+        // Ignore audio errors
+      }
     }
   };
 
-  // Don't render if no unread notifications
-  if (unreadNotifications.length === 0) {
+  // Effects
+  useEffect(() => {
+    if (user?.id) {
+      fetchNotifications();
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  useEffect(() => {
+    const prevCount = notifications.filter(n => !n.isRead).length;
+    if (prevCount > 0 && unreadCount > prevCount) {
+      playNotificationSound();
+    }
+  }, [unreadCount]);
+
+  // Don't render if no user
+  if (!user?.id) {
     return null;
   }
 
-  const activeNotification = unreadNotifications[currentNotification];
-
-  // Play notification sound and show system notification for new notifications
-  useEffect(() => {
-    if (notifications.length > previousCount && previousCount > 0) {
-      // Play notification sound
-      try {
-        const audio = new Audio('/notification.mp3');
-        audio.volume = 0.6;
-        audio.play().catch(() => {
-          console.log('Could not play notification sound');
-        });
-      } catch (error) {
-        console.log('Error playing notification sound:', error);
-      }
-
-      // Show system notification if permission granted
-      if (Notification.permission === 'granted') {
-        new Notification('New Notification', {
-          body: notifications[0]?.title || 'You have a new notification',
-          icon: '/favicon.ico'
-        });
-      }
-    }
-    setPreviousCount(notifications.length);
-  }, [notifications.length, previousCount, setPreviousCount]);
-
   return (
     <>
-      {/* Spacer to prevent content overlap */}
-      <div className="h-16" />
-
-      <div className={`fixed top-0 left-0 right-0 z-[60] ${className}`}>
-        {/* Main notification bar */}
-      <div 
-        className={`${getNotificationColor(activeNotification?.type)} text-white shadow-lg cursor-pointer transition-all duration-300 ${
-          isExpanded ? 'rounded-b-none' : 'rounded-b-lg'
-        }`}
-        onClick={handleNotificationClick}
-      >
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center space-x-3 flex-1 min-w-0">
-            <div className="flex-shrink-0">
-              <span className="text-lg" role="img" aria-label="notification">
-                {getNotificationIcon(activeNotification?.type)}
-              </span>
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-2">
-                <h4 className="font-medium text-sm truncate">
-                  {activeNotification?.title}
-                </h4>
-                {unreadNotifications.length > 1 && (
-                  <Badge variant="secondary" className="bg-white/20 text-white text-xs">
-                    {unreadNotifications.length}
-                  </Badge>
-                )}
-              </div>
-              <p className="text-xs text-white/90 truncate mt-0.5">
-                {activeNotification?.message}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
-            {unreadNotifications.length > 1 && (
-              <div className="flex space-x-1">
-                {unreadNotifications.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`w-1.5 h-1.5 rounded-full transition-opacity ${
-                      index === currentNotification ? 'bg-white' : 'bg-white/40'
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-
-            {unreadNotifications.length > 1 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 text-white hover:bg-white/20"
-              >
-                {isExpanded ? (
-                  <ChevronUp className="h-3 w-3" />
-                ) : (
-                  <ChevronDown className="h-3 w-3" />
-                )}
-              </Button>
-            )}
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 text-white hover:bg-white/20"
-              onClick={handleDismissAll}
+      {/* Notification Bell */}
+      <div className="fixed top-4 right-4 z-50 md:hidden">
+        <Button
+          size="sm"
+          variant="outline"
+          className="relative bg-white shadow-lg border-gray-200 hover:bg-gray-50"
+          onClick={() => setIsVisible(!isVisible)}
+        >
+          <Bell className="h-4 w-4" />
+          {unreadCount > 0 && (
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-2 -right-2 px-1 min-w-[1.25rem] h-5 text-xs"
             >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
+          )}
+        </Button>
       </div>
 
-      {/* Expanded notification list */}
-      {isExpanded && (
-        <div className="bg-white border-x border-b border-gray-200 shadow-lg max-h-80 overflow-y-auto">
-          {unreadNotifications.map((notification, index) => (
-            <div
-              key={notification.id}
-              className={`px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 ${
-                index === currentNotification ? 'bg-blue-50' : ''
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 flex-1">
-                  <span className="text-lg mt-0.5" role="img" aria-label="notification">
-                    {getNotificationIcon(notification.type)}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm text-gray-900 truncate">
-                      {notification.title}
-                    </h4>
-                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                      {notification.message}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 ml-2"
-                  onClick={(e) => handleMarkAsRead(notification.id, e)}
-                >
-                  <X className="h-3 w-3" />
+      {/* Notification Panel */}
+      {isVisible && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <div className="absolute inset-0 bg-black/20" onClick={() => setIsVisible(false)} />
+          <div className="absolute top-16 right-4 left-4 max-h-[80vh] bg-white rounded-lg shadow-xl border">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="font-semibold">Notifications</h3>
+              <div className="flex items-center space-x-2">
+                {unreadCount > 0 && (
+                  <Button size="sm" variant="ghost" onClick={markAllAsRead}>
+                    Mark all read
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={() => setIsVisible(false)}>
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>
-          ))}
 
-          {unreadNotifications.length > 3 && (
-            <div className="px-4 py-2 bg-gray-50 text-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs text-blue-600 hover:text-blue-800"
-                onClick={handleDismissAll}
-              >
-                Mark all as read
-              </Button>
+            {/* Content */}
+            <div className="max-h-96 overflow-y-auto">
+              {isLoading ? (
+                <div className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-sm text-gray-500">Loading notifications...</p>
+                </div>
+              ) : error ? (
+                <div className="p-8 text-center">
+                  <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
+                  <p className="text-sm text-red-600">{error}</p>
+                  <Button size="sm" variant="outline" onClick={fetchNotifications} className="mt-2">
+                    Try Again
+                  </Button>
+                </div>
+              ) : notifications.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Bell className="h-8 w-8 text-gray-400 mx-auto mb-4" />
+                  <p className="text-sm text-gray-500">No notifications yet</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {notifications.slice(0, 20).map((notification) => (
+                    <div 
+                      key={notification.id}
+                      className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                        !notification.isRead ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                      }`}
+                      onClick={() => {
+                        if (!notification.isRead) {
+                          markAsRead(notification.id);
+                        }
+                      }}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 mt-1">
+                          {getNotificationIcon(notification.type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className={`text-sm font-medium ${!notification.isRead ? 'text-gray-900' : 'text-gray-700'}`}>
+                              {notification.title}
+                            </p>
+                            {!notification.isRead && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 ml-2"></div>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(notification.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Footer */}
+            {notifications.length > 0 && (
+              <div className="p-4 border-t bg-gray-50 text-center">
+                <p className="text-xs text-gray-500">
+                  Showing {Math.min(notifications.length, 20)} of {notifications.length} notifications
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
-      </div>
     </>
   );
-}
+};
+
+export default MobileNotificationBar;
