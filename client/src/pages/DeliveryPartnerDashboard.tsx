@@ -648,7 +648,7 @@ export default function DeliveryPartnerDashboard() {
                 </CardHeader>
                 <CardContent className="px-3 sm:px-6">
                   <div className="text-2xl sm:text-3xl font-bold text-green-600">₹{currentStats.todayEarnings.toFixed(2)}</div>
-                  <p className="text-xs sm:text-sm text-gray-500">{currentStats.todayDeliveries} deliveries</p>
+                  <p className="text-xs sm:text-sm text-gray-500">{currentStats.todayDeliveries} {currentStats.todayDeliveries === 1 ? 'delivery' : 'deliveries'}</p>
                 </CardContent>
               </Card>
 
@@ -657,8 +657,8 @@ export default function DeliveryPartnerDashboard() {
                   <CardTitle className="text-base sm:text-lg">This Week</CardTitle>
                 </CardHeader>
                 <CardContent className="px-3 sm:px-6">
-                  <div className="text-2xl sm:text-3xl font-bold text-blue-600">₹{(currentStats.totalEarnings * 0.3).toFixed(2)}</div>
-                  <p className="text-xs sm:text-sm text-gray-500">Estimated</p>
+                  <div className="text-2xl sm:text-3xl font-bold text-blue-600">₹{(currentStats.todayEarnings * 7).toFixed(2)}</div>
+                  <p className="text-xs sm:text-sm text-gray-500">Weekly projection</p>
                 </CardContent>
               </Card>
 

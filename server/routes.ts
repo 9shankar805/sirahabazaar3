@@ -1986,6 +1986,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/delivery-partners/:id/stats", async (req, res) => {
+    try {
+      const partnerId = parseInt(req.params.id);
+      
+      // Get all deliveries for this partner
+      const deliveries = await storage.getDeliveriesByPartnerId(partnerId);
+      
+      // Calculate stats from actual delivery data
+      const completedDeliveries = deliveries.filter(d => d.status === 'delivered');
+      
+      const today = new Date().toDateString();
+      const todayDeliveries = completedDeliveries.filter(d => 
+        d.deliveredAt && new Date(d.deliveredAt).toDateString() === today
+      );
+      
+      const totalEarnings = completedDeliveries.reduce((sum, d) => 
+        sum + parseFloat(d.deliveryFee || '0'), 0
+      );
+      
+      const todayEarnings = todayDeliveries.reduce((sum, d) => 
+        sum + parseFloat(d.deliveryFee || '0'), 0
+      );
+      
+      // Calculate average rating
+      const deliveriesWithRating = completedDeliveries.filter(d => d.customerRating);
+      const averageRating = deliveriesWithRating.length > 0 
+        ? deliveriesWithRating.reduce((sum, d) => sum + (d.customerRating || 0), 0) / deliveriesWithRating.length
+        : 0;
+      
+      const activeDeliveries = deliveries.filter(d => 
+        ['assigned', 'picked_up', 'in_transit'].includes(d.status)
+      );
+      
+      const stats = {
+        totalDeliveries: completedDeliveries.length,
+        totalEarnings: Math.round(totalEarnings * 100) / 100,
+        rating: Math.round(averageRating * 10) / 10,
+        todayDeliveries: todayDeliveries.length,
+        todayEarnings: Math.round(todayEarnings * 100) / 100,
+        activeDeliveries: activeDeliveries.length
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching delivery partner stats:", error);
+      res.status(500).json({ error: "Failed to fetch delivery partner stats" });
+    }
+  });
+
   app.get("/api/admin/analytics/revenue", async (req, res) => {
     try {
       const days = parseInt(req.query.days as string) || 30;
