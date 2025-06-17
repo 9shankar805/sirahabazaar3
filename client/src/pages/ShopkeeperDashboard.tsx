@@ -44,6 +44,7 @@ import { LocationPicker } from "@/components/LocationPicker";
 import type { Product, Order, OrderItem, Store, Category } from "@shared/schema";
 import { LeafletDeliveryMap } from "@/components/tracking/LeafletDeliveryMap";
 import { LocationTracker } from "@/components/LocationTracker";
+import { DeliveryTrackingMap } from "@/components/tracking/DeliveryTrackingMap";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -1699,10 +1700,34 @@ export default function ShopkeeperDashboard() {
                         </div>
                         {/* Display Delivery Tracking Map if a delivery partner is assigned */}
                         {order.deliveryPartner && (
-                          <div className="mt-4">
-                            <h5 className="font-semibold">Delivery Tracking</h5>
-                            <DeliveryTrackingMap orderId={order.id} deliveryPartnerId={order.deliveryPartner.id} />
-                            <p>Contact Delivery Partner: <a href={`tel:${order.deliveryPartner.phone}`}><Phone className="inline h-4 w-4 mr-1"/>{order.deliveryPartner.phone}</a></p>
+                          <div className="mt-4 border-t pt-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <h5 className="font-semibold flex items-center gap-2">
+                                <MapPin className="h-4 w-4" />
+                                Live Delivery Tracking
+                              </h5>
+                              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                Live
+                              </Badge>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                              <p className="text-sm">
+                                <strong>Contact Delivery Partner:</strong>
+                                <a href={`tel:${order.deliveryPartner.phone}`} className="text-blue-600 hover:underline ml-2">
+                                  <Phone className="inline h-4 w-4 mr-1"/>
+                                  {order.deliveryPartner.phone}
+                                </a>
+                              </p>
+                              <p className="text-sm text-gray-600 mt-1">
+                                Partner: {order.deliveryPartner.name || 'Assigned Partner'}
+                              </p>
+                            </div>
+                            <div className="h-64 rounded-lg overflow-hidden border">
+                              <DeliveryTrackingMap 
+                                deliveryId={order.id} 
+                                userType="shopkeeper"
+                              />
+                            </div>
                           </div>
                         )}
                       </div>

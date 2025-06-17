@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Package, Truck, MapPin, Calendar, DollarSign, User, CheckCircle2, Circle, Clock, Home, ArrowLeft, Phone, Mail } from "lucide-react";
 import { format } from "date-fns";
+import { LeafletDeliveryMap } from "@/components/tracking/LeafletDeliveryMap";
 
 interface Order {
   id: number;
@@ -20,6 +22,11 @@ interface Order {
   longitude?: string;
   createdAt: string;
   items?: OrderItem[];
+  deliveryPartner?: {
+    id: number;
+    name: string;
+    phone: string;
+  };
 }
 
 interface OrderItem {
@@ -51,6 +58,7 @@ const OrderTracking = () => {
   const { data: orderData, isLoading: orderLoading } = useQuery<Order>({
     queryKey: [`/api/orders/${orderId}/tracking`],
     enabled: !!orderId,
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
   });
 
   // Extract order and tracking data from the response
@@ -60,11 +68,13 @@ const OrderTracking = () => {
 
   if (orderLoading || trackingLoading) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto"></div>
-          <div className="h-32 bg-gray-200 rounded"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+      <div className="min-h-screen bg-muted">
+        <div className="container mx-auto py-8 px-4">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto"></div>
+            <div className="h-32 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
         </div>
       </div>
     );
@@ -72,14 +82,16 @@ const OrderTracking = () => {
 
   if (!order) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <Card>
-          <CardContent className="text-center py-8">
-            <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Order Not Found</h3>
-            <p className="text-gray-500">The order you're looking for doesn't exist or has been removed.</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-muted">
+        <div className="container mx-auto py-8 px-4">
+          <Card>
+            <CardContent className="text-center py-8">
+              <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Order Not Found</h3>
+              <p className="text-gray-500">The order you're looking for doesn't exist or has been removed.</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -91,9 +103,14 @@ const OrderTracking = () => {
       case 'processing':
       case 'in production':
         return 'bg-blue-500';
-      case 'shipped':
-      case 'ocean transit':
+      case 'ready_for_pickup':
         return 'bg-purple-500';
+      case 'shipped':
+      case 'en_route_pickup':
+        return 'bg-orange-500';
+      case 'picked_up':
+      case 'en_route_delivery':
+        return 'bg-indigo-500';
       case 'out for delivery':
       case 'shipping final mile':
         return 'bg-orange-500';
@@ -112,10 +129,18 @@ const OrderTracking = () => {
         return 'Order Placed';
       case 'processing':
         return 'In Production';
+      case 'ready_for_pickup':
+        return 'Ready for Pickup';
+      case 'en_route_pickup':
+        return 'En Route to Pickup';
+      case 'picked_up':
+        return 'Order Picked Up';
+      case 'en_route_delivery':
+        return 'En Route to You';
       case 'shipped':
-        return 'Ocean Transit';
+        return 'Shipped';
       case 'out for delivery':
-        return 'Shipping Final Mile';
+        return 'Out for Delivery';
       case 'delivered':
         return 'Delivered';
       default:
@@ -126,8 +151,10 @@ const OrderTracking = () => {
   const trackingSteps = [
     { key: 'pending', label: 'Order Placed', icon: CheckCircle2 },
     { key: 'processing', label: 'In Production', icon: Package },
-    { key: 'shipped', label: 'Ocean Transit', icon: Truck },
-    { key: 'out_for_delivery', label: 'Shipping Final Mile', icon: Truck },
+    { key: 'ready_for_pickup', label: 'Ready for Pickup', icon: Package },
+    { key: 'en_route_pickup', label: 'En Route to Pickup', icon: Truck },
+    { key: 'picked_up', label: 'Order Picked Up', icon: Truck },
+    { key: 'en_route_delivery', label: 'En Route to You', icon: Truck },
     { key: 'delivered', label: 'Delivered', icon: Home }
   ];
 
@@ -136,16 +163,21 @@ const OrderTracking = () => {
     switch (status) {
       case 'pending': return 0;
       case 'processing': return 1;
-      case 'shipped': return 2;
-      case 'out for delivery': return 3;
-      case 'delivered': return 4;
+      case 'ready_for_pickup': return 2;
+      case 'en_route_pickup': return 3;
+      case 'picked_up': return 4;
+      case 'en_route_delivery': return 5;
+      case 'delivered': return 6;
       default: return 0;
     }
   };
 
   const currentStepIndex = getCurrentStepIndex();
   const estimatedDeliveryDate = new Date(order.createdAt);
-  estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + 7); // Add 7 days for delivery
+  estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + 1); // Add 1 day for delivery
+
+  // Show map if delivery partner is assigned and order is in transit
+  const showMap = order.deliveryPartner && ['en_route_pickup', 'picked_up', 'en_route_delivery'].includes(order.status);
 
   return (
     <div className="min-h-screen bg-muted">
@@ -211,6 +243,20 @@ const OrderTracking = () => {
           <p className="text-muted-foreground mt-4">
             Estimated Delivery: {format(estimatedDeliveryDate, 'EEEE, MMMM dd, yyyy')}
           </p>
+          {order.deliveryPartner && (
+            <div className="mt-4 flex items-center justify-center gap-4">
+              <div className="flex items-center gap-2">
+                <Truck className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">Delivery Partner: {order.deliveryPartner.name}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-green-600" />
+                <a href={`tel:${order.deliveryPartner.phone}`} className="text-sm text-blue-600 hover:underline">
+                  {order.deliveryPartner.phone}
+                </a>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Progress Timeline */}
@@ -226,7 +272,7 @@ const OrderTracking = () => {
               </div>
 
               {/* Steps */}
-              <div className="relative grid grid-cols-5 gap-4">
+              <div className="relative grid grid-cols-7 gap-2">
                 {trackingSteps.map((step, index) => {
                   const isCompleted = index <= currentStepIndex;
                   const isCurrent = index === currentStepIndex;
@@ -247,15 +293,15 @@ const OrderTracking = () => {
                       </div>
 
                       {/* Label */}
-                      <div className="text-sm font-medium text-gray-700 mb-1">
+                      <div className="text-xs font-medium text-gray-700 mb-1">
                         {step.label}
                       </div>
 
                       {/* Date */}
                       <div className="text-xs text-gray-500">
-                        {index === 0 ? format(new Date(order.createdAt), 'MMM dd, yyyy') :
-                         index <= currentStepIndex ? format(new Date(order.createdAt), 'MMM dd, yyyy') :
-                         format(estimatedDeliveryDate, 'MMM dd, yyyy')}
+                        {index === 0 ? format(new Date(order.createdAt), 'MMM dd') :
+                         index <= currentStepIndex ? format(new Date(), 'MMM dd') :
+                         format(estimatedDeliveryDate, 'MMM dd')}
                       </div>
                     </div>
                   );
@@ -264,6 +310,16 @@ const OrderTracking = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Live Tracking Map */}
+        {showMap && (
+          <div className="mb-8">
+            <LeafletDeliveryMap
+              deliveryId={order.id}
+              userType="customer"
+            />
+          </div>
+        )}
 
         {/* Order Items */}
         {order.items && order.items.length > 0 && (
@@ -324,24 +380,47 @@ const OrderTracking = () => {
             </CardContent>
           </Card>
 
-          {/* Map Placeholder */}
+          {/* Contact Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Delivery Location
+                <Phone className="h-5 w-5" />
+                Contact Information
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500">Map integration coming soon</p>
-                  {order.latitude && order.longitude && (
-                    <p className="text-xs text-gray-400 mt-2">
-                      Coordinates: {order.latitude}, {order.longitude}
-                    </p>
-                  )}
+            <CardContent className="space-y-4">
+              {order.deliveryPartner && (
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2">Delivery Partner</h4>
+                  <div className="space-y-2">
+                    <p className="text-gray-600">{order.deliveryPartner.name}</p>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-green-600" />
+                      <a 
+                        href={`tel:${order.deliveryPartner.phone}`} 
+                        className="text-blue-600 hover:underline"
+                      >
+                        {order.deliveryPartner.phone}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div>
+                <h4 className="font-medium text-gray-700 mb-2">Customer Support</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-primary" />
+                    <a href="tel:+977-33-123456" className="text-primary hover:underline">
+                      +977-33-123456
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-primary" />
+                    <a href="mailto:support@sirahbazaar.com" className="text-primary hover:underline">
+                      support@sirahbazaar.com
+                    </a>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -364,7 +443,7 @@ const OrderTracking = () => {
                     <div className={`w-3 h-3 rounded-full mt-2 ${getStatusColor(track.status)}`}></div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium capitalize">{track.status}</h4>
+                        <h4 className="font-medium capitalize">{getStatusText(track.status)}</h4>
                         <span className="text-sm text-muted-foreground">
                           {format(new Date(track.updatedAt), 'MMM dd, yyyy HH:mm')}
                         </span>
@@ -385,63 +464,6 @@ const OrderTracking = () => {
             </CardContent>
           </Card>
         )}
-
-        {/* Customer Support Section */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Phone className="h-5 w-5" />
-              Need Help?
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-foreground mb-2">Contact Customer Support</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-primary" />
-                      <a href="tel:+977-33-123456" className="text-primary hover:underline">
-                        +977-33-123456
-                      </a>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-primary" />
-                      <a href="mailto:support@sirahbazaar.com" className="text-primary hover:underline">
-                        support@sirahbazaar.com
-                      </a>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-medium text-foreground mb-2">Order Information</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Have your order number ready: <span className="font-mono font-medium">#{order.id}</span>
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-foreground mb-2">Support Hours</h4>
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
-                    <p>Saturday: 10:00 AM - 4:00 PM</p>
-                    <p>Sunday: Closed</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    Chat Support
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
-                    Report Issue
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
