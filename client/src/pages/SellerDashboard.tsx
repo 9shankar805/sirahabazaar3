@@ -55,7 +55,7 @@ import type {
   Product,
   Order,
   OrderItem,
-  Store,
+  Store as StoreType,
   Category,
 } from "@shared/schema";
 import Link from "next/link";
@@ -124,7 +124,7 @@ export default function ShopkeeperDashboard() {
   const { toast } = useToast();
 
   // Queries
-  const { data: stores = [] } = useQuery<Store[]>({
+  const { data: stores = [] } = useQuery<StoreType[]>({
     queryKey: [`/api/stores/owner`, user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
