@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, Phone, DollarSign, Package } from "lucide-react";
+import { Clock, MapPin, Phone, DollarSign, Package, Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DeliveryNotification {
@@ -36,6 +36,7 @@ interface NotificationData {
 export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryPartnerId: number }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [acceptingOrder, setAcceptingOrder] = useState<number | null>(null);
   const [previousCount, setPreviousCount] = useState(0);
 
@@ -48,7 +49,7 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
       }
       const allNotifications = await response.json();
       console.log('All delivery notifications:', allNotifications);
-      
+
       // Show all available orders (not filtered by delivery partner)
       return allNotifications.filter((notification: DeliveryNotification) => 
         notification.status === 'pending'
@@ -65,12 +66,12 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deliveryPartnerId })
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error);
       }
-      
+
       return response.json();
     },
     onSuccess: (data, orderId) => {
@@ -99,12 +100,12 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deliveryPartnerId })
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error);
       }
-      
+
       return response.json();
     },
     onSuccess: (data, orderId) => {
@@ -128,7 +129,7 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
     if (notifications.length > previousCount && previousCount > 0) {
       // Play notification sound
       try {
-        const audio = new Audio('data:audio/wav;base64,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');
+        const audio = new Audio('data:audio/wav;base64,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');
         audio.volume = 0.5;
         audio.play().catch(() => {
           // Fallback to system notification
@@ -179,137 +180,114 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
 
   if (notifications.length === 0) {
     return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Available Orders</h3>
-          <p className="text-gray-600">New delivery requests will appear here automatically.</p>
+      <Card className="shadow-lg border-0 h-full">
+        <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+            <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+            <span className="text-sm sm:text-base">New Assignments ({notifications.length})</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 sm:space-y-4 max-h-64 sm:max-h-96 overflow-y-auto px-3 sm:px-6 pb-3 sm:pb-6">
+          <div className="text-center py-6 sm:py-8">
+            <Bell className="h-10 w-10 sm:h-12 sm:w-12 text-gray-300 mx-auto mb-3 sm:mb-4" />
+            <p className="text-sm sm:text-base text-gray-500">No new assignments</p>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Delivery Orders</h2>
-      
-      {notifications.map((notification: DeliveryNotification) => {
-        let notificationData: NotificationData;
-        try {
-          notificationData = JSON.parse(notification.notification_data);
-        } catch {
-          notificationData = {
-            orderId: notification.order_id,
-            customerName: notification.customername,
-            customerPhone: '',
-            totalAmount: notification.totalamount,
-            pickupAddress: notification.storename || 'Store Address',
-            deliveryAddress: notification.shippingaddress,
-            estimatedDistance: Math.floor(Math.random() * 10) + 2, // 2-12 km
-            estimatedEarnings: Math.floor(parseFloat(notification.totalamount) * 0.15) + 25, // 15% + base fee
-            latitude: '0',
-            longitude: '0',
-            orderItems: notification.orderitems || 1,
-            deliveryFee: Math.floor(parseFloat(notification.totalamount) * 0.1) + 30 // 10% + base
-          };
-        }
+    <Card className="shadow-lg border-0 h-full">
+      <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+          <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+          <span className="text-sm sm:text-base">New Assignments ({notifications.length})</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 sm:space-y-4 max-h-64 sm:max-h-96 overflow-y-auto px-3 sm:px-6 pb-3 sm:pb-6">
+        {notifications.map((notification: DeliveryNotification) => {
+          let notificationData: NotificationData;
+          try {
+            notificationData = JSON.parse(notification.notification_data);
+          } catch {
+            notificationData = {
+              orderId: notification.order_id,
+              customerName: notification.customername,
+              customerPhone: '',
+              totalAmount: notification.totalamount,
+              pickupAddress: notification.storename || 'Store Address',
+              deliveryAddress: notification.shippingaddress,
+              estimatedDistance: Math.floor(Math.random() * 10) + 2, // 2-12 km
+              estimatedEarnings: Math.floor(parseFloat(notification.totalamount) * 0.15) + 25, // 15% + base fee
+              latitude: '0',
+              longitude: '0',
+              orderItems: notification.orderitems || 1,
+              deliveryFee: Math.floor(parseFloat(notification.totalamount) * 0.1) + 30 // 10% + base
+            };
+          }
 
-        const isAccepting = acceptingOrder === notification.order_id;
+          const isAccepting = acceptingOrder === notification.order_id;
 
-        const isUrgent = notificationData.urgent || notificationData.estimatedDistance > 8;
-        
-        return (
-          <Card key={notification.id} className={`border-l-4 ${isUrgent ? 'border-l-red-500 bg-red-50' : 'border-l-blue-500'} ${isUrgent ? 'animate-pulse' : ''}`}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">Order #{notification.order_id}</CardTitle>
-                  {isUrgent && (
-                    <Badge variant="destructive" className="bg-red-600 text-white">
-                      🚨 URGENT
-                    </Badge>
-                  )}
+          const isUrgent = notificationData.urgent || notificationData.estimatedDistance > 8;
+
+          return (
+            <Card key={notification.id} className="border border-orange-200 bg-orange-50">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-3 gap-2">
+                  <div className="font-semibold text-sm sm:text-lg">
+                    Order #{notification.order_id}
+                  </div>
+                  <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs w-fit">
+                    New Assignment
+                  </Badge>
                 </div>
-                <Badge variant="secondary">
-                  <Clock className="w-3 h-3 mr-1" />
-                  {new Date(notification.created_at).toLocaleTimeString()}
-                </Badge>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Package className="w-4 h-4 text-gray-600" />
+
+                <div className="space-y-2 text-xs sm:text-sm">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 flex-shrink-0" />
                     <span className="font-medium">Customer:</span>
-                    <span>{notificationData.customerName}</span>
+                    <span className="text-gray-700 truncate">{notification.customername}</span>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Phone className="w-4 h-4 text-gray-600" />
-                    <span className="font-medium">Phone:</span>
-                    <span>{notificationData.customerPhone || 'Not provided'}</span>
+
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
+                    <span className="font-medium">Order Total:</span>
+                    <span className="text-gray-700">₹{notification.totalamount}</span>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <DollarSign className="w-4 h-4 text-gray-600" />
-                    <span className="font-medium">Order Value:</span>
-                    <span className="font-semibold text-green-600">Rs. {notificationData.totalAmount}</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex items-start space-x-2">
-                    <MapPin className="w-4 h-4 text-gray-600 mt-0.5" />
-                    <div>
-                      <span className="font-medium block">Pickup:</span>
-                      <span className="text-sm text-gray-600">{notificationData.pickupAddress}</span>
+
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <span className="font-medium">Delivery Address:</span>
+                      <p className="text-gray-700 text-[10px] sm:text-xs mt-1 break-words">{notification.shippingaddress}</p>
                     </div>
                   </div>
-                  
-                  <div className="flex items-start space-x-2">
-                    <MapPin className="w-4 h-4 text-gray-600 mt-0.5" />
-                    <div>
-                      <span className="font-medium block">Delivery:</span>
-                      <span className="text-sm text-gray-600">{notificationData.deliveryAddress}</span>
-                    </div>
+
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
+                    <span className="font-medium">Assigned:</span>
+                    <span className="text-gray-700 text-[10px] sm:text-xs">
+                      {new Date(notification.created_at).toLocaleString()}
+                    </span>
                   </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-                  <span>📍 Distance: ~{notificationData.estimatedDistance} km</span>
-                  <span>💰 Earnings: Rs. {notificationData.estimatedEarnings}</span>
-                  <span>📦 Items: {notificationData.orderItems || 1}</span>
-                  <span>🚚 Fee: Rs. {notificationData.deliveryFee || 30}</span>
-                </div>
-                
-                <div className="flex space-x-2">
+
+                <div className="mt-3 sm:mt-4">
                   <Button
-                    variant="outline"
+                    onClick={() => acceptAssignment.mutate(notification.id)}
+                    disabled={acceptAssignment.isPending}
+                    className="w-full bg-green-600 hover:bg-green-700 text-xs sm:text-sm py-2"
                     size="sm"
-                    onClick={() => handleRejectOrder(notification.order_id)}
-                    disabled={isAccepting || rejectMutation.isPending}
                   >
-                    Decline
-                  </Button>
-                  
-                  <Button
-                    size="sm"
-                    onClick={() => handleAcceptOrder(notification.order_id)}
-                    disabled={isAccepting || acceptMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    {isAccepting ? "Accepting..." : "Accept Order"}
+                    Accept Assignment
                   </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </CardContent>
+    </Card>
   );
 }
