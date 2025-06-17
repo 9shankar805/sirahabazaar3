@@ -10,7 +10,7 @@ interface MobileNotificationBarProps {
 }
 
 export default function MobileNotificationBar({ className = '' }: MobileNotificationBarProps) {
-  const { notifications, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead, previousCount, setPreviousCount } = useNotifications();
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentNotification, setCurrentNotification] = useState(0);
 
@@ -94,11 +94,36 @@ export default function MobileNotificationBar({ className = '' }: MobileNotifica
 
   const activeNotification = unreadNotifications[currentNotification];
 
+  // Play notification sound and show system notification for new notifications
+  useEffect(() => {
+    if (notifications.length > previousCount && previousCount > 0) {
+      // Play notification sound
+      try {
+        const audio = new Audio('/notification.mp3');
+        audio.volume = 0.6;
+        audio.play().catch(() => {
+          console.log('Could not play notification sound');
+        });
+      } catch (error) {
+        console.log('Error playing notification sound:', error);
+      }
+
+      // Show system notification if permission granted
+      if (Notification.permission === 'granted') {
+        new Notification('New Notification', {
+          body: notifications[0]?.title || 'You have a new notification',
+          icon: '/favicon.ico'
+        });
+      }
+    }
+    setPreviousCount(notifications.length);
+  }, [notifications.length, previousCount, setPreviousCount]);
+
   return (
     <>
       {/* Spacer to prevent content overlap */}
       <div className="h-16" />
-      
+
       <div className={`fixed top-0 left-0 right-0 z-[60] ${className}`}>
         {/* Main notification bar */}
       <div 
@@ -114,7 +139,7 @@ export default function MobileNotificationBar({ className = '' }: MobileNotifica
                 {getNotificationIcon(activeNotification?.type)}
               </span>
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2">
                 <h4 className="font-medium text-sm truncate">
@@ -145,7 +170,7 @@ export default function MobileNotificationBar({ className = '' }: MobileNotifica
                 ))}
               </div>
             )}
-            
+
             {unreadNotifications.length > 1 && (
               <Button
                 variant="ghost"
@@ -159,7 +184,7 @@ export default function MobileNotificationBar({ className = '' }: MobileNotifica
                 )}
               </Button>
             )}
-            
+
             <Button
               variant="ghost"
               size="sm"
@@ -210,7 +235,7 @@ export default function MobileNotificationBar({ className = '' }: MobileNotifica
               </div>
             </div>
           ))}
-          
+
           {unreadNotifications.length > 3 && (
             <div className="px-4 py-2 bg-gray-50 text-center">
               <Button

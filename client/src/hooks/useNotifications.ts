@@ -149,6 +149,17 @@ export function useNotifications() {
     setNotifications(prev => [notification, ...prev]);
     setUnreadCount(prev => prev + 1);
     
+    // Play notification sound
+    try {
+      const audio = new Audio('/notification.mp3');
+      audio.volume = 0.6;
+      audio.play().catch(() => {
+        console.log('Could not play notification sound');
+      });
+    } catch (error) {
+      console.log('Error playing notification sound:', error);
+    }
+    
     // Show browser notification
     showNotification(notification.title, {
       body: notification.message,

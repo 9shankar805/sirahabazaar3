@@ -80,7 +80,7 @@ export default function NotificationCenter() {
           Enable Notifications
         </Button>
       )}
-      
+
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="relative">
@@ -95,7 +95,7 @@ export default function NotificationCenter() {
             )}
           </Button>
         </DropdownMenuTrigger>
-        
+
         <DropdownMenuContent align="end" className="w-80">
           <div className="flex items-center justify-between p-3 border-b">
             <h3 className="font-semibold">Notifications</h3>
@@ -111,9 +111,9 @@ export default function NotificationCenter() {
               </Button>
             )}
           </div>
-          
+
           <DropdownMenuSeparator />
-          
+
           <ScrollArea className="h-96">
             {notifications.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground">
@@ -134,7 +134,7 @@ export default function NotificationCenter() {
                     <div className={`p-1 rounded-full text-sm ${getNotificationColor(notification.type)}`}>
                       {getNotificationIcon(notification.type)}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p className={`text-sm font-medium truncate ${
@@ -146,11 +146,11 @@ export default function NotificationCenter() {
                           <div className="h-2 w-2 bg-primary rounded-full ml-2 flex-shrink-0" />
                         )}
                       </div>
-                      
+
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                         {notification.message}
                       </p>
-                      
+
                       <p className="text-xs text-muted-foreground mt-1">
                         {(() => {
                           try {
@@ -169,7 +169,7 @@ export default function NotificationCenter() {
               ))
             )}
           </ScrollArea>
-          
+
           {notifications.length > 0 && (
             <>
               <DropdownMenuSeparator />

@@ -20,19 +20,32 @@ export default function NotificationTestButton() {
     }
 
     setIsLoading(true);
+    const testNotification = async () => {
     try {
+      // Play sound first
+      const audio = new Audio('/notification.mp3');
+      audio.volume = 0.7;
+      audio.play().catch(() => {
+        console.log('Could not play notification sound');
+      });
+
       const response = await fetch('/api/notifications/test', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({
+          userId: user?.id,
+          title: 'Test Notification',
+          message: 'This is a test notification with sound!',
+          type: 'info'
+        }),
       });
 
       if (response.ok) {
         toast({
-          title: "Test notification sent",
-          description: "Check the mobile notification bar at the top",
+          title: "Test notification sent!",
+          description: "Check your notifications panel and listen for the sound.",
         });
       } else {
         throw new Error('Failed to send test notification');
@@ -40,9 +53,14 @@ export default function NotificationTestButton() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to send test notification",
-        variant: "destructive"
+        description: "Failed to send test notification.",
+        variant: "destructive",
       });
+    }
+  };
+
+    try {
+      await testNotification();
     } finally {
       setIsLoading(false);
     }
