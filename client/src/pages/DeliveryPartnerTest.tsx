@@ -520,57 +520,55 @@ export default function DeliveryPartnerTest() {
             {allNotifications.map((notification) => (
               <Card 
                 key={notification.id}
-                className={`transition-all hover:shadow-md ${
+                className={`transition-all hover:shadow-md delivery-notification-card ${
                   !notification.isRead ? 'border-l-4 border-l-blue-500 bg-blue-50/30' : ''
                 }`}
               >
-                <CardContent className="p-3 sm:p-4 lg:p-6">
-                        <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                    <div className="p-2 sm:p-3 rounded-full text-blue-600 bg-blue-50 flex-shrink-0">
-                            <Package className="h-4 w-4 sm:h-5 sm:w-5" />
-                          </div>
-                          <div className="flex-1 min-w-0 overflow-hidden">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-1 sm:gap-2">
-                              <h3 className="font-semibold text-base sm:text-lg break-words">New Delivery Assignment</h3>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                {!notification.isRead && (
-                                  <Badge className="text-xs">New</Badge>
-                                )}
-                                <span className="text-xs sm:text-sm text-muted-foreground">
-                                  {new Date(notification.createdAt).toLocaleTimeString('en-US', {
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                    hour12: true
-                                  })}
-                                </span>
-                              </div>
-                            </div>
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                    <div className={`p-2 sm:p-3 rounded-full ${getNotificationColor(notification.type)} flex-shrink-0`}>
+                      {getNotificationIcon(notification.type)}
+                    </div>
 
-                      <p className="text-muted-foreground mb-3">{notification.message}</p>
+                    <div className="flex-1 w-full min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                        <h3 className="font-semibold text-base sm:text-lg notification-text">{notification.title}</h3>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {!notification.isRead && (
+                            <Badge variant="secondary" className="text-xs">New</Badge>
+                          )}
+                          <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                            {new Date(notification.createdAt).toLocaleTimeString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-muted-foreground mb-3 text-sm notification-text">{notification.message}</p>
 
                       {notification.deliveryDetails && (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 bg-gray-50 p-3 sm:p-4 rounded-lg mb-4">
-                        <div className="space-y-3">
-                            <div className="flex flex-col sm:flex-row sm:items-start gap-2 text-sm">
+                        <div className="delivery-card-grid bg-gray-50 p-3 sm:p-4 rounded-lg mb-4">
+                          <div className="space-y-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <MapPin className="h-4 w-4 text-red-500" />
                                 <span className="font-medium">Pickup:</span>
                               </div>
-                              <span className="text-muted-foreground break-words text-xs sm:text-sm overflow-hidden">
+                              <span className="text-muted-foreground address-text break-all">
                                 {notification.deliveryDetails.pickupAddress}
                               </span>
                             </div>
-                            <div className="flex flex-col sm:flex-row sm:items-start gap-2 text-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <MapPin className="h-4 w-4 text-green-500" />
                                 <span className="font-medium">Delivery:</span>
                               </div>
-                              <span className="text-muted-foreground break-words text-xs sm:text-sm overflow-hidden">
+                              <span className="text-muted-foreground address-text break-all">
                                 {notification.deliveryDetails.deliveryAddress}
                               </span>
                             </div>
                           </div>
-                          <div className="space-y-3">
+
+                          <div className="space-y-2 mt-3 sm:mt-0">
                             <div className="flex items-center gap-2 text-sm">
                               <DollarSign className="h-4 w-4 text-green-600" />
                               <span className="font-medium">Fee:</span>
@@ -586,7 +584,7 @@ export default function DeliveryPartnerTest() {
                               </span>
                             </div>
                           </div>
-</div>
+                        </div>
                       )}
 
                       {notification.deliveryDetails?.specialInstructions && (
@@ -804,6 +802,7 @@ export default function DeliveryPartnerTest() {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h4 className="font-medium text-blue-800 mb-2">Current Active Delivery</h4>
                     <p className="text-blue-700">Order #1001 - Rajesh Kumar</p>
+                    ```
                     <p className="text-sm text-blue-600">
                       Pickup: Green Valley Restaurant → Delivery: DLF Phase 2
                     </p>

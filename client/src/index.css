@@ -343,6 +343,63 @@ body::-webkit-scrollbar {
     max-width: 100% !important;
     box-sizing: border-box !important;
   }
+
+  /* Additional mobile responsiveness fixes */
+  .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  .flex-wrap {
+    flex-wrap: wrap !important;
+  }
+
+  /* Make cards stack vertically on mobile */
+  .delivery-card-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  /* Responsive text sizes */
+  .text-lg {
+    font-size: 1rem !important;
+  }
+
+  .text-2xl {
+    font-size: 1.25rem !important;
+  }
+
+  /* Mobile button adjustments */
+  .mobile-btn-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  .mobile-btn-stack .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Address text wrapping */
+  .address-text {
+    word-break: break-all !important;
+    overflow-wrap: anywhere !important;
+    white-space: normal !important;
+    max-width: 100% !important;
+    display: block !important;
+  }
+
+  /* Ensure all text content is visible */
+  .notification-text {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+    max-width: 100% !important;
+  }
 }
 
 /* Animation for notification banner */
