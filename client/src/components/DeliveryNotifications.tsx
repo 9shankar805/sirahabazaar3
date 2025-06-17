@@ -237,7 +237,7 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
             }
 
             return (
-              <Card key={notification.id} className="border border-orange-200 bg-orange-50 shadow-sm hover:shadow-md transition-shadow duration-200 w-full overflow-hidden">
+              <Card key={notification.id} className="border border-orange-200 bg-orange-50 shadow-sm hover:shadow-md transition-shadow duration-200 w-full overflow-hidden delivery-notification-card">
                 <CardContent className="p-2 sm:p-4">
                   <div className="flex flex-col gap-2 w-full">
                     <div className="flex items-start justify-between gap-2 w-full">
@@ -267,11 +267,11 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
                       <div className="space-y-2 w-full">
                         <div className="flex items-start gap-2 w-full">
                           <Package className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                          <div className="min-w-0 flex-1 w-full">
-                            <p className="font-medium text-xs sm:text-sm text-gray-900 break-words">
+                          <div className="min-w-0 flex-1 w-full overflow-hidden">
+                            <p className="font-medium text-xs sm:text-sm text-gray-900 break-words overflow-hidden">
                               Store: {notificationData.storeDetails?.name || 'SS Book Store'}
                             </p>
-                            <p className="text-xs text-gray-600 break-words hyphens-auto" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                            <p className="text-xs text-gray-600 break-all overflow-hidden text-ellipsis line-clamp-2">
                               {notificationData.pickupAddress}
                             </p>
                           </div>
@@ -279,9 +279,9 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
 
                         <div className="flex items-start gap-2 w-full">
                           <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                          <div className="min-w-0 flex-1 w-full">
+                          <div className="min-w-0 flex-1 w-full overflow-hidden">
                             <p className="font-medium text-xs sm:text-sm text-gray-900">Delivery Address</p>
-                            <p className="text-xs text-gray-600 break-words hyphens-auto" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                            <p className="text-xs text-gray-600 break-all overflow-hidden text-ellipsis line-clamp-2">
                               {notificationData.deliveryAddress}
                             </p>
                           </div>
