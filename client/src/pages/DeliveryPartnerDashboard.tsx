@@ -235,33 +235,43 @@ export default function DeliveryPartnerDashboard() {
 
       <div className="container mx-auto p-3 sm:p-4 lg:p-6">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          {/* Mobile Responsive Tabs - Icons Only */}
+          {/* Mobile Responsive Tabs - Clear Icons with Better Visibility */}
           <TabsList className="grid grid-cols-6 mb-4 sm:mb-8 bg-white shadow-sm h-auto p-1">
-            <TabsTrigger value="dashboard" className="flex items-center justify-center py-3 px-2" title="Dashboard">
-              <TrendingUp className="h-5 w-5" />
+            <TabsTrigger value="dashboard" className="flex flex-col items-center justify-center py-2 px-1 gap-1" title="Dashboard">
+              <TrendingUp className="h-6 w-6 text-blue-600" />
+              <span className="text-[10px] font-medium text-gray-600">Home</span>
             </TabsTrigger>
-            <TabsTrigger value="orders" className="flex items-center justify-center py-3 px-2 relative" title="New Orders">
-              <Bell className="h-5 w-5" />
-              <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
-                !
-              </Badge>
+            <TabsTrigger value="orders" className="flex flex-col items-center justify-center py-2 px-1 gap-1 relative" title="Notifications">
+              <div className="relative">
+                <Bell className="h-6 w-6 text-orange-600" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                </div>
+              </div>
+              <span className="text-[10px] font-medium text-gray-600">Alerts</span>
             </TabsTrigger>
-            <TabsTrigger value="deliveries" className="flex items-center justify-center py-3 px-2 relative" title="Active Deliveries">
-              <Package className="h-5 w-5" />
-              {(pendingDeliveries.length + activeDeliveries.length) > 0 && (
-                <Badge variant="outline" className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[8px] bg-orange-100 text-orange-800 border-orange-300">
-                  {pendingDeliveries.length + activeDeliveries.length}
-                </Badge>
-              )}
+            <TabsTrigger value="deliveries" className="flex flex-col items-center justify-center py-2 px-1 gap-1 relative" title="Active Deliveries">
+              <div className="relative">
+                <Truck className="h-6 w-6 text-green-600" />
+                {(pendingDeliveries.length + activeDeliveries.length) > 0 && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                    <span className="text-[8px] font-bold text-white">{pendingDeliveries.length + activeDeliveries.length}</span>
+                  </div>
+                )}
+              </div>
+              <span className="text-[10px] font-medium text-gray-600">Active</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center justify-center py-3 px-2" title="Delivery History">
-              <Calendar className="h-5 w-5" />
+            <TabsTrigger value="history" className="flex flex-col items-center justify-center py-2 px-1 gap-1" title="Delivery History">
+              <MapPin className="h-6 w-6 text-purple-600" />
+              <span className="text-[10px] font-medium text-gray-600">Track</span>
             </TabsTrigger>
-            <TabsTrigger value="earnings" className="flex items-center justify-center py-3 px-2" title="Earnings">
-              <DollarSign className="h-5 w-5" />
+            <TabsTrigger value="earnings" className="flex flex-col items-center justify-center py-2 px-1 gap-1" title="Earnings">
+              <DollarSign className="h-6 w-6 text-green-600" />
+              <span className="text-[10px] font-medium text-gray-600">Earn</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center justify-center py-3 px-2" title="Profile">
-              <CheckCircle className="h-5 w-5" />
+            <TabsTrigger value="profile" className="flex flex-col items-center justify-center py-2 px-1 gap-1" title="Reports">
+              <Calendar className="h-6 w-6 text-indigo-600" />
+              <span className="text-[10px] font-medium text-gray-600">Report</span>
             </TabsTrigger>
           </TabsList>
 
