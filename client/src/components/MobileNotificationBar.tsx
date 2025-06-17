@@ -95,8 +95,12 @@ export default function MobileNotificationBar({ className = '' }: MobileNotifica
   const activeNotification = unreadNotifications[currentNotification];
 
   return (
-    <div className={`fixed top-0 left-0 right-0 z-50 ${className}`}>
-      {/* Main notification bar */}
+    <>
+      {/* Spacer to prevent content overlap */}
+      <div className="h-16" />
+      
+      <div className={`fixed top-0 left-0 right-0 z-[60] ${className}`}>
+        {/* Main notification bar */}
       <div 
         className={`${getNotificationColor(activeNotification?.type)} text-white shadow-lg cursor-pointer transition-all duration-300 ${
           isExpanded ? 'rounded-b-none' : 'rounded-b-lg'
@@ -221,6 +225,7 @@ export default function MobileNotificationBar({ className = '' }: MobileNotifica
           )}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
