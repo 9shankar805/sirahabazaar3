@@ -20,12 +20,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch(`/api/auth/refresh?userId=${userId}`);
       if (response.ok) {
-        const { user: updatedUser } = await response.json();
-        setUser(updatedUser);
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+        const responseData = await response.json();
+        if (responseData.user) {
+          setUser(responseData.user);
+          localStorage.setItem("user", JSON.stringify(responseData.user));
+        } else {
+          console.warn("No user data in refresh response");
+        }
+      } else {
+        console.warn("Failed to refresh user data:", response.status);
+        // Don't clear user on failed refresh, just log the warning
       }
     } catch (error) {
       console.error("Failed to refresh user data:", error);
+      // Don't clear user on network errors, just log the error
     }
   };
 

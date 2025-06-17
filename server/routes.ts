@@ -30,6 +30,17 @@ import { eq, desc } from "drizzle-orm";
 const realTimeTrackingService = new RealTimeTrackingService();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Global error handling middleware
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error('Unhandled error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+      });
+    }
+  });
+
   // Middleware to track website visits
   app.use(async (req, res, next) => {
     try {
@@ -45,6 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.recordVisit(visitData);
     } catch (error) {
       // Continue even if visit tracking fails
+      console.error('Visit tracking error:', error);
     }
     next();
   });

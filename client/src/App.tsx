@@ -14,6 +14,7 @@ import Footer from "@/components/Footer";
 import ModeSwiper from "@/components/ModeSwiper";
 import MobileNotificationBar from "@/components/MobileNotificationBar";
 import NotificationTestButton from "@/components/NotificationTestButton";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Homepage from "@/pages/Homepage";
 import FoodHomepage from "@/pages/FoodHomepage";
 import Products from "@/pages/Products";
@@ -122,29 +123,45 @@ function AppRouter() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CartProvider>
-          <WishlistProvider>
-            <AppModeProvider>
-              <TooltipProvider>
-                <div className="min-h-screen flex flex-col">
-                  <MobileNotificationBar className="md:hidden" />
-                  <NavbarWrapper />
-                  <main className="flex-1 pb-16 md:pb-0">
-                    <AppRouter />
-                  </main>
-                  <Footer />
-                  <BottomNavbar />
-                  <NotificationTestButton />
-                </div>
-                <Toaster />
-              </TooltipProvider>
-            </AppModeProvider>
-          </WishlistProvider>
-        </CartProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <AppModeProvider>
+                <TooltipProvider>
+                  <ErrorBoundary>
+                    <div className="min-h-screen flex flex-col">
+                      <ErrorBoundary>
+                        <MobileNotificationBar className="md:hidden" />
+                      </ErrorBoundary>
+                      <ErrorBoundary>
+                        <NavbarWrapper />
+                      </ErrorBoundary>
+                      <main className="flex-1 pb-16 md:pb-0">
+                        <ErrorBoundary>
+                          <AppRouter />
+                        </ErrorBoundary>
+                      </main>
+                      <ErrorBoundary>
+                        <Footer />
+                      </ErrorBoundary>
+                      <ErrorBoundary>
+                        <BottomNavbar />
+                      </ErrorBoundary>
+                      <ErrorBoundary>
+                        <NotificationTestButton />
+                      </ErrorBoundary>
+                    </div>
+                    <Toaster />
+                  </ErrorBoundary>
+                </TooltipProvider>
+              </AppModeProvider>
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
