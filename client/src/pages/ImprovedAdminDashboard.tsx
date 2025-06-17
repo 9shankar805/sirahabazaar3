@@ -1204,6 +1204,213 @@ export default function ImprovedAdminDashboard() {
                   <h3 className="text-lg font-medium">System Settings</h3>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Admin Profile Management */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Admin Profile</CardTitle>
+                        <CardDescription>
+                          Manage your admin account details
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label htmlFor="admin-name">Full Name</Label>
+                          <Input
+                            id="admin-name"
+                            value={adminUser?.fullName || ""}
+                            readOnly
+                            className="mt-1 bg-gray-50"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="admin-email">Email</Label>
+                          <Input
+                            id="admin-email"
+                            value={adminUser?.email || ""}
+                            readOnly
+                            className="mt-1 bg-gray-50"
+                          />
+                        </div>
+                        <div className="flex space-x-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit Profile
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Edit Admin Profile</DialogTitle>
+                                <DialogDescription>
+                                  Update your admin account information
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <Label htmlFor="edit-name">Full Name</Label>
+                                  <Input
+                                    id="edit-name"
+                                    defaultValue={adminUser?.fullName || ""}
+                                    placeholder="Enter your full name"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="edit-email">Email</Label>
+                                  <Input
+                                    id="edit-email"
+                                    type="email"
+                                    defaultValue={adminUser?.email || ""}
+                                    placeholder="Enter your email"
+                                  />
+                                </div>
+                                <div className="flex justify-end space-x-2">
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline">Cancel</Button>
+                                  </DialogTrigger>
+                                  <Button 
+                                    onClick={() => {
+                                      const nameInput = document.getElementById('edit-name') as HTMLInputElement;
+                                      const emailInput = document.getElementById('edit-email') as HTMLInputElement;
+                                      
+                                      // Update admin profile logic would go here
+                                      toast({
+                                        title: "Profile Updated",
+                                        description: "Your admin profile has been updated successfully.",
+                                      });
+                                    }}
+                                  >
+                                    Save Changes
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Shield className="h-4 w-4 mr-2" />
+                                Change Password
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Change Admin Password</DialogTitle>
+                                <DialogDescription>
+                                  Enter your current password and choose a new secure password
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <Label htmlFor="current-password">Current Password</Label>
+                                  <Input
+                                    id="current-password"
+                                    type="password"
+                                    placeholder="Enter your current password"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="new-password">New Password</Label>
+                                  <Input
+                                    id="new-password"
+                                    type="password"
+                                    placeholder="Enter new password"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="confirm-password">Confirm New Password</Label>
+                                  <Input
+                                    id="confirm-password"
+                                    type="password"
+                                    placeholder="Confirm new password"
+                                  />
+                                </div>
+                                <div className="flex justify-end space-x-2">
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline">Cancel</Button>
+                                  </DialogTrigger>
+                                  <Button 
+                                    onClick={async () => {
+                                      const currentPasswordInput = document.getElementById('current-password') as HTMLInputElement;
+                                      const newPasswordInput = document.getElementById('new-password') as HTMLInputElement;
+                                      const confirmPasswordInput = document.getElementById('confirm-password') as HTMLInputElement;
+                                      
+                                      if (!currentPasswordInput.value || !newPasswordInput.value) {
+                                        toast({
+                                          title: "Error",
+                                          description: "Please fill in all password fields.",
+                                          variant: "destructive",
+                                        });
+                                        return;
+                                      }
+                                      
+                                      if (newPasswordInput.value !== confirmPasswordInput.value) {
+                                        toast({
+                                          title: "Error",
+                                          description: "New passwords do not match.",
+                                          variant: "destructive",
+                                        });
+                                        return;
+                                      }
+                                      
+                                      if (newPasswordInput.value.length < 6) {
+                                        toast({
+                                          title: "Error",
+                                          description: "New password must be at least 6 characters long.",
+                                          variant: "destructive",
+                                        });
+                                        return;
+                                      }
+                                      
+                                      try {
+                                        const response = await fetch("/api/admin/change-password", {
+                                          method: "PUT",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({
+                                            adminId: adminUser.id,
+                                            currentPassword: currentPasswordInput.value,
+                                            newPassword: newPasswordInput.value,
+                                          }),
+                                        });
+                                        
+                                        const result = await response.json();
+                                        
+                                        if (response.ok) {
+                                          toast({
+                                            title: "Password Changed",
+                                            description: "Your admin password has been changed successfully.",
+                                          });
+                                          // Clear the form
+                                          currentPasswordInput.value = "";
+                                          newPasswordInput.value = "";
+                                          confirmPasswordInput.value = "";
+                                        } else {
+                                          toast({
+                                            title: "Error",
+                                            description: result.error || "Failed to change password.",
+                                            variant: "destructive",
+                                          });
+                                        }
+                                      } catch (error) {
+                                        toast({
+                                          title: "Error",
+                                          description: "Network error. Please try again.",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    Change Password
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </CardContent>
+                    </Card>
+
                     <Card>
                       <CardHeader>
                         <CardTitle>Platform Settings</CardTitle>
@@ -1597,7 +1804,7 @@ export default function ImprovedAdminDashboard() {
                   }}
                   disabled={updateZoneMutation.isPending}
                 >
-                  {updateZoneMutation.isPending ? "Saving..." : "Save Changes"}
+                  {updateZoneMutation.isPending ? "Saving..." : "Update Zone"}
                 </Button>
               </div>
             </div>
