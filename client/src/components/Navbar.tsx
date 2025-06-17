@@ -438,11 +438,11 @@ export default function Navbar() {
           />
 
           {/* Notification Panel */}
-          <div className="absolute top-0 right-0 h-full w-80 max-w-[90vw] bg-white shadow-xl">
+          <div className="absolute top-0 right-0 h-full w-full max-w-sm bg-white shadow-xl">
             <Card className="h-full rounded-none border-0">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b bg-primary text-white">
-                <h3 className="text-lg font-semibold">Notifications</h3>
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-primary text-white">
+                <h3 className="text-base sm:text-lg font-semibold">Notifications</h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -454,45 +454,45 @@ export default function Navbar() {
               </div>
 
               {/* Content */}
-              <CardContent className="p-0 h-[calc(100%-4rem)]">
+              <CardContent className="p-0 h-[calc(100%-3.5rem)] sm:h-[calc(100%-4rem)]">
                 <ScrollArea className="h-full">
                   {notifications.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Bell className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No notifications yet</p>
+                    <div className="text-center py-6 sm:py-8 text-muted-foreground px-4">
+                      <Bell className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                      <p className="text-sm sm:text-base">No notifications yet</p>
                     </div>
                   ) : (
                     <div className="divide-y">
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`p-4 hover:bg-gray-50 transition-colors ${
+                          className={`p-3 sm:p-4 hover:bg-gray-50 transition-colors ${
                             !notification.isRead
                               ? "bg-blue-50 border-l-4 border-l-primary"
                               : ""
                           }`}
                         >
-                          <div className="flex items-start space-x-3">
-                            <div className="text-lg flex-shrink-0">
+                          <div className="flex items-start space-x-2 sm:space-x-3">
+                            <div className="text-base sm:text-lg flex-shrink-0 mt-0.5">
                               {getNotificationIcon(notification.type)}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <p className="text-sm font-medium text-gray-900 truncate">
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <div className="flex items-start justify-between mb-1 gap-2">
+                                <p className="text-xs sm:text-sm font-medium text-gray-900 leading-tight line-clamp-2">
                                   {notification.title}
                                 </p>
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
                                   <Badge
-                                    className={`text-xs ${getNotificationColor(notification.type)}`}
+                                    className={`text-xs px-1.5 py-0.5 ${getNotificationColor(notification.type)}`}
                                   >
                                     {notification.type}
                                   </Badge>
                                   {!notification.isRead && (
-                                    <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
+                                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full flex-shrink-0"></div>
                                   )}
                                 </div>
                               </div>
-                              <p className="text-sm text-gray-600 mb-2 break-words">
+                              <p className="text-xs sm:text-sm text-gray-600 mb-2 leading-relaxed word-wrap break-words overflow-wrap-anywhere">
                                 {notification.message}
                               </p>
                               <p className="text-xs text-gray-400">
