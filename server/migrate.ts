@@ -171,6 +171,20 @@ export async function runMigrations() {
       ALTER TABLE categories ADD COLUMN IF NOT EXISTS icon TEXT DEFAULT 'package'
     `);
 
+    // Create website_visits table for analytics
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS website_visits (
+        id SERIAL PRIMARY KEY,
+        ip_address TEXT,
+        user_agent TEXT,
+        page TEXT NOT NULL,
+        referrer TEXT,
+        session_id TEXT,
+        user_id INTEGER REFERENCES users(id),
+        visited_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
     // Create delivery tracking tables for HERE Maps integration
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS delivery_location_tracking (

@@ -55,8 +55,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.recordVisit(visitData);
     } catch (error) {
-      // Continue even if visit tracking fails
-      console.error('Visit tracking error:', error);
+      // Silently continue if visit tracking fails to prevent app crashes
+      // This is expected during initial setup before migrations run
     }
     next();
   });
