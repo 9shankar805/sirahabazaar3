@@ -1,12 +1,11 @@
-
-import React, { useState, useEffect, useMemo } from 'react';
-import { Bell, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/useAuth';
+import React, { useState, useEffect, useMemo } from "react";
+import { Bell, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Notification {
   id: number;
@@ -29,7 +28,7 @@ export default function MobileNotificationBar() {
   }) as { data: Notification[] };
 
   const unreadCount = useMemo(() => {
-    return notifications.filter(n => !n.isRead).length;
+    return notifications.filter((n) => !n.isRead).length;
   }, [notifications]);
 
   const formatTimeAgo = (dateString: string) => {
@@ -37,33 +36,48 @@ export default function MobileNotificationBar() {
     const date = new Date(dateString);
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}h ago`;
     return `${Math.floor(diffInSeconds / 86400)}d ago`;
   };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'order': return '📦';
-      case 'delivery': return '🚚';
-      case 'payment': return '💳';
-      case 'product': return '🛍️';
-      case 'store': return '🏪';
-      case 'system': return '⚙️';
-      default: return '🔔';
+      case "order":
+        return "📦";
+      case "delivery":
+        return "🚚";
+      case "payment":
+        return "💳";
+      case "product":
+        return "🛍️";
+      case "store":
+        return "🏪";
+      case "system":
+        return "⚙️";
+      default:
+        return "🔔";
     }
   };
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'order': return 'bg-blue-100 text-blue-800';
-      case 'delivery': return 'bg-green-100 text-green-800';
-      case 'payment': return 'bg-yellow-100 text-yellow-800';
-      case 'product': return 'bg-purple-100 text-purple-800';
-      case 'store': return 'bg-orange-100 text-orange-800';
-      case 'system': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
+      case "order":
+        return "bg-blue-100 text-blue-800";
+      case "delivery":
+        return "bg-green-100 text-green-800";
+      case "payment":
+        return "bg-yellow-100 text-yellow-800";
+      case "product":
+        return "bg-purple-100 text-purple-800";
+      case "store":
+        return "bg-orange-100 text-orange-800";
+      case "system":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-blue-100 text-blue-800";
     }
   };
 
@@ -73,7 +87,7 @@ export default function MobileNotificationBar() {
   return (
     <>
       {/* Fixed Notification Button - Mobile Only */}
-      <div className="fixed top-16 right-4 z-50 md:hidden">
+      <div className="fixed top-20 right-6 z-50 md:hidden">
         <Button
           variant="default"
           size="sm"
@@ -86,7 +100,7 @@ export default function MobileNotificationBar() {
               variant="destructive"
               className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 text-xs flex items-center justify-center min-w-0"
             >
-              {unreadCount > 99 ? '99+' : unreadCount}
+              {unreadCount > 99 ? "99+" : unreadCount}
             </Badge>
           )}
         </Button>
@@ -96,11 +110,11 @@ export default function MobileNotificationBar() {
       {isOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-black bg-opacity-50" 
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Notification Panel */}
           <div className="absolute top-0 right-0 h-full w-80 max-w-[90vw] bg-white shadow-xl">
             <Card className="h-full rounded-none border-0">
@@ -131,7 +145,9 @@ export default function MobileNotificationBar() {
                         <div
                           key={notification.id}
                           className={`p-4 hover:bg-gray-50 transition-colors ${
-                            !notification.isRead ? 'bg-blue-50 border-l-4 border-l-primary' : ''
+                            !notification.isRead
+                              ? "bg-blue-50 border-l-4 border-l-primary"
+                              : ""
                           }`}
                         >
                           <div className="flex items-start space-x-3">
