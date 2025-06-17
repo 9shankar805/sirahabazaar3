@@ -37,13 +37,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { User } from "@shared/schema";
+import type { User as UserType } from "@shared/schema";
 
 export default function AdminPanel() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [adminUser, setAdminUser] = useState<any>(null);
   const [editingZone, setEditingZone] = useState<any>(null);
