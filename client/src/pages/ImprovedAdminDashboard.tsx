@@ -43,6 +43,15 @@ export default function ImprovedAdminDashboard() {
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [editingZone, setEditingZone] = useState<any>(null);
   const [showEditZoneDialog, setShowEditZoneDialog] = useState(false);
+  const [showCreateZone, setShowCreateZone] = useState(false);
+  const [newZone, setNewZone] = useState({
+    name: "",
+    minDistance: "",
+    maxDistance: "",
+    baseFee: "",
+    perKmRate: "",
+    isActive: true
+  });
 
   useEffect(() => {
     const stored = localStorage.getItem("adminUser");
@@ -171,6 +180,61 @@ export default function ImprovedAdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({ title: "Success", description: "User unbanned successfully" });
+    },
+  });
+
+  const updateZoneMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await apiRequest(`/api/admin/delivery-zones/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, adminId: adminUser.id }),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-zones"] });
+      setShowEditZoneDialog(false);
+      setEditingZone(null);
+      toast({ title: "Success", description: "Delivery zone updated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to update delivery zone",
+        variant: "destructive"
+      });
+    },
+  });
+
+  const createZoneMutation = useMutation({
+    mutationFn: async (zoneData: any) => {
+      const response = await apiRequest("/api/admin/delivery-zones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...zoneData, adminId: adminUser.id }),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-zones"] });
+      setShowCreateZone(false);
+      setNewZone({
+        name: "",
+        minDistance: "",
+        maxDistance: "",
+        baseFee: "",
+        perKmRate: "",
+        isActive: true
+      });
+      toast({ title: "Success", description: "Delivery zone created successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to create delivery zone",
+        variant: "destructive"
+      });
     },
   });
 
@@ -1068,7 +1132,7 @@ export default function ImprovedAdminDashboard() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium">Delivery Zone Management</h3>
-                    <Button>
+                    <Button onClick={() => setShowCreateZone(true)}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Zone
                     </Button>
@@ -1453,7 +1517,8 @@ export default function ImprovedAdminDashboard() {
                 <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
-                  defaultValue={editingZone.name}
+                  value={editingZone.name}
+                  onChange={(e) => setEditingZone({...editingZone, name: e.target.value})}
                   className="mt-1"
                 />
               </div>
@@ -1462,7 +1527,8 @@ export default function ImprovedAdminDashboard() {
                 <Input
                   id="minDistance"
                   type="number"
-                  defaultValue={editingZone.minDistance}
+                  value={editingZone.minDistance}
+                  onChange={(e) => setEditingZone({...editingZone, minDistance: e.target.value})}
                   className="mt-1"
                 />
               </div>
@@ -1471,7 +1537,8 @@ export default function ImprovedAdminDashboard() {
                 <Input
                   id="maxDistance"
                   type="number"
-                  defaultValue={editingZone.maxDistance}
+                  value={editingZone.maxDistance}
+                  onChange={(e) => setEditingZone({...editingZone, maxDistance: e.target.value})}
                   className="mt-1"
                 />
               </div>
@@ -1480,7 +1547,9 @@ export default function ImprovedAdminDashboard() {
                 <Input
                   id="baseFee"
                   type="number"
-                  defaultValue={editingZone.baseFee}
+                  step="0.01"
+                  value={editingZone.baseFee}
+                  onChange={(e) => setEditingZone({...editingZone, baseFee: e.target.value})}
                   className="mt-1"
                 />
               </div>
@@ -1489,7 +1558,9 @@ export default function ImprovedAdminDashboard() {
                 <Input
                   id="perKmRate"
                   type="number"
-                  defaultValue={editingZone.perKmRate}
+                  step="0.01"
+                  value={editingZone.perKmRate}
+                  onChange={(e) => setEditingZone({...editingZone, perKmRate: e.target.value})}
                   className="mt-1"
                 />
               </div>
@@ -1498,11 +1569,128 @@ export default function ImprovedAdminDashboard() {
                 <Switch
                   id="isActive"
                   checked={editingZone.isActive}
+                  onCheckedChange={(checked) => setEditingZone({...editingZone, isActive: checked})}
                   className="data-[state=checked]:bg-green-600"
                 />
               </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setShowEditZoneDialog(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => {
+                    const formData = new FormData();
+                    const inputs = document.querySelectorAll('#name, #minDistance, #maxDistance, #baseFee, #perKmRate');
+                    const data: any = {};
+                    
+                    inputs.forEach((input: any) => {
+                      if (input.type === 'number') {
+                        data[input.id] = parseFloat(input.value) || 0;
+                      } else {
+                        data[input.id] = input.value;
+                      }
+                    });
+                    
+                    data.isActive = editingZone.isActive;
+                    
+                    updateZoneMutation.mutate({ id: editingZone.id, data });
+                  }}
+                  disabled={updateZoneMutation.isPending}
+                >
+                  {updateZoneMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Delivery Zone Dialog */}
+      <Dialog open={showCreateZone} onOpenChange={setShowCreateZone}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Delivery Zone</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-name">Name</Label>
+              <Input
+                id="new-name"
+                value={newZone.name}
+                onChange={(e) => setNewZone({...newZone, name: e.target.value})}
+                className="mt-1"
+                placeholder="e.g., Inner City"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-minDistance">Min Distance (km)</Label>
+              <Input
+                id="new-minDistance"
+                type="number"
+                step="0.01"
+                value={newZone.minDistance}
+                onChange={(e) => setNewZone({...newZone, minDistance: e.target.value})}
+                className="mt-1"
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-maxDistance">Max Distance (km)</Label>
+              <Input
+                id="new-maxDistance"
+                type="number"
+                step="0.01"
+                value={newZone.maxDistance}
+                onChange={(e) => setNewZone({...newZone, maxDistance: e.target.value})}
+                className="mt-1"
+                placeholder="5"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-baseFee">Base Fee</Label>
+              <Input
+                id="new-baseFee"
+                type="number"
+                step="0.01"
+                value={newZone.baseFee}
+                onChange={(e) => setNewZone({...newZone, baseFee: e.target.value})}
+                className="mt-1"
+                placeholder="30.00"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-perKmRate">Per KM Rate</Label>
+              <Input
+                id="new-perKmRate"
+                type="number"
+                step="0.01"
+                value={newZone.perKmRate}
+                onChange={(e) => setNewZone({...newZone, perKmRate: e.target.value})}
+                className="mt-1"
+                placeholder="5.00"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="new-isActive">Active</Label>
+              <Switch
+                id="new-isActive"
+                checked={newZone.isActive}
+                onCheckedChange={(checked) => setNewZone({...newZone, isActive: checked})}
+                className="data-[state=checked]:bg-green-600"
+              />
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setShowCreateZone(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => createZoneMutation.mutate(newZone)}
+                disabled={createZoneMutation.isPending}
+              >
+                {createZoneMutation.isPending ? "Creating..." : "Create Zone"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
