@@ -1799,6 +1799,163 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Admin authentication methods
+  // Admin profile management methods
+  async getAdminProfile(adminId: number): Promise<any> {
+    try {
+      const admin = await db.select({
+        id: adminUsers.id,
+        email: adminUsers.email,
+        fullName: adminUsers.fullName,
+        role: adminUsers.role,
+        createdAt: adminUsers.createdAt
+      }).from(adminUsers).where(eq(adminUsers.id, adminId)).limit(1);
+
+      return admin[0] || null;
+    } catch (error) {
+      console.error('Error fetching admin profile:', error);
+      return null;
+    }
+  }
+
+  async updateAdminProfile(adminId: number, updates: any): Promise<any> {
+    try {
+      const updateData: any = {};
+      
+      if (updates.fullName) updateData.fullName = updates.fullName;
+      if (updates.email) updateData.email = updates.email;
+      if (updates.password) updateData.password = updates.password;
+
+      const updatedAdmin = await db.update(adminUsers)
+        .set(updateData)
+        .where(eq(adminUsers.id, adminId))
+        .returning({
+          id: adminUsers.id,
+          email: adminUsers.email,
+          fullName: adminUsers.fullName,
+          role: adminUsers.role
+        });
+
+      return updatedAdmin[0] || null;
+    } catch (error) {
+      console.error('Error updating admin profile:', error);
+      return null;
+    }
+  }
+
+  async verifyAdminPassword(adminId: number, password: string): Promise<boolean> {
+    try {
+      const admin = await db.select()
+        .from(adminUsers)
+        .where(eq(adminUsers.id, adminId))
+        .limit(1);
+
+      if (!admin[0]) return false;
+
+      // Simple password comparison (in production, use bcrypt)
+      return admin[0].password === password;
+    } catch (error) {
+      console.error('Error verifying admin password:', error);
+      return false;
+    }
+  }
+
+  async changeAdminPassword(adminId: number, currentPassword: string, newPassword: string): Promise<boolean> {
+    try {
+      const isValid = await this.verifyAdminPassword(adminId, currentPassword);
+      if (!isValid) return false;
+
+      await db.update(adminUsers)
+        .set({ password: newPassword })
+        .where(eq(adminUsers.id, adminId));
+
+      return true;
+    } catch (error) {
+      console.error('Error changing admin password:', error);
+      return false;
+    }
+  }
+
+  // Delivery zone management methods
+  async getAllDeliveryZones(): Promise<any[]> {
+    try {
+      // Return mock data for now - in production this would query the delivery_zones table
+      return [
+        {
+          id: 1,
+          name: "Inner City",
+          minDistance: "0",
+          maxDistance: "5",
+          baseFee: "30.00",
+          perKmRate: "5.00",
+          isActive: true,
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 2,
+          name: "Suburban",
+          minDistance: "5.01",
+          maxDistance: "15",
+          baseFee: "50.00",
+          perKmRate: "8.00",
+          isActive: true,
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 3,
+          name: "Rural",
+          minDistance: "15.01",
+          maxDistance: "30",
+          baseFee: "80.00",
+          perKmRate: "12.00",
+          isActive: true,
+          createdAt: new Date().toISOString()
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching delivery zones:', error);
+      return [];
+    }
+  }
+
+  async createDeliveryZone(zoneData: any): Promise<any> {
+    try {
+      // Mock implementation - return success with generated ID
+      const newZone = {
+        id: Math.floor(Math.random() * 1000) + 100,
+        ...zoneData,
+        createdAt: new Date().toISOString()
+      };
+      return newZone;
+    } catch (error) {
+      console.error('Error creating delivery zone:', error);
+      throw error;
+    }
+  }
+
+  async updateDeliveryZone(id: number, updateData: any): Promise<any> {
+    try {
+      // Mock implementation - return updated zone
+      return {
+        id,
+        ...updateData,
+        updatedAt: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error updating delivery zone:', error);
+      return null;
+    }
+  }
+
+  async deleteDeliveryZone(id: number): Promise<boolean> {
+    try {
+      // Mock implementation - return success
+      return true;
+    } catch (error) {
+      console.error('Error deleting delivery zone:', error);
+      return false;
+    }
+  }
+
   async createDefaultAdmin(): Promise<void> {
     try {
       // Check if admin already exists

@@ -455,6 +455,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin product management
+  app.delete("/api/admin/products/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { adminId } = req.body;
+
+      if (!adminId) {
+        return res.status(400).json({ error: "Admin ID is required" });
+      }
+
+      // Log admin action
+      await storage.logAdminAction({
+        adminId,
+        action: "delete_product",
+        resourceType: "product",
+        resourceId: id,
+        description: `Deleted product with ID ${id}`
+      });
+
+      const deleted = await storage.deleteProduct(id);
+
+      if (!deleted) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      res.json({ success: true, message: "Product deleted successfully" });
+    } catch (error) {
+      console.error("Admin product deletion error:", error);
+      res.status(500).json({ error: "Failed to delete product" });
+    }
+  });
+
+  app.post("/api/admin/products/bulk-delete", async (req, res) => {
+    try {
+      const { productIds, adminId } = req.body;
+
+      if (!adminId || !Array.isArray(productIds) || productIds.length === 0) {
+        return res.status(400).json({ error: "Admin ID and product IDs are required" });
+      }
+
+      // Log admin action
+      await storage.logAdminAction({
+        adminId,
+        action: "bulk_delete_products",
+        resourceType: "product",
+        description: `Bulk deleted ${productIds.length} products`
+      });
+
+      const deleteResults = await Promise.all(
+        productIds.map(id => storage.deleteProduct(parseInt(id)))
+      );
+
+      const deletedCount = deleteResults.filter(result => result).length;
+
+      res.json({ 
+        success: true, 
+        message: `Successfully deleted ${deletedCount} out of ${productIds.length} products`,
+        deletedCount
+      });
+    } catch (error) {
+      console.error("Bulk product deletion error:", error);
+      res.status(500).json({ error: "Failed to delete products" });
+    }
+  });
+
   // Fixed products by store endpoint for inventory (must come before parameterized route)
   app.get("/api/products/store", async (req, res) => {
     try {
@@ -1142,6 +1207,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Admin login error:", error);
       res.status(500).json({ error: "Admin login failed" });
+    }
+  });
+
+  // Admin profile management routes
+  app.get("/api/admin/profile/:adminId", async (req, res) => {
+    try {
+      const adminId = parseInt(req.params.adminId);
+      const admin = await storage.getAdminProfile(adminId);
+      
+      if (!admin) {
+        return res.status(404).json({ error: "Admin not found" });
+      }
+
+      res.json(admin);
+    } catch (error) {
+      console.error("Get admin profile error:", error);
+      res.status(500).json({ error: "Failed to fetch admin profile" });
+    }
+  });
+
+  app.put("/api/admin/profile/:adminId", async (req, res) => {
+    try {
+      const adminId = parseInt(req.params.adminId);
+      const { fullName, email, currentPassword, newPassword } = req.body;
+
+      // Verify current password if changing password
+      if (newPassword && currentPassword) {
+        const isValidPassword = await storage.verifyAdminPassword(adminId, currentPassword);
+        if (!isValidPassword) {
+          return res.status(400).json({ error: "Current password is incorrect" });
+        }
+      }
+
+      const updatedAdmin = await storage.updateAdminProfile(adminId, {
+        fullName,
+        email,
+        password: newPassword
+      });
+
+      if (!updatedAdmin) {
+        return res.status(404).json({ error: "Admin not found" });
+      }
+
+      res.json(updatedAdmin);
+    } catch (error) {
+      console.error("Update admin profile error:", error);
+      res.status(500).json({ error: "Failed to update admin profile" });
+    }
+  });
+
+  app.put("/api/admin/change-password", async (req, res) => {
+    try {
+      const { adminId, currentPassword, newPassword } = req.body;
+
+      if (!adminId || !currentPassword || !newPassword) {
+        return res.status(400).json({ error: "Admin ID, current password, and new password are required" });
+      }
+
+      const success = await storage.changeAdminPassword(adminId, currentPassword, newPassword);
+
+      if (!success) {
+        return res.status(400).json({ error: "Current password is incorrect" });
+      }
+
+      res.json({ success: true, message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Change admin password error:", error);
+      res.status(500).json({ error: "Failed to change password" });
     }
   });
 
@@ -3738,69 +3871,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/delivery-zones", async (req, res) => {
     try {
-      // For now, return the same mock data as the public endpoint
-      // This will be replaced with database data once the table is created
-      const mockZones = [
-        {
-          id: 1,
-          name: "Inner City",
-          minDistance: "0",
-          maxDistance: "5",
-          baseFee: "30.00",
-          perKmRate: "5.00",
-          isActive: true
-        },
-        {
-          id: 2,
-          name: "Suburban",
-          minDistance: "5.01",
-          maxDistance: "15",
-          baseFee: "50.00",
-          perKmRate: "8.00",
-          isActive: true
-        },
-        {
-          id: 3,
-          name: "Rural",
-          minDistance: "15.01",
-          maxDistance: "30",
-          baseFee: "80.00",
-          perKmRate: "12.00",
-          isActive: true
-        },
-        {
-          id: 4,
-          name: "Extended Rural",
-          minDistance: "30.01",
-          maxDistance: "100",
-          baseFee: "120.00",
-          perKmRate: "15.00",
-          isActive: true
-        }
-      ];
-      res.json(mockZones);
+      const zones = await storage.getAllDeliveryZones();
+      res.json(zones);
     } catch (error) {
+      console.error("Fetch delivery zones error:", error);
       res.status(500).json({ error: "Failed to fetch delivery zones" });
     }
   });
 
   app.post("/api/admin/delivery-zones", async (req, res) => {
     try {
-      // Simplified delivery zone creation - using basic delivery schema
-      const zoneData = insertDeliverySchema.parse(req.body);
-      res.json({ success: true, message: "Delivery zone management will be available soon" });
+      const { adminId, ...zoneData } = req.body;
+      
+      if (!adminId) {
+        return res.status(400).json({ error: "Admin ID is required" });
+      }
+
+      const zone = await storage.createDeliveryZone(zoneData);
+
+      // Log admin action
+      await storage.logAdminAction({
+        adminId,
+        action: "create_delivery_zone",
+        resourceType: "delivery_zone",
+        resourceId: zone.id,
+        description: `Created delivery zone: ${zone.name}`
+      });
+
+      res.json({ success: true, zone, message: "Delivery zone created successfully" });
     } catch (error) {
-      res.status(400).json({ error: "Invalid delivery zone data" });
+      console.error("Create delivery zone error:", error);
+      res.status(400).json({ error: "Failed to create delivery zone" });
     }
   });
 
   app.put("/api/admin/delivery-zones/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const updateData = req.body;
+      const { adminId, ...updateData } = req.body;
+      
+      if (!adminId) {
+        return res.status(400).json({ error: "Admin ID is required" });
+      }
+
       const zone = await storage.updateDeliveryZone(parseInt(id), updateData);
-      res.json(zone);
+
+      if (!zone) {
+        return res.status(404).json({ error: "Delivery zone not found" });
+      }
+
+      // Log admin action
+      await storage.logAdminAction({
+        adminId,
+        action: "update_delivery_zone",
+        resourceType: "delivery_zone",
+        resourceId: parseInt(id),
+        description: `Updated delivery zone: ${zone.name}`
+      });
+
+      res.json({ success: true, zone, message: "Delivery zone updated successfully" });
     } catch (error) {
+      console.error("Update delivery zone error:", error);
       res.status(500).json({ error: "Failed to update delivery zone" });
     }
   });
@@ -3808,9 +3939,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/admin/delivery-zones/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      await storage.deleteDeliveryZone(parseInt(id));
-      res.json({ success: true });
+      const { adminId } = req.body;
+      
+      if (!adminId) {
+        return res.status(400).json({ error: "Admin ID is required" });
+      }
+
+      const success = await storage.deleteDeliveryZone(parseInt(id));
+
+      if (!success) {
+        return res.status(404).json({ error: "Delivery zone not found" });
+      }
+
+      // Log admin action
+      await storage.logAdminAction({
+        adminId,
+        action: "delete_delivery_zone",
+        resourceType: "delivery_zone",
+        resourceId: parseInt(id),
+        description: `Deleted delivery zone with ID ${id}`
+      });
+
+      res.json({ success: true, message: "Delivery zone deleted successfully" });
     } catch (error) {
+      console.error("Delete delivery zone error:", error);
       res.status(500).json({ error: "Failed to delete delivery zone" });
     }
   });

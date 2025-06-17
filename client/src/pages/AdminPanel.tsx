@@ -17,7 +17,12 @@ import {
   Edit,
   Trash2,
   Save,
-  Truck
+  Truck,
+  Settings,
+  Key,
+  User,
+  Package,
+  MoreHorizontal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +57,16 @@ export default function AdminPanel() {
     isActive: true
   });
   const [activeTab, setActiveTab] = useState("pending");
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [profileData, setProfileData] = useState({
+    fullName: "",
+    email: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
 
   useEffect(() => {
     const storedAdmin = localStorage.getItem("adminUser");
@@ -80,6 +95,16 @@ export default function AdminPanel() {
   const { data: deliveryPartners = [], isLoading: partnersLoading } = useQuery({
     queryKey: ["/api/delivery-partners"],
     enabled: !!adminUser,
+  });
+
+  const { data: allProducts = [], isLoading: productsLoading } = useQuery({
+    queryKey: ["/api/products"],
+    enabled: !!adminUser,
+  });
+
+  const { data: adminProfile } = useQuery({
+    queryKey: ["/api/admin/profile", adminUser?.id],
+    enabled: !!adminUser?.id,
   });
 
   const approveMutation = useMutation({
@@ -139,7 +164,7 @@ export default function AdminPanel() {
       return await apiRequest("/api/admin/delivery-zones", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(zoneData),
+        body: JSON.stringify({ ...zoneData, adminId: adminUser.id }),
       });
     },
     onSuccess: () => {
@@ -172,7 +197,7 @@ export default function AdminPanel() {
       return await apiRequest(`/api/admin/delivery-zones/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, adminId: adminUser.id }),
       });
     },
     onSuccess: () => {
@@ -196,6 +221,8 @@ export default function AdminPanel() {
     mutationFn: async (id: number) => {
       return await apiRequest(`/api/admin/delivery-zones/${id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser.id }),
       });
     },
     onSuccess: () => {
@@ -262,6 +289,118 @@ export default function AdminPanel() {
     },
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest(`/api/admin/profile/${adminUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/profile", adminUser.id] });
+      setShowProfileDialog(false);
+      setProfileData({
+        fullName: "",
+        email: "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      });
+      toast({
+        title: "Profile updated",
+        description: "Admin profile has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Update failed",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("/api/admin/change-password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser.id, ...data }),
+      });
+    },
+    onSuccess: () => {
+      setShowPasswordDialog(false);
+      setProfileData({
+        fullName: "",
+        email: "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      });
+      toast({
+        title: "Password changed",
+        description: "Admin password has been changed successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Password change failed",
+        description: "Failed to change password. Please check your current password.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteProductMutation = useMutation({
+    mutationFn: async (productId: number) => {
+      return await apiRequest(`/api/admin/products/${productId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser.id }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({
+        title: "Product deleted",
+        description: "Product has been deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Deletion failed",
+        description: "Failed to delete product. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkDeleteProductsMutation = useMutation({
+    mutationFn: async (productIds: number[]) => {
+      return await apiRequest("/api/admin/products/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productIds, adminId: adminUser.id }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      setSelectedProducts([]);
+      toast({
+        title: "Products deleted",
+        description: "Selected products have been deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Bulk deletion failed",
+        description: "Failed to delete selected products. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogout = () => {
     localStorage.removeItem("adminUser");
     setLocation("/admin/login");
@@ -313,6 +452,131 @@ export default function AdminPanel() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, {adminUser.fullName}</span>
+              
+              <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Admin Profile Settings</DialogTitle>
+                    <DialogDescription>
+                      Update your admin profile information
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="admin-name" className="text-right">Full Name</Label>
+                      <Input
+                        id="admin-name"
+                        value={profileData.fullName || adminProfile?.fullName || ""}
+                        onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="admin-email" className="text-right">Email</Label>
+                      <Input
+                        id="admin-email"
+                        type="email"
+                        value={profileData.email || adminProfile?.email || ""}
+                        onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                        className="col-span-3"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowProfileDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={() => updateProfileMutation.mutate(profileData)}
+                      disabled={updateProfileMutation.isPending}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Update Profile
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Key className="h-4 w-4 mr-2" />
+                    Change Password
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Change Admin Password</DialogTitle>
+                    <DialogDescription>
+                      Enter your current password and choose a new one
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="current-password" className="text-right">Current Password</Label>
+                      <Input
+                        id="current-password"
+                        type="password"
+                        value={profileData.currentPassword}
+                        onChange={(e) => setProfileData({ ...profileData, currentPassword: e.target.value })}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="new-password" className="text-right">New Password</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        value={profileData.newPassword}
+                        onChange={(e) => setProfileData({ ...profileData, newPassword: e.target.value })}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="confirm-password" className="text-right">Confirm Password</Label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        value={profileData.confirmPassword}
+                        onChange={(e) => setProfileData({ ...profileData, confirmPassword: e.target.value })}
+                        className="col-span-3"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        if (profileData.newPassword !== profileData.confirmPassword) {
+                          toast({
+                            title: "Password mismatch",
+                            description: "New password and confirm password don't match.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        changePasswordMutation.mutate({
+                          currentPassword: profileData.currentPassword,
+                          newPassword: profileData.newPassword
+                        });
+                      }}
+                      disabled={changePasswordMutation.isPending || !profileData.currentPassword || !profileData.newPassword}
+                    >
+                      <Key className="h-4 w-4 mr-2" />
+                      Change Password
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               <Button variant="outline" onClick={handleLogout}>
                 Logout
               </Button>
@@ -445,6 +709,21 @@ export default function AdminPanel() {
                 </button>
                 
                 <button
+                  onClick={() => setActiveTab("products")}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === "products" 
+                      ? "bg-orange-100 text-orange-700 border-l-4 border-orange-700" 
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <Package className="h-4 w-4" />
+                  Products
+                  <Badge variant="outline" className="ml-auto">
+                    {allProducts.length}
+                  </Badge>
+                </button>
+                
+                <button
                   onClick={() => setActiveTab("delivery-zones")}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     activeTab === "delivery-zones" 
@@ -470,6 +749,7 @@ export default function AdminPanel() {
                   <TabsTrigger value="pending">Pending Approvals</TabsTrigger>
                   <TabsTrigger value="all">All Users</TabsTrigger>
                   <TabsTrigger value="delivery-partners">Delivery Partners</TabsTrigger>
+                  <TabsTrigger value="products">Products</TabsTrigger>
                   <TabsTrigger value="delivery-zones">Delivery Zones</TabsTrigger>
                 </TabsList>
               </div>
@@ -778,6 +1058,168 @@ export default function AdminPanel() {
                       ))}
                     </TableBody>
                   </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="products">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-6 w-6 text-orange-600" />
+                      Product Management
+                    </CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Manage all products across the platform
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    {selectedProducts.length > 0 && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => bulkDeleteProductsMutation.mutate(selectedProducts)}
+                        disabled={bulkDeleteProductsMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Selected ({selectedProducts.length})
+                      </Button>
+                    )}
+                    <Badge variant="outline">
+                      {allProducts.length} Total Products
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {productsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p>Loading products...</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">
+                          <input
+                            type="checkbox"
+                            checked={selectedProducts.length === allProducts.length && allProducts.length > 0}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedProducts(allProducts.map((p: any) => p.id));
+                              } else {
+                                setSelectedProducts([]);
+                              }
+                            }}
+                            className="rounded"
+                          />
+                        </TableHead>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Store</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Stock</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(allProducts as any[]).map((product) => (
+                        <TableRow key={product.id}>
+                          <TableCell>
+                            <input
+                              type="checkbox"
+                              checked={selectedProducts.includes(product.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedProducts([...selectedProducts, product.id]);
+                                } else {
+                                  setSelectedProducts(selectedProducts.filter(id => id !== product.id));
+                                }
+                              }}
+                              className="rounded"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              {product.imageUrl && (
+                                <img
+                                  src={product.imageUrl}
+                                  alt={product.name}
+                                  className="w-10 h-10 rounded object-cover"
+                                />
+                              )}
+                              <div>
+                                <p className="font-medium">{product.name}</p>
+                                <p className="text-sm text-gray-500">ID: {product.id}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{product.storeName || 'Unknown Store'}</TableCell>
+                          <TableCell>{product.category || 'Uncategorized'}</TableCell>
+                          <TableCell>Rs. {product.price}</TableCell>
+                          <TableCell>
+                            <span className={`font-medium ${product.stock < 10 ? 'text-red-600' : 'text-green-600'}`}>
+                              {product.stock}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {product.isActive ? (
+                              <Badge variant="default" className="bg-green-100 text-green-800">
+                                Active
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">Inactive</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button size="sm" variant="outline">
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="destructive">
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Delete
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Delete Product</DialogTitle>
+                                    <DialogDescription>
+                                      Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <DialogFooter>
+                                    <Button variant="outline">Cancel</Button>
+                                    <Button
+                                      variant="destructive"
+                                      onClick={() => deleteProductMutation.mutate(product.id)}
+                                      disabled={deleteProductMutation.isPending}
+                                    >
+                                      Delete Product
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+                
+                {(allProducts as any[]).length === 0 && !productsLoading && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No products found</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
