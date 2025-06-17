@@ -489,11 +489,11 @@ export default function DeliveryPartnerDashboard() {
                     </div>
                   ) : (
                     pendingDeliveries.map((delivery: Delivery) => (
-                      <Card key={delivery.id} className="border border-orange-200 bg-orange-50">
-                        <CardContent className="p-3 sm:p-4">
-                          <div className="flex items-center justify-between mb-2 sm:mb-3">
-                            <div className="font-semibold text-sm sm:text-lg">Order #{delivery.orderId}</div>
-                            <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs sm:text-sm">
+                      <Card key={delivery.id} className="border border-orange-200 bg-orange-50 max-w-full overflow-hidden">
+                        <CardContent className="p-2 sm:p-4">
+                          <div className="flex items-center justify-between mb-2 gap-2">
+                            <div className="font-semibold text-xs sm:text-lg truncate min-w-0">Order #{delivery.orderId}</div>
+                            <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs flex-shrink-0">
                               ₹{delivery.deliveryFee}
                             </Badge>
                           </div>
@@ -501,15 +501,15 @@ export default function DeliveryPartnerDashboard() {
                             <div className="flex items-start gap-2">
                               <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mt-0.5 flex-shrink-0" />
                               <div className="min-w-0 flex-1">
-                                <p className="font-medium">Pickup</p>
-                                <p className="text-gray-600 break-words">{delivery.pickupAddress}</p>
+                                <p className="font-medium text-xs sm:text-sm">Pickup</p>
+                                <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 word-wrap break-words overflow-wrap-anywhere">{delivery.pickupAddress}</p>
                               </div>
                             </div>
                             <div className="flex items-start gap-2">
                               <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 mt-0.5 flex-shrink-0" />
                               <div className="min-w-0 flex-1">
-                                <p className="font-medium">Delivery</p>
-                                <p className="text-gray-600 break-words">{delivery.deliveryAddress}</p>
+                                <p className="font-medium text-xs sm:text-sm">Delivery</p>
+                                <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 word-wrap break-words overflow-wrap-anywhere">{delivery.deliveryAddress}</p>
                               </div>
                             </div>
                           </div>
@@ -517,10 +517,11 @@ export default function DeliveryPartnerDashboard() {
                             <Button
                               onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'picked_up' })}
                               disabled={updateDeliveryStatus.isPending}
-                              className="flex-1 bg-green-600 hover:bg-green-700 text-xs sm:text-sm py-2"
+                              className="flex-1 bg-green-600 hover:bg-green-700 text-xs py-2"
                               size="sm"
                             >
-                              Accept & Pickup
+                              <span className="hidden sm:inline">Accept & Pickup</span>
+                              <span className="sm:hidden">Accept</span>
                             </Button>
                             <Button variant="outline" size="sm" className="sm:w-auto">
                               <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -549,11 +550,11 @@ export default function DeliveryPartnerDashboard() {
                     </div>
                   ) : (
                     activeDeliveries.map((delivery: Delivery) => (
-                      <Card key={delivery.id} className="border border-blue-200 bg-blue-50">
-                        <CardContent className="p-3 sm:p-4">
-                          <div className="flex items-center justify-between mb-2 sm:mb-3">
-                            <div className="font-semibold text-sm sm:text-lg">Order #{delivery.orderId}</div>
-                            <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs sm:text-sm">
+                      <Card key={delivery.id} className="border border-blue-200 bg-blue-50 max-w-full overflow-hidden">
+                        <CardContent className="p-2 sm:p-4">
+                          <div className="flex items-center justify-between mb-2 gap-2">
+                            <div className="font-semibold text-xs sm:text-lg truncate min-w-0">Order #{delivery.orderId}</div>
+                            <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs flex-shrink-0">
                               In Progress
                             </Badge>
                           </div>
@@ -561,8 +562,8 @@ export default function DeliveryPartnerDashboard() {
                             <div className="flex items-start gap-2">
                               <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 mt-0.5 flex-shrink-0" />
                               <div className="min-w-0 flex-1">
-                                <p className="font-medium">Delivery Address</p>
-                                <p className="text-gray-600 break-words">{delivery.deliveryAddress}</p>
+                                <p className="font-medium text-xs sm:text-sm">Delivery Address</p>
+                                <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 word-wrap break-words overflow-wrap-anywhere">{delivery.deliveryAddress}</p>
                               </div>
                             </div>
                           </div>
@@ -570,19 +571,21 @@ export default function DeliveryPartnerDashboard() {
                             <Button
                               variant="outline"
                               onClick={() => window.open(`/delivery-map/${delivery.id}`, '_blank')}
-                              className="flex-1 text-xs sm:text-sm py-2"
+                              className="flex-1 text-xs py-2"
                               size="sm"
                             >
-                              <Navigation className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                              Navigate
+                              <Navigation className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              <span className="hidden sm:inline">Navigate</span>
+                              <span className="sm:hidden">Nav</span>
                             </Button>
                             <Button
                               onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'delivered' })}
                               disabled={updateDeliveryStatus.isPending}
-                              className="flex-1 bg-green-600 hover:bg-green-700 text-xs sm:text-sm py-2"
+                              className="flex-1 bg-green-600 hover:bg-green-700 text-xs py-2"
                               size="sm"
                             >
-                              Mark Delivered
+                              <span className="hidden sm:inline">Mark Delivered</span>
+                              <span className="sm:hidden">Delivered</span>
                             </Button>
                           </div>
                         </CardContent>
@@ -608,12 +611,12 @@ export default function DeliveryPartnerDashboard() {
                 ) : (
                   <div className="space-y-3 sm:space-y-4">
                     {completedDeliveries.map((delivery: Delivery) => (
-                      <Card key={delivery.id} className="border border-green-200 bg-green-50">
-                        <CardContent className="p-3 sm:p-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-                            <div className="flex-1">
-                              <div className="font-semibold text-sm sm:text-lg">Order #{delivery.orderId}</div>
-                              <p className="text-xs sm:text-sm text-gray-600">
+                      <Card key={delivery.id} className="border border-green-200 bg-green-50 max-w-full overflow-hidden">
+                        <CardContent className="p-2 sm:p-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-xs sm:text-lg truncate">Order #{delivery.orderId}</div>
+                              <p className="text-xs sm:text-sm text-gray-600 truncate">
                                 Delivered on {new Date(delivery.deliveredAt!).toLocaleDateString()}
                               </p>
                               {delivery.customerRating && (
@@ -623,8 +626,8 @@ export default function DeliveryPartnerDashboard() {
                                 </div>
                               )}
                             </div>
-                            <div className="text-left sm:text-right">
-                              <div className="font-bold text-green-600 text-base sm:text-lg">₹{delivery.deliveryFee}</div>
+                            <div className="text-left sm:text-right flex-shrink-0">
+                              <div className="font-bold text-green-600 text-sm sm:text-lg">₹{delivery.deliveryFee}</div>
                               <Badge variant="outline" className="border-green-300 text-green-700 text-xs">
                                 Completed
                               </Badge>
