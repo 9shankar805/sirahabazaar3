@@ -1828,7 +1828,7 @@ export default function ShopkeeperDashboard() {
                             </p>
                           </CardHeader>
                           <CardContent className="p-0">
-                            <DeliveryTrackingMap
+                            <LeafletDeliveryMap
                               deliveryId={selectedDeliveryId}
                               userType="shopkeeper"
                             />

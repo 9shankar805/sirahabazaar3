@@ -42,7 +42,7 @@ import { queryClient } from "@/lib/queryClient";
 import ImageUpload from "@/components/ImageUpload";
 import { LocationPicker } from "@/components/LocationPicker";
 import type { Product, Order, OrderItem, Store, Category } from "@shared/schema";
-import { DeliveryTrackingMap } from "@/components/tracking/DeliveryTrackingMap";
+import { LeafletDeliveryMap } from "@/components/tracking/LeafletDeliveryMap";
 import { LocationTracker } from "@/components/LocationTracker";
 
 const productSchema = z.object({

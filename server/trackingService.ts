@@ -1,7 +1,7 @@
 import { db } from './db';
 import { deliveryLocationTracking, deliveryRoutes, deliveryStatusHistory, deliveries, orders, orderItems, users, stores } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
-import { hereMapService } from './hereMapService';
+import { leafletMapService } from './services/leafletMapService';
 import { NotificationService } from './notificationService';
 
 export interface LocationUpdate {
@@ -95,12 +95,12 @@ export class TrackingService {
 
       const customerLocation = order[0];
 
-      // Calculate route using HERE Maps
-      const routeInfo = await hereMapService.calculateRoute(
-        { lat: Number(store.latitude), lng: Number(store.longitude) },
-        { lat: Number(customerLocation.latitude), lng: Number(customerLocation.longitude) },
-        'bicycle'
-      );
+      // Calculate route using Leaflet Maps service
+      const routeInfo = await leafletMapService.calculateRoute({
+        origin: { lat: Number(store.latitude), lng: Number(store.longitude) },
+        destination: { lat: Number(customerLocation.latitude), lng: Number(customerLocation.longitude) },
+        mode: 'cycling'
+      });
 
       // Store route information
       await db.insert(deliveryRoutes).values({
@@ -112,7 +112,7 @@ export class TrackingService {
         routeGeometry: routeInfo.polyline,
         distanceMeters: routeInfo.distance,
         estimatedDurationSeconds: routeInfo.duration,
-        hereRouteId: routeInfo.routeId
+        hereRouteId: null // Not using HERE Maps anymore
       });
 
       // Add initial status history
