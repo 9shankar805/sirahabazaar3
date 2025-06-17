@@ -1,13 +1,20 @@
-import { Link, useLocation } from "wouter";
 import { Home, Package, Store, User, MapPin, ShoppingCart, Tag, UtensilsCrossed, ChefHat } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useAppMode } from "@/hooks/useAppMode";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/hooks/use-user";
 
 export default function BottomNavbar() {
   const [location] = useLocation();
   const { user } = useAuth();
   const { mode } = useAppMode();
+  const { user: currentUser } = useUser();
+
+  // Hide bottom navbar for delivery partners
+  if (currentUser?.role === "delivery_partner") {
+    return null;
+  }
 
   // Role-based navigation items
   const sellerNavItems = [
