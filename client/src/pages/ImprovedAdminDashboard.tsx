@@ -41,6 +41,8 @@ export default function ImprovedAdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showStoreDialog, setShowStoreDialog] = useState(false);
   const [selectedStore, setSelectedStore] = useState<any>(null);
+  const [editingZone, setEditingZone] = useState<any>(null);
+  const [showEditZoneDialog, setShowEditZoneDialog] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("adminUser");
@@ -1108,7 +1110,14 @@ export default function ImprovedAdminDashboard() {
                                       checked={zone.isActive} 
                                       className="data-[state=checked]:bg-green-600"
                                     />
-                                    <Button size="sm" variant="outline">
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      onClick={() => {
+                                        setEditingZone(zone);
+                                        setShowEditZoneDialog(true);
+                                      }}
+                                    >
                                       <Edit className="h-4 w-4" />
                                     </Button>
                                     <Button size="sm" variant="destructive">
@@ -1358,9 +1367,9 @@ export default function ImprovedAdminDashboard() {
                   </div>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-600">User ID</Label>
@@ -1407,9 +1416,9 @@ export default function ImprovedAdminDashboard() {
                   </div>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Store ID</Label>
@@ -1427,6 +1436,70 @@ export default function ImprovedAdminDashboard() {
                   <Label className="text-sm font-medium text-gray-600">Products</Label>
                   <p className="mt-1">{selectedStore.productCount || 0}</p>
                 </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+       {/* Edit Delivery Zone Dialog */}
+       <Dialog open={showEditZoneDialog} onOpenChange={setShowEditZoneDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Delivery Zone</DialogTitle>
+          </DialogHeader>
+          {editingZone && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  defaultValue={editingZone.name}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="minDistance">Min Distance (km)</Label>
+                <Input
+                  id="minDistance"
+                  type="number"
+                  defaultValue={editingZone.minDistance}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="maxDistance">Max Distance (km)</Label>
+                <Input
+                  id="maxDistance"
+                  type="number"
+                  defaultValue={editingZone.maxDistance}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="baseFee">Base Fee</Label>
+                <Input
+                  id="baseFee"
+                  type="number"
+                  defaultValue={editingZone.baseFee}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="perKmRate">Per KM Rate</Label>
+                <Input
+                  id="perKmRate"
+                  type="number"
+                  defaultValue={editingZone.perKmRate}
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="isActive">Active</Label>
+                <Switch
+                  id="isActive"
+                  checked={editingZone.isActive}
+                  className="data-[state=checked]:bg-green-600"
+                />
               </div>
             </div>
           )}
