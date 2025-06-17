@@ -201,17 +201,17 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
 
   if (notifications.length === 0) {
     return (
-      <Card className="shadow-lg border-0 h-full">
-        <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
-            <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
-            <span className="text-sm sm:text-base">New Assignments ({notifications.length})</span>
+      <Card className="shadow-lg border-0 h-full max-w-full overflow-hidden">
+        <CardHeader className="px-2 sm:px-6 py-2 sm:py-4">
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-xl">
+            <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500 flex-shrink-0" />
+            <span className="text-xs sm:text-base truncate">New Assignments ({notifications.length})</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 sm:space-y-4 max-h-64 sm:max-h-96 overflow-y-auto px-3 sm:px-6 pb-3 sm:pb-6">
-          <div className="text-center py-6 sm:py-8">
-            <Bell className="h-10 w-10 sm:h-12 sm:w-12 text-gray-300 mx-auto mb-3 sm:mb-4" />
-            <p className="text-sm sm:text-base text-gray-500">No new assignments</p>
+        <CardContent className="space-y-2 sm:space-y-4 max-h-64 sm:max-h-96 overflow-y-auto px-2 sm:px-6 pb-2 sm:pb-6">
+          <div className="text-center py-4 sm:py-8">
+            <Bell className="h-8 w-8 sm:h-12 sm:w-12 text-gray-300 mx-auto mb-2 sm:mb-4" />
+            <p className="text-xs sm:text-base text-gray-500">No new assignments</p>
           </div>
         </CardContent>
       </Card>

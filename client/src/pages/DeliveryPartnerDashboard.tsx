@@ -600,8 +600,7 @@ export default function DeliveryPartnerDashboard() {
                 <CardTitle className="text-base sm:text-lg">Delivery History</CardTitle>
                 <CardDescription className="text-sm">Your completed deliveries</CardDescription>
               </CardHeader>
-              <CardContent className="px-3 sm:px-6">
-                {completedDeliveries.length === 0 ? (
+              <CardContent className="px-3 sm:px-6                {completedDeliveries.length === 0 ? (
                   <div className="text-center py-8 sm:py-12">
                     <Calendar className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
                     <p className="text-base sm:text-lg text-gray-500">No completed deliveries yet</p>
