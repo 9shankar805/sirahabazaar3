@@ -234,13 +234,7 @@ export default function Navbar() {
                         </DropdownMenuItem>
                       </>
                     )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin" className="cursor-pointer">
-                        <Shield className="h-4 w-4 mr-2" />
-                        Admin Panel
-                      </Link>
-                    </DropdownMenuItem>
+                    
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <Button 
@@ -313,10 +307,7 @@ export default function Navbar() {
                   </Link>
                 )}
 
-                {/* Admin Panel - for all users who might have admin access */}
-                <Link href="/admin" className="hover:text-accent transition-colors p-1">
-                  <Shield className="h-5 w-5" />
-                </Link>
+                
 
                 {/* Logout */}
                 <Button 
