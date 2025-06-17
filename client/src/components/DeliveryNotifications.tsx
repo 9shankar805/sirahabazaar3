@@ -226,118 +226,135 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
           <span className="text-sm sm:text-base">New Assignments ({notifications.length})</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 sm:space-y-4 max-h-64 sm:max-h-96 overflow-y-auto px-3 sm:px-6 pb-3 sm:pb-6">
-        {notifications.map((notification: DeliveryNotification) => {
-          let notificationData: NotificationData;
-          try {
-            notificationData = JSON.parse(notification.notification_data);
-          } catch {
-            notificationData = {
-              orderId: notification.order_id,
-              customerName: notification.customername,
-              customerPhone: '9805916598', // Default phone for demo
-              totalAmount: notification.totalamount,
-              pickupAddress: notification.storename || 'Store Address',
-              deliveryAddress: notification.shippingaddress,
-              estimatedDistance: Math.floor(Math.random() * 10) + 2, // 2-12 km
-              estimatedEarnings: Math.floor(parseFloat(notification.totalamount) * 0.15) + 25, // 15% + base fee
-              latitude: '0',
-              longitude: '0',
-              pickupGoogleMapsLink: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(notification.storename || 'Store Address')}`,
-              deliveryGoogleMapsLink: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(notification.shippingaddress)}`,
-              deliveryFee: parseFloat(notification.totalamount) * 0.1,
-              urgent: false,
-              storeDetails: {name: notification.storename || 'Store Name'}
-            };
-          }
+      <CardContent className="space-y-2 sm:space-y-4 max-h-64 sm:max-h-96 overflow-y-auto px-2 sm:px-6 pb-2 sm:pb-6">
+          {notifications.map((notification: DeliveryNotification) => {
+            let notificationData: NotificationData;
+            try {
+              notificationData = JSON.parse(notification.notification_data);
+            } catch (error) {
+              console.error('Failed to parse notification data:', error);
+              return null;
+            }
 
-          const isAccepting = acceptingOrder === notification.order_id;
+            return (
+              <Card key={notification.id} className="border border-orange-200 bg-orange-50 shadow-sm hover:shadow-md transition-shadow duration-200 w-full overflow-hidden">
+                <CardContent className="p-2 sm:p-4">
+                  <div className="flex flex-col gap-2 w-full">
+                    <div className="flex items-start justify-between gap-2 w-full">
+                      <div className="min-w-0 flex-1 w-full">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 flex-shrink-0">
+                            New
+                          </Badge>
+                          <span className="text-xs text-gray-500 flex-shrink-0">
+                            {new Date(notification.created_at).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true
+                            })}
+                          </span>
+                        </div>
+                        <h3 className="font-semibold text-sm sm:text-base text-gray-900 mb-1 break-words">
+                          New Delivery Assignment
+                        </h3>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-2 break-words">
+                          You have been assigned Order #{notification.order_id}
+                        </p>
+                      </div>
+                    </div>
 
-          const isUrgent = notificationData.urgent || notificationData.estimatedDistance > 8;
+                    <div className="bg-white rounded-lg p-2 sm:p-3 border border-gray-200 w-full overflow-hidden">
+                      <div className="space-y-2 w-full">
+                        <div className="flex items-start gap-2 w-full">
+                          <Package className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                          <div className="min-w-0 flex-1 w-full">
+                            <p className="font-medium text-xs sm:text-sm text-gray-900 break-words">
+                              Store: {notificationData.storeDetails?.name || 'SS Book Store'}
+                            </p>
+                            <p className="text-xs text-gray-600 break-words hyphens-auto" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                              {notificationData.pickupAddress}
+                            </p>
+                          </div>
+                        </div>
 
-          return (
-            <Card key={notification.id} className="border border-orange-200 bg-orange-50">
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-3 gap-2">
-                  <div className="font-semibold text-sm sm:text-lg">
-                    Order #{notification.order_id}
-                  </div>
-                  <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs w-fit">
-                    New Assignment
-                  </Badge>
-                </div>
+                        <div className="flex items-start gap-2 w-full">
+                          <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                          <div className="min-w-0 flex-1 w-full">
+                            <p className="font-medium text-xs sm:text-sm text-gray-900">Delivery Address</p>
+                            <p className="text-xs text-gray-600 break-words hyphens-auto" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                              {notificationData.deliveryAddress}
+                            </p>
+                          </div>
+                        </div>
 
-                <div className="space-y-2 text-xs sm:text-sm">
-                  <div className="flex items-center gap-2">
-                    <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 flex-shrink-0" />
-                    <span className="font-medium">Customer:</span>
-                    <span className="text-gray-700 truncate flex-1">{notification.customername}</span>
-                  </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-1 sm:pt-2 border-t border-gray-100 gap-2 sm:gap-0 w-full">
+                          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
+                              <span className="font-bold text-green-600 text-xs sm:text-sm">₹{notificationData.deliveryFee || '35'}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
+                              <span className="text-xs sm:text-sm text-gray-600">{notificationData.estimatedDistance} km</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
-                    <span className="font-medium">Total:</span>
-                    <span className="text-gray-700 font-semibold">₹{notification.totalamount}</span>
-                  </div>
+                    <div className="flex flex-col sm:flex-row gap-2 pt-2 w-full">
+                      <Button
+                        onClick={() => handleAcceptOrder(notification.order_id)}
+                        disabled={acceptingOrder === notification.order_id}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm py-2 sm:py-2.5 min-w-0"
+                        size="sm"
+                      >
+                        {acceptingOrder === notification.order_id ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span className="hidden sm:inline">Accepting...</span>
+                            <span className="sm:hidden">...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-1 sm:gap-2">
+                            <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline">Accept Delivery</span>
+                            <span className="sm:hidden">Accept</span>
+                          </div>
+                        )}
+                      </Button>
 
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500 flex-shrink-0" />
-                    <span className="font-medium">Phone:</span>
-                    <span className="text-gray-700">{notificationData.customerPhone}</span>
-                  </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <Button
+                          variant="outline"
+                          onClick={() => window.open(`tel:${notificationData.customerPhone}`, '_self')}
+                          className="px-2 sm:px-3 border-blue-200 text-blue-600 hover:bg-blue-50 flex-shrink-0"
+                          size="sm"
+                          title="Call Customer"
+                        >
+                          <Phone className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
 
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <span className="font-medium block">Delivery:</span>
-                      <p className="text-gray-700 text-[10px] sm:text-xs mt-1 break-words leading-tight">{notification.shippingaddress}</p>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(notificationData.deliveryAddress)}`;
+                            window.open(mapUrl, '_blank');
+                          }}
+                          className="px-2 sm:px-3 border-green-200 text-green-600 hover:bg-green-50 flex-shrink-0"
+                          size="sm"
+                          title="View Map"
+                        >
+                          <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-[10px] sm:text-xs">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-gray-400 flex-shrink-0" />
-                      <span className="text-gray-600">Est: {notificationData.estimatedDistance}km</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3 text-green-400 flex-shrink-0" />
-                      <span className="text-green-600 font-medium">₹{notificationData.estimatedEarnings}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-3 sm:mt-4 flex gap-2">
-                  <Button
-                    onClick={() => handleAcceptOrder(notification.order_id)}
-                    disabled={isAccepting || acceptMutation.isPending}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-xs sm:text-sm py-2 flex items-center justify-center gap-1"
-                    size="sm"
-                  >
-                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">Accept</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="px-2 sm:px-3 flex items-center justify-center"
-                    onClick={() => window.open(`tel:${notificationData.customerPhone || ''}`, '_self')}
-                  >
-                    <Phone className="h-3 w-3 sm:h-4 sm:w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="px-2 sm:px-3 flex items-center justify-center"
-                    onClick={() => window.open(notificationData.deliveryGoogleMapsLink || '', '_blank')}
-                  >
-                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </CardContent>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </CardContent>
     </Card>
   );
 }

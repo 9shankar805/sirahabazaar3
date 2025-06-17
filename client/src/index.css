@@ -291,6 +291,21 @@ body::-webkit-scrollbar {
     overflow-wrap: break-word;
     hyphens: auto;
   }
+
+  /* Force text wrapping in notification components */
+  .notification-card * {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+  }
+
+  /* Ensure addresses don't overflow */
+  .notification-card p,
+  .notification-card span {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
 }
 
 /* Animation for notification banner */
