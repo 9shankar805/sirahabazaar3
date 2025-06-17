@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, Phone, DollarSign, Package, Bell } from "lucide-react";
+import { Clock, MapPin, Phone, DollarSign, Package, Bell, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DeliveryNotification {
@@ -214,16 +214,14 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
             notificationData = {
               orderId: notification.order_id,
               customerName: notification.customername,
-              customerPhone: '',
+              customerPhone: '9805916598', // Default phone for demo
               totalAmount: notification.totalamount,
               pickupAddress: notification.storename || 'Store Address',
               deliveryAddress: notification.shippingaddress,
               estimatedDistance: Math.floor(Math.random() * 10) + 2, // 2-12 km
               estimatedEarnings: Math.floor(parseFloat(notification.totalamount) * 0.15) + 25, // 15% + base fee
               latitude: '0',
-              longitude: '0',
-              orderItems: notification.orderitems || 1,
-              deliveryFee: Math.floor(parseFloat(notification.totalamount) * 0.1) + 30 // 10% + base
+              longitude: '0'
             };
           }
 
@@ -247,40 +245,66 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
                   <div className="flex items-center gap-2">
                     <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 flex-shrink-0" />
                     <span className="font-medium">Customer:</span>
-                    <span className="text-gray-700 truncate">{notification.customername}</span>
+                    <span className="text-gray-700 truncate flex-1">{notification.customername}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
-                    <span className="font-medium">Order Total:</span>
-                    <span className="text-gray-700">₹{notification.totalamount}</span>
+                    <span className="font-medium">Total:</span>
+                    <span className="text-gray-700 font-semibold">₹{notification.totalamount}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500 flex-shrink-0" />
+                    <span className="font-medium">Phone:</span>
+                    <span className="text-gray-700">{notificationData.customerPhone}</span>
                   </div>
 
                   <div className="flex items-start gap-2">
                     <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 mt-0.5 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <span className="font-medium">Delivery Address:</span>
-                      <p className="text-gray-700 text-[10px] sm:text-xs mt-1 break-words">{notification.shippingaddress}</p>
+                      <span className="font-medium block">Delivery:</span>
+                      <p className="text-gray-700 text-[10px] sm:text-xs mt-1 break-words leading-tight">{notification.shippingaddress}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                    <span className="font-medium">Assigned:</span>
-                    <span className="text-gray-700 text-[10px] sm:text-xs">
-                      {new Date(notification.created_at).toLocaleString()}
-                    </span>
+                  <div className="grid grid-cols-2 gap-2 text-[10px] sm:text-xs">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                      <span className="text-gray-600">Est: {notificationData.estimatedDistance}km</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="h-3 w-3 text-green-400 flex-shrink-0" />
+                      <span className="text-green-600 font-medium">₹{notificationData.estimatedEarnings}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-3 sm:mt-4">
+                <div className="mt-3 sm:mt-4 flex gap-2">
                   <Button
-                    onClick={() => acceptAssignment.mutate(notification.id)}
-                    disabled={acceptAssignment.isPending}
-                    className="w-full bg-green-600 hover:bg-green-700 text-xs sm:text-sm py-2"
+                    onClick={() => handleAcceptOrder(notification.order_id)}
+                    disabled={isAccepting || acceptMutation.isPending}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-xs sm:text-sm py-2 flex items-center justify-center gap-1"
                     size="sm"
                   >
-                    Accept Assignment
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Accept</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="px-2 sm:px-3 flex items-center justify-center"
+                    onClick={() => window.open(`tel:${notificationData.customerPhone || ''}`, '_self')}
+                  >
+                    <Phone className="h-3 w-3 sm:h-4 sm:w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="px-2 sm:px-3 flex items-center justify-center"
+                    onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(notification.shippingaddress)}`, '_blank')}
+                  >
+                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </div>
               </CardContent>
