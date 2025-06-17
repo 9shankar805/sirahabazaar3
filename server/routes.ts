@@ -910,31 +910,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
+        // Use the actual delivery fee from the order, not a calculated one
+        const actualDeliveryFee = parseFloat(orderData.deliveryFee || '35');
+        
         // Calculate earnings (delivery fee - platform commission)
         const platformCommission = 0.15; // 15% commission
-        const estimatedEarnings = Math.round(deliveryFee * (1 - platformCommission));
+        const estimatedEarnings = Math.round(actualDeliveryFee * (1 - platformCommission));
+
+        // Get store details for pickup location with Google Maps link
+        let storeDetails = null;
+        let pickupGoogleMapsLink = '';
+        if (orderItems.length > 0) {
+          try {
+            const firstItem = orderItems[0];
+            const store = await storage.getStore(firstItem.storeId);
+            if (store) {
+              storeDetails = store;
+              pickupAddress = `${store.name}, ${store.address || store.location || 'Store Location'}`;
+              // Create Google Maps link for pickup location
+              if (store.latitude && store.longitude) {
+                pickupGoogleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`;
+              } else {
+                pickupGoogleMapsLink = `https://www.google.com/maps/search/${encodeURIComponent(pickupAddress)}`;
+              }
+            }
+          } catch (error) {
+            console.log('Could not get store details for pickup address');
+          }
+        }
+
+        // Create Google Maps link for delivery location
+        let deliveryGoogleMapsLink = '';
+        if (orderData.latitude && orderData.longitude) {
+          deliveryGoogleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${orderData.latitude},${orderData.longitude}`;
+        } else {
+          deliveryGoogleMapsLink = `https://www.google.com/maps/search/${encodeURIComponent(orderData.shippingAddress)}`;
+        }
 
         // Send first-accept-first-serve notifications to all available delivery partners
         for (const partner of availablePartners) {
           await storage.createNotification({
             userId: partner.userId,
             title: "📦 New Delivery Available",
-            message: `Order #${createdOrder.id} from ${orderData.customerName}. Distance: ${actualDistance}km, Earn: ₹${estimatedEarnings}`,
+            message: `Order #${createdOrder.id} from ${orderData.customerName}. Distance: ${actualDistance}km, Fee: ₹${actualDeliveryFee}`,
             type: "delivery_assignment",
             orderId: createdOrder.id,
             isRead: false,
             data: JSON.stringify({
               orderId: createdOrder.id,
               customerName: orderData.customerName,
-              customerPhone: orderData.phone || 'Not provided',
+              customerPhone: orderData.phone || orderData.customerPhone || 'Not provided',
               totalAmount: orderData.totalAmount,
-              deliveryFee: deliveryFee.toFixed(2),
+              deliveryFee: actualDeliveryFee.toFixed(2),
               pickupAddress,
-              deliveryAddress: formattedDeliveryAddress,
+              deliveryAddress: orderData.shippingAddress,
               estimatedDistance: actualDistance,
               estimatedTime: Math.round(30 + (actualDistance * 8)), // 30 min base + 8 min per km
               estimatedEarnings,
-              platformCommission: Math.round(deliveryFee * platformCommission),
+              platformCommission: Math.round(actualDeliveryFee * platformCommission),
               paymentMethod: orderData.paymentMethod,
               specialInstructions: orderData.specialInstructions || null,
               orderItems: orderItems.length,
@@ -942,7 +975,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               canAccept: true,
               urgent: actualDistance > 15 || orderItems.length > 5,
               notificationType: "first_accept_first_serve",
-              createdAt: new Date().toISOString()
+              createdAt: new Date().toISOString(),
+              pickupGoogleMapsLink,
+              deliveryGoogleMapsLink,
+              storeDetails: storeDetails ? {
+                id: storeDetails.id,
+                name: storeDetails.name,
+                address: storeDetails.address,
+                phone: storeDetails.phone,
+                latitude: storeDetails.latitude,
+                longitude: storeDetails.longitude
+              } : null
             })
           });
         }
@@ -3082,7 +3125,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const partnerId = parseInt(req.params.partnerId);
       const deliveries = await storage.getDeliveriesByPartnerId(partnerId);
-      res.json(deliveries);
+      
+      // Enhance deliveries with correct order and store data
+      const enhancedDeliveries = await Promise.all(
+        deliveries.map(async (delivery) => {
+          try {
+            const order = await storage.getOrder(delivery.orderId);
+            if (order) {
+              // Get order items to find store
+              const orderItems = await storage.getOrderItems(delivery.orderId);
+              let storeDetails = null;
+              let pickupAddress = delivery.pickupAddress || 'Store Location';
+              
+              if (orderItems.length > 0) {
+                const store = await storage.getStore(orderItems[0].storeId);
+                if (store) {
+                  storeDetails = store;
+                  pickupAddress = `${store.name}, ${store.address || store.location || 'Store Location'}`;
+                }
+              }
+
+              return {
+                ...delivery,
+                customerName: order.customerName,
+                customerPhone: order.phone || order.customerPhone,
+                totalAmount: order.totalAmount,
+                deliveryFee: order.deliveryFee || delivery.deliveryFee || '35',
+                pickupAddress,
+                deliveryAddress: order.shippingAddress,
+                storeDetails
+              };
+            }
+            return delivery;
+          } catch (error) {
+            console.error('Error enhancing delivery data:', error);
+            return delivery;
+          }
+        })
+      );
+
+      res.json(enhancedDeliveries);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch partner deliveries" });
     }
@@ -3279,20 +3361,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Get order items to count them
                 const orderItems = await storage.getOrderItems(orderId);
                 
-                // Get store details for the first item
-                let storeName = 'Store Location';
+                // Get store details for the first item with proper address
+                let storeDetails = null;
+                let pickupAddress = 'Store Location';
+                let pickupGoogleMapsLink = '';
                 if (orderItems.length > 0) {
                   const store = await storage.getStore(orderItems[0].storeId);
                   if (store) {
-                    storeName = store.name;
+                    storeDetails = store;
+                    pickupAddress = `${store.name}, ${store.address || store.location || 'Store Location'}`;
+                    // Create Google Maps link for pickup
+                    if (store.latitude && store.longitude) {
+                      pickupGoogleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`;
+                    } else {
+                      pickupGoogleMapsLink = `https://www.google.com/maps/search/${encodeURIComponent(pickupAddress)}`;
+                    }
                   }
                 }
 
-                // Calculate realistic distance and earnings
-                const distance = Math.floor(Math.random() * 8) + 3; // 3-10 km
-                const baseEarnings = 30;
-                const distanceEarnings = distance * 8;
-                const totalEarnings = baseEarnings + distanceEarnings;
+                // Create Google Maps link for delivery
+                let deliveryGoogleMapsLink = '';
+                if (order.latitude && order.longitude) {
+                  deliveryGoogleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${order.latitude},${order.longitude}`;
+                } else {
+                  deliveryGoogleMapsLink = `https://www.google.com/maps/search/${encodeURIComponent(order.shippingAddress)}`;
+                }
+
+                // Use actual delivery fee from order
+                const actualDeliveryFee = parseFloat(order.deliveryFee || '35');
+                const estimatedEarnings = Math.round(actualDeliveryFee * 0.85); // 15% commission
 
                 allNotifications.push({
                   id: notification.id,
@@ -3303,22 +3400,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     ...notificationData,
                     orderId,
                     customerName: order.customerName,
-                    customerPhone: order.phone || 'Not provided',
+                    customerPhone: order.phone || order.customerPhone || 'Not provided',
                     totalAmount: order.totalAmount,
-                    pickupAddress: `${storeName}, ${order.shippingAddress.split(',')[0] || 'Store Location'}`,
+                    pickupAddress,
                     deliveryAddress: order.shippingAddress,
-                    estimatedDistance: distance,
-                    estimatedEarnings: totalEarnings,
-                    deliveryFee: Math.floor(parseFloat(order.totalAmount) * 0.12) + 25,
+                    estimatedDistance: notificationData.estimatedDistance || 5,
+                    estimatedEarnings,
+                    deliveryFee: actualDeliveryFee.toFixed(2),
                     orderItems: orderItems.length,
-                    storeName: storeName,
-                    urgent: distance > 8 || orderItems.length > 3
+                    storeName: storeDetails?.name || 'Store',
+                    urgent: false,
+                    pickupGoogleMapsLink,
+                    deliveryGoogleMapsLink,
+                    storeDetails: storeDetails ? {
+                      id: storeDetails.id,
+                      name: storeDetails.name,
+                      address: storeDetails.address,
+                      phone: storeDetails.phone
+                    } : null
                   }),
                   created_at: notification.createdAt,
                   customername: order.customerName,
                   totalamount: order.totalAmount,
                   shippingaddress: order.shippingAddress,
-                  storename: storeName,
+                  storename: storeDetails?.name || 'Store',
                   orderitems: orderItems.length
                 });
               }

@@ -31,6 +31,14 @@ interface NotificationData {
   estimatedEarnings: number;
   latitude: string;
   longitude: string;
+  pickupGoogleMapsLink?: string;
+  deliveryGoogleMapsLink?: string;
+  deliveryFee?: number;
+  urgent?: boolean;
+  storeDetails?: {
+    name: string;
+    phone?: string;
+  };
 }
 
 export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryPartnerId: number }) {
@@ -132,15 +140,15 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
         console.log('Playing notification sound for new delivery orders...');
         const audio = new Audio('/notification.mp3');
         audio.volume = 0.7;
-        
+
         audio.addEventListener('canplaythrough', () => {
           console.log('Delivery notification audio ready');
         });
-        
+
         audio.addEventListener('error', (e) => {
           console.error('Delivery notification audio error:', e);
         });
-        
+
         audio.play().then(() => {
           console.log('Delivery notification sound played successfully');
         }).catch((error) => {
@@ -234,7 +242,12 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
               estimatedDistance: Math.floor(Math.random() * 10) + 2, // 2-12 km
               estimatedEarnings: Math.floor(parseFloat(notification.totalamount) * 0.15) + 25, // 15% + base fee
               latitude: '0',
-              longitude: '0'
+              longitude: '0',
+              pickupGoogleMapsLink: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(notification.storename || 'Store Address')}`,
+              deliveryGoogleMapsLink: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(notification.shippingaddress)}`,
+              deliveryFee: parseFloat(notification.totalamount) * 0.1,
+              urgent: false,
+              storeDetails: {name: notification.storename || 'Store Name'}
             };
           }
 
@@ -315,7 +328,7 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
                     variant="outline"
                     size="sm"
                     className="px-2 sm:px-3 flex items-center justify-center"
-                    onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(notification.shippingaddress)}`, '_blank')}
+                    onClick={() => window.open(notificationData.deliveryGoogleMapsLink || '', '_blank')}
                   >
                     <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>

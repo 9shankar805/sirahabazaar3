@@ -79,6 +79,27 @@ export async function runMigrations() {
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS owner_id INTEGER REFERENCES users(id) NOT NULL DEFAULT 1
     `);
 
+    // Ensure stores have location fields
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS address TEXT
+    `);
+
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS location TEXT
+    `);
+
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS phone TEXT
+    `);
+
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,8)
+    `);
+
+    await db.execute(sql`
+      ALTER TABLE stores ADD COLUMN IF NOT EXISTS longitude DECIMAL(11,8)
+    `);
+
     // Create delivery_partners table with correct schema
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS delivery_partners (
