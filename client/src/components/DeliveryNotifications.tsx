@@ -129,9 +129,22 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
     if (notifications.length > previousCount && previousCount > 0) {
       // Play notification sound
       try {
+        console.log('Playing notification sound for new delivery orders...');
         const audio = new Audio('/notification.mp3');
         audio.volume = 0.7;
-        audio.play().catch(() => {
+        
+        audio.addEventListener('canplaythrough', () => {
+          console.log('Delivery notification audio ready');
+        });
+        
+        audio.addEventListener('error', (e) => {
+          console.error('Delivery notification audio error:', e);
+        });
+        
+        audio.play().then(() => {
+          console.log('Delivery notification sound played successfully');
+        }).catch((error) => {
+          console.log('Could not play delivery notification sound:', error);
           // Fallback to system notification
           if (Notification.permission === 'granted') {
             new Notification('New Delivery Order Available!', {

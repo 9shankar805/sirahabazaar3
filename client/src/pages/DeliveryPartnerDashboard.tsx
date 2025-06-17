@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +10,8 @@ import { useState } from "react";
 import DeliveryNotifications from "@/components/DeliveryNotifications";
 import DeliveryPartnerProfileSetup from "@/components/DeliveryPartnerProfileSetup";
 import DeliveryMap from "@/components/DeliveryMap";
+import NotificationTestButton from "@/components/NotificationTestButton";
+import SoundTestButton from "@/components/SoundTestButton";
 
 interface DeliveryPartner {
   id: number;
@@ -155,6 +156,13 @@ export default function DeliveryPartnerDashboard() {
         description: "Your availability status has been updated.",
       });
     },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update delivery status.",
+        variant: "destructive",
+      });
+    },
   });
 
   if (partnerLoading) {
@@ -290,7 +298,7 @@ export default function DeliveryPartnerDashboard() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow-lg">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
                   <CardTitle className="text-xs sm:text-sm font-medium opacity-90">Total Earnings</CardTitle>
@@ -360,6 +368,8 @@ export default function DeliveryPartnerDashboard() {
                 </div>
               </CardContent>
             </Card>
+             <NotificationTestButton />
+      <SoundTestButton />
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-4 sm:space-y-6">
@@ -430,7 +440,7 @@ export default function DeliveryPartnerDashboard() {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Mobile Responsive Quick Stats */}
                     <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-4 sm:mt-6">
                       <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
@@ -641,7 +651,7 @@ export default function DeliveryPartnerDashboard() {
                   <p className="text-xs sm:text-sm text-gray-500">{currentStats.todayDeliveries} deliveries</p>
                 </CardContent>
               </Card>
-              
+
               <Card className="shadow-lg border-0">
                 <CardHeader className="px-3 sm:px-6">
                   <CardTitle className="text-base sm:text-lg">This Week</CardTitle>
@@ -651,7 +661,7 @@ export default function DeliveryPartnerDashboard() {
                   <p className="text-xs sm:text-sm text-gray-500">Estimated</p>
                 </CardContent>
               </Card>
-              
+
               <Card className="shadow-lg border-0 sm:col-span-2 lg:col-span-1">
                 <CardHeader className="px-3 sm:px-6">
                   <CardTitle className="text-base sm:text-lg">Total Lifetime</CardTitle>
@@ -689,7 +699,7 @@ export default function DeliveryPartnerDashboard() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <h3 className="font-semibold text-base sm:text-lg">Contact & Areas</h3>
                     <div className="space-y-3">

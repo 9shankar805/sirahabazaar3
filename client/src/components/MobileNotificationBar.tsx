@@ -10,9 +10,9 @@ interface MobileNotificationBarProps {
 }
 
 export default function MobileNotificationBar({ className = '' }: MobileNotificationBarProps) {
-  const { notifications, markAsRead, markAllAsRead, previousCount, setPreviousCount } = useNotifications();
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentNotification, setCurrentNotification] = useState(0);
+  const { notifications, markAsRead, markAllAsRead, previousCount, setPreviousCount } = useNotifications();
 
   // Get unread notifications
   const unreadNotifications = useMemo(() => 

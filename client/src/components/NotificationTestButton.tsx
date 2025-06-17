@@ -6,8 +6,34 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function NotificationTestButton() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSoundTesting, setIsSoundTesting] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const handleTestSound = async () => {
+    setIsSoundTesting(true);
+    
+    try {
+      const audio = new Audio('/notification.mp3');
+      audio.volume = 0.8;
+      
+      await audio.play();
+      
+      toast({
+        title: "🔊 Sound Test",
+        description: "Did you hear the notification sound?",
+      });
+    } catch (error) {
+      console.error('Error playing sound:', error);
+      toast({
+        title: "Sound Test Failed",
+        description: "Could not play notification sound. Check if audio is enabled.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSoundTesting(false);
+    }
+  };
 
   const handleTestNotification = async () => {
     if (!user?.id) {
@@ -67,15 +93,25 @@ export default function NotificationTestButton() {
   };
 
   return (
-    <Button
-      onClick={handleTestNotification}
-      disabled={isLoading}
-      variant="outline"
-      size="sm"
-      className="fixed bottom-20 right-4 z-40 md:hidden"
-    >
-      <Bell className="h-4 w-4 mr-2" />
-      {isLoading ? 'Sending...' : 'Test Notification'}
-    </Button>
+    <div className="fixed bottom-20 right-4 z-40 md:hidden flex flex-col gap-2">
+      <Button
+        onClick={handleTestSound}
+        disabled={isSoundTesting}
+        variant="outline"
+        size="sm"
+        className="bg-blue-500 text-white hover:bg-blue-600"
+      >
+        🔊 {isSoundTesting ? 'Playing...' : 'Test Sound'}
+      </Button>
+      <Button
+        onClick={handleTestNotification}
+        disabled={isLoading}
+        variant="outline"
+        size="sm"
+      >
+        <Bell className="h-4 w-4 mr-2" />
+        {isLoading ? 'Sending...' : 'Test Notification'}
+      </Button>
+    </div>
   );
 }
