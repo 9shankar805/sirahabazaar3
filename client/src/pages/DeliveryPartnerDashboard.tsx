@@ -235,40 +235,33 @@ export default function DeliveryPartnerDashboard() {
 
       <div className="container mx-auto p-3 sm:p-4 lg:p-6">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          {/* Mobile Responsive Tabs */}
-          <TabsList className="grid grid-cols-3 sm:grid-cols-6 mb-4 sm:mb-8 bg-white shadow-sm h-auto p-1">
-            <TabsTrigger value="dashboard" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-3">
-              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Dashboard</span>
-              <span className="xs:hidden">Home</span>
+          {/* Mobile Responsive Tabs - Icons Only */}
+          <TabsList className="grid grid-cols-6 mb-4 sm:mb-8 bg-white shadow-sm h-auto p-1">
+            <TabsTrigger value="dashboard" className="flex items-center justify-center py-3 px-2" title="Dashboard">
+              <TrendingUp className="h-5 w-5" />
             </TabsTrigger>
-            <TabsTrigger value="orders" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-3">
-              <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Orders</span>
-              <span className="xs:hidden">New</span>
-              <Badge variant="destructive" className="ml-0 sm:ml-2 px-1.5 py-0.5 text-[10px] sm:text-xs">
-                New
+            <TabsTrigger value="orders" className="flex items-center justify-center py-3 px-2 relative" title="New Orders">
+              <Bell className="h-5 w-5" />
+              <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
+                !
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="deliveries" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-3">
-              <Package className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Active ({pendingDeliveries.length + activeDeliveries.length})</span>
-              <span className="xs:hidden">Active</span>
+            <TabsTrigger value="deliveries" className="flex items-center justify-center py-3 px-2 relative" title="Active Deliveries">
+              <Package className="h-5 w-5" />
+              {(pendingDeliveries.length + activeDeliveries.length) > 0 && (
+                <Badge variant="outline" className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[8px] bg-orange-100 text-orange-800 border-orange-300">
+                  {pendingDeliveries.length + activeDeliveries.length}
+                </Badge>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-3">
-              <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">History</span>
-              <span className="sm:hidden">Past</span>
+            <TabsTrigger value="history" className="flex items-center justify-center py-3 px-2" title="Delivery History">
+              <Calendar className="h-5 w-5" />
             </TabsTrigger>
-            <TabsTrigger value="earnings" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-3">
-              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Earnings</span>
-              <span className="sm:hidden">Money</span>
+            <TabsTrigger value="earnings" className="flex items-center justify-center py-3 px-2" title="Earnings">
+              <DollarSign className="h-5 w-5" />
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-3">
-              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Profile</span>
-              <span className="sm:hidden">Me</span>
+            <TabsTrigger value="profile" className="flex items-center justify-center py-3 px-2" title="Profile">
+              <CheckCircle className="h-5 w-5" />
             </TabsTrigger>
           </TabsList>
 
