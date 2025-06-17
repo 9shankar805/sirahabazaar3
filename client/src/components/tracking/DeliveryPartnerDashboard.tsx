@@ -17,6 +17,14 @@ interface Delivery {
   customerPhone: string;
   totalAmount: string;
   assignedAt: string;
+  storeName?: string;
+  storePhone?: string;
+  pickupGoogleMapsLink?: string;
+  deliveryGoogleMapsLink?: string;
+  specialInstructions?: string;
+  estimatedDistance?: number;
+  estimatedTime?: number;
+  routeGoogleMapsLink?: string;
 }
 
 interface DeliveryPartnerDashboardProps {

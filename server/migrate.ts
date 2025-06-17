@@ -51,7 +51,7 @@ export async function runMigrations() {
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()
     `);
-    
+
     // Fix city column constraint if it exists as NOT NULL
     await db.execute(sql`
       ALTER TABLE stores ALTER COLUMN city DROP NOT NULL
@@ -187,6 +187,31 @@ export async function runMigrations() {
       )
     `);
 
+    // Add missing columns to deliveries table for better tracking
+    await db.execute(sql`
+      ALTER TABLE deliveries ADD COLUMN pickup_latitude TEXT
+    `).catch(() => {}); // Ignore if column already exists
+
+    await db.execute(sql`
+      ALTER TABLE deliveries ADD COLUMN pickup_longitude TEXT
+    `).catch(() => {});
+
+    await db.execute(sql`
+      ALTER TABLE deliveries ADD COLUMN delivery_latitude TEXT
+    `).catch(() => {});
+
+    await db.execute(sql`
+      ALTER TABLE deliveries ADD COLUMN delivery_longitude TEXT
+    `).catch(() => {});
+
+    await db.execute(sql`
+      ALTER TABLE deliveries ADD COLUMN distance INTEGER
+    `).catch(() => {});
+
+    await db.execute(sql`
+      ALTER TABLE deliveries ADD COLUMN estimated_duration INTEGER
+    `).catch(() => {});
+
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS delivery_routes (
         id SERIAL PRIMARY KEY,
@@ -269,67 +294,67 @@ export async function runMigrations() {
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS website TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS rating DECIMAL(3,2) DEFAULT 0.00
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS total_reviews INTEGER DEFAULT 0
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS phone TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS logo TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS cover_image TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT false
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS store_type TEXT DEFAULT 'retail'
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS cuisine_type TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS delivery_time TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS minimum_order DECIMAL(10,2)
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS delivery_fee DECIMAL(10,2)
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS is_delivery_available BOOLEAN DEFAULT false
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS opening_hours TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,8)
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE stores ADD COLUMN IF NOT EXISTS longitude DECIMAL(11,8)
     `);
@@ -338,7 +363,7 @@ export async function runMigrations() {
     await db.execute(sql`
       ALTER TABLE categories ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE categories ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()
     `);
@@ -347,79 +372,79 @@ export async function runMigrations() {
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS category_id INTEGER REFERENCES categories(id)
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS store_id INTEGER REFERENCES stores(id) NOT NULL DEFAULT 1
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS original_price DECIMAL(10,2)
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS stock INTEGER DEFAULT 0
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}'
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS rating DECIMAL(3,2) DEFAULT 0.00
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS total_reviews INTEGER DEFAULT 0
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS is_fast_sell BOOLEAN DEFAULT false
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS is_on_offer BOOLEAN DEFAULT false
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_percentage INTEGER DEFAULT 0
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_end_date TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS product_type TEXT DEFAULT 'retail'
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS preparation_time TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS ingredients TEXT[] DEFAULT '{}'
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS allergens TEXT[] DEFAULT '{}'
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS spice_level TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS is_vegetarian BOOLEAN DEFAULT false
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS is_vegan BOOLEAN DEFAULT false
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE products ADD COLUMN IF NOT EXISTS nutrition_info TEXT
     `);
@@ -428,35 +453,35 @@ export async function runMigrations() {
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES users(id) NOT NULL DEFAULT 1
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address TEXT NOT NULL DEFAULT ''
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT 'cash'
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS phone TEXT NOT NULL DEFAULT ''
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name TEXT NOT NULL DEFAULT ''
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,8)
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS longitude DECIMAL(11,8)
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending'
     `);
@@ -465,31 +490,31 @@ export async function runMigrations() {
     await db.execute(sql`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active'
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'customer'
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS approval_date TIMESTAMP
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_by INTEGER REFERENCES users(id)
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS rejection_reason TEXT
     `);
@@ -498,7 +523,7 @@ export async function runMigrations() {
     await db.execute(sql`
       ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
     `);
-    
+
     // Also check for and remove any enum type constraints
     await db.execute(sql`
       DO $$ 
@@ -524,23 +549,23 @@ export async function runMigrations() {
     await db.execute(sql`
       ALTER TABLE orders DROP COLUMN IF EXISTS user_id
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders DROP COLUMN IF EXISTS address_id
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES users(id) NOT NULL DEFAULT 1
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address TEXT NOT NULL DEFAULT '123 Main St'
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS phone TEXT NOT NULL DEFAULT '+1234567890'
     `);
-    
+
     await db.execute(sql`
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name TEXT NOT NULL DEFAULT 'Default Customer'
     `);
@@ -588,11 +613,11 @@ export async function runMigrations() {
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_product_reviews_product_id ON product_reviews(product_id)
     `);
-    
+
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_product_reviews_customer_id ON product_reviews(customer_id)
     `);
-    
+
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_product_reviews_rating ON product_reviews(rating)
     `);
