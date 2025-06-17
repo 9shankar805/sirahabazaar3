@@ -58,7 +58,7 @@ import type {
   Store as StoreType,
   Category,
 } from "@shared/schema";
-import Link from "next/link";
+import { Link } from "wouter";
 import { Phone } from "lucide-react";
 
 const productSchema = z.object({
