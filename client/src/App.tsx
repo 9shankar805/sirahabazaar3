@@ -56,6 +56,7 @@ import DeliveryPartnerQuickReg from "@/pages/DeliveryPartnerQuickReg";
 import AdminDeliveryPartners from "@/pages/AdminDeliveryPartners";
 import OrderTracking from "@/pages/OrderTracking";
 import DeliveryMap from "@/pages/DeliveryMap";
+import NotificationBanner from "@/components/NotificationBanner";
 
 function AppRouter() {
   const { mode } = useAppMode();
@@ -132,6 +133,9 @@ function App() {
                 <TooltipProvider>
                   <ErrorBoundary>
                     <div className="min-h-screen flex flex-col">
+                      <ErrorBoundary>
+                        <NotificationBanner />
+                      </ErrorBoundary>
                       <ErrorBoundary>
                         <MobileNotificationBar className="md:hidden" />
                       </ErrorBoundary>

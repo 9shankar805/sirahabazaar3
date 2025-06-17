@@ -256,6 +256,22 @@ body::-webkit-scrollbar {
   overflow: hidden;
 }
 
+/* Animation for notification banner */
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.notification-banner-enter {
+  animation: slideDown 0.3s ease-out;
+}
+
 /* Ensure notification panel content is fully visible on small screens */
 @media (max-width: 640px) {
   .notification-panel {
