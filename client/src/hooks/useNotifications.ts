@@ -89,6 +89,52 @@ export function useNotifications() {
       const response = await fetch(`/api/notifications/user/${user.id}`);
       if (response.ok) {
         const data = await response.json();
+        
+        // Check for new notifications and play sound
+        const previousNotificationIds = notifications.map(n => n.id);
+        const newNotifications = data.filter((n: NotificationData) => 
+          !previousNotificationIds.includes(n.id) && !n.isRead
+        );
+        
+        // Play sound for new notifications
+        if (newNotifications.length > 0) {
+          newNotifications.forEach((notification: NotificationData) => {
+            // Play sound for approval notifications immediately
+            const isApprovalNotification = notification.title.includes('Approved') || 
+                                         notification.message.includes('approved');
+            
+            if (isApprovalNotification) {
+              try {
+                const audio = new Audio('/notification.mp3');
+                audio.volume = 0.8;
+                audio.play().then(() => {
+                  console.log('Approval notification sound played');
+                  
+                  // Play celebratory second sound
+                  setTimeout(() => {
+                    const celebraryAudio = new Audio('/notification.mp3');
+                    celebraryAudio.volume = 0.5;
+                    celebraryAudio.play().catch(() => {
+                      console.log('Could not play celebratory sound');
+                    });
+                  }, 500);
+                }).catch(() => {
+                  console.log('Could not play approval notification sound');
+                });
+              } catch (error) {
+                console.log('Error playing approval notification sound:', error);
+              }
+              
+              // Show toast for approval
+              toast({
+                title: "🎉 " + notification.title,
+                description: notification.message,
+                duration: 8000
+              });
+            }
+          });
+        }
+        
         setNotifications(data);
         setUnreadCount(data.filter((n: NotificationData) => !n.isRead).length);
       }
@@ -149,11 +195,30 @@ export function useNotifications() {
     setNotifications(prev => [notification, ...prev]);
     setUnreadCount(prev => prev + 1);
     
-    // Play notification sound
+    // Play notification sound - higher volume for approval notifications
     try {
       const audio = new Audio('/notification.mp3');
-      audio.volume = 0.6;
-      audio.play().catch(() => {
+      // Check if this is an approval notification for louder sound
+      const isApprovalNotification = notification.title.includes('Approved') || 
+                                   notification.message.includes('approved') ||
+                                   (notification.data && JSON.parse(notification.data)?.playSound);
+      
+      audio.volume = isApprovalNotification ? 0.8 : 0.6;
+      
+      audio.play().then(() => {
+        console.log('Notification sound played successfully');
+        
+        // For approval notifications, play a second celebratory beep
+        if (isApprovalNotification) {
+          setTimeout(() => {
+            const celebraryAudio = new Audio('/notification.mp3');
+            celebraryAudio.volume = 0.5;
+            celebraryAudio.play().catch(() => {
+              console.log('Could not play celebratory sound');
+            });
+          }, 500);
+        }
+      }).catch(() => {
         console.log('Could not play notification sound');
       });
     } catch (error) {
@@ -166,11 +231,13 @@ export function useNotifications() {
       tag: `notification-${notification.id}`
     });
     
-    // Show toast notification for desktop
+    // Show toast notification for desktop with special styling for approvals
     if (window.innerWidth >= 768) {
+      const isApprovalNotification = notification.title.includes('Approved');
       toast({
         title: notification.title,
-        description: notification.message
+        description: notification.message,
+        duration: isApprovalNotification ? 8000 : 5000 // Longer duration for approvals
       });
     }
   };
