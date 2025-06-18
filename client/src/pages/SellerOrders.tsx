@@ -80,7 +80,7 @@ export default function SellerOrders() {
     );
   }
 
-  if (user.role === 'shopkeeper' && (user as any).status !== 'active') {
+  if (user.role === 'shopkeeper' && user.status !== 'active') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <Card className="w-full max-w-lg">
@@ -112,14 +112,31 @@ export default function SellerOrders() {
       if (!user?.id) {
         throw new Error('User ID is required');
       }
-      const response = await fetch(`/api/orders/store?userId=${user?.id}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch orders: ${response.status}`);
-      }
-      const ordersData = await response.json();
       
-      // Ensure we return an array
-      return Array.isArray(ordersData) ? ordersData : [];
+      try {
+        const response = await fetch(`/api/orders/store?userId=${user.id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            return []; // No orders found
+          }
+          throw new Error(`Failed to fetch orders: ${response.status} ${response.statusText}`);
+        }
+        
+        const ordersData = await response.json();
+        console.log('Orders fetched for user:', user.id, 'Count:', ordersData.length);
+        
+        // Ensure we return an array
+        return Array.isArray(ordersData) ? ordersData : [];
+      } catch (error) {
+        console.error('Order fetch error:', error);
+        throw error;
+      }
     },
     enabled: !!user?.id && user.role === 'shopkeeper' && user.status === 'active',
     retry: 2,

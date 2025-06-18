@@ -136,29 +136,55 @@ export default function InventoryManagement() {
   });
 
   // Store query to get current store info
-  const { data: stores = [] } = useQuery({
+  const { data: stores = [], isLoading: storesLoading, error: storesError } = useQuery({
     queryKey: [`/api/stores/owner`, user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const response = await fetch(`/api/stores/owner/${user.id}`);
-      if (!response.ok) throw new Error("Failed to fetch stores");
-      return response.json();
+      
+      try {
+        const response = await fetch(`/api/stores/owner/${user.id}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            return []; // No stores found
+          }
+          throw new Error(`Failed to fetch stores: ${response.status}`);
+        }
+        const storesData = await response.json();
+        console.log('Stores fetched for user:', user.id, 'Count:', storesData.length);
+        return Array.isArray(storesData) ? storesData : [];
+      } catch (error) {
+        console.error('Store fetch error:', error);
+        throw error;
+      }
     },
-    enabled: !!user,
+    enabled: !!user && user.role === 'shopkeeper' && user.status === 'active',
   });
 
   const currentStore = stores[0]; // Assuming one store per shopkeeper
 
   // Products query
-  const { data: products = [], isLoading: productsLoading } = useQuery<
+  const { data: products = [], isLoading: productsLoading, error: productsError } = useQuery<
     Product[]
   >({
     queryKey: [`/api/products/store/${currentStore?.id}`],
     queryFn: async () => {
       if (!currentStore?.id) return [];
-      const response = await fetch(`/api/products/store/${currentStore.id}`);
-      if (!response.ok) throw new Error("Failed to fetch store products");
-      return response.json();
+      
+      try {
+        const response = await fetch(`/api/products/store/${currentStore.id}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            return []; // No products found
+          }
+          throw new Error(`Failed to fetch store products: ${response.status}`);
+        }
+        const productsData = await response.json();
+        console.log('Products fetched for store:', currentStore.id, 'Count:', productsData.length);
+        return Array.isArray(productsData) ? productsData : [];
+      } catch (error) {
+        console.error('Products fetch error:', error);
+        throw error;
+      }
     },
     enabled: !!currentStore,
   });
@@ -333,6 +359,67 @@ export default function InventoryManagement() {
                 Go back to homepage
               </Link>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if shopkeeper is approved by admin
+  if (user.role === 'shopkeeper' && user.status !== 'active') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Card className="w-full max-w-lg">
+          <CardHeader>
+            <CardTitle className="text-center text-yellow-600">
+              Pending Admin Approval
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <div className="mx-auto w-16 h-16 rounded-full bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
+              <Package className="h-8 w-8 text-yellow-600" />
+            </div>
+            <p className="text-muted-foreground">
+              Your seller account is pending approval from our admin team. You cannot access inventory management until approved.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/">
+                <Button variant="outline">Go to Homepage</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Handle loading states
+  if (storesLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading your store information...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Handle store errors
+  if (storesError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center text-red-600">Error Loading Store</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground mb-4">
+              Failed to load your store information. Please try again.
+            </p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
           </CardContent>
         </Card>
       </div>

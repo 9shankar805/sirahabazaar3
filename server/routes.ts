@@ -237,7 +237,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid owner ID" });
       }
 
+      console.log(`Fetching stores for owner ID: ${parsedId}`);
       const stores = await storage.getStoresByOwnerId(parsedId);
+      console.log(`Found ${stores.length} stores for owner ${parsedId}`);
+      
       res.json(stores);
     } catch (error) {
       console.error("Error fetching stores by owner:", error);
