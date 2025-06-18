@@ -1038,7 +1038,7 @@ export default function ShopkeeperDashboard() {
                                   <input
                                     type="checkbox"
                                     checked={field.value}
-                                    onChange={field.onChange}
+                                                                   onChange={field.onChange}
                                     className="rounded"
                                   />
                                 </FormControl>
