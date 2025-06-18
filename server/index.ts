@@ -84,14 +84,17 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  try {
-    console.log("Skipping migrations - using existing database tables");
+    try {
+      console.log("Initializing database and creating default admin...");
 
-    // Initialize database with default admin account
-    await storage.createDefaultAdmin();
-  } catch (error) {
-    console.error("Error initializing database:", error);
-  }
+      // Initialize database with default admin account
+      await storage.createDefaultAdmin();
+      console.log("✅ Database initialization completed");
+    } catch (error) {
+      console.error("❌ Error initializing database:", error);
+      console.error("Stack:", error instanceof Error ? error.stack : 'No stack trace');
+      // Continue anyway to allow the server to start
+    }
 
   const server = await registerRoutes(app);
 

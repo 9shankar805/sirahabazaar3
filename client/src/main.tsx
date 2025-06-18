@@ -12,7 +12,11 @@ try {
   rootElement.innerHTML = '<div style="padding: 20px; text-align: center;">Loading Siraha Bazaar...</div>';
   
   const root = createRoot(rootElement);
-  root.render(<App />);
+  root.render(
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
   
   console.log("React app mounted successfully");
 } catch (error: any) {
