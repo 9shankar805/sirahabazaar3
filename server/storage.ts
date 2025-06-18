@@ -2058,3 +2058,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 }
+
+// Create and export the storage instance
+export const storage = new DatabaseStorage();

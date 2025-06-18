@@ -86,13 +86,13 @@ app.use((req, res, next) => {
 (async () => {
   try {
     console.log("Skipping migrations - using existing database tables");
-    
+
     // Initialize database with default admin account
     await storage.createDefaultAdmin();
   } catch (error) {
     console.error("Error initializing database:", error);
   }
-  
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
