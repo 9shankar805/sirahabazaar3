@@ -481,9 +481,12 @@ export default function ShopkeeperDashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList
-            className={`grid w-full gap-1 mb-6 ${currentStore ? "grid-cols-3 md:grid-cols-6" : "grid-cols-2"}`}
+            className={`grid w-full gap-1 mb-16 ${currentStore ? "grid-cols-3 md:grid-cols-6" : "grid-cols-2"}`}
           >
-            <TabsTrigger value="overview" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+            <TabsTrigger
+              value="overview"
+              className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
+            >
               <div className="flex flex-col items-center gap-1">
                 <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Overview</span>
@@ -491,7 +494,10 @@ export default function ShopkeeperDashboard() {
               </div>
             </TabsTrigger>
             {!currentStore && (
-              <TabsTrigger value="create-store" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+              <TabsTrigger
+                value="create-store"
+                className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
+              >
                 <div className="flex flex-col items-center gap-1">
                   <Store className="h-3 w-3 md:h-4 md:w-4" />
                   <span className="hidden sm:inline">Create Store</span>
@@ -501,35 +507,54 @@ export default function ShopkeeperDashboard() {
             )}
             {currentStore && (
               <>
-                <TabsTrigger value="inventory" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+                <TabsTrigger
+                  value="inventory"
+                  className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
+                >
                   <div className="flex flex-col items-center gap-1">
                     <Package className="h-3 w-3 md:h-4 md:w-4" />
                     <span className="hidden sm:inline">Inventory</span>
                     <span className="sm:hidden">Stock</span>
                   </div>
                 </TabsTrigger>
-                <TabsTrigger value="products" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+                <TabsTrigger
+                  value="products"
+                  className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
+                >
                   <div className="flex flex-col items-center gap-1">
                     <Package className="h-3 w-3 md:h-4 md:w-4" />
                     <span className="hidden sm:inline">Products</span>
                     <span className="sm:hidden">Items</span>
                   </div>
                 </TabsTrigger>
-                <TabsTrigger value="add-product" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+                <TabsTrigger
+                  value="add-product"
+                  className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
+                >
                   <div className="flex flex-col items-center gap-1">
                     <Plus className="h-3 w-3 md:h-4 md:w-4" />
-                    <span className="hidden sm:inline">{editingProduct ? "Edit Product" : "Add Product"}</span>
-                    <span className="sm:hidden">{editingProduct ? "Edit" : "Add"}</span>
+                    <span className="hidden sm:inline">
+                      {editingProduct ? "Edit Product" : "Add Product"}
+                    </span>
+                    <span className="sm:hidden">
+                      {editingProduct ? "Edit" : "Add"}
+                    </span>
                   </div>
                 </TabsTrigger>
-                <TabsTrigger value="orders" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+                <TabsTrigger
+                  value="orders"
+                  className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
+                >
                   <div className="flex flex-col items-center gap-1">
                     <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
                     <span className="hidden sm:inline">Orders</span>
                     <span className="sm:hidden">Orders</span>
                   </div>
                 </TabsTrigger>
-                <TabsTrigger value="tracking" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+                <TabsTrigger
+                  value="tracking"
+                  className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
+                >
                   <div className="flex flex-col items-center gap-1">
                     <Navigation className="h-3 w-3 md:h-4 md:w-4" />
                     <span className="hidden sm:inline">Delivery Tracking</span>
@@ -1076,7 +1101,7 @@ export default function ShopkeeperDashboard() {
                                   <input
                                     type="checkbox"
                                     checked={field.value}
-                                                                   onChange={field.onChange}
+                                    onChange={field.onChange}
                                     className="rounded"
                                   />
                                 </FormControl>
@@ -1674,13 +1699,17 @@ export default function ShopkeeperDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-              <Link href="/seller/dashboard">
-                <Button variant="outline" size="sm" title="Back to Dashboard">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
+                  <div className="flex items-center space-x-3">
+                    <Link href="/seller/dashboard">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        title="Back to Dashboard"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
                 {orders.length === 0 ? (
                   <div className="text-center py-8">
