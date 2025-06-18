@@ -52,6 +52,7 @@ export default function ImprovedAdminDashboard() {
     perKmRate: "",
     isActive: true
   });
+  const [showEditProfileDialog, setShowEditProfileDialog] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("adminUser");
@@ -253,6 +254,7 @@ export default function ImprovedAdminDashboard() {
       setAdminUser(updatedAdmin);
       localStorage.setItem("adminUser", JSON.stringify(updatedAdmin));
       toast({ title: "Success", description: "Profile updated successfully" });
+      setShowEditProfileDialog(false); // Close the dialog after successful update
     },
     onError: (error: any) => {
       toast({ 
@@ -790,7 +792,8 @@ export default function ImprovedAdminDashboard() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Store</TableHead>
-                            <TableHead>Type</TableHead>
+                            <TableHead>```python
+                            Type</TableHead>
                             <TableHead>Owner</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Products</TableHead>
@@ -1257,7 +1260,7 @@ export default function ImprovedAdminDashboard() {
                           />
                         </div>
                         <div className="flex space-x-2">
-                          <Dialog>
+                          <Dialog open={showEditProfileDialog} onOpenChange={setShowEditProfileDialog}>
                             <DialogTrigger asChild>
                               <Button variant="outline" size="sm">
                                 <Edit className="h-4 w-4 mr-2" />
@@ -1290,14 +1293,17 @@ export default function ImprovedAdminDashboard() {
                                   />
                                 </div>
                                 <div className="flex justify-end space-x-2">
-                                  <DialogTrigger asChild>
-                                    <Button variant="outline">Cancel</Button>
-                                  </DialogTrigger>
+                                  <Button 
+                                    variant="outline" 
+                                    onClick={() => setShowEditProfileDialog(false)}
+                                  >
+                                    Cancel
+                                  </Button>
                                   <Button 
                                     onClick={() => {
                                       const nameInput = document.getElementById('edit-name') as HTMLInputElement;
                                       const emailInput = document.getElementById('edit-email') as HTMLInputElement;
-                                      
+
                                       if (!nameInput.value || !emailInput.value) {
                                         toast({
                                           title: "Error",
@@ -1320,7 +1326,7 @@ export default function ImprovedAdminDashboard() {
                               </div>
                             </DialogContent>
                           </Dialog>
-                          
+
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button variant="outline" size="sm">
@@ -1369,7 +1375,7 @@ export default function ImprovedAdminDashboard() {
                                       const currentPasswordInput = document.getElementById('current-password') as HTMLInputElement;
                                       const newPasswordInput = document.getElementById('new-password') as HTMLInputElement;
                                       const confirmPasswordInput = document.getElementById('confirm-password') as HTMLInputElement;
-                                      
+
                                       if (!currentPasswordInput.value || !newPasswordInput.value) {
                                         toast({
                                           title: "Error",
@@ -1378,7 +1384,7 @@ export default function ImprovedAdminDashboard() {
                                         });
                                         return;
                                       }
-                                      
+
                                       if (newPasswordInput.value !== confirmPasswordInput.value) {
                                         toast({
                                           title: "Error",
@@ -1387,7 +1393,7 @@ export default function ImprovedAdminDashboard() {
                                         });
                                         return;
                                       }
-                                      
+
                                       if (newPasswordInput.value.length < 6) {
                                         toast({
                                           title: "Error",
@@ -1396,7 +1402,7 @@ export default function ImprovedAdminDashboard() {
                                         });
                                         return;
                                       }
-                                      
+
                                       try {
                                         const response = await apiRequest("/api/admin/change-password", {
                                           method: "PUT",
@@ -1407,9 +1413,9 @@ export default function ImprovedAdminDashboard() {
                                             newPassword: newPasswordInput.value,
                                           }),
                                         });
-                                        
+
                                         const result = await response.json();
-                                        
+
                                         if (response.ok) {
                                           toast({
                                             title: "Password Changed",
@@ -1823,7 +1829,7 @@ export default function ImprovedAdminDashboard() {
                     const formData = new FormData();
                     const inputs = document.querySelectorAll('#name, #minDistance, #maxDistance, #baseFee, #perKmRate');
                     const data: any = {};
-                    
+
                     inputs.forEach((input: any) => {
                       if (input.type === 'number') {
                         data[input.id] = parseFloat(input.value) || 0;
@@ -1831,9 +1837,9 @@ export default function ImprovedAdminDashboard() {
                         data[input.id] = input.value;
                       }
                     });
-                    
+
                     data.isActive = editingZone.isActive;
-                    
+
                     updateZoneMutation.mutate({ id: editingZone.id, data });
                   }}
                   disabled={updateZoneMutation.isPending}

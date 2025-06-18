@@ -1257,6 +1257,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/admin/profile", async (req, res) => {
+    try {
+      const { adminId, fullName, email } = req.body;
+
+      if (!adminId) {
+        return res.status(400).json({ error: "Admin ID is required" });
+      }
+
+      // Check if email is already taken by another admin
+      if (email) {
+        const existingAdmin = await storage.getAdminByEmail(email);
+        if (existingAdmin && existingAdmin.id !== adminId) {
+          return res.status(400).json({ error: "Email is already taken by another admin" });
+        }
+      }
+
+      const updatedAdmin = await storage.updateAdminProfile(adminId, {
+        fullName,
+        email
+      });
+
+      if (!updatedAdmin) {
+        return res.status(404).json({ error: "Admin not found" });
+      }
+
+      res.json({ success: true, admin: updatedAdmin, message: "Profile updated successfully" });
+    } catch (error) {
+      console.error("Update admin profile error:", error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
   app.put("/api/admin/change-password", async (req, res) => {
     try {
       const { adminId, currentPassword, newPassword } = req.body;
