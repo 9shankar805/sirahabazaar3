@@ -1917,20 +1917,26 @@ export class DatabaseStorage implements IStorage {
 
   async authenticateAdmin(email: string, password: string): Promise<AdminUser | null> {
     try {
-      const admin = await db.select()
+      console.log('Authenticating admin:', email);
+      const [admin] = await db.select()
         .from(adminUsers)
         .where(eq(adminUsers.email, email))
         .limit(1);
 
-      if (admin.length === 0) {
+      if (!admin) {
+        console.log('Admin not found');
         return null;
       }
 
+      console.log('Found admin:', admin.email, 'Active:', admin.isActive);
+      
       // Check if admin is active and password matches
-      if (admin[0].isActive && admin[0].password === password) {
-        return admin[0];
+      if (admin.isActive && admin.password === password) {
+        console.log('Authentication successful');
+        return admin;
       }
 
+      console.log('Authentication failed - inactive or wrong password');
       return null;
     } catch (error) {
       console.error('Admin authentication error:', error);
