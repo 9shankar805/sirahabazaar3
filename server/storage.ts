@@ -1918,25 +1918,53 @@ export class DatabaseStorage implements IStorage {
   async authenticateAdmin(email: string, password: string): Promise<AdminUser | null> {
     try {
       console.log('Authenticating admin:', email);
-      const [admin] = await db.select()
-        .from(adminUsers)
-        .where(eq(adminUsers.email, email))
-        .limit(1);
-
-      if (!admin) {
-        console.log('Admin not found');
-        return null;
-      }
-
-      console.log('Found admin:', admin.email, 'Active:', admin.isActive);
       
-      // Check if admin is active and password matches
-      if (admin.isActive && admin.password === password) {
-        console.log('Authentication successful');
-        return admin;
+      // First try adminUsers table
+      try {
+        const [admin] = await db.select()
+          .from(adminUsers)
+          .where(eq(adminUsers.email, email))
+          .limit(1);
+
+        if (admin) {
+          console.log('Found admin in adminUsers:', admin.email, 'Active:', admin.isActive);
+          
+          // Check if admin is active and password matches
+          if (admin.isActive && admin.password === password) {
+            console.log('Authentication successful');
+            return admin;
+          }
+        }
+      } catch (adminUsersError) {
+        console.log('AdminUsers table query failed, trying admins table:', adminUsersError.message);
       }
 
-      console.log('Authentication failed - inactive or wrong password');
+      // Fallback to admins table
+      try {
+        const [admin] = await db.select()
+          .from(admins)
+          .where(eq(admins.email, email))
+          .limit(1);
+
+        if (admin && admin.isActive && admin.password === password) {
+          console.log('Authentication successful via admins table');
+          // Convert to AdminUser format
+          return {
+            id: admin.id,
+            email: admin.email,
+            password: admin.password,
+            fullName: admin.fullName,
+            role: admin.role,
+            isActive: admin.isActive,
+            createdAt: admin.createdAt,
+            updatedAt: new Date()
+          };
+        }
+      } catch (adminsError) {
+        console.log('Admins table query failed:', adminsError.message);
+      }
+
+      console.log('Authentication failed - user not found or invalid credentials');
       return null;
     } catch (error) {
       console.error('Admin authentication error:', error);
