@@ -481,7 +481,7 @@ export default function ShopkeeperDashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList
-            className={`grid w-full gap-1 ${currentStore ? "grid-cols-3 md:grid-cols-6" : "grid-cols-2"}`}
+            className={`grid w-full gap-1 mb-6 ${currentStore ? "grid-cols-3 md:grid-cols-6" : "grid-cols-2"}`}
           >
             <TabsTrigger value="overview" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
               <div className="flex flex-col items-center gap-1">
