@@ -1918,8 +1918,8 @@ export class DatabaseStorage implements IStorage {
   async authenticateAdmin(email: string, password: string): Promise<AdminUser | null> {
     try {
       const admin = await db.select()
-        .from(admins)
-        .where(eq(admins.email, email))
+        .from(adminUsers)
+        .where(eq(adminUsers.email, email))
         .limit(1);
 
       if (admin.length === 0) {
