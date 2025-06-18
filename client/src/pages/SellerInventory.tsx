@@ -450,28 +450,28 @@ export default function InventoryManagement() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <Package className="h-8 w-8 text-primary" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 sm:py-4 gap-3 sm:gap-0">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                   Inventory Management
                 </h1>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {currentStore.name}
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto">
               <Button
                 onClick={() => setShowAddProduct(true)}
-                className="bg-primary"
+                className="bg-primary flex-1 sm:flex-none text-sm"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Product
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="hidden sm:flex">
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
@@ -480,18 +480,18 @@ export default function InventoryManagement() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
         {/* Inventory Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">
                 Total Products
               </CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <Package className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{products.length}</div>
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{products.length}</div>
               <p className="text-xs text-muted-foreground">
                 <TrendingUp className="h-3 w-3 inline mr-1" />
                 Active inventory items
@@ -500,14 +500,14 @@ export default function InventoryManagement() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">
                 Low Stock Alert
               </CardTitle>
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
+              <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold text-orange-600">
                 {lowStockProducts.length}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -517,14 +517,14 @@ export default function InventoryManagement() {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">
                 Out of Stock
               </CardTitle>
-              <TrendingDown className="h-4 w-4 text-red-500" />
+              <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold text-red-600">
                 {outOfStockProducts.length}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -535,63 +535,65 @@ export default function InventoryManagement() {
         </div>
 
         {/* Filters and Search */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Product Management</CardTitle>
+        <Card className="mb-4 sm:mb-6">
+          <CardHeader className="p-3 sm:p-6">
+            <CardTitle className="text-lg sm:text-xl">Product Management</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <CardContent className="p-3 sm:p-6">
+            <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="flex-1">
                 <Input
                   placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full"
+                  className="w-full text-sm"
                 />
               </div>
-              <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-              >
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {Array.isArray(categories) &&
-                    categories.map((category: any) => (
-                      <SelectItem
-                        key={category.id}
-                        value={category.id.toString()}
-                      >
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              <Select value={stockFilter} onValueChange={setStockFilter}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Stock Status" />
-                </SelectTrigger>
+              <div className="flex gap-2 sm:gap-4 flex-col sm:flex-row">
+                <Select
+                  value={selectedCategory}
+                  onValueChange={setSelectedCategory}
+                >
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {Array.isArray(categories) &&
+                      categories.map((category: any) => (
+                        <SelectItem
+                          key={category.id}
+                          value={category.id.toString()}
+                        >
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Select value={stockFilter} onValueChange={setStockFilter}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Stock Status" />
+                  </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Stock</SelectItem>
                   <SelectItem value="available">Available ({">"}5)</SelectItem>
                   <SelectItem value="low">Low Stock (≤5)</SelectItem>
                   <SelectItem value="out">Out of Stock</SelectItem>
                 </SelectContent>
-              </Select>
+                </Select>
+              </div>
             </div>
 
             {/* Products List */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => (
                   <div
                     key={product.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:shadow-md transition-shadow gap-3 sm:gap-0"
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                    <div className="flex items-center space-x-3 sm:space-x-4">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                         {product.images?.[0] ? (
                           <img
                             src={product.images[0]}
@@ -600,16 +602,16 @@ export default function InventoryManagement() {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <Package className="h-6 w-6 text-gray-400" />
+                            <Package className="h-4 w-4 sm:h-6 sm:w-6 text-gray-400" />
                           </div>
                         )}
                       </div>
-                      <div>
-                        <h3 className="font-medium">{product.name}</h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm sm:text-base truncate">{product.name}</h3>
                         <p className="text-sm text-muted-foreground">
                           ₹{product.price}
                         </p>
-                        <div className="flex items-center space-x-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <Badge
                             variant={
                               product.stock === 0
@@ -618,44 +620,49 @@ export default function InventoryManagement() {
                                   ? "secondary"
                                   : "default"
                             }
+                            className="text-xs"
                           >
                             Stock: {product.stock}
                           </Badge>
                           {product.isOnOffer && (
-                            <Badge variant="outline" className="text-green-600">
+                            <Badge variant="outline" className="text-green-600 text-xs">
                               {product.offerPercentage}% OFF
                             </Badge>
                           )}
                           {product.isFastSell && (
-                            <Badge variant="outline" className="text-blue-600">
+                            <Badge variant="outline" className="text-blue-600 text-xs">
                               Fast Sell
                             </Badge>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 justify-end sm:justify-start">
                       <Button
                         onClick={() => handleEditProduct(product)}
                         variant="outline"
                         size="sm"
+                        className="flex-1 sm:flex-none"
                       >
                         <Edit className="h-4 w-4" />
+                        <span className="ml-1 sm:hidden">Edit</span>
                       </Button>
                       <Button
                         onClick={() => handleDeleteProduct(product.id)}
                         variant="destructive"
                         size="sm"
+                        className="flex-1 sm:flex-none"
                       >
                         <Trash2 className="h-4 w-4" />
+                        <span className="ml-1 sm:hidden">Delete</span>
                       </Button>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8">
-                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-muted-foreground">
+                <div className="text-center py-6 sm:py-8">
+                  <Package className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-muted-foreground text-sm sm:text-base">
                     {searchTerm ||
                     selectedCategory !== "all" ||
                     stockFilter !== "all"
@@ -665,7 +672,7 @@ export default function InventoryManagement() {
                   {!showAddProduct && (
                     <Button
                       onClick={() => setShowAddProduct(true)}
-                      className="mt-4"
+                      className="mt-4 text-sm"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Your First Product
@@ -680,19 +687,19 @@ export default function InventoryManagement() {
         {/* Add/Edit Product Form */}
         {showAddProduct && (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                 {editingProduct ? "Edit Product" : "Add New Product"}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6">
               <Form {...productForm}>
                 <form
                   onSubmit={productForm.handleSubmit(handleAddProduct)}
                   className="space-y-6"
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <FormField
                       control={productForm.control}
                       name="name"
@@ -763,7 +770,7 @@ export default function InventoryManagement() {
                     )}
                   />
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                     <FormField
                       control={productForm.control}
                       name="price"
@@ -840,7 +847,7 @@ export default function InventoryManagement() {
                     )}
                   />
 
-                  <div className="flex justify-end space-x-4">
+                  <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
                     <Button
                       type="button"
                       variant="outline"
@@ -849,10 +856,11 @@ export default function InventoryManagement() {
                         setEditingProduct(null);
                         productForm.reset();
                       }}
+                      className="order-2 sm:order-1"
                     >
                       Cancel
                     </Button>
-                    <Button type="submit">
+                    <Button type="submit" className="order-1 sm:order-2">
                       <Plus className="h-4 w-4 mr-2" />
                       {editingProduct ? "Update Product" : "Add Product"}
                     </Button>
