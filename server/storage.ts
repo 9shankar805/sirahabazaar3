@@ -259,6 +259,8 @@ export interface IStorage {
   calculateDeliveryFee(distance: number): Promise<{ fee: number; zone: DeliveryZone | null }>;
 
   // Admin authentication methods
+  authenticateAdmin(email: string, password: string): Promise<AdminUser | null>;
+  
   // Admin profile management methods
   getAdminProfile(adminId: number): Promise<any>;
   updateAdminProfile(adminId: number, updates: any): Promise<any>;
@@ -1910,6 +1912,30 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  async authenticateAdmin(email: string, password: string): Promise<AdminUser | null> {
+    try {
+      const admin = await db.select()
+        .from(admins)
+        .where(and(eq(admins.email, email), eq(admins.isActive, true)))
+        .limit(1);
+
+      if (admin.length === 0) {
+        return null;
+      }
+
+      // In production, you should hash passwords and compare hashes
+      // For now, direct comparison (this should be changed for security)
+      if (admin[0].password === password) {
+        return admin[0];
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Admin authentication error:', error);
+      return null;
     }
   }
 
