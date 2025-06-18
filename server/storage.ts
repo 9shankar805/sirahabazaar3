@@ -756,13 +756,658 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(notifications)
       .where(eq(notifications.userId, userId))
       .orderBy(desc(notifications.createdAt));
+  }
+
+  async getNotificationsByUserId(userId: number): Promise<Notification[]> {
+    return await db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async getNotificationsByType(type: string): Promise<Notification[]> {
+    return await db.select().from(notifications)
+      .where(eq(notifications.type, type))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification> {
+    const [updated] = await db.update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    return updated;
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<boolean> {
+    try {
+      await db.update(notifications)
+        .set({ isRead: true })
+        .where(eq(notifications.userId, userId));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Order tracking
+  async createOrderTracking(tracking: InsertOrderTracking): Promise<OrderTracking> {
+    const [newTracking] = await db.insert(orderTracking).values(tracking).returning();
+    return newTracking;
+  }
+
+  async getOrderTracking(orderId: number): Promise<OrderTracking[]> {
+    return await db.select().from(orderTracking)
+      .where(eq(orderTracking.orderId, orderId))
+      .orderBy(desc(orderTracking.createdAt));
+  }
+
+  async updateOrderTracking(orderId: number, status: string, description?: string, location?: string): Promise<OrderTracking> {
+    const trackingData = {
+      orderId,
+      status,
+      description: description || `Order ${status}`,
+      location: location || 'Unknown',
+      createdAt: new Date()
+    };
+
+    const [newTracking] = await db.insert(orderTracking).values(trackingData).returning();
+    return newTracking;
+  }
+
+  // Return policy
+  async createReturnPolicy(policy: InsertReturnPolicy): Promise<ReturnPolicy> {
+    const [newPolicy] = await db.insert(returnPolicies).values(policy).returning();
+    return newPolicy;
+  }
+
+  async getReturnPolicy(storeId: number): Promise<ReturnPolicy | undefined> {
+    const [policy] = await db.select().from(returnPolicies).where(eq(returnPolicies.storeId, storeId));
+    return policy;
+  }
+
+  async updateReturnPolicy(storeId: number, updates: Partial<InsertReturnPolicy>): Promise<ReturnPolicy | undefined> {
+    const [updated] = await db.update(returnPolicies)
+      .set(updates)
+      .where(eq(returnPolicies.storeId, storeId))
+      .returning();
+    return updated;
+  }
+
+  // Returns
+  async createReturn(returnItem: InsertReturn): Promise<Return> {
+    const [newReturn] = await db.insert(returns).values(returnItem).returning();
+    return newReturn;
+  }
+
+  async getReturn(id: number): Promise<Return | undefined> {
+    const [returnItem] = await db.select().from(returns).where(eq(returns.id, id));
+    return returnItem;
+  }
+
+  async getReturnsByCustomer(customerId: number): Promise<Return[]> {
+    return await db.select().from(returns).where(eq(returns.customerId, customerId));
+  }
+
+  async getReturnsByStore(storeId: number): Promise<Return[]> {
+    return await db.select().from(returns).where(eq(returns.storeId, storeId));
+  }
+
+  async updateReturnStatus(id: number, status: string): Promise<Return | undefined> {
+    const [updated] = await db.update(returns)
+      .set({ status })
+      .where(eq(returns.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Distance calculation between stores and user location
+  calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c; // Distance in kilometers
+    return distance;
+  }
+
+  async getStoresWithDistance(userLat: number, userLon: number, storeType?: string): Promise<(Store & { distance: number })[]> {
+    try {
+      let allStores = await db.select().from(stores);
+      
+      if (storeType) {
+        allStores = allStores.filter(store => store.type === storeType);
       }
 
-      return await query.orderBy(desc(commissions.createdAt));
+      const storesWithDistance = allStores.map(store => {
+        const storeLat = parseFloat(store.latitude || '0');
+        const storeLon = parseFloat(store.longitude || '0');
+        const distance = this.calculateDistance(userLat, userLon, storeLat, storeLon);
+        
+        return {
+          ...store,
+          distance: Math.round(distance * 100) / 100 // Round to 2 decimal places
+        };
+      });
+
+      // Sort by distance
+      return storesWithDistance.sort((a, b) => a.distance - b.distance);
+    } catch (error) {
+      console.error('Error calculating store distances:', error);
+      return [];
+    }
+  }
+
+  // Seller hub analytics
+  async getSellerDashboardStats(storeId: number): Promise<{
+    totalProducts: number;
+    totalOrders: number;
+    totalRevenue: number;
+    pendingOrders: number;
+    averageRating: number;
+    totalReviews: number;
+  }> {
+    try {
+      const [productsCount] = await db.select({ count: count() })
+        .from(products)
+        .where(eq(products.storeId, storeId));
+
+      const storeOrders = await this.getOrdersByStoreId(storeId);
+      const totalOrders = storeOrders.length;
+      const pendingOrders = storeOrders.filter(order => order.status === 'pending').length;
+
+      let totalRevenue = 0;
+      for (const order of storeOrders) {
+        if (order.status === 'delivered') {
+          totalRevenue += parseFloat(order.totalAmount);
+        }
+      }
+
+      const [store] = await db.select().from(stores).where(eq(stores.id, storeId));
+      const averageRating = store ? parseFloat(store.rating) : 0;
+      const totalReviews = store ? store.totalReviews : 0;
+
+      return {
+        totalProducts: productsCount.count,
+        totalOrders,
+        totalRevenue,
+        pendingOrders,
+        averageRating,
+        totalReviews
+      };
+    } catch (error) {
+      console.error('Error fetching seller dashboard stats:', error);
+      return {
+        totalProducts: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        pendingOrders: 0,
+        averageRating: 0,
+        totalReviews: 0
+      };
+    }
+  }
+
+  async getStoreAnalytics(storeId: number, days: number = 30): Promise<StoreAnalytics[]> {
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      return await db.select().from(storeAnalytics)
+        .where(and(eq(storeAnalytics.storeId, storeId), gte(storeAnalytics.date, startDate)))
+        .orderBy(desc(storeAnalytics.date));
     } catch {
       return [];
     }
   }
+
+  async updateStoreAnalytics(data: InsertStoreAnalytics): Promise<StoreAnalytics> {
+    const [analytics] = await db.insert(storeAnalytics).values(data).returning();
+    return analytics;
+  }
+
+  // Promotions
+  async getStorePromotions(storeId: number): Promise<Promotion[]> {
+    try {
+      return await db.select().from(promotions)
+        .where(eq(promotions.storeId, storeId))
+        .orderBy(desc(promotions.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createPromotion(promotion: InsertPromotion): Promise<Promotion> {
+    const [newPromotion] = await db.insert(promotions).values(promotion).returning();
+    return newPromotion;
+  }
+
+  async updatePromotion(id: number, updates: Partial<InsertPromotion>): Promise<Promotion | undefined> {
+    try {
+      const [updated] = await db.update(promotions).set(updates).where(eq(promotions.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async deletePromotion(id: number): Promise<boolean> {
+    try {
+      await db.delete(promotions).where(eq(promotions.id, id));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Advertisements
+  async getStoreAdvertisements(storeId: number): Promise<Advertisement[]> {
+    try {
+      return await db.select().from(advertisements)
+        .where(eq(advertisements.storeId, storeId))
+        .orderBy(desc(advertisements.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createAdvertisement(ad: InsertAdvertisement): Promise<Advertisement> {
+    const [newAd] = await db.insert(advertisements).values(ad).returning();
+    return newAd;
+  }
+
+  async updateAdvertisement(id: number, updates: Partial<InsertAdvertisement>): Promise<Advertisement | undefined> {
+    try {
+      const [updated] = await db.update(advertisements).set(updates).where(eq(advertisements.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async deleteAdvertisement(id: number): Promise<boolean> {
+    try {
+      await db.delete(advertisements).where(eq(advertisements.id, id));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Product reviews
+  async getProductReviews(productId: number): Promise<ProductReview[]> {
+    try {
+      return await db.select().from(productReviews)
+        .where(eq(productReviews.productId, productId))
+        .orderBy(desc(productReviews.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async getStoreReviews(storeId: number): Promise<ProductReview[]> {
+    try {
+      return await db.select().from(productReviews)
+        .where(eq(productReviews.storeId, storeId))
+        .orderBy(desc(productReviews.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createProductReview(review: InsertProductReview): Promise<ProductReview> {
+    const [newReview] = await db.insert(productReviews).values(review).returning();
+    return newReview;
+  }
+
+  async updateProductReview(id: number, updates: Partial<InsertProductReview>): Promise<ProductReview | undefined> {
+    try {
+      const [updated] = await db.update(productReviews).set(updates).where(eq(productReviews.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async deleteProductReview(id: number): Promise<boolean> {
+    try {
+      await db.delete(productReviews).where(eq(productReviews.id, id));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Settlements
+  async getStoreSettlements(storeId: number): Promise<Settlement[]> {
+    try {
+      return await db.select().from(settlements)
+        .where(eq(settlements.storeId, storeId))
+        .orderBy(desc(settlements.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createSettlement(settlement: InsertSettlement): Promise<Settlement> {
+    const [newSettlement] = await db.insert(settlements).values(settlement).returning();
+    return newSettlement;
+  }
+
+  async updateSettlement(id: number, updates: Partial<InsertSettlement>): Promise<Settlement | undefined> {
+    try {
+      const [updated] = await db.update(settlements).set(updates).where(eq(settlements.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  // Inventory management
+  async getInventoryLogs(storeId: number, productId?: number): Promise<InventoryLog[]> {
+    try {
+      let query = db.select().from(inventoryLogs).where(eq(inventoryLogs.storeId, storeId));
+      
+      if (productId) {
+        query = query.where(eq(inventoryLogs.productId, productId));
+      }
+
+      return await query.orderBy(desc(inventoryLogs.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createInventoryLog(log: InsertInventoryLog): Promise<InventoryLog> {
+    const [newLog] = await db.insert(inventoryLogs).values(log).returning();
+    return newLog;
+  }
+
+  async updateProductStock(productId: number, quantity: number, type: string, reason?: string): Promise<boolean> {
+    try {
+      const product = await this.getProduct(productId);
+      if (!product) return false;
+
+      let newStock = product.stock;
+      if (type === 'add') {
+        newStock += quantity;
+      } else if (type === 'subtract') {
+        newStock -= quantity;
+        if (newStock < 0) newStock = 0;
+      } else if (type === 'set') {
+        newStock = quantity;
+      }
+
+      await db.update(products)
+        .set({ stock: newStock })
+        .where(eq(products.id, productId));
+
+      // Create inventory log
+      await this.createInventoryLog({
+        productId,
+        storeId: product.storeId,
+        type,
+        quantity,
+        reason: reason || `Stock ${type}`,
+        previousStock: product.stock,
+        newStock,
+        createdAt: new Date()
+      });
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Enhanced admin management methods
+  async getAllOrders(): Promise<Order[]> {
+    try {
+      return await db.select().from(orders).orderBy(desc(orders.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async getAllTransactions(): Promise<PaymentTransaction[]> {
+    try {
+      return await db.select().from(paymentTransactions).orderBy(desc(paymentTransactions.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async getAllCoupons(): Promise<Coupon[]> {
+    try {
+      return await db.select().from(coupons).orderBy(desc(coupons.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createCoupon(coupon: InsertCoupon): Promise<Coupon> {
+    const [newCoupon] = await db.insert(coupons).values(coupon).returning();
+    return newCoupon;
+  }
+
+  async updateCoupon(id: number, updates: Partial<InsertCoupon>): Promise<Coupon | undefined> {
+    try {
+      const [updated] = await db.update(coupons).set(updates).where(eq(coupons.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async deleteCoupon(id: number): Promise<boolean> {
+    try {
+      await db.delete(coupons).where(eq(coupons.id, id));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getAllBanners(): Promise<Banner[]> {
+    try {
+      return await db.select().from(banners).orderBy(desc(banners.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createBanner(banner: InsertBanner): Promise<Banner> {
+    const [newBanner] = await db.insert(banners).values(banner).returning();
+    return newBanner;
+  }
+
+  async updateBanner(id: number, updates: Partial<InsertBanner>): Promise<Banner | undefined> {
+    try {
+      const [updated] = await db.update(banners).set(updates).where(eq(banners.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async deleteBanner(id: number): Promise<boolean> {
+    try {
+      await db.delete(banners).where(eq(banners.id, id));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getAllSupportTickets(): Promise<SupportTicket[]> {
+    try {
+      return await db.select().from(supportTickets).orderBy(desc(supportTickets.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket> {
+    const [newTicket] = await db.insert(supportTickets).values(ticket).returning();
+    return newTicket;
+  }
+
+  async updateSupportTicket(id: number, updates: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined> {
+    try {
+      const [updated] = await db.update(supportTickets).set(updates).where(eq(supportTickets.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getAllSiteSettings(): Promise<SiteSetting[]> {
+    try {
+      return await db.select().from(siteSettings);
+    } catch {
+      return [];
+    }
+  }
+
+  async updateSiteSetting(key: string, value: string): Promise<SiteSetting | undefined> {
+    try {
+      const [updated] = await db.update(siteSettings)
+        .set({ value })
+        .where(eq(siteSettings.key, key))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  // Enhanced admin features
+  async getDashboardStats(): Promise<any> {
+    try {
+      const [totalUsers, totalStores, totalOrders, pendingOrders, activeUsers] = await Promise.all([
+        this.getTotalUsersCount(),
+        this.getTotalStoresCount(),
+        this.getTotalOrdersCount(),
+        this.getPendingOrdersCount(),
+        this.getActiveUsersCount()
+      ]);
+
+      const totalRevenue = await this.getTotalRevenue();
+
+      return {
+        totalUsers,
+        totalStores,
+        totalOrders,
+        totalRevenue,
+        pendingOrders,
+        activeUsers
+      };
+    } catch {
+      return {
+        totalUsers: 0,
+        totalStores: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        pendingOrders: 0,
+        activeUsers: 0
+      };
+    }
+  }
+
+  async getAllVendorVerifications(): Promise<VendorVerification[]> {
+    try {
+      return await db.select().from(vendorVerifications).orderBy(desc(vendorVerifications.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async updateVendorVerification(id: number, updates: Partial<InsertVendorVerification>): Promise<VendorVerification | undefined> {
+    try {
+      const [updated] = await db.update(vendorVerifications).set(updates).where(eq(vendorVerifications.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async approveVendorVerification(id: number, adminId: number): Promise<VendorVerification | undefined> {
+    try {
+      const [updated] = await db.update(vendorVerifications)
+        .set({ 
+          status: 'approved',
+          reviewedBy: adminId,
+          reviewedAt: new Date()
+        })
+        .where(eq(vendorVerifications.id, id))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async rejectVendorVerification(id: number, adminId: number, reason: string): Promise<VendorVerification | undefined> {
+    try {
+      const [updated] = await db.update(vendorVerifications)
+        .set({ 
+          status: 'rejected',
+          reviewedBy: adminId,
+          reviewedAt: new Date(),
+          rejectionReason: reason
+        })
+        .where(eq(vendorVerifications.id, id))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getAllFraudAlerts(): Promise<FraudAlert[]> {
+    try {
+      return await db.select().from(fraudAlerts).orderBy(desc(fraudAlerts.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createFraudAlert(alert: InsertFraudAlert): Promise<FraudAlert> {
+    const [newAlert] = await db.insert(fraudAlerts).values(alert).returning();
+    return newAlert;
+  }
+
+  async updateFraudAlert(id: number, updates: Partial<InsertFraudAlert>): Promise<FraudAlert | undefined> {
+    try {
+      const [updated] = await db.update(fraudAlerts).set(updates).where(eq(fraudAlerts.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async updateFraudAlertStatus(id: number, status: string): Promise<FraudAlert | undefined> {
+    try {
+      const [updated] = await db.update(fraudAlerts)
+        .set({ status })
+        .where(eq(fraudAlerts.id, id))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getCommissions(status?: string): Promise<Commission[]> {
+    try {
+      let query = db.select().from(commissions);
+      
+      if (status) {
+        query = query.where(eq(commissions.status, status));
+      }
 
   async updateCommissionStatus(id: number, status: string): Promise<Commission | undefined> {
     try {
