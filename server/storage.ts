@@ -882,7 +882,7 @@ export class DatabaseStorage implements IStorage {
         allStores = allStores.filter(store => store.type === storeType);
       }
 
-      const storesWithDistance = allStores.map(store => {
+      const storesWithDistance = allStores.map((store) => {
         const storeLat = parseFloat(store.latitude || '0');
         const storeLon = parseFloat(store.longitude || '0');
         const distance = this.calculateDistance(userLat, userLon, storeLat, storeLon);
@@ -893,11 +893,10 @@ export class DatabaseStorage implements IStorage {
         };
       });
 
-      // Sort by distance
       return storesWithDistance.sort((a, b) => a.distance - b.distance);
     } catch (error) {
-      console.error('Error calculating store distances:', error);
-      return [];
+      console.error('Error getting stores with distance:', error);
+      throw error;
     }
   }
 

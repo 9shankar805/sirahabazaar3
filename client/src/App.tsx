@@ -78,7 +78,7 @@ function AppRouter() {
         <Route path="/stores" component={Stores} />
         <Route path="/restaurants" component={Stores} />
         <Route path="/stores/:id" component={StoreDetail} />
-        <Route path="/restaurants/:id" component={StoreDetail} />
+        <Route path="/restaurants/:id" component={RestaurantDetail} />
         <Route path="/store/:id" component={StoreDetail} />
         <Route path="/restaurant/:id" component={RestaurantDetail} />
         <Route path="/account" component={Account} />
