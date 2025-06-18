@@ -46,6 +46,35 @@ export default function NotificationBanner() {
       });
       setLastNotificationId(latestNotification.id);
 
+      // Play notification sound when banner appears
+      try {
+        const audio = new Audio('/notification.mp3');
+        // Check if this is an approval notification for louder sound
+        const isApprovalNotification = latestNotification.title.includes('Approved') || 
+                                     latestNotification.message.includes('approved');
+        
+        audio.volume = isApprovalNotification ? 0.8 : 0.6;
+        
+        audio.play().then(() => {
+          console.log('Notification banner sound played successfully');
+          
+          // For approval notifications, play a second celebratory beep
+          if (isApprovalNotification) {
+            setTimeout(() => {
+              const celebraryAudio = new Audio('/notification.mp3');
+              celebraryAudio.volume = 0.5;
+              celebraryAudio.play().catch(() => {
+                console.log('Could not play celebratory sound');
+              });
+            }, 500);
+          }
+        }).catch(() => {
+          console.log('Could not play notification banner sound');
+        });
+      } catch (error) {
+        console.log('Error playing notification banner sound:', error);
+      }
+
       // Auto-hide notification after 8 seconds
       setTimeout(() => {
         setVisibleNotifications(prev => prev.filter(n => n.id !== latestNotification.id));
