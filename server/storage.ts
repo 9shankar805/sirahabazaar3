@@ -1677,4 +1677,384 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getProductAttributes(productId: number): Promise<ProductAttribute[]> {DatabaseStorage class is updated with admin profile management methods.
+  async getProductAttributes(productId: number): Promise<ProductAttribute[]> {
+    try {
+      return await db.select().from(productAttributes).where(eq(productAttributes.productId, productId));
+    } catch {
+      return [];
+    }
+  }
+
+  async createProductAttribute(attribute: InsertProductAttribute): Promise<ProductAttribute> {
+    const [newAttribute] = await db.insert(productAttributes).values(attribute).returning();
+    return newAttribute;
+  }
+
+  async deleteProductAttribute(id: number): Promise<boolean> {
+    try {
+      await db.delete(productAttributes).where(eq(productAttributes.id, id));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async logAdminAction(log: InsertAdminLog): Promise<AdminLog> {
+    const [newLog] = await db.insert(adminLogs).values(log).returning();
+    return newLog;
+  }
+
+  async getAdminLogs(adminId?: number): Promise<AdminLog[]> {
+    try {
+      if (adminId) {
+        return await db.select().from(adminLogs).where(eq(adminLogs.adminId, adminId)).orderBy(desc(adminLogs.createdAt));
+      }
+      return await db.select().from(adminLogs).orderBy(desc(adminLogs.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async bulkUpdateProductStatus(productIds: number[], status: boolean): Promise<boolean> {
+    try {
+      await db.update(products).set({ isActive: status }).where(inArray(products.id, productIds));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getOrdersWithDetails(): Promise<any[]> {
+    try {
+      return await db.select().from(orders).orderBy(desc(orders.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async getRevenueAnalytics(days: number = 30): Promise<any> {
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const result = await db.select({
+        total: sql`sum(${orders.totalAmount})`,
+        count: count()
+      }).from(orders).where(and(
+        gte(orders.createdAt, startDate),
+        eq(orders.status, 'delivered')
+      ));
+
+      return {
+        totalRevenue: parseFloat(result[0]?.total || '0'),
+        totalOrders: result[0]?.count || 0
+      };
+    } catch {
+      return { totalRevenue: 0, totalOrders: 0 };
+    }
+  }
+
+  async getUsersAnalytics(): Promise<any> {
+    try {
+      const [total, active, pending] = await Promise.all([
+        db.select({ count: count() }).from(users),
+        db.select({ count: count() }).from(users).where(eq(users.status, 'active')),
+        db.select({ count: count() }).from(users).where(eq(users.status, 'pending'))
+      ]);
+
+      return {
+        total: total[0]?.count || 0,
+        active: active[0]?.count || 0,
+        pending: pending[0]?.count || 0
+      };
+    } catch {
+      return { total: 0, active: 0, pending: 0 };
+    }
+  }
+
+  async getInventoryAlerts(): Promise<any[]> {
+    try {
+      return await db.select().from(products).where(sql`${products.stock} < 10`);
+    } catch {
+      return [];
+    }
+  }
+
+  // Delivery partner operations
+  async getDeliveryPartner(id: number): Promise<DeliveryPartner | undefined> {
+    try {
+      const [partner] = await db.select().from(deliveryPartners).where(eq(deliveryPartners.id, id));
+      return partner;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getDeliveryPartnerByUserId(userId: number): Promise<DeliveryPartner | undefined> {
+    try {
+      const [partner] = await db.select().from(deliveryPartners).where(eq(deliveryPartners.userId, userId));
+      return partner;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getAllDeliveryPartners(): Promise<DeliveryPartner[]> {
+    try {
+      return await db.select().from(deliveryPartners).orderBy(desc(deliveryPartners.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async getPendingDeliveryPartners(): Promise<DeliveryPartner[]> {
+    try {
+      return await db.select().from(deliveryPartners).where(eq(deliveryPartners.status, 'pending'));
+    } catch {
+      return [];
+    }
+  }
+
+  async createDeliveryPartner(deliveryPartner: InsertDeliveryPartner): Promise<DeliveryPartner> {
+    const [newPartner] = await db.insert(deliveryPartners).values(deliveryPartner).returning();
+    return newPartner;
+  }
+
+  async updateDeliveryPartner(id: number, updates: Partial<InsertDeliveryPartner>): Promise<DeliveryPartner | undefined> {
+    try {
+      const [updated] = await db.update(deliveryPartners).set(updates).where(eq(deliveryPartners.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async approveDeliveryPartner(id: number, adminId: number): Promise<DeliveryPartner | undefined> {
+    try {
+      const [updated] = await db.update(deliveryPartners)
+        .set({ 
+          status: 'approved',
+          approvedBy: adminId,
+          approvedAt: new Date()
+        })
+        .where(eq(deliveryPartners.id, id))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async rejectDeliveryPartner(id: number, adminId: number, reason: string): Promise<DeliveryPartner | undefined> {
+    try {
+      const [updated] = await db.update(deliveryPartners)
+        .set({ 
+          status: 'rejected',
+          approvedBy: adminId,
+          approvedAt: new Date(),
+          rejectionReason: reason
+        })
+        .where(eq(deliveryPartners.id, id))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  // Delivery operations
+  async getDelivery(id: number): Promise<Delivery | undefined> {
+    try {
+      const [delivery] = await db.select().from(deliveries).where(eq(deliveries.id, id));
+      return delivery;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getDeliveriesByPartnerId(partnerId: number): Promise<Delivery[]> {
+    try {
+      return await db.select().from(deliveries).where(eq(deliveries.partnerId, partnerId));
+    } catch {
+      return [];
+    }
+  }
+
+  async getDeliveriesByOrderId(orderId: number): Promise<Delivery[]> {
+    try {
+      return await db.select().from(deliveries).where(eq(deliveries.orderId, orderId));
+    } catch {
+      return [];
+    }
+  }
+
+  async createDelivery(delivery: InsertDelivery): Promise<Delivery> {
+    const [newDelivery] = await db.insert(deliveries).values(delivery).returning();
+    return newDelivery;
+  }
+
+  async updateDeliveryStatus(id: number, status: string, partnerId?: number): Promise<Delivery | undefined> {
+    try {
+      const updates: any = { status };
+      if (partnerId) updates.partnerId = partnerId;
+
+      const [updated] = await db.update(deliveries).set(updates).where(eq(deliveries.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async assignDeliveryToPartner(deliveryId: number, partnerId: number): Promise<Delivery | undefined> {
+    try {
+      const [updated] = await db.update(deliveries)
+        .set({ 
+          partnerId,
+          status: 'assigned',
+          assignedAt: new Date()
+        })
+        .where(eq(deliveries.id, deliveryId))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getActiveDeliveriesForStore(storeId: number): Promise<any[]> {
+    try {
+      return await db.select().from(deliveries)
+        .where(and(
+          eq(deliveries.storeId, storeId),
+          sql`${deliveries.status} NOT IN ('delivered', 'cancelled')`
+        ));
+    } catch {
+      return [];
+    }
+  }
+
+  // Delivery tracking
+  async getDeliveryTrackingData(deliveryId: number): Promise<any> {
+    try {
+      const [delivery] = await db.select().from(deliveries).where(eq(deliveries.id, deliveryId));
+      return delivery;
+    } catch {
+      return null;
+    }
+  }
+
+  async updateDeliveryLocation(deliveryId: number, latitude: number, longitude: number): Promise<void> {
+    try {
+      await db.update(deliveries)
+        .set({ 
+          currentLatitude: latitude.toString(),
+          currentLongitude: longitude.toString(),
+          updatedAt: new Date()
+        })
+        .where(eq(deliveries.id, deliveryId));
+    } catch (error) {
+      console.error('Failed to update delivery location:', error);
+    }
+  }
+
+  // Delivery Zone methods
+  async createDeliveryZone(data: InsertDeliveryZone): Promise<DeliveryZone> {
+    const [newZone] = await db.insert(deliveryZones).values(data).returning();
+    return newZone;
+  }
+
+  async getDeliveryZones(): Promise<DeliveryZone[]> {
+    try {
+      return await db.select().from(deliveryZones).orderBy(deliveryZones.minDistance);
+    } catch {
+      return [];
+    }
+  }
+
+  async getAllDeliveryZones(): Promise<DeliveryZone[]> {
+    try {
+      return await db.select().from(deliveryZones).orderBy(deliveryZones.minDistance);
+    } catch {
+      return [];
+    }
+  }
+
+  async updateDeliveryZone(id: number, data: Partial<InsertDeliveryZone>): Promise<DeliveryZone> {
+    const [updated] = await db.update(deliveryZones).set(data).where(eq(deliveryZones.id, id)).returning();
+    return updated;
+  }
+
+  async deleteDeliveryZone(id: number): Promise<void> {
+    await db.delete(deliveryZones).where(eq(deliveryZones.id, id));
+  }
+
+  async calculateDeliveryFee(distance: number): Promise<{ fee: number; zone: DeliveryZone | null }> {
+    try {
+      const zones = await this.getDeliveryZones();
+      
+      for (const zone of zones) {
+        if (distance >= zone.minDistance && distance <= zone.maxDistance) {
+          return { fee: parseFloat(zone.deliveryFee), zone };
+        }
+      }
+      
+      return { fee: 0, zone: null };
+    } catch {
+      return { fee: 0, zone: null };
+    }
+  }
+
+  // Admin profile management methods
+  async getAdminProfile(adminId: number): Promise<any> {
+    try {
+      const [admin] = await db.select().from(adminUsers).where(eq(adminUsers.id, adminId));
+      return admin;
+    } catch {
+      return null;
+    }
+  }
+
+  async updateAdminProfile(adminId: number, updates: any): Promise<any> {
+    try {
+      const [updated] = await db.update(adminUsers)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(adminUsers.id, adminId))
+        .returning();
+      return updated;
+    } catch {
+      return null;
+    }
+  }
+
+  async verifyAdminPassword(adminId: number, password: string): Promise<boolean> {
+    try {
+      const [admin] = await db.select().from(adminUsers).where(eq(adminUsers.id, adminId));
+      if (!admin) return false;
+      
+      // In a real application, you would hash the password and compare
+      // For now, we'll do a simple comparison (not secure for production)
+      return admin.password === password;
+    } catch {
+      return false;
+    }
+  }
+
+  async changeAdminPassword(adminId: number, currentPassword: string, newPassword: string): Promise<boolean> {
+    try {
+      // Verify current password
+      const isCurrentPasswordValid = await this.verifyAdminPassword(adminId, currentPassword);
+      if (!isCurrentPasswordValid) {
+        return false;
+      }
+
+      // Update password
+      await db.update(adminUsers)
+        .set({ password: newPassword, updatedAt: new Date() })
+        .where(eq(adminUsers.id, adminId));
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
