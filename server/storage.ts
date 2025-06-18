@@ -877,7 +877,7 @@ export class DatabaseStorage implements IStorage {
   async getStoresWithDistance(userLat: number, userLon: number, storeType?: string): Promise<(Store & { distance: number })[]> {
     try {
       let allStores = await db.select().from(stores);
-      
+
       if (storeType) {
         allStores = allStores.filter(store => store.type === storeType);
       }
@@ -886,7 +886,7 @@ export class DatabaseStorage implements IStorage {
         const storeLat = parseFloat(store.latitude || '0');
         const storeLon = parseFloat(store.longitude || '0');
         const distance = this.calculateDistance(userLat, userLon, storeLat, storeLon);
-        
+
         return {
           ...store,
           distance: Math.round(distance * 100) / 100 // Round to 2 decimal places
@@ -1110,7 +1110,7 @@ export class DatabaseStorage implements IStorage {
   async getInventoryLogs(storeId: number, productId?: number): Promise<InventoryLog[]> {
     try {
       let query = db.select().from(inventoryLogs).where(eq(inventoryLogs.storeId, storeId));
-      
+
       if (productId) {
         query = query.where(eq(inventoryLogs.productId, productId));
       }
@@ -1404,7 +1404,7 @@ export class DatabaseStorage implements IStorage {
   async getCommissions(status?: string): Promise<Commission[]> {
     try {
       let query = db.select().from(commissions);
-      
+
       if (status) {
         query = query.where(eq(commissions.status, status));
       }
