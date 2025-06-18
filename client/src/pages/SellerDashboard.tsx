@@ -481,27 +481,65 @@ export default function ShopkeeperDashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList
-            className={`grid w-full ${currentStore ? "grid-cols-6" : "grid-cols-2"}`}
+            className={`grid w-full gap-1 ${currentStore ? "grid-cols-3 md:grid-cols-6" : "grid-cols-2"}`}
           >
-            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="overview" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+              <div className="flex flex-col items-center gap-1">
+                <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Overview</span>
+                <span className="sm:hidden">Home</span>
+              </div>
+            </TabsTrigger>
             {!currentStore && (
-              <TabsTrigger value="create-store">Create Store</TabsTrigger>
+              <TabsTrigger value="create-store" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+                <div className="flex flex-col items-center gap-1">
+                  <Store className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="hidden sm:inline">Create Store</span>
+                  <span className="sm:hidden">Store</span>
+                </div>
+              </TabsTrigger>
             )}
             {currentStore && (
               <>
-                <TabsTrigger value="inventory">Inventory</TabsTrigger>
-                <TabsTrigger value="products">Products</TabsTrigger>
-                <TabsTrigger value="add-product">
-                  {editingProduct ? "Edit Product" : "Add Product"}
+                <TabsTrigger value="inventory" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+                  <div className="flex flex-col items-center gap-1">
+                    <Package className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">Inventory</span>
+                    <span className="sm:hidden">Stock</span>
+                  </div>
                 </TabsTrigger>
-                <TabsTrigger value="orders">Orders</TabsTrigger>
-                <TabsTrigger value="tracking">
-                  Delivery Tracking
-                  {activeDeliveries.length > 0 && (
-                    <Badge className="ml-2 bg-blue-500 text-white">
-                      {activeDeliveries.length}
-                    </Badge>
-                  )}
+                <TabsTrigger value="products" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+                  <div className="flex flex-col items-center gap-1">
+                    <Package className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">Products</span>
+                    <span className="sm:hidden">Items</span>
+                  </div>
+                </TabsTrigger>
+                <TabsTrigger value="add-product" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+                  <div className="flex flex-col items-center gap-1">
+                    <Plus className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">{editingProduct ? "Edit Product" : "Add Product"}</span>
+                    <span className="sm:hidden">{editingProduct ? "Edit" : "Add"}</span>
+                  </div>
+                </TabsTrigger>
+                <TabsTrigger value="orders" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+                  <div className="flex flex-col items-center gap-1">
+                    <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">Orders</span>
+                    <span className="sm:hidden">Orders</span>
+                  </div>
+                </TabsTrigger>
+                <TabsTrigger value="tracking" className="px-2 md:px-3 py-1.5 text-xs md:text-sm">
+                  <div className="flex flex-col items-center gap-1">
+                    <Navigation className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">Delivery Tracking</span>
+                    <span className="sm:hidden">Track</span>
+                    {activeDeliveries.length > 0 && (
+                      <Badge className="ml-1 bg-blue-500 text-white text-xs h-4 min-w-4 px-1">
+                        {activeDeliveries.length}
+                      </Badge>
+                    )}
+                  </div>
                 </TabsTrigger>
               </>
             )}
