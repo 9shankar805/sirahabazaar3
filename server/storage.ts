@@ -1946,25 +1946,48 @@ export class DatabaseStorage implements IStorage {
 
   async createDefaultAdmin(): Promise<void> {
     try {
-      // Check if default admin already exists
+      // Check if default admin already exists in adminUsers table
       const existingAdmin = await db.select()
-        .from(admins)
-        .where(eq(admins.email, 'admin@example.com'))
+        .from(adminUsers)
+        .where(eq(adminUsers.email, 'admin@sirahbazaar.com'))
         .limit(1);
 
       if (existingAdmin.length === 0) {
-        // Create default admin
-        await db.insert(admins).values({
-          email: 'admin@example.com',
+        // Create default admin in adminUsers table
+        await db.insert(adminUsers).values({
+          email: 'admin@sirahbazaar.com',
           password: 'admin123', // In production, this should be hashed
           fullName: 'System Administrator',
           role: 'super_admin',
           isActive: true,
-          createdAt: new Date()
+          createdAt: new Date(),
+          updatedAt: new Date()
         });
-        console.log('✅ Default admin account created: admin@example.com / admin123');
+        console.log('✅ Default admin account created: admin@sirahbazaar.com / admin123');
       } else {
         console.log('✅ Default admin account already exists');
+      }
+
+      // Also ensure the old admins table has the admin if it exists
+      try {
+        const existingOldAdmin = await db.select()
+          .from(admins)
+          .where(eq(admins.email, 'admin@sirahbazaar.com'))
+          .limit(1);
+
+        if (existingOldAdmin.length === 0) {
+          await db.insert(admins).values({
+            email: 'admin@sirahbazaar.com',
+            password: 'admin123',
+            fullName: 'System Administrator',
+            role: 'super_admin',
+            isActive: true,
+            createdAt: new Date()
+          });
+        }
+      } catch (error) {
+        // Ignore errors for the old admins table if it doesn't exist
+        console.log('Old admins table not found or error inserting, continuing...');
       }
     } catch (error) {
       console.error('Error creating default admin:', error);
