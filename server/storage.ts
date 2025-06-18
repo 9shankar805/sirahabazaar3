@@ -1919,16 +1919,15 @@ export class DatabaseStorage implements IStorage {
     try {
       const admin = await db.select()
         .from(admins)
-        .where(and(eq(admins.email, email), eq(admins.isActive, true)))
+        .where(eq(admins.email, email))
         .limit(1);
 
       if (admin.length === 0) {
         return null;
       }
 
-      // In production, you should hash passwords and compare hashes
-      // For now, direct comparison (this should be changed for security)
-      if (admin[0].password === password) {
+      // Check if admin is active and password matches
+      if (admin[0].isActive && admin[0].password === password) {
         return admin[0];
       }
 
