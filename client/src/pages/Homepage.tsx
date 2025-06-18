@@ -481,7 +481,7 @@ export default function Homepage() {
                   </div>
                 </div>
               </Link>
-            ))}</div>
+            ))}
           </div>
         </div>
       </section>
