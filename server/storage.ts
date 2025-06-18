@@ -1408,6 +1408,12 @@ export class DatabaseStorage implements IStorage {
         query = query.where(eq(commissions.status, status));
       }
 
+      return await query;
+    } catch {
+      return [];
+    }
+  }
+
   async updateCommissionStatus(id: number, status: string): Promise<Commission | undefined> {
     try {
       const [updated] = await db.update(commissions)

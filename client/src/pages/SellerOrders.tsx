@@ -360,8 +360,9 @@ export default function SellerOrders() {
                 <p className="text-gray-500">Loading orders...</p>
               </div>
             ) : (
-              {/* Mobile-first order cards */}
-              <div className="block sm:hidden space-y-3 px-3">
+              <>
+                {/* Mobile-first order cards */}
+                <div className="block sm:hidden space-y-3 px-3">
                 {filteredOrders.map((order) => (
                   <Card key={order.id} className="p-4">
                     <div className="space-y-3">
@@ -529,6 +530,7 @@ export default function SellerOrders() {
                 </TableBody>
               </Table>
               </div>
+              </>
             )}
           </CardContent>
         </Card>
