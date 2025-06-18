@@ -238,6 +238,31 @@ export default function ImprovedAdminDashboard() {
     },
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: async (profileData: any) => {
+      const response = await apiRequest("/api/admin/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...profileData, adminId: adminUser.id }),
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      // Update local admin user data
+      const updatedAdmin = { ...adminUser, ...data.admin };
+      setAdminUser(updatedAdmin);
+      localStorage.setItem("adminUser", JSON.stringify(updatedAdmin));
+      toast({ title: "Success", description: "Profile updated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to update profile",
+        variant: "destructive"
+      });
+    },
+  });
+
   const handleLogout = () => {
     localStorage.removeItem("adminUser");
     setLocation("/admin/login");
@@ -1273,12 +1298,21 @@ export default function ImprovedAdminDashboard() {
                                       const nameInput = document.getElementById('edit-name') as HTMLInputElement;
                                       const emailInput = document.getElementById('edit-email') as HTMLInputElement;
                                       
-                                      // Update admin profile logic would go here
-                                      toast({
-                                        title: "Profile Updated",
-                                        description: "Your admin profile has been updated successfully.",
+                                      if (!nameInput.value || !emailInput.value) {
+                                        toast({
+                                          title: "Error",
+                                          description: "Please fill in all fields.",
+                                          variant: "destructive",
+                                        });
+                                        return;
+                                      }
+
+                                      updateProfileMutation.mutate({
+                                        fullName: nameInput.value,
+                                        email: emailInput.value,
                                       });
                                     }}
+                                    disabled={updateProfileMutation.isPending}
                                   >
                                     Save Changes
                                   </Button>
@@ -1364,7 +1398,7 @@ export default function ImprovedAdminDashboard() {
                                       }
                                       
                                       try {
-                                        const response = await fetch("/api/admin/change-password", {
+                                        const response = await apiRequest("/api/admin/change-password", {
                                           method: "PUT",
                                           headers: { "Content-Type": "application/json" },
                                           body: JSON.stringify({
