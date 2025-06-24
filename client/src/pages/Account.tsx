@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { User, Mail, Phone, MapPin, Calendar, ShoppingBag, Store, Settings, Edit, Clock, AlertCircle, Check } from "lucide-react";
 import { Link } from "wouter";
+import PushNotificationSettings from "@/components/PushNotificationSettings";
+import NotificationTestButton from "@/components/NotificationTestButton";
 import type { Order } from "@shared/schema";
 
 export default function Account() {

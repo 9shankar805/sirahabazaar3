@@ -8,7 +8,7 @@ import { Bell, Send, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/hooks/use-user';
 
-export function NotificationTestButton() {
+export default function NotificationTestButton() {
   const { user } = useUser();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);

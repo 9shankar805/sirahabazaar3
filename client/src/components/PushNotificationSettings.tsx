@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, title } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -8,7 +8,7 @@ import { Bell, BellOff, Smartphone, AlertCircle, CheckCircle } from 'lucide-reac
 import { usePushNotificationSetup } from '@/hooks/useFirebaseMessaging';
 import { useUser } from '@/hooks/use-user';
 
-export function PushNotificationSettings() {
+export default function PushNotificationSettings() {
   const { user } = useUser();
   const { 
     isSupported, 

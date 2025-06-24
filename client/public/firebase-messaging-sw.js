@@ -6,13 +6,13 @@ importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-comp
 
 // Initialize Firebase in service worker
 const firebaseConfig = {
-  // Firebase config will be dynamically inserted by the frontend
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN", 
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCUDoNuJ5hUKzwnZJe8hp5Rbt_Ja1MCDpw",
+  authDomain: "sirahabazaar-bc62f.firebaseapp.com",
+  projectId: "sirahabazaar-bc62f",
+  storageBucket: "sirahabazaar-bc62f.firebasestorage.app",
+  messagingSenderId: "898667729116",
+  appId: "1:898667729116:web:bf417c13c2651c0bc26419",
+  measurementId: "G-SK3VBMNR5N"
 };
 
 firebase.initializeApp(firebaseConfig);

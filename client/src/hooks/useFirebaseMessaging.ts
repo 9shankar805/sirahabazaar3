@@ -3,14 +3,15 @@ import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import { apiRequest } from '@/lib/queryClient';
 
-// Firebase configuration - Replace with your actual config
+// Firebase configuration 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: "AIzaSyCUDoNuJ5hUKzwnZJe8hp5Rbt_Ja1MCDpw",
+  authDomain: "sirahabazaar-bc62f.firebaseapp.com",
+  projectId: "sirahabazaar-bc62f",
+  storageBucket: "sirahabazaar-bc62f.firebasestorage.app",
+  messagingSenderId: "898667729116",
+  appId: "1:898667729116:web:bf417c13c2651c0bc26419",
+  measurementId: "G-SK3VBMNR5N"
 };
 
 export interface UseFirebaseMessagingResult {
@@ -139,7 +140,7 @@ export function useFirebaseMessaging(): UseFirebaseMessagingResult {
       const messaging = getMessaging(app);
 
       const currentToken = await getToken(messaging, {
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+        vapidKey: "BIA9pygwkacYkvg7W5lJh1PjDXhb2ntG3N0YCg9hbnNKwPHKncZlUzpRlNUZ4mOs-qQ_BgaFrSqDxKShgyWg-14",
       });
 
       if (currentToken) {
