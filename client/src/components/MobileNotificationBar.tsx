@@ -2,43 +2,44 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Bell, X, Smartphone } from 'lucide-react';
-import { usePushNotificationSetup } from '@/hooks/useFirebaseMessaging';
+import { testNotificationSetup, supportsNotifications, isMobileDevice } from '@/lib/firebaseNotifications';
 import { useUser } from '@/hooks/use-user';
 
 export default function MobileNotificationBar() {
   const { user } = useUser();
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
-  const {
-    isSupported,
-    isSetup,
-    requestPermission,
-    setupPushNotifications,
-    error
-  } = usePushNotificationSetup(user?.id);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if we should show the notification bar
     const shouldShow = 
       user?.id && // User is logged in
-      isSupported && // Browser supports notifications
-      !isSetup && // Notifications not set up yet
+      supportsNotifications() && // Browser supports notifications
       !isDismissed && // User hasn't dismissed
       !localStorage.getItem('notification-bar-dismissed') && // Not dismissed before
+      Notification.permission !== 'granted' && // Not already granted
       Notification.permission !== 'denied'; // Permission not denied
 
     setIsVisible(shouldShow);
-  }, [user, isSupported, isSetup, isDismissed]);
+  }, [user, isDismissed]);
 
   const handleEnableNotifications = async () => {
+    if (!user?.id) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      const success = await requestPermission();
-      if (success) {
-        await setupPushNotifications();
-        setIsVisible(false);
-      }
-    } catch (error) {
-      console.error('Failed to enable notifications:', error);
+      await testNotificationSetup(user.id);
+      setIsVisible(false);
+      localStorage.setItem('notification-setup-complete', 'true');
+    } catch (err) {
+      console.error('Failed to enable notifications:', err);
+      setError(err instanceof Error ? err.message : 'Failed to enable notifications');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -73,10 +74,11 @@ export default function MobileNotificationBar() {
                 <Button 
                   size="sm" 
                   onClick={handleEnableNotifications}
+                  disabled={isLoading}
                   className="text-xs h-7 bg-blue-600 hover:bg-blue-700"
                 >
                   <Smartphone className="h-3 w-3 mr-1" />
-                  Enable
+                  {isLoading ? 'Setting up...' : 'Enable'}
                 </Button>
                 <Button 
                   size="sm" 

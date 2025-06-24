@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
-import { apiRequest } from '@/lib/queryClient';
+import { testNotificationSetup, supportsNotifications } from '@/lib/firebaseNotifications';
 
 // Firebase configuration 
 const firebaseConfig = {
@@ -35,17 +33,15 @@ export function useFirebaseMessaging(): UseFirebaseMessagingResult {
 
   const checkSupport = async () => {
     try {
-      const supported = await isSupported();
+      const supported = supportsNotifications();
       setIsSupportedState(supported);
       
-      if (supported && hasFirebaseConfig()) {
-        await initializeFirebase();
-      } else if (!hasFirebaseConfig()) {
-        setError('Firebase configuration not found. Please set up Firebase environment variables.');
+      if (!supported) {
+        setError('Notifications are not supported in this browser');
       }
     } catch (err) {
-      console.error('Error checking Firebase support:', err);
-      setError('Firebase messaging is not supported in this browser');
+      console.error('Error checking notification support:', err);
+      setError('Failed to check notification support');
     } finally {
       setIsLoading(false);
     }
@@ -138,13 +134,12 @@ export function useFirebaseMessaging(): UseFirebaseMessagingResult {
 
   const requestPermission = async (): Promise<boolean> => {
     try {
-      if (!isSupportedState || !hasFirebaseConfig()) {
+      if (!isSupportedState) {
         return false;
       }
 
       // Check if already granted
       if (Notification.permission === 'granted') {
-        await getFirebaseToken();
         return true;
       }
 
@@ -153,16 +148,12 @@ export function useFirebaseMessaging(): UseFirebaseMessagingResult {
       console.log('Notification permission:', permission);
       
       if (permission === 'granted') {
-        await getFirebaseToken();
-        
         // Show a test notification to confirm it works
-        if ('serviceWorker' in navigator) {
-          new Notification('Notifications Enabled!', {
-            body: 'You will now receive push notifications from Siraha Bazaar',
-            icon: '/favicon.ico',
-            tag: 'permission-granted'
-          });
-        }
+        new Notification('Notifications Enabled!', {
+          body: 'You will now receive push notifications from Siraha Bazaar',
+          icon: '/favicon.ico',
+          tag: 'permission-granted'
+        });
         
         return true;
       } else if (permission === 'denied') {
@@ -201,33 +192,12 @@ export function useFirebaseMessaging(): UseFirebaseMessagingResult {
   };
 
   const saveTokenToServer = async (userId: number): Promise<boolean> => {
-    if (!token) {
-      setError('No token available to save');
-      return false;
-    }
-
     try {
-      const response = await fetch('/api/device-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          token,
-          deviceType: 'web',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to save token: ${response.statusText}`);
-      }
-
-      console.log('Token saved to server successfully');
+      await testNotificationSetup(userId);
       return true;
     } catch (err) {
-      console.error('Error saving token to server:', err);
-      setError('Failed to save token to server');
+      console.error('Error setting up notifications:', err);
+      setError('Failed to setup notifications');
       return false;
     }
   };

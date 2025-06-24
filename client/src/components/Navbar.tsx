@@ -11,6 +11,7 @@ import { useAppMode } from "@/hooks/useAppMode";
 import { useQuery } from "@tanstack/react-query";
 import SearchWithSuggestions from "@/components/SearchWithSuggestions";
 import NotificationCenter from "@/components/NotificationCenter";
+import MobileNotificationCenter from "@/components/MobileNotificationCenter";
 import {
   DropdownMenu,
   DropdownMenuContent,
