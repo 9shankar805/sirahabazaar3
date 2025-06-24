@@ -23,29 +23,63 @@ export class FirebaseService {
     if (this.initialized) return;
 
     try {
-      // Check if Firebase service account is configured
-      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+      // Try to load service account from environment variable first
+      let serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
       
       if (!serviceAccount) {
-        console.log('Firebase service account not configured. Push notifications will be limited.');
+        // Fallback to local file for development
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const serviceAccountPath = path.join(process.cwd(), 'firebase-service-account.json');
+          if (fs.existsSync(serviceAccountPath)) {
+            serviceAccount = fs.readFileSync(serviceAccountPath, 'utf8');
+          }
+        } catch (fileError) {
+          console.log('No local service account file found');
+        }
+      }
+      
+      if (!serviceAccount) {
+        console.log('Firebase service account not configured. Using minimal configuration.');
+        // Initialize with minimal config for development
+        admin.initializeApp({
+          projectId: 'sirahabazaar-bc62f',
+        });
+        this.initialized = true;
         return;
       }
 
+      // Parse service account
+      const serviceAccountObj = typeof serviceAccount === 'string' 
+        ? JSON.parse(serviceAccount) 
+        : serviceAccount;
+
       // Initialize Firebase Admin SDK
       admin.initializeApp({
-        credential: admin.credential.cert(JSON.parse(serviceAccount)),
-        projectId: process.env.FIREBASE_PROJECT_ID,
+        credential: admin.credential.cert(serviceAccountObj),
+        projectId: serviceAccountObj.project_id || 'sirahabazaar-bc62f',
       });
 
       this.initialized = true;
       console.log('✅ Firebase service initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Firebase service:', error);
+      // Initialize with minimal config as fallback
+      try {
+        admin.initializeApp({
+          projectId: 'sirahabazaar-bc62f',
+        });
+        this.initialized = true;
+        console.log('✅ Firebase initialized with minimal configuration');
+      } catch (fallbackError) {
+        console.error('Failed to initialize Firebase with fallback:', fallbackError);
+      }
     }
   }
 
   static isConfigured(): boolean {
-    return this.initialized && !!process.env.FIREBASE_SERVICE_ACCOUNT;
+    return this.initialized;
   }
 
   /**
@@ -72,12 +106,14 @@ export class FirebaseService {
         data: payload.data || {},
         android: {
           priority: options.priority || 'high',
-          ttl: options.timeToLive || 3600000, // 1 hour default
+          ttl: options.timeToLive || 3600000,
           collapseKey: options.collapseKey,
           notification: {
             sound: options.sound || 'default',
-            clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+            clickAction: 'FCM_PLUGIN_ACTIVITY',
             channelId: 'siraha_bazaar_notifications',
+            icon: 'ic_notification',
+            color: '#0079F2',
           },
         },
         apns: {
@@ -85,7 +121,31 @@ export class FirebaseService {
             aps: {
               sound: options.sound || 'default',
               badge: options.badge || 1,
+              alert: {
+                title: payload.title,
+                body: payload.body,
+              },
             },
+          },
+          headers: {
+            'apns-priority': '10',
+            'apns-push-type': 'alert',
+          },
+        },
+        webpush: {
+          headers: {
+            'Urgency': 'high',
+            'TTL': '86400',
+          },
+          notification: {
+            title: payload.title,
+            body: payload.body,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            data: payload.data,
+            requireInteraction: false,
+            silent: false,
+            tag: payload.data?.type || 'general',
           },
         },
       };
@@ -130,8 +190,10 @@ export class FirebaseService {
           collapseKey: options.collapseKey,
           notification: {
             sound: options.sound || 'default',
-            clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+            clickAction: 'FCM_PLUGIN_ACTIVITY',
             channelId: 'siraha_bazaar_notifications',
+            icon: 'ic_notification',
+            color: '#0079F2',
           },
         },
         apns: {
@@ -139,7 +201,31 @@ export class FirebaseService {
             aps: {
               sound: options.sound || 'default',
               badge: options.badge || 1,
+              alert: {
+                title: payload.title,
+                body: payload.body,
+              },
             },
+          },
+          headers: {
+            'apns-priority': '10',
+            'apns-push-type': 'alert',
+          },
+        },
+        webpush: {
+          headers: {
+            'Urgency': 'high',
+            'TTL': '86400',
+          },
+          notification: {
+            title: payload.title,
+            body: payload.body,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            data: payload.data,
+            requireInteraction: false,
+            silent: false,
+            tag: payload.data?.type || 'general',
           },
         },
         tokens,

@@ -66,18 +66,42 @@ export function useFirebaseMessaging(): UseFirebaseMessagingResult {
       const app = initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
 
+      // Register service worker for background notifications
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+          console.log('Service Worker registered:', registration);
+        } catch (swError) {
+          console.error('Service Worker registration failed:', swError);
+        }
+      }
+
       // Listen for foreground messages
       onMessage(messaging, (payload) => {
         console.log('Foreground message received:', payload);
         
         // Show browser notification for foreground messages
         if (Notification.permission === 'granted') {
-          new Notification(payload.notification?.title || 'Siraha Bazaar', {
+          const notification = new Notification(payload.notification?.title || 'Siraha Bazaar', {
             body: payload.notification?.body,
-            icon: '/logo192.png',
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
             image: payload.notification?.imageUrl,
             data: payload.data,
+            tag: payload.data?.type || 'general',
+            requireInteraction: false,
+            silent: false,
           });
+
+          // Auto-close notification after 5 seconds on mobile
+          setTimeout(() => {
+            notification.close();
+          }, 5000);
+
+          notification.onclick = () => {
+            handleNotificationAction(payload.data);
+            notification.close();
+          };
         }
 
         // Handle different notification types
@@ -118,13 +142,34 @@ export function useFirebaseMessaging(): UseFirebaseMessagingResult {
         return false;
       }
 
+      // Check if already granted
+      if (Notification.permission === 'granted') {
+        await getFirebaseToken();
+        return true;
+      }
+
+      // Request permission with user gesture
       const permission = await Notification.requestPermission();
+      console.log('Notification permission:', permission);
       
       if (permission === 'granted') {
         await getFirebaseToken();
+        
+        // Show a test notification to confirm it works
+        if ('serviceWorker' in navigator) {
+          new Notification('Notifications Enabled!', {
+            body: 'You will now receive push notifications from Siraha Bazaar',
+            icon: '/favicon.ico',
+            tag: 'permission-granted'
+          });
+        }
+        
         return true;
+      } else if (permission === 'denied') {
+        setError('Notification permission denied. Please enable notifications in your browser settings.');
+        return false;
       } else {
-        setError('Notification permission denied');
+        setError('Notification permission not granted');
         return false;
       }
     } catch (err) {
@@ -162,17 +207,21 @@ export function useFirebaseMessaging(): UseFirebaseMessagingResult {
     }
 
     try {
-      await apiRequest('/api/device-token', {
+      const response = await fetch('/api/device-token', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           userId,
           token,
           deviceType: 'web',
         }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save token: ${response.statusText}`);
+      }
 
       console.log('Token saved to server successfully');
       return true;

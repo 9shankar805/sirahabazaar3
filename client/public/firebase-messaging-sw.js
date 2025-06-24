@@ -26,26 +26,29 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification?.title || 'Siraha Bazaar';
   const notificationOptions = {
     body: payload.notification?.body || 'You have a new notification',
-    icon: '/logo192.png',
-    badge: '/badge-icon.png',
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
     image: payload.notification?.imageUrl,
     data: payload.data,
     actions: [
       {
         action: 'open',
-        title: 'Open App'
+        title: 'Open'
       },
       {
         action: 'dismiss',
         title: 'Dismiss'
       }
     ],
-    requireInteraction: payload.data?.requireInteraction === 'true',
-    tag: payload.data?.type || 'general'
+    requireInteraction: false,
+    tag: payload.data?.type || 'general',
+    silent: false,
+    vibrate: [200, 100, 200], // For mobile devices
+    timestamp: Date.now()
   };
 
   // Show notification
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // Handle notification click
@@ -105,27 +108,43 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// Handle push event
+// Handle push event directly (for better mobile support)
 self.addEventListener('push', (event) => {
   console.log('Push event received:', event);
 
   if (!event.data) {
+    console.log('Push event has no data');
     return;
   }
 
-  const payload = event.data.json();
-  const notificationTitle = payload.notification?.title || 'Siraha Bazaar';
-  const notificationOptions = {
-    body: payload.notification?.body || 'You have a new notification',
-    icon: '/logo192.png',
-    badge: '/badge-icon.png',
-    image: payload.notification?.imageUrl,
-    data: payload.data,
-    requireInteraction: false,
-    tag: payload.data?.type || 'general'
-  };
+  try {
+    const payload = event.data.json();
+    console.log('Push payload:', payload);
+    
+    const notificationTitle = payload.notification?.title || 'Siraha Bazaar';
+    const notificationOptions = {
+      body: payload.notification?.body || 'You have a new notification',
+      icon: '/favicon.ico',
+      badge: '/favicon.ico',
+      image: payload.notification?.imageUrl,
+      data: payload.data,
+      requireInteraction: false,
+      tag: payload.data?.type || 'general',
+      silent: false,
+      vibrate: [200, 100, 200],
+      timestamp: Date.now(),
+      actions: [
+        {
+          action: 'open',
+          title: 'Open'
+        }
+      ]
+    };
 
-  event.waitUntil(
-    self.registration.showNotification(notificationTitle, notificationOptions)
-  );
+    event.waitUntil(
+      self.registration.showNotification(notificationTitle, notificationOptions)
+    );
+  } catch (error) {
+    console.error('Error processing push event:', error);
+  }
 });

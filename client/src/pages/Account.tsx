@@ -10,6 +10,7 @@ import { User, Mail, Phone, MapPin, Calendar, ShoppingBag, Store, Settings, Edit
 import { Link } from "wouter";
 import PushNotificationSettings from "@/components/PushNotificationSettings";
 import NotificationTestButton from "@/components/NotificationTestButton";
+import SoundTestButton from "@/components/SoundTestButton";
 import type { Order } from "@shared/schema";
 
 export default function Account() {
