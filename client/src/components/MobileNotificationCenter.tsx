@@ -28,7 +28,7 @@ export default function MobileNotificationCenter() {
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['/api/notifications/user', user?.id],
     enabled: !!user?.id,
-    refetchInterval: 5000, // Poll every 5 seconds
+    refetchInterval: 3000, // Poll every 3 seconds for better mobile experience
   });
 
   const markAsReadMutation = useMutation({
@@ -130,7 +130,7 @@ export default function MobileNotificationCenter() {
       {/* Mobile Notification Panel */}
       {isOpen && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-50 md:absolute md:inset-auto md:top-full md:right-0 md:w-96 md:bg-transparent">
-          <div className="bg-white h-full md:h-auto md:max-h-96 md:rounded-lg md:shadow-lg md:border">
+          <div className="bg-white h-full md:h-auto md:max-h-96 md:rounded-lg md:shadow-lg md:border overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b">
               <div className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />

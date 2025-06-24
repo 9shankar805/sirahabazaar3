@@ -757,7 +757,9 @@ export class DatabaseStorage implements IStorage {
 
   // Notifications
   async createNotification(notification: InsertNotification): Promise<Notification> {
+    console.log('Creating notification in database:', notification);
     const [newNotification] = await db.insert(notifications).values(notification).returning();
+    console.log('Notification created successfully:', newNotification);
     return newNotification;
   }
 
