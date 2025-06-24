@@ -1,117 +1,150 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Bell } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Bell, Send, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/hooks/use-user';
 
-export default function NotificationTestButton() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSoundTesting, setIsSoundTesting] = useState(false);
-  const { user } = useAuth();
+export function NotificationTestButton() {
+  const { user } = useUser();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [testData, setTestData] = useState({
+    title: 'Test Notification',
+    message: 'This is a test push notification from Siraha Bazaar!',
+    type: 'test'
+  });
 
-  const handleTestSound = async () => {
-    setIsSoundTesting(true);
-    
-    try {
-      const audio = new Audio('/notification.mp3');
-      audio.volume = 0.8;
-      
-      await audio.play();
-      
-      toast({
-        title: "🔊 Sound Test",
-        description: "Did you hear the notification sound?",
-      });
-    } catch (error) {
-      console.error('Error playing sound:', error);
-      toast({
-        title: "Sound Test Failed",
-        description: "Could not play notification sound. Check if audio is enabled.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSoundTesting(false);
-    }
-  };
-
-  const handleTestNotification = async () => {
+  const handleSendTestNotification = async () => {
     if (!user?.id) {
       toast({
-        title: "Please log in",
-        description: "You need to be logged in to test notifications",
+        title: "Error",
+        description: "You must be logged in to test notifications",
         variant: "destructive"
       });
       return;
     }
 
     setIsLoading(true);
-    const testNotification = async () => {
     try {
-      // Play sound first
-      const audio = new Audio('/notification.mp3');
-      audio.volume = 0.7;
-      audio.play().catch(() => {
-        console.log('Could not play notification sound');
-      });
-
-      const response = await fetch('/api/notifications/test', {
+      const response = await fetch('/api/test-notification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user?.id,
-          title: 'Test Notification',
-          message: 'This is a test notification with sound!',
-          type: 'info'
+          userId: user.id,
+          title: testData.title,
+          message: testData.message,
+          type: testData.type,
         }),
       });
 
       if (response.ok) {
         toast({
-          title: "Test notification sent!",
-          description: "Check your notifications panel and listen for the sound.",
+          title: "Success",
+          description: "Test notification sent successfully!",
         });
       } else {
-        throw new Error('Failed to send test notification');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send notification');
       }
     } catch (error) {
+      console.error('Error sending test notification:', error);
       toast({
         title: "Error",
-        description: "Failed to send test notification.",
-        variant: "destructive",
+        description: error instanceof Error ? error.message : 'Failed to send test notification',
+        variant: "destructive"
       });
-    }
-  };
-
-    try {
-      await testNotification();
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Only show in development environment
+  if (process.env.NODE_ENV !== 'development') {
+    return null;
+  }
+
   return (
-    <div className="fixed bottom-20 right-4 z-40 md:hidden flex flex-col gap-2">
-      <Button
-        onClick={handleTestSound}
-        disabled={isSoundTesting}
-        variant="outline"
-        size="sm"
-        className="bg-blue-500 text-white hover:bg-blue-600"
-      >
-        🔊 {isSoundTesting ? 'Playing...' : 'Test Sound'}
-      </Button>
-      <Button
-        onClick={handleTestNotification}
-        disabled={isLoading}
-        variant="outline"
-        size="sm"
-      >
-        <Bell className="h-4 w-4 mr-2" />
-        {isLoading ? 'Sending...' : 'Test Notification'}
-      </Button>
-    </div>
+    <Card className="border-dashed border-2 border-orange-200 bg-orange-50">
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Bell className="h-5 w-5 text-orange-600" />
+          <CardTitle className="text-orange-800">Test Push Notifications</CardTitle>
+        </div>
+        <CardDescription className="text-orange-700">
+          Development testing tool for Firebase push notifications
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-2 p-2 bg-orange-100 rounded-md">
+          <AlertCircle className="h-4 w-4 text-orange-600" />
+          <span className="text-sm text-orange-700">
+            This is a development tool and won't appear in production
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="test-title">Notification Title</Label>
+            <Input
+              id="test-title"
+              value={testData.title}
+              onChange={(e) => setTestData({ ...testData, title: e.target.value })}
+              placeholder="Enter notification title"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="test-message">Notification Message</Label>
+            <Textarea
+              id="test-message"
+              value={testData.message}
+              onChange={(e) => setTestData({ ...testData, message: e.target.value })}
+              placeholder="Enter notification message"
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="test-type">Notification Type</Label>
+            <Input
+              id="test-type"
+              value={testData.type}
+              onChange={(e) => setTestData({ ...testData, type: e.target.value })}
+              placeholder="test, order_update, promotion, etc."
+            />
+          </div>
+        </div>
+
+        <Button 
+          onClick={handleSendTestNotification}
+          disabled={isLoading || !user?.id}
+          className="w-full"
+        >
+          {isLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Sending...
+            </>
+          ) : (
+            <>
+              <Send className="h-4 w-4 mr-2" />
+              Send Test Notification
+            </>
+          )}
+        </Button>
+
+        {!user?.id && (
+          <p className="text-sm text-orange-600 text-center">
+            Please log in to test notifications
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

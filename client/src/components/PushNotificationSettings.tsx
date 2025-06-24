@@ -1,108 +1,61 @@
-import { useState } from 'react';
-import { Bell, BellOff, Smartphone } from 'lucide-react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, title } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Bell, BellOff, Smartphone, AlertCircle, CheckCircle } from 'lucide-react';
+import { usePushNotificationSetup } from '@/hooks/useFirebaseMessaging';
+import { useUser } from '@/hooks/use-user';
 
-export default function PushNotificationSettings() {
-  const { toast } = useToast();
-  const {
-    isSupported,
-    permission,
-    isSubscribed,
-    requestPermission,
-    subscribe,
-    unsubscribe,
-    sendTestNotification
-  } = usePushNotifications();
+export function PushNotificationSettings() {
+  const { user } = useUser();
+  const { 
+    isSupported, 
+    isLoading, 
+    error, 
+    token, 
+    isSetup, 
+    requestPermission, 
+    setupPushNotifications 
+  } = usePushNotificationSetup(user?.id);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [notifications, setNotifications] = useState({
+    orderUpdates: true,
+    deliveryAlerts: true,
+    promotions: false,
+    newProducts: false,
+  });
 
-  const handleToggleNotifications = async () => {
-    setIsLoading(true);
+  const handleNotificationToggle = (type: keyof typeof notifications) => {
+    setNotifications(prev => ({
+      ...prev,
+      [type]: !prev[type]
+    }));
+  };
+
+  const handleEnablePushNotifications = async () => {
+    if (!user?.id) return;
     
     try {
-      if (!isSubscribed) {
-        if (permission === 'default') {
-          const granted = await requestPermission();
-          if (!granted) {
-            toast({
-              title: "Permission Required",
-              description: "Please enable notifications in your browser settings to receive mobile notifications.",
-              variant: "destructive"
-            });
-            setIsLoading(false);
-            return;
-          }
-        }
-        
-        const success = await subscribe();
-        if (success) {
-          toast({
-            title: "Notifications Enabled",
-            description: "You'll now receive mobile notifications for orders, deliveries, and updates."
-          });
-        } else {
-          toast({
-            title: "Failed to Enable",
-            description: "Could not enable push notifications. Please try again.",
-            variant: "destructive"
-          });
-        }
-      } else {
-        const success = await unsubscribe();
-        if (success) {
-          toast({
-            title: "Notifications Disabled",
-            description: "You'll no longer receive mobile notifications."
-          });
-        }
+      const hasPermission = await requestPermission();
+      if (hasPermission) {
+        await setupPushNotifications();
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive"
-      });
+      console.error('Error enabling push notifications:', error);
     }
-    
-    setIsLoading(false);
   };
 
-  const handleTestNotification = async () => {
-    setIsLoading(true);
-    
-    try {
-      await sendTestNotification();
-      toast({
-        title: "Test Sent",
-        description: "Check your device's notification bar for the test notification."
-      });
-    } catch (error) {
-      toast({
-        title: "Test Failed",
-        description: "Could not send test notification.",
-        variant: "destructive"
-      });
-    }
-    
-    setIsLoading(false);
-  };
-
-  if (!isSupported) {
+  if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BellOff className="h-5 w-5" />
-            Mobile Notifications
-          </CardTitle>
-          <CardDescription>
-            Push notifications are not supported in your browser.
-          </CardDescription>
-        </CardHeader>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+            <span>Loading notification settings...</span>
+          </div>
+        </CardContent>
       </Card>
     );
   }
@@ -110,58 +63,165 @@ export default function PushNotificationSettings() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Smartphone className="h-5 w-5" />
-          Mobile Notifications
-        </CardTitle>
+        <div className="flex items-center gap-2">
+          <Bell className="h-5 w-5" />
+          <CardTitle>Push Notifications</CardTitle>
+        </div>
         <CardDescription>
-          Get notified on your mobile device about orders, deliveries, and important updates.
+          Manage your notification preferences for order updates, promotions, and more.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium">
-              Push Notifications
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Receive notifications in your device's notification bar
-            </p>
-          </div>
-          <Switch
-            checked={isSubscribed}
-            onCheckedChange={handleToggleNotifications}
-            disabled={isLoading || permission === 'denied'}
-          />
+      <CardContent className="space-y-6">
+        {/* Browser Support Status */}
+        <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+          <Smartphone className="h-4 w-4" />
+          <span className="text-sm">Browser Support:</span>
+          {isSupported ? (
+            <Badge variant="secondary" className="bg-green-100 text-green-800">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Supported
+            </Badge>
+          ) : (
+            <Badge variant="destructive">
+              <BellOff className="h-3 w-3 mr-1" />
+              Not Supported
+            </Badge>
+          )}
         </div>
 
-        {permission === 'denied' && (
-          <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-            Notifications are blocked in your browser. Please enable them in your browser settings.
+        {/* Error Display */}
+        {error && (
+          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <span className="text-sm text-red-700">{error}</span>
           </div>
         )}
 
-        {isSubscribed && (
-          <Button 
-            onClick={handleTestNotification}
-            disabled={isLoading}
-            variant="outline"
-            className="w-full"
-          >
-            <Bell className="mr-2 h-4 w-4" />
-            Send Test Notification
-          </Button>
+        {/* Setup Status */}
+        {isSupported && !error && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Push Notifications</h4>
+                <p className="text-sm text-gray-600">
+                  {isSetup 
+                    ? 'You will receive push notifications for selected events'
+                    : 'Enable push notifications to stay updated'
+                  }
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {isSetup ? (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Enabled
+                  </Badge>
+                ) : (
+                  <Button onClick={handleEnablePushNotifications} size="sm">
+                    Enable Notifications
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Notification Types */}
+            {isSetup && (
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="font-medium">Notification Types</h4>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="orderUpdates" className="font-medium">
+                        Order Updates
+                      </Label>
+                      <p className="text-sm text-gray-600">
+                        Get notified about order status changes
+                      </p>
+                    </div>
+                    <Switch
+                      id="orderUpdates"
+                      checked={notifications.orderUpdates}
+                      onCheckedChange={() => handleNotificationToggle('orderUpdates')}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="deliveryAlerts" className="font-medium">
+                        Delivery Alerts
+                      </Label>
+                      <p className="text-sm text-gray-600">
+                        Real-time updates on delivery progress
+                      </p>
+                    </div>
+                    <Switch
+                      id="deliveryAlerts"
+                      checked={notifications.deliveryAlerts}
+                      onCheckedChange={() => handleNotificationToggle('deliveryAlerts')}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="promotions" className="font-medium">
+                        Promotions & Offers
+                      </Label>
+                      <p className="text-sm text-gray-600">
+                        Special deals and discount notifications
+                      </p>
+                    </div>
+                    <Switch
+                      id="promotions"
+                      checked={notifications.promotions}
+                      onCheckedChange={() => handleNotificationToggle('promotions')}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="newProducts" className="font-medium">
+                        New Products
+                      </Label>
+                      <p className="text-sm text-gray-600">
+                        Updates about new products from your favorite stores
+                      </p>
+                    </div>
+                    <Switch
+                      id="newProducts"
+                      checked={notifications.newProducts}
+                      onCheckedChange={() => handleNotificationToggle('newProducts')}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Debug Info (only in development) */}
+            {process.env.NODE_ENV === 'development' && token && (
+              <div className="border-t pt-4">
+                <details className="text-xs">
+                  <summary className="cursor-pointer font-medium">Debug Info</summary>
+                  <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono break-all">
+                    Token: {token.substring(0, 20)}...
+                  </div>
+                </details>
+              </div>
+            )}
+          </div>
         )}
 
-        <div className="text-xs text-muted-foreground">
-          <p className="font-medium mb-1">You'll be notified about:</p>
-          <ul className="list-disc list-inside space-y-1">
-            <li>Order confirmations and status updates</li>
-            <li>Delivery tracking and arrival notifications</li>
-            <li>New product arrivals and special offers</li>
-            <li>Store updates and important announcements</li>
-          </ul>
-        </div>
+        {/* Fallback for unsupported browsers */}
+        {!isSupported && (
+          <div className="text-center py-6">
+            <BellOff className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <h4 className="font-medium mb-2">Push Notifications Not Available</h4>
+            <p className="text-sm text-gray-600">
+              Your browser doesn't support push notifications. 
+              Try using a modern browser like Chrome, Firefox, or Safari.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

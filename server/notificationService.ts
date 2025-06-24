@@ -10,6 +10,8 @@ export interface NotificationData {
   data?: any;
 }
 
+import FirebaseService from "./firebaseService";
+
 export class NotificationService {
   // Send notification to specific user
   static async sendNotification(notificationData: NotificationData) {
@@ -18,6 +20,18 @@ export class NotificationService {
         ...notificationData,
         isRead: false
       });
+
+      // Send Firebase push notification
+      const success = await FirebaseService.sendOrderNotification(
+        notificationData.userId,
+        notificationData.orderId || 0,
+        notificationData.type,
+        notificationData.message
+      );
+      
+      if (success) {
+        console.log(`Firebase push notification sent to user ${notificationData.userId}`);
+      }
 
       return notification;
     } catch (error) {

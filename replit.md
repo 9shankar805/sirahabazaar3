@@ -118,8 +118,28 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - **Backups**: Handled by Neon PostgreSQL service
 - **Scaling**: Auto-scaling database connections
 
+## Recent Changes
+
+### December 24, 2024 - Firebase Push Notifications Integration
+- ✓ Integrated Firebase Cloud Messaging (FCM) for mobile push notifications
+- ✓ Created FirebaseService class with comprehensive notification methods
+- ✓ Added device token management in database storage layer
+- ✓ Implemented API endpoints for device token registration/removal
+- ✓ Added notification hooks for React frontend integration
+- ✓ Created service worker for background notification handling
+- ✓ Enhanced NotificationService to use Firebase for push delivery
+- → Firebase configuration requires environment variables setup
+
+### Key Features Added:
+- Order status notifications to customers
+- Delivery assignment alerts for partners  
+- Promotional notifications to customer segments
+- Real-time push notifications with custom actions
+- Cross-platform support (web, mobile apps)
+
 ## Changelog
 - June 13, 2025. Initial setup
+- December 24, 2024. Firebase push notifications integration
 
 ## User Preferences
 

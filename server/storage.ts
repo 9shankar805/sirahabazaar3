@@ -261,6 +261,13 @@ export interface IStorage {
   // Admin authentication methods
   authenticateAdmin(email: string, password: string): Promise<AdminUser | null>;
   
+  // Device token management for Firebase FCM
+  saveDeviceToken(userId: number, token: string, deviceType: string): Promise<boolean>;
+  removeDeviceToken(userId: number, token: string): Promise<boolean>;
+  getDeviceTokensByUserId(userId: number): Promise<string[]>;
+  getDeviceTokensByUserIds(userIds: number[]): Promise<string[]>;
+  getDeviceTokensByRole(role: string): Promise<string[]>;
+  
   // Admin profile management methods
   getAdminProfile(adminId: number): Promise<any>;
   updateAdminProfile(adminId: number, updates: any): Promise<any>;
@@ -2019,7 +2026,102 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (error) {
       console.error('Error creating default admin:', error);
-      // Don't throw error to prevent app crash during startup
+    }
+  }
+
+  // Device token management methods for Firebase FCM
+  async saveDeviceToken(userId: number, token: string, deviceType: string): Promise<boolean> {
+    try {
+      const existing = await db.select()
+        .from(pushNotificationTokens)
+        .where(and(eq(pushNotificationTokens.userId, userId), eq(pushNotificationTokens.token, token)))
+        .limit(1);
+
+      if (existing.length === 0) {
+        await db.insert(pushNotificationTokens).values({
+          userId,
+          token,
+          deviceType,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      } else {
+        await db.update(pushNotificationTokens)
+          .set({ 
+            isActive: true, 
+            deviceType,
+            updatedAt: new Date() 
+          })
+          .where(and(eq(pushNotificationTokens.userId, userId), eq(pushNotificationTokens.token, token)));
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving device token:', error);
+      return false;
+    }
+  }
+
+  async removeDeviceToken(userId: number, token: string): Promise<boolean> {
+    try {
+      await db.update(pushNotificationTokens)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(and(eq(pushNotificationTokens.userId, userId), eq(pushNotificationTokens.token, token)));
+      
+      return true;
+    } catch (error) {
+      console.error('Error removing device token:', error);
+      return false;
+    }
+  }
+
+  async getDeviceTokensByUserId(userId: number): Promise<string[]> {
+    try {
+      const tokens = await db.select({ token: pushNotificationTokens.token })
+        .from(pushNotificationTokens)
+        .where(and(eq(pushNotificationTokens.userId, userId), eq(pushNotificationTokens.isActive, true)));
+      
+      return tokens.map(t => t.token);
+    } catch (error) {
+      console.error('Error getting device tokens by user ID:', error);
+      return [];
+    }
+  }
+
+  async getDeviceTokensByUserIds(userIds: number[]): Promise<string[]> {
+    try {
+      if (userIds.length === 0) return [];
+    
+      const tokens = await db.select({ token: pushNotificationTokens.token })
+        .from(pushNotificationTokens)
+        .where(and(
+          inArray(pushNotificationTokens.userId, userIds),
+          eq(pushNotificationTokens.isActive, true)
+        ));
+      
+      return tokens.map(t => t.token);
+    } catch (error) {
+      console.error('Error getting device tokens by user IDs:', error);
+      return [];
+    }
+  }
+
+  async getDeviceTokensByRole(role: string): Promise<string[]> {
+    try {
+      const tokens = await db.select({ token: pushNotificationTokens.token })
+        .from(pushNotificationTokens)
+        .innerJoin(users, eq(pushNotificationTokens.userId, users.id))
+        .where(and(
+          eq(users.role, role),
+          eq(users.status, 'active'),
+          eq(pushNotificationTokens.isActive, true)
+        ));
+      
+      return tokens.map(t => t.token);
+    } catch (error) {
+      console.error('Error getting device tokens by role:', error);
+      return [];
     }
   }
 }
