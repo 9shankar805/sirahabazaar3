@@ -1740,7 +1740,7 @@ export class DatabaseStorage implements IStorage {
 
   async getDeliveriesByPartnerId(partnerId: number): Promise<Delivery[]> {
     try {
-      return await db.select().from(deliveries).where(eq(deliveries.partnerId, partnerId));
+      return await db.select().from(deliveries).where(eq(deliveries.deliveryPartnerId, partnerId));
     } catch {
       return [];
     }
@@ -1762,7 +1762,7 @@ export class DatabaseStorage implements IStorage {
   async updateDeliveryStatus(id: number, status: string, partnerId?: number): Promise<Delivery | undefined> {
     try {
       const updates: any = { status };
-      if (partnerId) updates.partnerId = partnerId;
+      if (partnerId) updates.deliveryPartnerId = partnerId;
 
       const [updated] = await db.update(deliveries).set(updates).where(eq(deliveries.id, id)).returning();
       return updated;
@@ -1775,7 +1775,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [updated] = await db.update(deliveries)
         .set({ 
-          partnerId,
+          deliveryPartnerId: partnerId,
           status: 'assigned',
           assignedAt: new Date()
         })
