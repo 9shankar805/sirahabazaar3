@@ -59,8 +59,15 @@ interface ActiveDelivery {
   deliveryAddress: string;
   deliveryFee: string;
   estimatedTime: number;
-  customerName?: string;
-  customerPhone?: string;
+  customerName: string;
+  customerPhone: string;
+  totalAmount: string;
+  storeDetails?: {
+    id: number;
+    name: string;
+    phone: string;
+    address: string;
+  };
 }
 
 export default function DeliveryPartnerNotifications() {
@@ -101,17 +108,18 @@ export default function DeliveryPartnerNotifications() {
     refetchInterval: 5000, // Poll every 5 seconds for new orders
   });
 
-  // Fetch active deliveries
+  // Fetch active deliveries using partner ID
   const { data: activeDeliveries = [] } = useQuery({
-    queryKey: ['/api/deliveries/active', user?.id],
+    queryKey: ['/api/deliveries/partner', partner?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/deliveries/active/${user?.id}`);
+      const response = await fetch(`/api/deliveries/partner/${partner?.id}`);
       if (!response.ok) {
         return [];
       }
       return response.json();
     },
-    enabled: !!user?.id,
+    enabled: !!partner?.id,
+    refetchInterval: 10000, // Poll every 10 seconds for updates
   });
 
   // Fetch user notifications for history
@@ -464,41 +472,139 @@ export default function DeliveryPartnerNotifications() {
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-red-500" />
-                          <span>Pickup: {delivery.pickupAddress}</span>
+                  <CardContent className="space-y-4">
+                    {/* Customer Information */}
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-blue-800 mb-3">Customer Details</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4 text-blue-600" />
+                          <span className="font-medium">Name:</span>
+                          <span>{delivery.customerName}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-green-500" />
-                          <span>Delivery: {delivery.deliveryAddress}</span>
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-blue-600" />
+                          <span className="font-medium">Phone:</span>
+                          <span>{delivery.customerPhone}</span>
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-green-600" />
-                          <span>Fee: ₹{delivery.deliveryFee}</span>
+                          <span className="font-medium">Order Value:</span>
+                          <span className="font-semibold text-green-600">₹{delivery.totalAmount}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-blue-500" />
-                          <span>Estimated: {delivery.estimatedTime || 30} mins</span>
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-blue-600" />
+                          <span className="font-medium">Delivery Fee:</span>
+                          <span className="font-semibold">₹{delivery.deliveryFee}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-4">
-                      <Button size="sm">
+
+                    {/* Store Information */}
+                    {delivery.storeDetails && (
+                      <div className="bg-orange-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-orange-800 mb-3">Pickup Details</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-orange-600" />
+                            <span className="font-medium">Store:</span>
+                            <span>{delivery.storeDetails.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-orange-600" />
+                            <span className="font-medium">Store Phone:</span>
+                            <span>{delivery.storeDetails.phone}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 mt-2">
+                          <MapPin className="h-4 w-4 text-orange-600 mt-0.5" />
+                          <div>
+                            <span className="font-medium">Pickup Address:</span>
+                            <div className="text-sm text-gray-600">{delivery.pickupAddress}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Delivery Address */}
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-green-800 mb-3">Delivery Details</h4>
+                      <div className="flex items-start gap-2">
+                        <MapPin className="h-4 w-4 text-green-600 mt-0.5" />
+                        <div>
+                          <span className="font-medium">Delivery Address:</span>
+                          <div className="text-sm text-gray-600">{delivery.deliveryAddress}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 mt-3 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4 text-green-600" />
+                          <span>Est. Time: {delivery.estimatedTime || 30} mins</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2 pt-4 border-t">
+                      <Button 
+                        size="sm"
+                        onClick={() => {
+                          const address = encodeURIComponent(delivery.pickupAddress);
+                          window.open(`https://www.google.com/maps/search/${address}`, '_blank');
+                        }}
+                      >
                         <Navigation className="h-4 w-4 mr-2" />
-                        Navigate
+                        Navigate to Pickup
                       </Button>
-                      <Button size="sm" variant="outline">
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          const address = encodeURIComponent(delivery.deliveryAddress);
+                          window.open(`https://www.google.com/maps/search/${address}`, '_blank');
+                        }}
+                      >
+                        <Navigation className="h-4 w-4 mr-2" />
+                        Navigate to Customer
+                      </Button>
+
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          window.open(`tel:${delivery.customerPhone}`, '_self');
+                        }}
+                        disabled={!delivery.customerPhone}
+                      >
                         <Phone className="h-4 w-4 mr-2" />
                         Call Customer
                       </Button>
-                      <Button size="sm" variant="outline">
+
+                      {delivery.storeDetails?.phone && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            window.open(`tel:${delivery.storeDetails?.phone}`, '_self');
+                          }}
+                        >
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call Store
+                        </Button>
+                      )}
+
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          const message = `Hi ${delivery.customerName}, I'm your delivery partner for order #${delivery.orderId}. I'll be delivering your order shortly.`;
+                          window.open(`sms:${delivery.customerPhone}?body=${encodeURIComponent(message)}`, '_self');
+                        }}
+                        disabled={!delivery.customerPhone}
+                      >
                         <MessageCircle className="h-4 w-4 mr-2" />
-                        Message
+                        SMS Customer
                       </Button>
                     </div>
                   </CardContent>
