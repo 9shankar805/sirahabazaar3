@@ -52,6 +52,28 @@ export async function runSimpleMigrations() {
             is_active BOOLEAN DEFAULT true
           )
         `
+      },
+
+      // Create default categories for restaurants and retail stores
+      {
+        name: "Insert default categories",
+        query: sql`
+          INSERT INTO categories (name, slug, description, icon, created_at, updated_at)
+          VALUES 
+            ('Appetizers', 'appetizers', 'Starters and small dishes', '🥗', NOW(), NOW()),
+            ('Main Courses', 'main-courses', 'Primary dishes and entrees', '🍛', NOW(), NOW()),
+            ('Beverages', 'beverages', 'Drinks and refreshments', '🥤', NOW(), NOW()),
+            ('Desserts', 'desserts', 'Sweet dishes and treats', '🍰', NOW(), NOW()),
+            ('Rice & Biryani', 'rice-biryani', 'Rice dishes and biryani varieties', '🍚', NOW(), NOW()),
+            ('Snacks', 'snacks', 'Light snacks and finger foods', '🍿', NOW(), NOW()),
+            ('Groceries', 'groceries', 'Food and household essentials', '🛒', NOW(), NOW()),
+            ('Electronics', 'electronics', 'Electronic devices and accessories', '📱', NOW(), NOW()),
+            ('Clothing', 'clothing', 'Apparel and fashion items', '👕', NOW(), NOW()),
+            ('Home & Kitchen', 'home-kitchen', 'Household and kitchen items', '🏠', NOW(), NOW()),
+            ('Health & Beauty', 'health-beauty', 'Personal care and beauty products', '💄', NOW(), NOW()),
+            ('Sports & Outdoors', 'sports-outdoors', 'Sports equipment and outdoor gear', '⚽', NOW(), NOW())
+          ON CONFLICT (slug) DO NOTHING
+        `
       }
     ];
 
