@@ -65,12 +65,15 @@ export default function AddProduct() {
   });
 
   // Store query to get current store info
-  const { data: stores = [] } = useQuery<Store[]>({
-    queryKey: [`/api/stores/owner`, user?.id],
+  const { data: stores = [], isLoading: storesLoading, error: storesError } = useQuery<Store[]>({
+    queryKey: [`/api/stores/owner/${user?.id}`],
     queryFn: async () => {
       if (!user?.id) return [];
       const response = await fetch(`/api/stores/owner/${user.id}`);
-      if (!response.ok) throw new Error('Failed to fetch stores');
+      if (!response.ok) {
+        if (response.status === 404) return [];
+        throw new Error('Failed to fetch stores');
+      }
       return response.json();
     },
     enabled: !!user,
@@ -337,18 +340,27 @@ export default function AddProduct() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-base font-medium">Category *</FormLabel>
-                      <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+                      <Select 
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        defaultValue={field.value?.toString()}
+                      >
                         <FormControl>
                           <SelectTrigger className="h-11">
-                            <SelectValue placeholder="Electronics" />
+                            <SelectValue placeholder="Select a category" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id.toString()}>
-                              {category.name}
+                          {categories.length > 0 ? (
+                            categories.map((category) => (
+                              <SelectItem key={category.id} value={category.id.toString()}>
+                                {category.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="1" disabled>
+                              Loading categories...
                             </SelectItem>
-                          ))}
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
