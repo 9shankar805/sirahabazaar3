@@ -21,10 +21,11 @@ import {
   insertSupportTicketSchema, insertSiteSettingSchema, insertFraudAlertSchema, insertCommissionSchema,
   insertProductAttributeSchema, insertVendorVerificationSchema, insertAdminLogSchema,
   insertDeliveryPartnerSchema, insertDeliverySchema,
-  users, orders, deliveries, deliveryPartners, notifications
+  users, orders, deliveries, deliveryPartners, notifications, deliveryLocationTracking, 
+  deliveryRoutes, deliveryStatusHistory, stores
 } from "@shared/schema";
 
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 // Initialize real-time tracking service
 const realTimeTrackingService = new RealTimeTrackingService();

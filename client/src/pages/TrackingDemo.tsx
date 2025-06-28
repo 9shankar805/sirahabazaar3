@@ -9,8 +9,33 @@ import { MapPin, Package, Truck, Users, Clock, Navigation } from 'lucide-react';
 import { DeliveryTrackingMap } from '../components/tracking/DeliveryTrackingMap';
 import { DeliveryPartnerDashboard } from '../components/tracking/DeliveryPartnerDashboard';
 
+interface DeliveryData {
+  id: number;
+  orderId: number;
+  status: string;
+  deliveryPartnerId?: number;
+  pickupAddress: string;
+  deliveryAddress: string;
+  createdAt: string;
+}
+
+interface PartnerData {
+  id: number;
+  name: string;
+  phone: string;
+  vehicleType: string;
+  status: string;
+  rating: string;
+}
+
+interface TrackingData {
+  deliveries: DeliveryData[];
+  deliveryPartners: PartnerData[];
+  orders: any[];
+}
+
 export default function TrackingDemo() {
-  const [demoData, setDemoData] = useState({
+  const [demoData, setDemoData] = useState<TrackingData>({
     deliveries: [],
     deliveryPartners: [],
     orders: []
@@ -26,29 +51,37 @@ export default function TrackingDemo() {
 
   const loadDemoData = async () => {
     try {
-      // Load real delivery data from the API
-      const [deliveriesRes, partnersRes] = await Promise.all([
+      // Load real delivery and partner data from the API
+      const [deliveriesRes, partnersRes, ordersRes] = await Promise.all([
         fetch('/api/deliveries'),
-        fetch('/api/delivery-partners')
+        fetch('/api/delivery-partners'),
+        fetch('/api/orders')
       ]);
 
       const deliveries = deliveriesRes.ok ? await deliveriesRes.json() : [];
       const partners = partnersRes.ok ? await partnersRes.json() : [];
+      const orders = ordersRes.ok ? await ordersRes.json() : [];
+
+      // Filter for active deliveries with assigned partners
+      const activeDeliveries = deliveries.filter((delivery: any) => 
+        delivery.deliveryPartnerId && 
+        ['assigned', 'en_route_pickup', 'picked_up', 'en_route_delivery'].includes(delivery.status)
+      );
 
       setDemoData({
-        deliveries,
+        deliveries: activeDeliveries,
         deliveryPartners: partners,
-        orders: []
+        orders: orders
       });
 
-      // Auto-select first delivery if available
-      if (deliveries.length > 0) {
-        setSelectedDeliveryId(deliveries[0].id);
+      // Auto-select first active delivery if available
+      if (activeDeliveries.length > 0) {
+        setSelectedDeliveryId(activeDeliveries[0].id);
       }
 
       setIsLoading(false);
     } catch (error) {
-      console.error('Error loading demo data:', error);
+      console.error('Error loading tracking data:', error);
       setIsLoading(false);
     }
   };
