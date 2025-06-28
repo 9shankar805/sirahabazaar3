@@ -48,6 +48,20 @@ interface Store {
   storeType: string;
 }
 
+// Helper function to detect restaurant by name
+const isRestaurantByName = (storeName: string): boolean => {
+  const restaurantKeywords = [
+    'restaurant', 'cafe', 'food', 'kitchen', 'dining', 'eatery', 'bistro',
+    'pizzeria', 'burger', 'pizza', 'chicken', 'biryani', 'dosa', 'samosa',
+    'chinese', 'indian', 'nepali', 'thai', 'continental', 'fast food',
+    'dhaba', 'hotel', 'canteen', 'mess', 'tiffin', 'sweet', 'bakery',
+    'family restaurant' // Specific detection for user's store
+  ];
+  
+  const lowerName = storeName.toLowerCase();
+  return restaurantKeywords.some(keyword => lowerName.includes(keyword));
+};
+
 export default function AddProduct() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
@@ -80,7 +94,11 @@ export default function AddProduct() {
   });
 
   const currentStore = stores[0]; // Assuming one store per shopkeeper
-  const isRestaurant = currentStore?.storeType === 'restaurant';
+  
+  // Enhanced restaurant detection - check both storeType and name
+  const isRestaurant = currentStore?.storeType === 'restaurant' || 
+    (currentStore?.name && currentStore.name.toLowerCase().includes('restaurant'));
+  
   const defaultProductType = isRestaurant ? 'food' : 'retail';
 
   const form = useForm<ProductForm>({
