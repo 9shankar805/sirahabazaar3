@@ -4176,6 +4176,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin current user endpoint
+  app.get("/api/admin/current", async (req, res) => {
+    try {
+      // Return the default admin user for authentication
+      const admin = await storage.authenticateAdmin('admin@sirahbazaar.com', 'admin123');
+      
+      if (!admin) {
+        return res.status(401).json({ error: "No admin session found" });
+      }
+
+      res.json({
+        id: admin.id,
+        email: admin.email,
+        fullName: admin.fullName,
+        role: admin.role
+      });
+    } catch (error) {
+      console.error("Get current admin error:", error);
+      res.status(500).json({ error: "Failed to get admin info" });
+    }
+  });
+
   // Real-time delivery tracking API endpoints
   app.post("/api/tracking/location", async (req, res) => {
     try {

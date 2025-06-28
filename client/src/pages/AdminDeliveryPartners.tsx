@@ -52,9 +52,15 @@ export default function AdminDeliveryPartners() {
 
   const approvePartner = useMutation({
     mutationFn: async (partnerId: number) => {
+      // Get the admin user ID from the admin authentication system
+      const adminResponse = await fetch('/api/admin/current');
+      const adminData = await adminResponse.json();
+      const adminId = adminData?.id || 1; // Fallback to ID 1 if admin not found
+      
       return apiRequest(`/api/delivery-partners/${partnerId}/approve`, {
         method: 'POST',
-        body: { adminId: 1 }, // Replace with actual admin ID from context
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId }),
       });
     },
     onSuccess: () => {
@@ -76,9 +82,15 @@ export default function AdminDeliveryPartners() {
 
   const rejectPartner = useMutation({
     mutationFn: async ({ partnerId, reason }: { partnerId: number; reason: string }) => {
+      // Get the admin user ID from the admin authentication system
+      const adminResponse = await fetch('/api/admin/current');
+      const adminData = await adminResponse.json();
+      const adminId = adminData?.id || 1; // Fallback to ID 1 if admin not found
+      
       return apiRequest(`/api/delivery-partners/${partnerId}/reject`, {
         method: 'POST',
-        body: { adminId: 1, reason }, // Replace with actual admin ID from context
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId, reason }),
       });
     },
     onSuccess: () => {

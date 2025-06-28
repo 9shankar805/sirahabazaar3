@@ -120,6 +120,15 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### June 28, 2025 - Delivery Partner Notification System Fix
+- ✓ Fixed critical delivery partner approval system that was preventing notifications
+- ✓ Added `/api/admin/current` endpoint for proper admin authentication
+- ✓ Updated admin pages to dynamically fetch correct admin ID instead of hardcoded values
+- ✓ Verified notification flow: Shankar Yadav (seller) → Gokul Yadav (delivery partner)
+- ✓ Tested complete order-to-delivery notification pipeline
+- ✓ Fixed database approval process to ensure delivery partners receive "approved" status
+- → All future delivery partners will now receive notifications properly after admin approval
+
 ### June 24, 2025 - Mobile Notification System Implementation
 - ✓ Built comprehensive mobile notification center for mobile browsers
 - ✓ Fixed Firebase integration and dependencies for web notifications
