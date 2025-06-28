@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import DeliveryNotifications from "@/components/DeliveryNotifications";
 import DeliveryMap from "@/components/DeliveryMap";
 import DeliveryPartnerProfileSetup from "@/components/DeliveryPartnerProfileSetup";
+import ProfessionalLiveTracking from "@/components/tracking/ProfessionalLiveTracking";
 
 interface DeliveryOrder {
   id: number;
@@ -698,60 +699,48 @@ export default function DeliveryPartnerTest() {
 
           {/* Live Tracking Tab */}
           <TabsContent value="tracking" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Navigation className="h-5 w-5" />
-                  Live Delivery Tracking
-                </CardTitle>
-                <CardDescription>
-                  Real-time location sharing and delivery progress
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {activeDeliveries && activeDeliveries.length > 0 ? (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h4 className="font-medium text-blue-800 mb-2">Current Active Delivery</h4>
-                      <p className="text-blue-700">Order #{activeDeliveries[0].orderId} - {activeDeliveries[0].customerName}</p>
-                      <p className="text-sm text-blue-600">
-                        Pickup: {activeDeliveries[0].pickupAddress} → Delivery: {activeDeliveries[0].deliveryAddress}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                      <h4 className="font-medium text-gray-800 mb-2">No Active Deliveries</h4>
-                      <p className="text-gray-600">You currently have no active deliveries to track.</p>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button className="h-12" onClick={() => toast({
-                      title: "Location Sharing Started",
-                      description: "Your live location is now being shared with the customer.",
-                    })}>
-                      <Navigation className="h-5 w-5 mr-2" />
-                      Share Live Location
-                    </Button>
-                    <Button variant="outline" className="h-12" onClick={() => toast({
-                      title: "Photo Upload",
-                      description: "Delivery proof photo uploaded successfully.",
-                    })}>
-                      <Camera className="h-5 w-5 mr-2" />
-                      Upload Proof
-                    </Button>
-                  </div>
-
-                  <div className="bg-gray-100 h-64 rounded-lg flex items-center justify-center">
-                    <div className="text-center">
-                      <MapPin className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                      <p className="text-gray-600">Interactive Map View</p>
-                      <p className="text-sm text-gray-500">Real-time location tracking would appear here</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {activeDeliveries && activeDeliveries.length > 0 ? (
+              <ProfessionalLiveTracking 
+                deliveryData={{
+                  id: activeDeliveries[0].id,
+                  orderId: activeDeliveries[0].orderId,
+                  customerName: activeDeliveries[0].customerName,
+                  customerPhone: activeDeliveries[0].customerPhone,
+                  pickupAddress: activeDeliveries[0].pickupAddress,
+                  deliveryAddress: activeDeliveries[0].deliveryAddress,
+                  storeName: "Family Restaurant", // Can be made dynamic
+                  storePhone: "+977-9800000001",
+                  deliveryFee: activeDeliveries[0].deliveryFee,
+                  status: activeDeliveries[0].status,
+                  estimatedDistance: activeDeliveries[0].estimatedDistance,
+                  estimatedTime: activeDeliveries[0].estimatedTime,
+                  specialInstructions: activeDeliveries[0].specialInstructions
+                }}
+                deliveryPartnerId={partner?.id || 0}
+                onLocationUpdate={(location) => {
+                  // Send location updates to server
+                  fetch('/api/tracking/location', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      deliveryId: activeDeliveries[0].id,
+                      partnerId: partner?.id,
+                      latitude: location.lat,
+                      longitude: location.lng,
+                      timestamp: location.timestamp
+                    })
+                  }).catch(console.error);
+                }}
+              />
+            ) : (
+              <Card className="shadow-lg border-0">
+                <CardContent className="text-center py-12">
+                  <Navigation className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Deliveries</h3>
+                  <p className="text-gray-600">You currently have no deliveries to track. When you accept a delivery, live tracking will appear here.</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Earnings Tab */}

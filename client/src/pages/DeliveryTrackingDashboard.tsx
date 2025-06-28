@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import RealTimeTrackingMap from '@/components/RealTimeTrackingMap';
+import ProfessionalLiveTracking from '@/components/tracking/ProfessionalLiveTracking';
 import { 
   MapPin, 
   Clock, 
@@ -351,14 +352,41 @@ export default function DeliveryTrackingDashboard() {
         </Card>
       )}
 
-      {/* Real-time Tracking Map */}
-      {selectedDelivery && (
+      {/* Professional Live Tracking */}
+      {selectedDelivery && assignments && (
         <div className="mt-8">
-          <RealTimeTrackingMap
-            deliveryId={selectedDelivery}
-            userType="delivery_partner"
-            userId={1} // TODO: Get from auth context
-          />
+          {(() => {
+            const selectedAssignment = assignments.find((a: DeliveryAssignment) => a.id === selectedDelivery);
+            return selectedAssignment ? (
+              <ProfessionalLiveTracking 
+                deliveryData={{
+                  id: selectedAssignment.id,
+                  orderId: selectedAssignment.orderId,
+                  customerName: selectedAssignment.customerName,
+                  customerPhone: selectedAssignment.customerPhone,
+                  pickupAddress: selectedAssignment.pickupAddress,
+                  deliveryAddress: selectedAssignment.deliveryAddress,
+                  storeName: "Family Restaurant",
+                  storePhone: "+977-9800000001",
+                  deliveryFee: parseFloat(selectedAssignment.deliveryFee),
+                  status: selectedAssignment.status,
+                  estimatedDistance: parseFloat(selectedAssignment.estimatedDistance),
+                  estimatedTime: 25,
+                  specialInstructions: selectedAssignment.specialInstructions
+                }}
+                deliveryPartnerId={1}
+                onLocationUpdate={(location) => {
+                  locationUpdateMutation.mutate({
+                    deliveryId: selectedAssignment.id,
+                    partnerId: 1,
+                    latitude: location.lat,
+                    longitude: location.lng,
+                    timestamp: location.timestamp
+                  });
+                }}
+              />
+            ) : null;
+          })()}
         </div>
       )}
     </div>

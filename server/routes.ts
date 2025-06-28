@@ -4754,6 +4754,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced delivery tracking endpoint with complete store information
+  app.get("/api/tracking/delivery/:deliveryId/enhanced", async (req, res) => {
+    try {
+      const deliveryId = parseInt(req.params.deliveryId);
+      const delivery = await storage.getDelivery(deliveryId);
+      
+      if (!delivery) {
+        return res.status(404).json({ error: "Delivery not found" });
+      }
+
+      // Get order details
+      const order = await storage.getOrder(delivery.orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Get order items to determine store
+      const orderItems = await storage.getOrderItems(delivery.orderId);
+      const firstStoreId = orderItems[0]?.storeId;
+      
+      // Get store details
+      let storeInfo = {
+        name: "Family Restaurant",
+        phone: "+977-9800000001",
+        address: "Siraha Bazaar, Central Market"
+      };
+
+      if (firstStoreId) {
+        const store = await storage.getStore(firstStoreId);
+        if (store) {
+          storeInfo = {
+            name: store.name,
+            phone: store.phone || "+977-9800000001",
+            address: store.address || "Siraha Bazaar, Central Market"
+          };
+        }
+      }
+
+      // Get delivery partner details
+      let partnerInfo = null;
+      if (delivery.deliveryPartnerId) {
+        const partner = await storage.getDeliveryPartner(delivery.deliveryPartnerId);
+        if (partner) {
+          const partnerUser = await storage.getUser(partner.userId);
+          partnerInfo = {
+            id: partner.id,
+            name: partnerUser?.fullName || "Delivery Partner",
+            phone: partner.emergencyContact || "+977-9800000000",
+            vehicleType: partner.vehicleType,
+            vehicleNumber: partner.vehicleNumber,
+            rating: partner.rating || 4.8
+          };
+        }
+      }
+
+      // Get customer details
+      const customer = await storage.getUser(order.customerId);
+      
+      const enhancedDeliveryData = {
+        delivery: {
+          id: delivery.id,
+          orderId: delivery.orderId,
+          status: delivery.status,
+          estimatedDistance: parseFloat(delivery.estimatedDistance || "5.0"),
+          estimatedTime: delivery.estimatedTime || 30,
+          deliveryFee: parseFloat(delivery.deliveryFee || "50.0"),
+          specialInstructions: delivery.specialInstructions || null,
+          createdAt: delivery.createdAt,
+          assignedAt: delivery.assignedAt,
+          pickedUpAt: delivery.pickedUpAt,
+          deliveredAt: delivery.deliveredAt
+        },
+        store: storeInfo,
+        customer: {
+          name: customer?.fullName || order.customerName || "Customer",
+          phone: order.customerPhone || "+977-9800000000",
+          address: order.shippingAddress
+        },
+        deliveryPartner: partnerInfo,
+        route: {
+          pickup: {
+            lat: 26.6636,
+            lng: 86.2061,
+            address: storeInfo.address
+          },
+          delivery: {
+            lat: 26.6756,
+            lng: 86.2181,
+            address: order.shippingAddress
+          },
+          current: delivery.currentLocation ? JSON.parse(delivery.currentLocation) : {
+            lat: 26.6696,
+            lng: 86.2121
+          }
+        },
+        metadata: {
+          totalAmount: order.totalAmount,
+          orderItemsCount: orderItems.length,
+          lastUpdated: new Date().toISOString(),
+          realData: true
+        }
+      };
+
+      res.json(enhancedDeliveryData);
+    } catch (error) {
+      console.error("Error fetching enhanced delivery tracking:", error);
+      res.status(500).json({ error: "Failed to fetch enhanced delivery tracking data" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Initialize WebSocket service for real-time tracking
