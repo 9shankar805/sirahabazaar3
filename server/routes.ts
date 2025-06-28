@@ -1144,6 +1144,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Assign delivery partner to order
+  app.post("/api/orders/:id/assign-delivery", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { deliveryPartnerId } = req.body;
+
+      // Check if order exists
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Check if delivery partner exists and is available
+      const deliveryPartner = await storage.getDeliveryPartner(deliveryPartnerId);
+      if (!deliveryPartner) {
+        return res.status(404).json({ error: "Delivery partner not found" });
+      }
+
+      if (deliveryPartner.status !== 'approved' || !deliveryPartner.isAvailable) {
+        return res.status(400).json({ error: "Delivery partner is not available" });
+      }
+
+      // Create delivery record
+      const deliveryData = {
+        orderId,
+        deliveryPartnerId,
+        status: 'assigned',
+        deliveryFee: '50.00',
+        pickupAddress: 'Store Location',
+        deliveryAddress: order.shippingAddress,
+        estimatedDistance: "5.0",
+        estimatedTime: 45
+      };
+
+      const delivery = await storage.createDelivery(deliveryData);
+
+      // Update order status
+      await storage.updateOrderStatus(orderId, 'assigned_for_delivery');
+
+      // Notify delivery partner
+      await storage.createNotification({
+        userId: deliveryPartner.userId,
+        title: "New Delivery Assignment",
+        message: `You have been assigned delivery for Order #${orderId}. Customer: ${order.customerName}. Total: ₹${order.totalAmount}`,
+        type: "delivery_assignment",
+        orderId: orderId,
+        isRead: false,
+        data: JSON.stringify({
+          deliveryId: delivery.id,
+          urgent: false,
+          canAccept: true,
+          estimatedEarnings: "100.00"
+        })
+      });
+
+      // Notify customer
+      await storage.createNotification({
+        userId: order.customerId,
+        title: "Delivery Partner Assigned",
+        message: `Your order #${orderId} has been assigned to a delivery partner and will be delivered soon.`,
+        type: "delivery_update",
+        orderId: orderId,
+        isRead: false
+      });
+
+      res.json({ 
+        success: true, 
+        delivery,
+        message: "Delivery partner assigned successfully" 
+      });
+    } catch (error) {
+      console.error("Error assigning delivery partner:", error);
+      res.status(500).json({ error: "Failed to assign delivery partner" });
+    }
+  });
+
   // User profile routes
   app.get("/api/users", async (req, res) => {
     try {

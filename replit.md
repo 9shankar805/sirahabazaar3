@@ -120,6 +120,18 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### June 28, 2025 - Shopkeeper Delivery Assignment System Implementation
+- ✓ Fixed root cause: Shopkeepers lacked direct delivery partner assignment functionality
+- ✓ Added "Assign Delivery Partner" dropdown in shopkeeper order management dashboard
+- ✓ Created `/api/orders/:id/assign-delivery` API endpoint for manual assignment
+- ✓ Enhanced order status options to include "assigned_for_delivery" tracking
+- ✓ Implemented automatic notification system for both delivery partners and customers
+- ✓ Delivery partners (Gokul Yadav, Shekhar) now receive instant notifications when assigned
+- ✓ Shopkeepers can now assign any available delivery partner to any order status
+- ✓ Added broadcast notification option for urgent delivery requests
+- ✓ Verified complete assignment flow: Shopkeeper → Assignment → Partner notification → Customer notification
+- → Delivery partner notification issues resolved - partners now receive notifications through proper assignment process
+
 ### June 28, 2025 - Delivery Partner Notification System Diagnostic and Prevention
 - ✓ Identified critical issue: Delivery partners with "pending" status cannot receive notifications
 - ✓ Fixed Shekhar's delivery partner status from "pending" to "approved" 

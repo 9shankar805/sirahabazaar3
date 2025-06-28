@@ -143,6 +143,29 @@ export default function ShopkeeperDashboard() {
     queryKey: ["/api/categories"],
   });
 
+  // Get available delivery partners with user details
+  const { data: deliveryPartners = [] } = useQuery({
+    queryKey: ['/api/delivery-partners'],
+    queryFn: async () => {
+      const response = await fetch('/api/delivery-partners');
+      if (!response.ok) throw new Error('Failed to fetch delivery partners');
+      const partners = await response.json();
+      
+      // Get user details for each partner
+      const usersResponse = await fetch('/api/users');
+      const users = usersResponse.ok ? await usersResponse.json() : [];
+      
+      return partners.map((partner: any) => {
+        const user = users.find((u: any) => u.id === partner.userId);
+        return {
+          ...partner,
+          name: user?.fullName || `Partner ${partner.id}`,
+          email: user?.email || 'No email'
+        };
+      });
+    },
+  });
+
   // Form for adding/editing products
   const form = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
@@ -435,6 +458,28 @@ export default function ShopkeeperDashboard() {
       toast({
         title: "Error",
         description: "Failed to send broadcast notification",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAssignDeliveryPartner = async (orderId: number, deliveryPartnerId: number) => {
+    try {
+      await apiPost(`/api/orders/${orderId}/assign-delivery`, {
+        deliveryPartnerId
+      });
+
+      toast({
+        title: "Delivery partner assigned",
+        description: "Delivery partner has been notified about the order"
+      });
+
+      // Refresh orders data
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/store/${currentStore?.id}`] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to assign delivery partner",
         variant: "destructive",
       });
     }
@@ -1508,23 +1553,57 @@ export default function ShopkeeperDashboard() {
                                   <SelectItem value="pending">Pending</SelectItem>
                                   <SelectItem value="processing">Processing</SelectItem>
                                   <SelectItem value="ready_for_pickup">Ready for Pickup</SelectItem>
+                                  <SelectItem value="assigned_for_delivery">Assigned for Delivery</SelectItem>
                                   <SelectItem value="shipped">Shipped</SelectItem>
                                   <SelectItem value="delivered">Delivered</SelectItem>
                                   <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                               </Select>
-                              {(order.status === "processing" || order.status === "ready_for_pickup") && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleNotifyDeliveryPartner(
-                                    order.id,
-                                    `Order #${order.id} is ready for pickup from ${currentStore?.name}`
-                                  )}
-                                >
-                                  <Navigation className="h-4 w-4 mr-1" />
-                                  Notify Delivery
-                                </Button>
+                            </div>
+                            
+                            {/* Delivery Partner Assignment Section */}
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {order.status !== "assigned_for_delivery" && order.status !== "delivered" && order.status !== "cancelled" && (
+                                <div className="flex gap-2">
+                                  <Select onValueChange={(partnerId) => handleAssignDeliveryPartner(order.id, parseInt(partnerId))}>
+                                    <SelectTrigger className="w-48">
+                                      <SelectValue placeholder="Assign Delivery Partner" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {deliveryPartners
+                                        .filter((partner: any) => partner.status === 'approved' && partner.isAvailable)
+                                        .map((partner: any) => (
+                                          <SelectItem key={partner.id} value={partner.id.toString()}>
+                                            {partner.name} - Available
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleNotifyDeliveryPartner(
+                                      order.id,
+                                      `⚡ URGENT: Order #${order.id} needs delivery from ${currentStore?.name}. Customer: ${order.customerName}. Total: ₹${order.totalAmount}`,
+                                      true
+                                    )}
+                                  >
+                                    <Bell className="h-4 w-4 mr-1" />
+                                    Notify All Partners
+                                  </Button>
+                                </div>
+                              )}
+                              
+                              {order.status === "assigned_for_delivery" && (
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-3 w-full">
+                                  <p className="text-sm text-green-700 font-medium">
+                                    ✅ Delivery partner assigned and notified
+                                  </p>
+                                  <p className="text-xs text-green-600 mt-1">
+                                    Order is being processed for delivery
+                                  </p>
+                                </div>
                               )}
                             </div>
                           </div>
