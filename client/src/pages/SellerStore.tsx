@@ -22,23 +22,36 @@ import { LocationPicker } from "@/components/LocationPicker";
 import { useAuth } from "@/hooks/useAuth";
 import { BackToDashboard } from "@/components/BackToDashboard";
 
+// Enhanced validation schema with graceful error handling
 const storeSchema = z.object({
-  name: z.string().min(1, "Store name is required"),
-  description: z.string().optional(),
-  address: z.string().min(1, "Address is required"),
-  latitude: z.string().optional(),
-  longitude: z.string().optional(),
-  phone: z.string().optional(),
-  website: z.string().url().optional().or(z.literal("")),
-  logo: z.string().optional(),
-  coverImage: z.string().optional(),
+  name: z.string().min(1, "Store name is required").transform(val => val.trim()),
+  description: z.string().optional().default(""),
+  address: z.string().min(1, "Address is required").transform(val => val.trim()),
+  latitude: z.string().optional().default(""),
+  longitude: z.string().optional().default(""),
+  phone: z.string().optional().default("").transform(val => val?.trim() || ""),
+  website: z.string()
+    .optional()
+    .default("")
+    .transform(val => {
+      if (!val || val.trim() === "") return "";
+      const trimmed = val.trim();
+      // Add https:// if no protocol is provided
+      if (trimmed && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+        return `https://${trimmed}`;
+      }
+      return trimmed;
+    })
+    .pipe(z.string().url().optional().or(z.literal(""))),
+  logo: z.string().optional().default(""),
+  coverImage: z.string().optional().default(""),
   storeType: z.enum(["retail", "restaurant"]).default("retail"),
-  cuisineType: z.string().optional(),
-  deliveryTime: z.string().optional(),
-  minimumOrder: z.string().optional(),
-  deliveryFee: z.string().optional(),
+  cuisineType: z.string().optional().default(""),
+  deliveryTime: z.string().optional().default(""),
+  minimumOrder: z.string().optional().default("").transform(val => val?.trim() || ""),
+  deliveryFee: z.string().optional().default("").transform(val => val?.trim() || ""),
   isDeliveryAvailable: z.boolean().default(false),
-  openingHours: z.string().optional()
+  openingHours: z.string().optional().default("")
 });
 
 interface StoreData {
@@ -104,65 +117,127 @@ export default function SellerStore() {
 
   const userStore = stores?.[0]; // Assuming one store per user for now
 
-  // Create store mutation
+  // Create store mutation with enhanced error handling
   const createStoreMutation = useMutation({
     mutationFn: async (data: z.infer<typeof storeSchema>) => {
-      const response = await fetch('/api/stores', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...data,
-          ownerId: currentUser?.id
-        })
-      });
-      if (!response.ok) throw new Error('Failed to create store');
-      return response.json();
+      try {
+        const response = await fetch('/api/stores', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...data,
+            ownerId: currentUser?.id
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.message || `Store creation failed (${response.status})`;
+          throw new Error(errorMessage);
+        }
+        
+        return response.json();
+      } catch (error) {
+        // Handle network errors gracefully
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          throw new Error('Network connection error. Please check your internet connection.');
+        }
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      const storeType = data.storeType || 'store';
+      const storeTypeText = storeType === 'restaurant' ? 'restaurant' : 'retail store';
+      
       toast({
-        title: "Store Created",
-        description: "Your store has been created successfully",
+        title: "Store Created Successfully!",
+        description: `Your ${storeTypeText} "${data.name || 'store'}" is now live on Siraha Bazaar`,
       });
+      
       queryClient.invalidateQueries({ queryKey: ['/api/stores/owner', currentUser?.id] });
       setIsCreateDialogOpen(false);
       form.reset();
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.warn('Store creation error:', error.message);
+      
+      // User-friendly error messages
+      let userMessage = "Unable to create your store right now. Please try again.";
+      
+      if (error.message.includes('network') || error.message.includes('connection')) {
+        userMessage = "Network connection issue. Please check your internet and try again.";
+      } else if (error.message.includes('duplicate') || error.message.includes('exists')) {
+        userMessage = "A store with this name already exists. Please choose a different name.";
+      } else if (error.message.includes('validation')) {
+        userMessage = "Please check your store information and try again.";
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to create store",
+        title: "Store Creation Issue",
+        description: userMessage,
         variant: "destructive"
       });
     }
   });
 
-  // Update store mutation
+  // Update store mutation with enhanced error handling
   const updateStoreMutation = useMutation({
     mutationFn: async (data: z.infer<typeof storeSchema>) => {
-      const response = await fetch(`/api/stores/${userStore?.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-      });
-      if (!response.ok) throw new Error('Failed to update store');
-      return response.json();
+      try {
+        const response = await fetch(`/api/stores/${userStore?.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.message || `Store update failed (${response.status})`;
+          throw new Error(errorMessage);
+        }
+        
+        return response.json();
+      } catch (error) {
+        // Handle network errors gracefully
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          throw new Error('Network connection error. Please check your internet connection.');
+        }
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      const storeType = data.storeType || userStore?.storeType || 'store';
+      const storeTypeText = storeType === 'restaurant' ? 'restaurant' : 'retail store';
+      
       toast({
-        title: "Store Updated",
-        description: "Your store has been updated successfully",
+        title: "Store Updated Successfully!",
+        description: `Your ${storeTypeText} information has been updated`,
       });
+      
       queryClient.invalidateQueries({ queryKey: ['/api/stores/owner', currentUser?.id] });
       setIsEditDialogOpen(false);
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.warn('Store update error:', error.message);
+      
+      // User-friendly error messages
+      let userMessage = "Unable to update your store right now. Please try again.";
+      
+      if (error.message.includes('network') || error.message.includes('connection')) {
+        userMessage = "Network connection issue. Please check your internet and try again.";
+      } else if (error.message.includes('not found')) {
+        userMessage = "Store not found. Please refresh the page and try again.";
+      } else if (error.message.includes('validation')) {
+        userMessage = "Please check your store information and try again.";
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to update store",
+        title: "Store Update Issue",
+        description: userMessage,
         variant: "destructive"
       });
     }
@@ -178,10 +253,11 @@ export default function SellerStore() {
 
   const openEditDialog = () => {
     if (userStore) {
+      // Safely handle all store data with fallbacks
       form.reset({
-        name: userStore.name,
+        name: userStore.name || "",
         description: userStore.description || "",
-        address: userStore.address,
+        address: userStore.address || "",
         latitude: userStore.latitude || "",
         longitude: userStore.longitude || "",
         phone: userStore.phone || "",
@@ -193,7 +269,7 @@ export default function SellerStore() {
         deliveryTime: userStore.deliveryTime || "",
         minimumOrder: userStore.minimumOrder?.toString() || "",
         deliveryFee: userStore.deliveryFee?.toString() || "",
-        isDeliveryAvailable: userStore.isDeliveryAvailable || false,
+        isDeliveryAvailable: Boolean(userStore.isDeliveryAvailable),
         openingHours: userStore.openingHours || ""
       });
       setIsEditDialogOpen(true);
@@ -201,7 +277,25 @@ export default function SellerStore() {
   };
 
   const openCreateDialog = () => {
-    form.reset();
+    // Reset form with proper defaults
+    form.reset({
+      name: "",
+      description: "",
+      address: "",
+      latitude: "",
+      longitude: "",
+      phone: "",
+      website: "",
+      logo: "",
+      coverImage: "",
+      storeType: "retail",
+      cuisineType: "",
+      deliveryTime: "",
+      minimumOrder: "",
+      deliveryFee: "",
+      isDeliveryAvailable: false,
+      openingHours: ""
+    });
     setIsCreateDialogOpen(true);
   };
 
@@ -274,7 +368,26 @@ export default function SellerStore() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {userStore ? (
+        {storesLoading ? (
+          /* Loading State */
+          <div className="space-y-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
+                  <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                  <div className="flex-1 space-y-3">
+                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+                    <div className="flex gap-2">
+                      <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                      <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : userStore ? (
           /* Existing Store Management */
           <div className="space-y-6">
             {/* Store Header */}
@@ -284,25 +397,48 @@ export default function SellerStore() {
                   <div className="flex-shrink-0">
                     <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden">
                       {userStore.logo ? (
-                        <img src={userStore.logo} alt="Store Logo" className="w-full h-full object-cover" />
-                      ) : (
-                        <Store className="h-12 w-12 text-muted-foreground" />
-                      )}
+                        <img 
+                          src={userStore.logo} 
+                          alt={userStore.name || 'Store Logo'} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Handle broken images gracefully
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const fallback = target.parentElement?.querySelector('.fallback-icon') as HTMLElement;
+                            if (fallback) fallback.style.display = 'block';
+                          }}
+                        />
+                      ) : null}
+                      <Store className={`h-12 w-12 text-muted-foreground fallback-icon ${userStore.logo ? 'hidden' : 'block'}`} />
                     </div>
                   </div>
                   <div className="flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{userStore.name}</h2>
-                        <p className="text-muted-foreground">{userStore.description}</p>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                          {userStore.name || 'My Store'}
+                        </h2>
+                        <p className="text-muted-foreground">
+                          {userStore.description || 'No description added yet.'}
+                        </p>
                         <div className="flex items-center space-x-4 mt-2">
                           <div className="flex items-center space-x-1">
                             <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                            <span className="text-sm">{parseFloat(userStore.rating).toFixed(1)}</span>
+                            <span className="text-sm">
+                              {userStore.rating ? parseFloat(userStore.rating).toFixed(1) : '0.0'}
+                            </span>
                             <span className="text-sm text-muted-foreground">
-                              ({userStore.totalReviews} reviews)
+                              ({userStore.totalReviews || 0} reviews)
                             </span>
                           </div>
+                          <Badge variant={userStore.storeType === 'restaurant' ? 'default' : 'secondary'}>
+                            {userStore.storeType === 'restaurant' ? (
+                              <><UtensilsCrossed className="h-3 w-3 mr-1" /> Restaurant</>
+                            ) : (
+                              <><Store className="h-3 w-3 mr-1" /> Retail</>
+                            )}
+                          </Badge>
                           <Badge variant={userStore.isActive ? 'default' : 'secondary'}>
                             {userStore.isActive ? 'Active' : 'Inactive'}
                           </Badge>
@@ -329,10 +465,12 @@ export default function SellerStore() {
                     <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="font-medium">Address</p>
-                      <p className="text-muted-foreground">{userStore.address}</p>
+                      <p className="text-muted-foreground">
+                        {userStore.address || 'No address provided'}
+                      </p>
                     </div>
                   </div>
-                  {userStore.phone && (
+                  {userStore.phone && userStore.phone.trim() && (
                     <div className="flex items-start space-x-3">
                       <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
@@ -341,7 +479,7 @@ export default function SellerStore() {
                       </div>
                     </div>
                   )}
-                  {userStore.website && (
+                  {userStore.website && userStore.website.trim() && (
                     <div className="flex items-start space-x-3">
                       <Globe className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
@@ -350,11 +488,18 @@ export default function SellerStore() {
                           href={userStore.website} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-primary hover:underline"
+                          className="text-primary hover:underline break-all"
                         >
                           {userStore.website}
                         </a>
                       </div>
+                    </div>
+                  )}
+                  {(!userStore.phone || !userStore.phone.trim()) && (!userStore.website || !userStore.website.trim()) && (
+                    <div className="text-center py-4">
+                      <p className="text-muted-foreground text-sm">
+                        Add your phone number and website to help customers connect with you
+                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -367,18 +512,43 @@ export default function SellerStore() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-2xl font-bold">{userStore.totalReviews}</p>
+                      <p className="text-2xl font-bold">{userStore.totalReviews || 0}</p>
                       <p className="text-sm text-muted-foreground">Total Reviews</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{parseFloat(userStore.rating).toFixed(1)}</p>
+                      <p className="text-2xl font-bold">
+                        {userStore.rating ? parseFloat(userStore.rating).toFixed(1) : '0.0'}
+                      </p>
                       <p className="text-sm text-muted-foreground">Average Rating</p>
                     </div>
                   </div>
                   <div className="pt-4">
                     <p className="text-sm text-muted-foreground">
-                      Store created on {new Date(userStore.createdAt).toLocaleDateString()}
+                      Store created on {
+                        userStore.createdAt 
+                          ? new Date(userStore.createdAt).toLocaleDateString() 
+                          : 'Unknown date'
+                      }
                     </p>
+                    {userStore.storeType === 'restaurant' && (
+                      <div className="mt-2 space-y-1">
+                        {userStore.cuisineType && (
+                          <p className="text-sm text-muted-foreground">
+                            <strong>Cuisine:</strong> {userStore.cuisineType}
+                          </p>
+                        )}
+                        {userStore.deliveryTime && (
+                          <p className="text-sm text-muted-foreground">
+                            <strong>Delivery Time:</strong> {userStore.deliveryTime}
+                          </p>
+                        )}
+                        {userStore.minimumOrder && (
+                          <p className="text-sm text-muted-foreground">
+                            <strong>Minimum Order:</strong> ₹{userStore.minimumOrder}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
