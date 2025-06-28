@@ -120,6 +120,16 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### June 28, 2025 - Delivery Order Recovery and Endpoint Fix
+- ✓ Fixed critical issue where accepted orders disappeared when wrong API endpoint was used
+- ✓ Recovered lost order #11 from Family Restaurant for delivery partner Gokul Yadav
+- ✓ Added intelligent endpoint redirection for delivery acceptance compatibility
+- ✓ Enhanced `/api/deliveries/:id/accept` to handle both deliveryId and orderId parameters
+- ✓ Created automatic order recovery system when endpoint mismatch occurs
+- ✓ Verified complete delivery flow: Order acceptance → Delivery creation → Status updates
+- ✓ Added proper error handling and logging for delivery acceptance debugging
+- → Order losses due to endpoint confusion are now prevented with automatic recovery
+
 ### June 28, 2025 - Automatic Restaurant Delivery Notifications Fixed
 - ✓ Fixed critical issue where delivery partners weren't getting notified about Family Restaurant orders
 - ✓ Implemented automatic delivery partner notifications when restaurant orders are placed

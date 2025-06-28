@@ -3767,13 +3767,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/deliveries/:id/accept", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { partnerId } = req.body;
+      const { partnerId, deliveryPartnerId } = req.body;
+      
+      // Handle both partnerId and deliveryPartnerId for compatibility
+      const actualPartnerId = partnerId || deliveryPartnerId;
+      
+      if (!actualPartnerId) {
+        return res.status(400).json({ error: "Partner ID is required" });
+      }
 
-      const delivery = await storage.updateDeliveryStatus(id, 'assigned', partnerId);
+      // Check if this is actually an orderId being passed instead of deliveryId
+      const order = await storage.getOrder(id);
+      if (order && !order.status.includes('assigned_for_delivery')) {
+        // This is an orderId, redirect to proper endpoint
+        console.log(`Redirecting order acceptance from /api/deliveries/${id}/accept to proper order acceptance`);
+        
+        // Get delivery partner details
+        const partner = await storage.getDeliveryPartner(actualPartnerId);
+        if (!partner) {
+          return res.status(404).json({ error: "Delivery partner not found" });
+        }
+
+        // Update order status
+        await storage.updateOrderStatus(id, 'assigned_for_delivery');
+
+        // Create delivery record
+        const deliveryData = {
+          orderId: id,
+          deliveryPartnerId: actualPartnerId,
+          status: 'assigned',
+          deliveryFee: '50.00',
+          pickupAddress: 'Store Location',
+          deliveryAddress: order.shippingAddress,
+          estimatedDistance: "5.0",
+          estimatedTime: 45
+        };
+
+        const delivery = await storage.createDelivery(deliveryData);
+
+        // Notify customer
+        await storage.createNotification({
+          userId: order.customerId,
+          title: "Delivery Partner Assigned",
+          message: `Your order #${id} has been assigned to a delivery partner.`,
+          type: "delivery_update",
+          orderId: id
+        });
+
+        return res.json({ 
+          success: true, 
+          delivery,
+          message: "Order accepted successfully (redirected from delivery endpoint)",
+          redirected: true
+        });
+      }
+
+      // Normal delivery acceptance flow
+      const delivery = await storage.updateDeliveryStatus(id, 'assigned', actualPartnerId);
 
       if (delivery) {
         await storage.createNotification({
-          userId: partnerId,
+          userId: actualPartnerId,
           title: "Delivery Accepted",
           message: `You have successfully accepted delivery for Order #${delivery.orderId}`,
           type: "success"
@@ -3782,6 +3836,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ success: true, delivery });
     } catch (error) {
+      console.error("Delivery acceptance error:", error);
       res.status(500).json({ error: "Failed to accept delivery" });
     }
   });
