@@ -1565,9 +1565,22 @@ export default function ShopkeeperDashboard() {
                             <div className="flex flex-wrap gap-2 mt-2">
                               {order.status !== "assigned_for_delivery" && order.status !== "delivered" && order.status !== "cancelled" && (
                                 <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    className="bg-orange-600 hover:bg-orange-700 text-white"
+                                    onClick={() => handleNotifyDeliveryPartner(
+                                      order.id,
+                                      `🚚 New Order Available: Order #${order.id} from ${currentStore?.name}. Customer: ${order.customerName}. Total: ₹${order.totalAmount}. First to accept gets delivery!`,
+                                      false
+                                    )}
+                                  >
+                                    <Bell className="h-4 w-4 mr-1" />
+                                    Notify All Partners (First Accept)
+                                  </Button>
+                                  
                                   <Select onValueChange={(partnerId) => handleAssignDeliveryPartner(order.id, parseInt(partnerId))}>
                                     <SelectTrigger className="w-48">
-                                      <SelectValue placeholder="Assign Delivery Partner" />
+                                      <SelectValue placeholder="Or Assign Specific Partner" />
                                     </SelectTrigger>
                                     <SelectContent>
                                       {deliveryPartners
@@ -1579,19 +1592,6 @@ export default function ShopkeeperDashboard() {
                                         ))}
                                     </SelectContent>
                                   </Select>
-                                  
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleNotifyDeliveryPartner(
-                                      order.id,
-                                      `⚡ URGENT: Order #${order.id} needs delivery from ${currentStore?.name}. Customer: ${order.customerName}. Total: ₹${order.totalAmount}`,
-                                      true
-                                    )}
-                                  >
-                                    <Bell className="h-4 w-4 mr-1" />
-                                    Notify All Partners
-                                  </Button>
                                 </div>
                               )}
                               

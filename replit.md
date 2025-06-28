@@ -120,17 +120,18 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### June 28, 2025 - Shopkeeper Delivery Assignment System Implementation
-- ✓ Fixed root cause: Shopkeepers lacked direct delivery partner assignment functionality
-- ✓ Added "Assign Delivery Partner" dropdown in shopkeeper order management dashboard
-- ✓ Created `/api/orders/:id/assign-delivery` API endpoint for manual assignment
-- ✓ Enhanced order status options to include "assigned_for_delivery" tracking
-- ✓ Implemented automatic notification system for both delivery partners and customers
-- ✓ Delivery partners (Gokul Yadav, Shekhar) now receive instant notifications when assigned
-- ✓ Shopkeepers can now assign any available delivery partner to any order status
-- ✓ Added broadcast notification option for urgent delivery requests
-- ✓ Verified complete assignment flow: Shopkeeper → Assignment → Partner notification → Customer notification
-- → Delivery partner notification issues resolved - partners now receive notifications through proper assignment process
+### June 28, 2025 - First-Accept-First-Serve Delivery Notification System Implementation
+- ✓ Built complete first-accept-first-serve notification system as requested by user
+- ✓ Added prominent orange "Notify All Partners (First Accept)" button in shopkeeper dashboard
+- ✓ Created `/api/notifications/delivery-assignment` endpoint for broadcasting to all delivery partners
+- ✓ Implemented `/api/delivery/accept-assignment` endpoint with race condition protection
+- ✓ All available delivery partners receive notifications simultaneously
+- ✓ First partner to accept gets delivery - others automatically rejected with proper error handling
+- ✓ Automatic confirmation notifications sent to successful partner and customer
+- ✓ Tested complete flow: Notification broadcast → Gokul accepted first → Shekhar properly rejected
+- ✓ System prevents double-assignment conflicts and ensures only one partner gets each order
+- ✓ Dual functionality: Both first-accept-first-serve and direct assignment options available
+- → Delivery partners can now compete for orders leading to faster response times and improved service
 
 ### June 28, 2025 - Delivery Partner Notification System Diagnostic and Prevention
 - ✓ Identified critical issue: Delivery partners with "pending" status cannot receive notifications

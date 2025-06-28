@@ -2598,21 +2598,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Accept delivery assignment (first-accept-first-serve)
+  // Enhanced first-accept-first-serve delivery acceptance
   app.post("/api/delivery/accept-assignment", async (req, res) => {
     try {
       const { deliveryPartnerId, orderId, notificationId } = req.body;
       
       // Check if order is still available (not already assigned)
-      const existingDeliveries = await storage.getDeliveriesByOrderId(orderId);
-      const assignedDelivery = existingDeliveries.find(d => d.deliveryPartnerId && d.status !== 'cancelled');
-      
-      if (assignedDelivery) {
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      if (order.status === 'assigned_for_delivery') {
         return res.status(409).json({ 
           error: "Order already assigned to another delivery partner",
           alreadyAssigned: true
         });
       }
+
+      // Get delivery partner details
+      const deliveryPartner = await storage.getDeliveryPartner(deliveryPartnerId);
+      if (!deliveryPartner) {
+        return res.status(404).json({ error: "Delivery partner not found" });
+      }
+
+      // Get store information for pickup address
+      const store = await storage.getStore(order.storeId);
+      const pickupAddress = store ? store.address : "Store Location";
 
       // Create delivery assignment
       const delivery = await storage.createDelivery({
@@ -2620,13 +2632,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deliveryPartnerId,
         status: "assigned",
         assignedAt: new Date(),
-        estimatedDeliveryTime: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes from now
+        deliveryFee: "50.00",
+        pickupAddress: pickupAddress,
+        deliveryAddress: order.shippingAddress || "Customer Address",
+        estimatedDistance: "5.0",
+        estimatedTime: 45
       });
 
       // Update order status
       await storage.updateOrderStatus(orderId, "assigned_for_delivery");
 
-      // Mark the notification as read/accepted
+      // Mark the accepted notification as read
+      if (notificationId) {
+        await storage.markNotificationAsRead(notificationId);
+      }
+
+      // Cancel all other delivery notifications for this order (since it's now assigned)
+      const allNotifications = await storage.getNotificationsByUserId(deliveryPartner.userId);
+      const deliveryNotifications = allNotifications.filter((n: any) => 
+        n.type === 'delivery_assignment' && n.orderId === orderId && n.id !== notificationId
+      );
+      
+      for (const notification of deliveryNotifications) {
+        await storage.markNotificationAsRead(notification.id);
+      }
+
+      // Notify the successful delivery partner
+      await storage.createNotification({
+        userId: deliveryPartner.userId,
+        title: "Delivery Assignment Confirmed",
+        message: `You have successfully accepted Order #${orderId}. Please proceed to pickup location.`,
+        type: "delivery_confirmed",
+        orderId: orderId,
+        isRead: false,
+        data: JSON.stringify({
+          deliveryId: delivery.id,
+          status: "assigned",
+          pickupRequired: true
+        })
+      });
+
+      // Notify customer about assignment
+      await storage.createNotification({
+        userId: order.customerId,
+        title: "Delivery Partner Assigned",
+        message: `Your order #${orderId} has been accepted by a delivery partner and will be delivered soon.`,
+        type: "delivery_update",
+        orderId: orderId,
+        isRead: false
+      });
+
+      res.json({ 
+        success: true, 
+        delivery: delivery,
+        message: "Delivery assignment accepted successfully",
+        deliveryPartnerId,
+        orderId
+      });
+    } catch (error) {
+      console.error("Error accepting delivery assignment:", error);
+      res.status(500).json({ error: "Failed to accept delivery assignment" });
+    }
+  });
+
+  // Reject delivery assignment (for first-accept-first-serve)
+  app.post("/api/delivery/reject-assignment", async (req, res) => {
+    try {
+      const { deliveryPartnerId, orderId, notificationId } = req.body;
+      
+      // Mark notification as read (rejected)
       if (notificationId) {
         await storage.markNotificationAsRead(notificationId);
       }
