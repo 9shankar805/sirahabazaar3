@@ -798,6 +798,28 @@ export const insertStoreSchema = createInsertSchema(stores).omit({
   featured: true,
   isActive: true,
 }).extend({
+  // Make name more flexible - allow any valid store name
+  name: z.string().min(1, "Store name is required").transform(val => val.trim()),
+  
+  // Make description optional with default
+  description: z.string().optional().default(""),
+  
+  // Make address required but flexible
+  address: z.string().min(1, "Address is required").transform(val => val.trim()),
+  
+  // Handle optional fields gracefully
+  phone: z.string().optional().default("").transform(val => val?.trim() || ""),
+  website: z.string().optional().default("").transform(val => {
+    if (!val || val.trim() === "") return "";
+    const trimmed = val.trim();
+    // Add https:// if no protocol is provided and it's a valid URL
+    if (trimmed && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      return `https://${trimmed}`;
+    }
+    return trimmed;
+  }),
+  
+  // Handle numeric fields as strings or numbers
   minimumOrder: z.union([z.string(), z.number()]).optional().transform((val) => 
     val !== undefined && val !== null && val !== "" ? String(val) : undefined
   ),
@@ -810,6 +832,17 @@ export const insertStoreSchema = createInsertSchema(stores).omit({
   longitude: z.union([z.string(), z.number()]).optional().transform((val) => 
     val !== undefined && val !== null && val !== "" ? String(val) : undefined
   ),
+  
+  // Make optional fields have proper defaults
+  logo: z.string().optional().default(""),
+  coverImage: z.string().optional().default(""),
+  cuisineType: z.string().optional().default(""),
+  deliveryTime: z.string().optional().default(""),
+  openingHours: z.string().optional().default(""),
+  city: z.string().optional().default(""),
+  state: z.string().optional().default(""),
+  postalCode: z.string().optional().default(""),
+  country: z.string().optional().default(""),
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({
@@ -897,6 +930,11 @@ export const insertAdvertisementSchema = createInsertSchema(advertisements).omit
   createdAt: true,
   impressions: true,
   clicks: true,
+});
+
+export const insertDeliveryZoneSchema = createInsertSchema(deliveryZones).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertProductReviewSchema = createInsertSchema(productReviews).omit({

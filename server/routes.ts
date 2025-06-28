@@ -288,6 +288,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/stores", async (req, res) => {
     try {
+      console.log('Store creation request received:', {
+        name: req.body.name,
+        ownerId: req.body.ownerId,
+        storeType: req.body.storeType,
+        address: req.body.address
+      });
+
       // Auto-generate slug if not provided
       if (!req.body.slug && req.body.name) {
         req.body.slug = req.body.name
@@ -296,34 +303,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .replace(/^-+|-+$/g, '') + '-' + Date.now();
       }
 
-      const storeData = insertStoreSchema.parse(req.body);
+      // Validate store data with enhanced error handling
+      let storeData;
+      try {
+        storeData = insertStoreSchema.parse(req.body);
+      } catch (validationError) {
+        console.error("Store validation error:", validationError);
+        return res.status(400).json({ 
+          error: "Store information is incomplete or invalid",
+          message: "Please check your store name and address are filled out correctly",
+          details: validationError instanceof Error ? validationError.message : "Validation failed"
+        });
+      }
 
       // Check if user already has a store
       const existingStores = await storage.getStoresByOwnerId(storeData.ownerId);
       if (existingStores.length > 0) {
         return res.status(400).json({ 
-          error: "You can only create one store per account" 
+          error: "You can only create one store per account",
+          message: "Each account is limited to one store. You already have a store set up." 
         });
       }
 
-      // Check if store name already exists
+      // Check if store name already exists (case-insensitive)
       const allStores = await storage.getAllStores();
       const nameExists = allStores.some(store => 
         store.name.toLowerCase() === storeData.name.toLowerCase()
       );
       if (nameExists) {
         return res.status(400).json({ 
-          error: "A store with this name already exists" 
+          error: "A store with this name already exists",
+          message: `"${storeData.name}" is already taken. Please choose a different store name.`
         });
       }
 
+      console.log('Creating store with validated data:', storeData);
       const store = await storage.createStore(storeData);
+      
+      console.log('Store created successfully:', store.id);
       res.json(store);
     } catch (error) {
       console.error("Store creation error:", error);
+      
+      // Provide user-friendly error messages
+      if (error instanceof Error) {
+        if (error.message.includes('duplicate') || error.message.includes('unique')) {
+          return res.status(400).json({ 
+            error: "Store name already exists",
+            message: "Please choose a different name for your store."
+          });
+        }
+        if (error.message.includes('foreign key') || error.message.includes('not found')) {
+          return res.status(400).json({ 
+            error: "Account verification required",
+            message: "Please ensure your account is properly set up before creating a store."
+          });
+        }
+      }
+      
       res.status(400).json({ 
-        error: "Invalid store data",
-        details: error instanceof Error ? error.message : "Unknown error"
+        error: "Unable to create store",
+        message: "Something went wrong while creating your store. Please try again.",
+        details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : "Unknown error" : undefined
       });
     }
   });
