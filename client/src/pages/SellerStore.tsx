@@ -664,13 +664,21 @@ export default function SellerStore() {
 
                       <FormField
                         control={form.control}
-                        name="phone"
+                        name="storeType"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="+1234567890" {...field} />
-                            </FormControl>
+                            <FormLabel>Store Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select store type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="retail">Retail Store</SelectItem>
+                                <SelectItem value="restaurant">Restaurant</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -716,27 +724,105 @@ export default function SellerStore() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="storeType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Store Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select store type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="retail">Retail Store</SelectItem>
-                              <SelectItem value="restaurant">Restaurant</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Restaurant-specific fields */}
+                    {form.watch("storeType") === "restaurant" && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                        <div className="md:col-span-2">
+                          <h3 className="text-lg font-medium text-orange-800 dark:text-orange-200 mb-2">
+                            🍽️ Restaurant Information
+                          </h3>
+                          <p className="text-sm text-orange-700 dark:text-orange-300 mb-4">
+                            Additional fields for restaurants
+                          </p>
+                        </div>
+                        
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone Number</FormLabel>
+                              <FormControl>
+                                <Input placeholder="+977-XXXXXXXXX" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="deliveryFee"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Delivery Fee (₹)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="50" type="number" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="minimumOrder"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Minimum Order (₹)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="300" type="number" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="deliveryTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Delivery Time</FormLabel>
+                              <FormControl>
+                                <Input placeholder="30-45 minutes" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="cuisineType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cuisine Type</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Nepali, Indian, Chinese" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="openingHours"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Opening Hours</FormLabel>
+                              <FormControl>
+                                <Input placeholder="9:00 AM - 10:00 PM" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+
+
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
@@ -828,13 +914,21 @@ export default function SellerStore() {
 
                 <FormField
                   control={form.control}
-                  name="phone"
+                  name="storeType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="+1234567890" {...field} />
-                      </FormControl>
+                      <FormLabel>Store Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select store type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="retail">Retail Store</SelectItem>
+                          <SelectItem value="restaurant">Restaurant</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -879,6 +973,101 @@ export default function SellerStore() {
                   </FormItem>
                 )}
               />
+
+              {/* Restaurant-specific fields for edit form */}
+              {form.watch("storeType") === "restaurant" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                  <div className="md:col-span-2">
+                    <h3 className="text-lg font-medium text-orange-800 dark:text-orange-200 mb-2">
+                      🍽️ Restaurant Information
+                    </h3>
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="+977-XXXXXXXXX" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="deliveryFee"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Delivery Fee (₹)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="50" type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="minimumOrder"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Minimum Order (₹)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="300" type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="deliveryTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Delivery Time</FormLabel>
+                        <FormControl>
+                          <Input placeholder="30-45 minutes" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="cuisineType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cuisine Type</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nepali, Indian, Chinese" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="openingHours"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Opening Hours</FormLabel>
+                        <FormControl>
+                          <Input placeholder="9:00 AM - 10:00 PM" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
 
               <div className="flex justify-end space-x-2">
                 <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
