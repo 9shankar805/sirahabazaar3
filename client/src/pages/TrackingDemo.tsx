@@ -51,32 +51,59 @@ export default function TrackingDemo() {
 
   const loadDemoData = async () => {
     try {
-      // Load real delivery and partner data from the API
-      const [deliveriesRes, partnersRes, ordersRes] = await Promise.all([
-        fetch('/api/deliveries'),
-        fetch('/api/delivery-partners'),
-        fetch('/api/orders')
-      ]);
+      // Load real delivery and partner data from the enhanced tracking endpoint
+      const trackingRes = await fetch('/api/tracking/demo-data');
+      
+      if (trackingRes.ok) {
+        const trackingData = await trackingRes.json();
+        
+        setDemoData({
+          deliveries: trackingData.deliveries || [],
+          deliveryPartners: trackingData.deliveryPartners || [],
+          orders: trackingData.orders || []
+        });
 
-      const deliveries = deliveriesRes.ok ? await deliveriesRes.json() : [];
-      const partners = partnersRes.ok ? await partnersRes.json() : [];
-      const orders = ordersRes.ok ? await ordersRes.json() : [];
+        // Auto-select first active delivery if available
+        if (trackingData.deliveries && trackingData.deliveries.length > 0) {
+          setSelectedDeliveryId(trackingData.deliveries[0].id);
+        }
 
-      // Filter for active deliveries with assigned partners
-      const activeDeliveries = deliveries.filter((delivery: any) => 
-        delivery.deliveryPartnerId && 
-        ['assigned', 'en_route_pickup', 'picked_up', 'en_route_delivery'].includes(delivery.status)
-      );
+        console.log('Loaded real tracking data:', {
+          deliveries: trackingData.deliveries?.length || 0,
+          partners: trackingData.deliveryPartners?.length || 0,
+          message: trackingData.message
+        });
+      } else {
+        // Fallback to individual API calls if tracking endpoint fails
+        const [deliveriesRes, partnersRes, ordersRes] = await Promise.all([
+          fetch('/api/deliveries'),
+          fetch('/api/delivery-partners'),
+          fetch('/api/orders')
+        ]);
 
-      setDemoData({
-        deliveries: activeDeliveries,
-        deliveryPartners: partners,
-        orders: orders
-      });
+        const deliveries = deliveriesRes.ok ? await deliveriesRes.json() : [];
+        const partners = partnersRes.ok ? await partnersRes.json() : [];
+        const orders = ordersRes.ok ? await ordersRes.json() : [];
 
-      // Auto-select first active delivery if available
-      if (activeDeliveries.length > 0) {
-        setSelectedDeliveryId(activeDeliveries[0].id);
+        // Filter for active deliveries with assigned partners
+        const activeDeliveries = deliveries.filter((delivery: any) => 
+          delivery.deliveryPartnerId && 
+          ['assigned', 'en_route_pickup', 'picked_up', 'en_route_delivery'].includes(delivery.status)
+        );
+
+        setDemoData({
+          deliveries: activeDeliveries,
+          deliveryPartners: partners.map((partner: any) => ({
+            ...partner,
+            name: partner.fullName || partner.name,
+            realData: true
+          })),
+          orders: orders
+        });
+
+        if (activeDeliveries.length > 0) {
+          setSelectedDeliveryId(activeDeliveries[0].id);
+        }
       }
 
       setIsLoading(false);

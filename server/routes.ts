@@ -4426,38 +4426,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Tracking demo data endpoint
+  // Tracking demo data endpoint - Fixed to show real delivery partners
   app.get("/api/tracking/demo-data", async (req, res) => {
     try {
-      // Get sample delivery and tracking data for demo purposes
-      const deliveries = await db.select().from(deliveries).limit(10);
-      const partners = await db.select().from(deliveryPartners).limit(10);
+      // Get real delivery and tracking data with complete user information
+      const deliveriesData = await db.select()
+        .from(deliveries)
+        .leftJoin(deliveryPartners, eq(deliveries.deliveryPartnerId, deliveryPartners.id))
+        .leftJoin(users, eq(deliveryPartners.userId, users.id))
+        .leftJoin(orders, eq(deliveries.orderId, orders.id))
+        .leftJoin(stores, eq(orders.storeId, stores.id))
+        .limit(10);
+
+      // Get all real delivery partners with complete user details
+      const partnersData = await db.select({
+        id: deliveryPartners.id,
+        userId: deliveryPartners.userId,
+        vehicleType: deliveryPartners.vehicleType,
+        vehicleNumber: deliveryPartners.vehicleNumber,
+        status: deliveryPartners.status,
+        isAvailable: deliveryPartners.isAvailable,
+        rating: deliveryPartners.rating,
+        totalDeliveries: deliveryPartners.totalDeliveries,
+        // User details
+        userName: users.fullName,
+        userEmail: users.email,
+        userRole: users.role,
+        userPhone: users.phone
+      })
+      .from(deliveryPartners)
+      .leftJoin(users, eq(deliveryPartners.userId, users.id))
+      .where(eq(deliveryPartners.status, 'approved'));
       
-      // Get some sample orders for context
+      // Get real orders with customer details
       const ordersData = await db.select()
         .from(orders)
         .leftJoin(users, eq(orders.customerId, users.id))
+        .leftJoin(stores, eq(orders.storeId, stores.id))
         .limit(10);
 
-      // Create demo tracking data structure
-      const demoData = {
-        deliveries: deliveries.map(delivery => ({
-          ...delivery,
+      // Filter for active deliveries with assigned partners
+      const activeDeliveries = deliveriesData
+        .filter(item => item.deliveries?.deliveryPartnerId && 
+          ['assigned', 'en_route_pickup', 'picked_up', 'en_route_delivery'].includes(item.deliveries.status))
+        .map(item => ({
+          ...item.deliveries,
+          // Add delivery partner details
+          deliveryPartner: item.delivery_partners ? {
+            id: item.delivery_partners.id,
+            fullName: item.users?.fullName || 'Unknown Partner',
+            phone: item.users?.phone || 'No phone',
+            vehicleType: item.delivery_partners.vehicleType,
+            vehicleNumber: item.delivery_partners.vehicleNumber,
+            rating: item.delivery_partners.rating,
+            userName: item.users?.fullName || 'Unknown Partner'
+          } : null,
+          // Add order details
+          order: item.orders ? {
+            customerName: item.orders.customerName,
+            shippingAddress: item.orders.shippingAddress,
+            totalAmount: item.orders.totalAmount
+          } : null,
+          // Add store details for pickup
+          store: item.stores ? {
+            name: item.stores.name,
+            address: item.stores.address,
+            phone: item.stores.phone
+          } : null,
+          // Add status history
           statusHistory: [
             {
               status: 'pending',
-              timestamp: new Date(Date.now() - 3600000).toISOString(),
+              timestamp: new Date(Date.now() - 7200000).toISOString(),
               description: 'Order placed and waiting for assignment'
             },
             {
-              status: delivery.status,
+              status: 'assigned',
+              timestamp: new Date(Date.now() - 3600000).toISOString(),
+              description: `Assigned to ${item.users?.fullName || 'delivery partner'}`
+            },
+            {
+              status: item.deliveries.status,
               timestamp: new Date().toISOString(),
-              description: `Current status: ${delivery.status}`
+              description: `Current status: ${item.deliveries.status}`
             }
-          ]
+          ],
+          realData: true // Flag to indicate this is real data, not test data
+        }));
+
+      // Create comprehensive tracking data structure with real information
+      const demoData = {
+        deliveries: activeDeliveries,
+        deliveryPartners: partnersData.map(partner => ({
+          id: partner.id,
+          name: partner.userName || 'Unknown Partner',
+          phone: partner.userPhone || 'No phone',
+          vehicleType: partner.vehicleType,
+          vehicleNumber: partner.vehicleNumber,
+          status: partner.status,
+          rating: partner.rating || '4.5',
+          totalDeliveries: partner.totalDeliveries || 0,
+          isAvailable: partner.isAvailable,
+          realData: true // Flag to indicate this is real data
         })),
-        deliveryPartners: partners,
-        orders: ordersData.map(order => order.orders)
+        orders: ordersData.map(orderItem => ({
+          ...orderItem.orders,
+          customer: orderItem.users,
+          store: orderItem.stores
+        })),
+        realData: true,
+        message: activeDeliveries.length > 0 
+          ? `Showing ${activeDeliveries.length} active deliveries with real delivery partners`
+          : 'No active deliveries found. Real delivery partners are available when orders are assigned.'
       };
 
       res.json(demoData);
