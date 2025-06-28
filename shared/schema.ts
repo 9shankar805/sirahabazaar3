@@ -106,24 +106,35 @@ export const products = pgTable("products", {
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   customerId: integer("customer_id").references(() => users.id).notNull(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  deliveryFee: decimal("delivery_fee", { precision: 10, scale: 2 }).default("0.00"),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).default("0.00"),
+  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).default("0.00"),
   status: text("status").notNull().default("pending"), // pending, processing, shipped, delivered, cancelled
   shippingAddress: text("shipping_address").notNull(),
+  billingAddress: text("billing_address"),
   paymentMethod: text("payment_method").notNull(),
+  paymentStatus: text("payment_status").notNull().default("pending"),
   phone: text("phone").notNull(),
   customerName: text("customer_name").notNull(),
+  email: text("email"),
+  specialInstructions: text("special_instructions"),
   latitude: decimal("latitude", { precision: 10, scale: 8 }), // Customer location latitude
   longitude: decimal("longitude", { precision: 11, scale: 8 }), // Customer location longitude
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const orderItems = pgTable("order_items", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").references(() => orders.id).notNull(),
   productId: integer("product_id").references(() => products.id).notNull(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
   quantity: integer("quantity").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  storeId: integer("store_id").references(() => stores.id).notNull(),
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const cartItems = pgTable("cart_items", {

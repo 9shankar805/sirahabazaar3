@@ -120,6 +120,16 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### June 28, 2025 - Order Placement System Fixed
+- ✓ Fixed critical order placement API that was failing due to database schema mismatches
+- ✓ Updated orders table schema to include storeId, deliveryFee, taxAmount, discountAmount fields
+- ✓ Updated orderItems table schema to include storeId, totalPrice, and createdAt fields
+- ✓ Implemented multi-vendor order creation system that creates separate orders per store
+- ✓ Fixed order item creation with proper totalPrice calculation (quantity × price)
+- ✓ Enhanced order notification system to notify store owners and customers
+- ✓ Verified complete order flow: Gokul Yadav → Shankar Yadav (Family Restaurant)
+- → Order placement system now fully operational for all users
+
 ### June 28, 2025 - Restaurant Dashboard System Implementation
 - ✓ Fixed restaurant dashboard routing to automatically detect restaurant stores
 - ✓ Enhanced restaurant detection to identify "Family Restaurant" and similar names

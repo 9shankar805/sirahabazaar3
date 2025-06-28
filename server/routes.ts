@@ -884,199 +884,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { order, items } = req.body;
       console.log("Order request:", { order, items });
 
-      // Create order with location data
-      const orderData = insertOrderSchema.parse(order);
-      const createdOrder = await storage.createOrder(orderData);
+      // Fix field mapping - handle both phone and customerPhone
+      const normalizedOrder = {
+        ...order,
+        phone: order.phone || order.customerPhone || 'Not provided'
+      };
 
-      // Create order items and collect store owners for notifications
-      const storeOwners = new Set<number>();
-      const orderItems = await Promise.all(
-        items.map(async (item: any) => {
-          const orderItem = await storage.createOrderItem({
-            ...item,
-            orderId: createdOrder.id
-          });
-
-          // Get store info for notifications
-          const store = await storage.getStore(item.storeId);
-          if (store) {
-            storeOwners.add(store.ownerId);
-          }
-
-          return orderItem;
-        })
-      );
-
-      // Create order tracking
-      await storage.createOrderTracking({
-        orderId: createdOrder.id,
-        status: "pending",
-        description: "Order placed successfully"
-      });
-
-      // Send notifications using the notification service
-      await NotificationService.sendOrderNotificationToShopkeepers(
-        createdOrder.id,
-        orderData.customerName,
-        orderData.totalAmount,
-        orderItems
-      );
-
-      // Send payment confirmation to customer
-      await NotificationService.sendPaymentConfirmation(
-        orderData.customerId,
-        createdOrder.id,
-        orderData.totalAmount,
-        orderData.paymentMethod
-      );
-
-      // Send order confirmation to customer
-      await storage.createNotification({
-        userId: orderData.customerId,
-        title: "Order Confirmed",
-        message: `Your order #${createdOrder.id} has been confirmed and is being processed`,
-        type: "order",
-        orderId: createdOrder.id,
-        isRead: false
-      });
-
-      // Automatically send delivery notifications to available delivery partners
-      const deliveryPartners = await storage.getAllDeliveryPartners();
-      const availablePartners = deliveryPartners.filter(partner => 
-        partner.status === 'approved' && partner.isAvailable
-      );
-
-      if (availablePartners.length > 0) {
-        // Calculate actual distance and delivery fee if coordinates are available
-        let actualDistance = 5; // Default 5km
-        let deliveryFee = orderData.deliveryFee ? parseFloat(orderData.deliveryFee) : 50;
-        let pickupAddress = 'Store Location';
-        let formattedDeliveryAddress = orderData.shippingAddress;
-
-        // Get store details for the first item to get pickup address
-        if (orderItems.length > 0) {
-          try {
-            const firstItem = orderItems[0];
-            const store = await storage.getStore(firstItem.storeId);
-            if (store) {
-              pickupAddress = `${store.name}, ${store.address || 'Store Location'}`;
-            }
-          } catch (error) {
-            console.log('Could not get store details for pickup address');
-          }
+      // Group items by store to create separate orders for each store
+      const itemsByStore = items.reduce((acc: any, item: any) => {
+        if (!acc[item.storeId]) {
+          acc[item.storeId] = [];
         }
+        acc[item.storeId].push(item);
+        return acc;
+      }, {});
 
-        // Parse coordinates from shipping address if available
-        if (orderData.latitude && orderData.longitude) {
-          try {
-            // Store coordinates (Siraha, Nepal as default)
-            const storeCoords = { latitude: 26.6618, longitude: 86.2025 };
-            const customerCoords = { latitude: orderData.latitude, longitude: orderData.longitude };
-            
-            // Calculate actual distance using Haversine formula
-            const R = 6371; // Earth's radius in kilometers
-            const dLat = (customerCoords.latitude - storeCoords.latitude) * Math.PI / 180;
-            const dLon = (customerCoords.longitude - storeCoords.longitude) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                     Math.cos(storeCoords.latitude * Math.PI / 180) * Math.cos(customerCoords.latitude * Math.PI / 180) *
-                     Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            actualDistance = Math.round((R * c) * 100) / 100; // Round to 2 decimal places
+      const createdOrders = [];
+      const allOrderItems = [];
 
-            // Format delivery address with coordinates
-            formattedDeliveryAddress = `${orderData.shippingAddress} (${customerCoords.latitude.toFixed(4)}, ${customerCoords.longitude.toFixed(4)})`;
-          } catch (error) {
-            console.log('Distance calculation failed, using default');
-          }
-        }
-
-        // Use the actual delivery fee from the order, not a calculated one
-        const actualDeliveryFee = parseFloat(orderData.deliveryFee || '35');
+      // Create separate orders for each store
+      for (const [storeId, storeItems] of Object.entries(itemsByStore)) {
+        const storeTotal = (storeItems as any[]).reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
         
-        // Calculate earnings (delivery fee - platform commission)
-        const platformCommission = 0.15; // 15% commission
-        const estimatedEarnings = Math.round(actualDeliveryFee * (1 - platformCommission));
+        const storeOrderData = {
+          ...normalizedOrder,
+          storeId: parseInt(storeId),
+          totalAmount: storeTotal.toFixed(2),
+          deliveryFee: normalizedOrder.deliveryFee || "35.00"
+        };
 
-        // Get store details for pickup location with Google Maps link
-        let storeDetails = null;
-        let pickupGoogleMapsLink = '';
-        if (orderItems.length > 0) {
-          try {
-            const firstItem = orderItems[0];
-            const store = await storage.getStore(firstItem.storeId);
-            if (store) {
-              storeDetails = store;
-              pickupAddress = `${store.name}, ${store.address || store.location || 'Store Location'}`;
-              // Create Google Maps link for pickup location
-              if (store.latitude && store.longitude) {
-                pickupGoogleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`;
-              } else {
-                pickupGoogleMapsLink = `https://www.google.com/maps/search/${encodeURIComponent(pickupAddress)}`;
-              }
-            }
-          } catch (error) {
-            console.log('Could not get store details for pickup address');
-          }
-        }
+        // Create order with location data
+        const orderData = insertOrderSchema.parse(storeOrderData);
+        const createdOrder = await storage.createOrder(orderData);
+        createdOrders.push(createdOrder);
 
-        // Create Google Maps link for delivery location
-        let deliveryGoogleMapsLink = '';
-        if (orderData.latitude && orderData.longitude) {
-          deliveryGoogleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${orderData.latitude},${orderData.longitude}`;
-        } else {
-          deliveryGoogleMapsLink = `https://www.google.com/maps/search/${encodeURIComponent(orderData.shippingAddress)}`;
-        }
-
-        // Send first-accept-first-serve notifications to all available delivery partners
-        for (const partner of availablePartners) {
-          await storage.createNotification({
-            userId: partner.userId,
-            title: "📦 New Delivery Available",
-            message: `Order #${createdOrder.id} from ${orderData.customerName}. Distance: ${actualDistance}km, Fee: ₹${actualDeliveryFee}`,
-            type: "delivery_assignment",
-            orderId: createdOrder.id,
-            isRead: false,
-            data: JSON.stringify({
+        // Create order items for this store
+        const storeOrderItems = await Promise.all(
+          (storeItems as any[]).map(async (item: any) => {
+            const totalPrice = (parseFloat(item.price) * item.quantity).toFixed(2);
+            const orderItemData = {
               orderId: createdOrder.id,
-              customerName: orderData.customerName,
-              customerPhone: orderData.phone || orderData.customerPhone || 'Not provided',
-              totalAmount: orderData.totalAmount,
-              deliveryFee: actualDeliveryFee.toFixed(2),
-              pickupAddress,
-              deliveryAddress: orderData.shippingAddress,
-              estimatedDistance: actualDistance,
-              estimatedTime: Math.round(30 + (actualDistance * 8)), // 30 min base + 8 min per km
-              estimatedEarnings,
-              platformCommission: Math.round(actualDeliveryFee * platformCommission),
-              paymentMethod: orderData.paymentMethod,
-              specialInstructions: orderData.specialInstructions || null,
-              orderItems: orderItems.length,
-              firstAcceptFirstServe: true,
-              canAccept: true,
-              urgent: actualDistance > 15 || orderItems.length > 5,
-              notificationType: "first_accept_first_serve",
-              createdAt: new Date().toISOString(),
-              pickupGoogleMapsLink,
-              deliveryGoogleMapsLink,
-              storeDetails: storeDetails ? {
-                id: storeDetails.id,
-                name: storeDetails.name,
-                address: storeDetails.address,
-                phone: storeDetails.phone,
-                latitude: storeDetails.latitude,
-                longitude: storeDetails.longitude
-              } : null
-            })
-          });
-        }
+              productId: item.productId,
+              storeId: item.storeId,
+              quantity: item.quantity,
+              price: item.price,
+              totalPrice: totalPrice
+            };
+            console.log("Creating order item with data:", orderItemData);
+            const orderItem = await storage.createOrderItem(orderItemData);
+            allOrderItems.push(orderItem);
+            return orderItem;
+          })
+        );
+
+        // Create order tracking
+        await storage.createOrderTracking({
+          orderId: createdOrder.id,
+          status: "pending",
+          description: "Order placed successfully"
+        });
       }
 
-      // Clear user's cart
-      await storage.clearCart(order.customerId);
+      // Clear customer's cart
+      await storage.clearCart(normalizedOrder.customerId);
 
-      res.json({ order: createdOrder, items: orderItems });
+      // Send notifications for all created orders
+      for (const createdOrder of createdOrders) {
+        // Send notifications using the notification service
+        await NotificationService.sendOrderNotificationToShopkeepers(
+          createdOrder.id,
+          normalizedOrder.customerName,
+          createdOrder.totalAmount,
+          allOrderItems.filter(item => item.orderId === createdOrder.id)
+        );
+
+        // Send order confirmation to customer
+        await storage.createNotification({
+          userId: normalizedOrder.customerId,
+          title: "Order Confirmed",
+          message: `Your order #${createdOrder.id} has been confirmed and is being processed`,
+          type: "order",
+          orderId: createdOrder.id,
+          isRead: false
+        });
+      }
+
+      res.json({ orders: createdOrders, success: true });
     } catch (error) {
-      console.error("Order creation error:", error);
+      console.error("Enhanced order creation error:", error);
       res.status(400).json({ error: "Failed to create order" });
     }
   });
