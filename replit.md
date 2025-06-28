@@ -120,6 +120,19 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### June 28, 2025 - Store Creation System Enhanced for Robust Data Handling
+- ✓ Fixed "invalid data" errors preventing store creation (e.g., "bhuvi fancy", "bhuvi retails")
+- ✓ Enhanced backend validation schema to handle null/undefined values gracefully
+- ✓ Updated insertStoreSchema to accept null values and transform them to empty strings
+- ✓ Added data cleaning in frontend before API submission to prevent validation errors
+- ✓ Improved error messages to be user-friendly instead of technical validation errors
+- ✓ Enhanced store display to handle missing or broken data without showing errors
+- ✓ Added loading states and fallback displays for invalid store information
+- ✓ Fixed form validation to prevent null value submission issues
+- ✓ Added automatic image fallback handling for broken store logos
+- ✓ Enhanced contact information display with helpful empty state messages
+- → Store creation now works seamlessly for any store name without validation errors
+
 ### June 28, 2025 - Professional Live Tracking System with Leaflet Maps Implementation
 - ✓ Created comprehensive ProfessionalLiveTracking component with Leaflet maps integration
 - ✓ Added custom animated markers for stores (🏪), customers (🏠), and delivery partners (🚛)

@@ -244,11 +244,61 @@ export default function SellerStore() {
   });
 
   const handleCreateStore = (data: z.infer<typeof storeSchema>) => {
-    createStoreMutation.mutate(data);
+    // Clean the data before sending to prevent null value issues
+    const cleanedData = {
+      ...data,
+      // Ensure all string fields are properly set
+      name: data.name?.trim() || "",
+      description: data.description || "",
+      address: data.address?.trim() || "",
+      phone: data.phone || "",
+      website: data.website || "",
+      logo: data.logo || "",
+      coverImage: data.coverImage || "",
+      latitude: data.latitude || "",
+      longitude: data.longitude || "",
+      cuisineType: data.cuisineType || "",
+      deliveryTime: data.deliveryTime || "",
+      minimumOrder: data.minimumOrder || "",
+      deliveryFee: data.deliveryFee || "",
+      openingHours: data.openingHours || "",
+      // Set boolean properly
+      isDeliveryAvailable: Boolean(data.isDeliveryAvailable),
+      // Set store type properly
+      storeType: data.storeType || "retail"
+    };
+    
+    console.log('Creating store with cleaned data:', cleanedData);
+    createStoreMutation.mutate(cleanedData);
   };
 
   const handleUpdateStore = (data: z.infer<typeof storeSchema>) => {
-    updateStoreMutation.mutate(data);
+    // Clean the data before sending to prevent null value issues
+    const cleanedData = {
+      ...data,
+      // Ensure all string fields are properly set
+      name: data.name?.trim() || "",
+      description: data.description || "",
+      address: data.address?.trim() || "",
+      phone: data.phone || "",
+      website: data.website || "",
+      logo: data.logo || "",
+      coverImage: data.coverImage || "",
+      latitude: data.latitude || "",
+      longitude: data.longitude || "",
+      cuisineType: data.cuisineType || "",
+      deliveryTime: data.deliveryTime || "",
+      minimumOrder: data.minimumOrder || "",
+      deliveryFee: data.deliveryFee || "",
+      openingHours: data.openingHours || "",
+      // Set boolean properly
+      isDeliveryAvailable: Boolean(data.isDeliveryAvailable),
+      // Set store type properly
+      storeType: data.storeType || "retail"
+    };
+    
+    console.log('Updating store with cleaned data:', cleanedData);
+    updateStoreMutation.mutate(cleanedData);
   };
 
   const openEditDialog = () => {

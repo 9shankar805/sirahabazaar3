@@ -799,17 +799,17 @@ export const insertStoreSchema = createInsertSchema(stores).omit({
   isActive: true,
 }).extend({
   // Make name more flexible - allow any valid store name
-  name: z.string().min(1, "Store name is required").transform(val => val.trim()),
+  name: z.string().min(1, "Store name is required").transform(val => val?.trim() || ""),
   
-  // Make description optional with default
-  description: z.string().optional().default(""),
+  // Handle all fields with null/undefined gracefully
+  description: z.union([z.string(), z.null(), z.undefined()]).optional().transform(val => val || ""),
   
   // Make address required but flexible
-  address: z.string().min(1, "Address is required").transform(val => val.trim()),
+  address: z.string().min(1, "Address is required").transform(val => val?.trim() || ""),
   
-  // Handle optional fields gracefully
-  phone: z.string().optional().default("").transform(val => val?.trim() || ""),
-  website: z.string().optional().default("").transform(val => {
+  // Handle optional string fields that can be null
+  phone: z.union([z.string(), z.null(), z.undefined()]).optional().transform(val => val?.trim() || ""),
+  website: z.union([z.string(), z.null(), z.undefined()]).optional().transform(val => {
     if (!val || val.trim() === "") return "";
     const trimmed = val.trim();
     // Add https:// if no protocol is provided and it's a valid URL
@@ -819,30 +819,30 @@ export const insertStoreSchema = createInsertSchema(stores).omit({
     return trimmed;
   }),
   
-  // Handle numeric fields as strings or numbers
-  minimumOrder: z.union([z.string(), z.number()]).optional().transform((val) => 
+  // Handle numeric fields as strings, numbers, or null
+  minimumOrder: z.union([z.string(), z.number(), z.null(), z.undefined()]).optional().transform((val) => 
     val !== undefined && val !== null && val !== "" ? String(val) : undefined
   ),
-  deliveryFee: z.union([z.string(), z.number()]).optional().transform((val) => 
+  deliveryFee: z.union([z.string(), z.number(), z.null(), z.undefined()]).optional().transform((val) => 
     val !== undefined && val !== null && val !== "" ? String(val) : undefined
   ),
-  latitude: z.union([z.string(), z.number()]).optional().transform((val) => 
+  latitude: z.union([z.string(), z.number(), z.null(), z.undefined()]).optional().transform((val) => 
     val !== undefined && val !== null && val !== "" ? String(val) : undefined
   ),
-  longitude: z.union([z.string(), z.number()]).optional().transform((val) => 
+  longitude: z.union([z.string(), z.number(), z.null(), z.undefined()]).optional().transform((val) => 
     val !== undefined && val !== null && val !== "" ? String(val) : undefined
   ),
   
-  // Make optional fields have proper defaults
-  logo: z.string().optional().default(""),
-  coverImage: z.string().optional().default(""),
-  cuisineType: z.string().optional().default(""),
-  deliveryTime: z.string().optional().default(""),
-  openingHours: z.string().optional().default(""),
-  city: z.string().optional().default(""),
-  state: z.string().optional().default(""),
-  postalCode: z.string().optional().default(""),
-  country: z.string().optional().default(""),
+  // Make optional fields handle null values
+  logo: z.union([z.string(), z.null(), z.undefined()]).optional().transform(val => val || ""),
+  coverImage: z.union([z.string(), z.null(), z.undefined()]).optional().transform(val => val || ""),
+  cuisineType: z.union([z.string(), z.null(), z.undefined()]).optional().transform(val => val || ""),
+  deliveryTime: z.union([z.string(), z.null(), z.undefined()]).optional().transform(val => val || ""),
+  openingHours: z.union([z.string(), z.null(), z.undefined()]).optional().transform(val => val || ""),
+  city: z.union([z.string(), z.null(), z.undefined()]).optional().transform(val => val || ""),
+  state: z.union([z.string(), z.null(), z.undefined()]).optional().transform(val => val || ""),
+  postalCode: z.union([z.string(), z.null(), z.undefined()]).optional().transform(val => val || ""),
+  country: z.union([z.string(), z.null(), z.undefined()]).optional().transform(val => val || ""),
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({
