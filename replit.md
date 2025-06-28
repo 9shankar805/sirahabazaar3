@@ -122,15 +122,17 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ### June 28, 2025 - First-Accept-First-Serve Delivery Notification System Implementation
 - ✓ Built complete first-accept-first-serve notification system as requested by user
-- ✓ Added prominent orange "Notify All Partners (First Accept)" button in shopkeeper dashboard
-- ✓ Created `/api/notifications/delivery-assignment` endpoint for broadcasting to all delivery partners
+- ✓ Created streamlined single dropdown interface combining both assignment options
+- ✓ Orange-highlighted "All Partners (First Accept)" option for broadcasting to all delivery partners
+- ✓ Individual partner names listed below for direct assignment to specific partners
+- ✓ Created `/api/notifications/delivery-assignment` endpoint for broadcasting functionality
 - ✓ Implemented `/api/delivery/accept-assignment` endpoint with race condition protection
-- ✓ All available delivery partners receive notifications simultaneously
+- ✓ All available delivery partners receive notifications simultaneously when "All Partners" selected
 - ✓ First partner to accept gets delivery - others automatically rejected with proper error handling
 - ✓ Automatic confirmation notifications sent to successful partner and customer
 - ✓ Tested complete flow: Notification broadcast → Gokul accepted first → Shekhar properly rejected
 - ✓ System prevents double-assignment conflicts and ensures only one partner gets each order
-- ✓ Dual functionality: Both first-accept-first-serve and direct assignment options available
+- ✓ Clean UI without extra buttons - user requested single dropdown with both options
 - → Delivery partners can now compete for orders leading to faster response times and improved service
 
 ### June 28, 2025 - Delivery Partner Notification System Diagnostic and Prevention

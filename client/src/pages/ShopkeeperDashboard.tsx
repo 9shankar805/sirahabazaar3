@@ -1565,24 +1565,27 @@ export default function ShopkeeperDashboard() {
                             <div className="flex flex-wrap gap-2 mt-2">
                               {order.status !== "assigned_for_delivery" && order.status !== "delivered" && order.status !== "cancelled" && (
                                 <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    className="bg-orange-600 hover:bg-orange-700 text-white"
-                                    onClick={() => handleNotifyDeliveryPartner(
-                                      order.id,
-                                      `🚚 New Order Available: Order #${order.id} from ${currentStore?.name}. Customer: ${order.customerName}. Total: ₹${order.totalAmount}. First to accept gets delivery!`,
-                                      false
-                                    )}
-                                  >
-                                    <Bell className="h-4 w-4 mr-1" />
-                                    Notify All Partners (First Accept)
-                                  </Button>
-                                  
-                                  <Select onValueChange={(partnerId) => handleAssignDeliveryPartner(order.id, parseInt(partnerId))}>
-                                    <SelectTrigger className="w-48">
-                                      <SelectValue placeholder="Or Assign Specific Partner" />
+                                  <Select onValueChange={(value) => {
+                                    if (value === "all") {
+                                      handleNotifyDeliveryPartner(
+                                        order.id,
+                                        `🚚 New Order Available: Order #${order.id} from ${currentStore?.name}. Customer: ${order.customerName}. Total: ₹${order.totalAmount}. First to accept gets delivery!`,
+                                        false
+                                      );
+                                    } else {
+                                      handleAssignDeliveryPartner(order.id, parseInt(value));
+                                    }
+                                  }}>
+                                    <SelectTrigger className="w-64">
+                                      <SelectValue placeholder="Assign Delivery Partner" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                      <SelectItem value="all" className="bg-orange-50 hover:bg-orange-100">
+                                        <div className="flex items-center">
+                                          <Bell className="h-4 w-4 mr-2 text-orange-600" />
+                                          <span className="font-medium text-orange-600">All Partners (First Accept)</span>
+                                        </div>
+                                      </SelectItem>
                                       {deliveryPartners
                                         .filter((partner: any) => partner.status === 'approved' && partner.isAvailable)
                                         .map((partner: any) => (
