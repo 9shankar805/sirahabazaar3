@@ -710,14 +710,20 @@ export default function DeliveryPartnerTest() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-medium text-blue-800 mb-2">Current Active Delivery</h4>
-                    <p className="text-blue-700">Order #1001 - Rajesh Kumar</p>
-                    ```
-                    <p className="text-sm text-blue-600">
-                      Pickup: Green Valley Restaurant → Delivery: DLF Phase 2
-                    </p>
-                  </div>
+                  {activeDeliveries && activeDeliveries.length > 0 ? (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-medium text-blue-800 mb-2">Current Active Delivery</h4>
+                      <p className="text-blue-700">Order #{activeDeliveries[0].orderId} - {activeDeliveries[0].customerName}</p>
+                      <p className="text-sm text-blue-600">
+                        Pickup: {activeDeliveries[0].pickupAddress} → Delivery: {activeDeliveries[0].deliveryAddress}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-medium text-gray-800 mb-2">No Active Deliveries</h4>
+                      <p className="text-gray-600">You currently have no active deliveries to track.</p>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <Button className="h-12" onClick={() => toast({
