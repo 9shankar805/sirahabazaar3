@@ -65,6 +65,24 @@ export default function DeliveryMap({
     window.open(googleMapsUrl, '_blank');
   };
 
+  // Calculate position on map based on real coordinates
+  const calculateMapPosition = (lat: number, lng: number) => {
+    // Convert Nepal coordinates to map percentage positions
+    // Siraha area: lat ~26.66, lng ~86.20
+    const baseLat = 26.65;
+    const baseLng = 86.19;
+    const latRange = 0.03; // ~3km range
+    const lngRange = 0.03; // ~3km range
+    
+    const leftPercent = ((lng - baseLng) / lngRange) * 50 + 25; // 25-75% range
+    const topPercent = ((baseLat + latRange - lat) / latRange) * 50 + 25; // 25-75% range
+    
+    return {
+      left: `${Math.max(15, Math.min(85, leftPercent))}%`,
+      top: `${Math.max(15, Math.min(85, topPercent))}%`
+    };
+  };
+
   const handleUpdateLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -138,15 +156,12 @@ export default function DeliveryMap({
                 {pickupLocation && (
                   <div 
                     className="absolute transform -translate-x-1/2 -translate-y-1/2"
-                    style={{ 
-                      left: '30%', 
-                      top: '40%'
-                    }}
+                    style={calculateMapPosition(pickupLocation.lat, pickupLocation.lng)}
                   >
                     <div className="relative">
                       <div className="w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
                       <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                        Pickup
+                        🏪 Pickup
                       </div>
                     </div>
                   </div>
@@ -155,15 +170,12 @@ export default function DeliveryMap({
                 {deliveryLocation && (
                   <div 
                     className="absolute transform -translate-x-1/2 -translate-y-1/2"
-                    style={{ 
-                      left: '70%', 
-                      top: '60%'
-                    }}
+                    style={calculateMapPosition(deliveryLocation.lat, deliveryLocation.lng)}
                   >
                     <div className="relative">
                       <div className="w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
                       <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-red-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                        Delivery
+                        🏠 Delivery
                       </div>
                     </div>
                   </div>
@@ -172,42 +184,49 @@ export default function DeliveryMap({
                 {(userLocation || currentLocation) && (
                   <div 
                     className="absolute transform -translate-x-1/2 -translate-y-1/2"
-                    style={{ 
-                      left: '50%', 
-                      top: '50%'
-                    }}
+                    style={calculateMapPosition(
+                      (currentLocation?.lat || userLocation?.lat) ?? 26.6696,
+                      (currentLocation?.lng || userLocation?.lng) ?? 86.2121
+                    )}
                   >
                     <div className="relative">
                       <div className="w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg">
                         <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-75"></div>
                       </div>
                       <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                        You
+                        🚛 Partner
                       </div>
                     </div>
                   </div>
                 )}
 
                 {/* Route Lines */}
-                {pickupLocation && deliveryLocation && (
-                  <div className="absolute inset-0">
-                    <svg className="w-full h-full">
-                      <defs>
-                        <pattern id="dash" patternUnits="userSpaceOnUse" width="8" height="8">
-                          <rect width="4" height="8" fill="#3B82F6" />
-                        </pattern>
-                      </defs>
-                      <path
-                        d="M 30% 40% Q 50% 30% 70% 60%"
-                        stroke="#3B82F6"
-                        strokeWidth="3"
-                        strokeDasharray="5,5"
-                        fill="none"
-                        className="animate-pulse"
-                      />
-                    </svg>
-                  </div>
-                )}
+                {pickupLocation && deliveryLocation && (() => {
+                  const pickupPos = calculateMapPosition(pickupLocation.lat, pickupLocation.lng);
+                  const deliveryPos = calculateMapPosition(deliveryLocation.lat, deliveryLocation.lng);
+                  const midX = (parseFloat(pickupPos.left) + parseFloat(deliveryPos.left)) / 2;
+                  const midY = Math.min(parseFloat(pickupPos.top), parseFloat(deliveryPos.top)) - 5;
+                  
+                  return (
+                    <div className="absolute inset-0">
+                      <svg className="w-full h-full">
+                        <defs>
+                          <pattern id="dash" patternUnits="userSpaceOnUse" width="8" height="8">
+                            <rect width="4" height="8" fill="#3B82F6" />
+                          </pattern>
+                        </defs>
+                        <path
+                          d={`M ${pickupPos.left} ${pickupPos.top} Q ${midX}% ${midY}% ${deliveryPos.left} ${deliveryPos.top}`}
+                          stroke="#3B82F6"
+                          strokeWidth="3"
+                          strokeDasharray="5,5"
+                          fill="none"
+                          className="animate-pulse"
+                        />
+                      </svg>
+                    </div>
+                  );
+                })()}
 
                 {/* Map Info */}
                 <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-lg p-3">

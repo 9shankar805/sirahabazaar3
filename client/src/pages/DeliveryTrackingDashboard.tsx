@@ -378,7 +378,7 @@ export default function DeliveryTrackingDashboard() {
                 onLocationUpdate={(location) => {
                   locationUpdateMutation.mutate({
                     deliveryId: selectedAssignment.id,
-                    partnerId: 1,
+                    deliveryPartnerId: 1,
                     latitude: location.lat,
                     longitude: location.lng,
                     timestamp: location.timestamp

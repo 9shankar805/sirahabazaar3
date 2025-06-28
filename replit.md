@@ -131,7 +131,11 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - ✓ Added professional styling with animated markers, pulse effects, and ripple animations
 - ✓ Connected live tracking to both delivery partner dashboard and standalone tracking page
 - ✓ Implemented real-time ETA calculations and distance tracking with visual updates
-- → Live tracking now shows professional animated maps with real store, customer, and partner data
+- ✓ Fixed database constraint error by ensuring delivery_partner_id is properly passed in location tracking
+- ✓ Fixed secondary map pickup/delivery buttons to show correct Siraha, Nepal coordinates instead of Kanpur, India
+- ✓ Added coordinate calculation system to position markers based on real GPS coordinates
+- ✓ Updated route lines to connect actual pickup and delivery locations dynamically
+- → Live tracking now shows professional animated maps with real store, customer, and partner data using accurate Nepal coordinates
 
 ### June 28, 2025 - Live Tracking System Fixed to Show Real Delivery Partners
 - ✓ Fixed live tracking component to display actual delivery partner data instead of test users

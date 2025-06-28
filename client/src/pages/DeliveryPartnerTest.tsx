@@ -724,7 +724,7 @@ export default function DeliveryPartnerTest() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       deliveryId: activeDeliveries[0].id,
-                      partnerId: partner?.id,
+                      deliveryPartnerId: partner?.id,
                       latitude: location.lat,
                       longitude: location.lng,
                       timestamp: location.timestamp
@@ -820,14 +820,14 @@ export default function DeliveryPartnerTest() {
             <DeliveryMap
               deliveryPartnerId={user?.id}
               pickupLocation={{
-                lat: 26.4499,
-                lng: 80.3319,
-                address: "Tech Store, Mall Road, Kanpur, Uttar Pradesh"
+                lat: 26.6636,
+                lng: 86.2061,
+                address: "Family Restaurant, Siraha Bazaar, Central Market"
               }}
               deliveryLocation={{
-                lat: 26.4599,
-                lng: 80.3419,
-                address: "Customer Location, Civil Lines, Kanpur, Uttar Pradesh"
+                lat: 26.6756,
+                lng: 86.2181,
+                address: "Customer Location, Siraha Municipality, Nepal"
               }}
               onLocationUpdate={(location) => {
                 console.log('Location updated:', location);
