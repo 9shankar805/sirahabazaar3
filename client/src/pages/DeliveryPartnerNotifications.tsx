@@ -59,6 +59,7 @@ interface ActiveDelivery {
   deliveryAddress: string;
   deliveryFee: string;
   estimatedTime: number;
+  estimatedDistance: string;
   customerName: string;
   customerPhone: string;
   totalAmount: string;
@@ -529,83 +530,94 @@ export default function DeliveryPartnerNotifications() {
                     {/* Delivery Address */}
                     <div className="bg-green-50 p-4 rounded-lg">
                       <h4 className="font-medium text-green-800 mb-3">Delivery Details</h4>
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-start gap-2 mb-3">
                         <MapPin className="h-4 w-4 text-green-600 mt-0.5" />
                         <div>
                           <span className="font-medium">Delivery Address:</span>
                           <div className="text-sm text-gray-600">{delivery.deliveryAddress}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 mt-3 text-sm">
-                        <div className="flex items-center gap-1">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-green-600" />
                           <span>Est. Time: {delivery.estimatedTime || 30} mins</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-green-600" />
+                          <span>Distance: {delivery.estimatedDistance || '5.0'} km</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-wrap gap-2 pt-4 border-t">
-                      <Button 
-                        size="sm"
-                        onClick={() => {
-                          const address = encodeURIComponent(delivery.pickupAddress);
-                          window.open(`https://www.google.com/maps/search/${address}`, '_blank');
-                        }}
-                      >
-                        <Navigation className="h-4 w-4 mr-2" />
-                        Navigate to Pickup
-                      </Button>
+                    {/* Navigation Section */}
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-gray-800 mb-3">Navigation & Actions</h4>
                       
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {
-                          const address = encodeURIComponent(delivery.deliveryAddress);
-                          window.open(`https://www.google.com/maps/search/${address}`, '_blank');
-                        }}
-                      >
-                        <Navigation className="h-4 w-4 mr-2" />
-                        Navigate to Customer
-                      </Button>
+                      {/* Navigation Buttons */}
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <Button 
+                          className="bg-orange-600 hover:bg-orange-700"
+                          onClick={() => {
+                            const address = encodeURIComponent(delivery.pickupAddress);
+                            window.open(`https://www.google.com/maps/search/${address}`, '_blank');
+                          }}
+                        >
+                          <Navigation className="h-4 w-4 mr-2" />
+                          Navigate to Store
+                        </Button>
+                        
+                        <Button 
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => {
+                            const address = encodeURIComponent(delivery.deliveryAddress);
+                            window.open(`https://www.google.com/maps/search/${address}`, '_blank');
+                          }}
+                        >
+                          <Navigation className="h-4 w-4 mr-2" />
+                          Navigate to Customer
+                        </Button>
+                      </div>
 
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {
-                          window.open(`tel:${delivery.customerPhone}`, '_self');
-                        }}
-                        disabled={!delivery.customerPhone}
-                      >
-                        <Phone className="h-4 w-4 mr-2" />
-                        Call Customer
-                      </Button>
-
-                      {delivery.storeDetails?.phone && (
+                      {/* Communication Buttons */}
+                      <div className="flex flex-wrap gap-2">
                         <Button 
                           size="sm" 
                           variant="outline"
                           onClick={() => {
-                            window.open(`tel:${delivery.storeDetails?.phone}`, '_self');
+                            window.open(`tel:${delivery.customerPhone}`, '_self');
                           }}
+                          disabled={!delivery.customerPhone}
                         >
                           <Phone className="h-4 w-4 mr-2" />
-                          Call Store
+                          Call Customer
                         </Button>
-                      )}
 
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {
-                          const message = `Hi ${delivery.customerName}, I'm your delivery partner for order #${delivery.orderId}. I'll be delivering your order shortly.`;
-                          window.open(`sms:${delivery.customerPhone}?body=${encodeURIComponent(message)}`, '_self');
-                        }}
-                        disabled={!delivery.customerPhone}
-                      >
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        SMS Customer
-                      </Button>
+                        {delivery.storeDetails?.phone && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              window.open(`tel:${delivery.storeDetails?.phone}`, '_self');
+                            }}
+                          >
+                            <Phone className="h-4 w-4 mr-2" />
+                            Call Store
+                          </Button>
+                        )}
+
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            const message = `Hi ${delivery.customerName}, I'm your delivery partner for order #${delivery.orderId}. I'll be delivering your order shortly.`;
+                            window.open(`sms:${delivery.customerPhone}?body=${encodeURIComponent(message)}`, '_self');
+                          }}
+                          disabled={!delivery.customerPhone}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          SMS Customer
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
