@@ -24,6 +24,12 @@ export default function Account() {
 
   const { data: stores, isLoading: storesLoading } = useQuery({
     queryKey: ["/api/stores/owner", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const response = await fetch(`/api/stores/owner/${user.id}`);
+      if (!response.ok) throw new Error("Failed to fetch stores");
+      return response.json();
+    },
     enabled: !!user?.id && user?.role === "shopkeeper",
   });
 
