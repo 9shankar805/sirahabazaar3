@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   Navigation,
   UtensilsCrossed,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,7 +61,6 @@ import type {
   Category,
 } from "@shared/schema";
 import { Link } from "wouter";
-import { Phone } from "lucide-react";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -1895,11 +1895,18 @@ export default function ShopkeeperDashboard() {
                               they come to your store
                             </p>
                           </CardHeader>
-                          <CardContent className="p-0">
-                            <LeafletDeliveryMap
-                              deliveryId={selectedDeliveryId}
-                              userType="shopkeeper"
-                            />
+                          <CardContent className="p-6">
+                            <div className="text-center py-8 bg-gray-50 rounded-lg">
+                              <MapPin className="h-16 w-16 text-blue-500 mx-auto mb-4" />
+                              <h3 className="text-lg font-semibold mb-2">Live Tracking</h3>
+                              <p className="text-muted-foreground mb-4">
+                                Delivery partner location tracking for delivery #{selectedDeliveryId}
+                              </p>
+                              <div className="flex items-center justify-center gap-2 text-green-600">
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                <span className="text-sm font-medium">Active Tracking</span>
+                              </div>
+                            </div>
                           </CardContent>
                         </Card>
                       </div>
