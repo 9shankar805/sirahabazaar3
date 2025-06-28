@@ -967,6 +967,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
           orderId: createdOrder.id,
           isRead: false
         });
+
+        // AUTO-NOTIFY DELIVERY PARTNERS for restaurant orders
+        try {
+          const store = await storage.getStore(createdOrder.storeId);
+          const isRestaurant = store && (
+            store.name.toLowerCase().includes('restaurant') ||
+            store.name.toLowerCase().includes('cafe') ||
+            store.name.toLowerCase().includes('kitchen') ||
+            store.name.toLowerCase().includes('food') ||
+            store.name.toLowerCase().includes('dining')
+          );
+
+          if (isRestaurant) {
+            // Get available delivery partners
+            const deliveryPartners = await storage.getAllDeliveryPartners();
+            const availablePartners = deliveryPartners.filter(partner => 
+              partner.status === 'approved' && partner.isAvailable
+            );
+
+            if (availablePartners.length > 0) {
+              // Send automatic notifications to all available delivery partners
+              const orderItems = allOrderItems.filter(item => item.orderId === createdOrder.id);
+              const itemNames = orderItems.map(item => `${item.quantity}x items`).join(', ');
+              const message = `New food order from ${store.name}: ${itemNames} - Total: ₹${createdOrder.totalAmount}`;
+
+              for (const partner of availablePartners) {
+                await storage.createNotification({
+                  userId: partner.userId,
+                  title: "🍽️ New Restaurant Order Available",
+                  message: message,
+                  type: "delivery_assignment",
+                  orderId: createdOrder.id,
+                  isRead: false,
+                  data: JSON.stringify({
+                    urgent: false,
+                    notificationType: "auto_restaurant_order",
+                    storeId: createdOrder.storeId,
+                    shopkeeperId: store.ownerId,
+                    firstAcceptFirstServe: true,
+                    canAccept: true,
+                    restaurantName: store.name,
+                    orderValue: createdOrder.totalAmount
+                  })
+                });
+              }
+
+              // Also send push notifications if available
+              try {
+                for (const partner of availablePartners) {
+                  await NotificationService.sendDeliveryAssignmentNotification(
+                    partner.userId,
+                    createdOrder.id,
+                    store.address || store.name,
+                    normalizedOrder.shippingAddress || "Customer address"
+                  );
+                }
+              } catch (pushError) {
+                console.log("Push notification service unavailable for auto-notification:", pushError);
+              }
+
+              console.log(`Auto-notified ${availablePartners.length} delivery partners about restaurant order #${createdOrder.id}`);
+            }
+          }
+        } catch (autoNotifyError) {
+          console.error("Error auto-notifying delivery partners:", autoNotifyError);
+          // Don't fail the order creation if notification fails
+        }
       }
 
       res.json({ orders: createdOrders, success: true });

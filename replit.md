@@ -120,6 +120,16 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### June 28, 2025 - Automatic Restaurant Delivery Notifications Fixed
+- ✓ Fixed critical issue where delivery partners weren't getting notified about Family Restaurant orders
+- ✓ Implemented automatic delivery partner notifications when restaurant orders are placed
+- ✓ Enhanced order creation flow to detect restaurant stores and auto-notify delivery partners
+- ✓ Added intelligent restaurant detection (restaurant, cafe, kitchen, food, dining keywords)
+- ✓ Created specialized notification messages: "🍽️ New Restaurant Order Available"
+- ✓ Verified complete notification flow: Customer order → Auto-notification → Delivery partner
+- ✓ System now sends both database notifications and push notifications automatically
+- → Delivery partners now receive instant notifications for all restaurant orders without manual intervention
+
 ### June 28, 2025 - Order Placement System Fixed
 - ✓ Fixed critical order placement API that was failing due to database schema mismatches
 - ✓ Updated orders table schema to include storeId, deliveryFee, taxAmount, discountAmount fields
