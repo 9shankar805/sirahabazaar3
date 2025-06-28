@@ -1534,8 +1534,15 @@ export default function ShopkeeperDashboard() {
                       )}
                     </div>
 
+                    {/* Debug: Show current store info */}
+                    {currentStore && (
+                      <div className="text-sm text-gray-500 mb-4">
+                        Store: {currentStore.name} | Type: {currentStore.storeType || 'undefined'} | Store Object: {JSON.stringify(currentStore)}
+                      </div>
+                    )}
+
                     {/* Food-specific fields for restaurants */}
-                    {currentStore?.storeType === "restaurant" && (
+                    {(currentStore?.storeType === "restaurant" || currentStore?.type === "restaurant") && (
                       <div className="space-y-4 p-4 border rounded-lg bg-orange-50">
                         <h3 className="font-medium text-lg flex items-center gap-2">
                           <UtensilsCrossed className="h-5 w-5" />
