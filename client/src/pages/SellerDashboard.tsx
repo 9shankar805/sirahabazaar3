@@ -16,12 +16,14 @@ import {
   Users,
   Clock,
   MapPin,
-  Store,
-  ChefHat,
-  Bell,
-  ArrowLeft,
-  Navigation,
   UtensilsCrossed,
+  Navigation,
+  Send,
+  Bell,
+  CheckCircle,
+  AlertCircle,
+  Timer,
+  Truck,
   Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -52,15 +54,16 @@ import { apiPost, apiPut, apiDelete } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import ImageUpload from "@/components/ImageUpload";
 import { LocationPicker } from "@/components/LocationPicker";
-import { DeliveryTrackingMap } from "@/components/tracking/DeliveryTrackingMap";
 import type {
   Product,
   Order,
   OrderItem,
-  Store as StoreType,
+  Store,
   Category,
 } from "@shared/schema";
-import { Link } from "wouter";
+import { LeafletDeliveryMap } from "@/components/tracking/LeafletDeliveryMap";
+import { LocationTracker } from "@/components/LocationTracker";
+import { DeliveryTrackingMap } from "@/components/tracking/DeliveryTrackingMap";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -118,14 +121,13 @@ export default function ShopkeeperDashboard() {
     longitude: number;
   } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [selectedDeliveryId, setSelectedDeliveryId] = useState<number | null>(
-    null,
-  );
+  const [notificationHistory, setNotificationHistory] = useState<any[]>([]);
+  const [pendingDeliveries, setPendingDeliveries] = useState<any[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
 
   // Queries
-  const { data: stores = [] } = useQuery<StoreType[]>({
+  const { data: stores = [] } = useQuery<Store[]>({
     queryKey: [`/api/stores/owner`, user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -166,19 +168,27 @@ export default function ShopkeeperDashboard() {
     queryKey: ["/api/categories"],
   });
 
-  // Query for active delivery assignments for this store
-  const { data: activeDeliveries = [] } = useQuery<any[]>({
-    queryKey: [`/api/deliveries/store/${currentStore?.id}/active`],
+  // Get available delivery partners with user details
+  const { data: deliveryPartners = [] } = useQuery({
+    queryKey: ["/api/delivery-partners"],
     queryFn: async () => {
-      if (!currentStore?.id) return [];
-      const response = await fetch(
-        `/api/deliveries/store/${currentStore.id}/active`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch active deliveries");
-      return response.json();
+      const response = await fetch("/api/delivery-partners");
+      if (!response.ok) throw new Error("Failed to fetch delivery partners");
+      const partners = await response.json();
+
+      // Get user details for each partner
+      const usersResponse = await fetch("/api/users");
+      const users = usersResponse.ok ? await usersResponse.json() : [];
+
+      return partners.map((partner: any) => {
+        const user = users.find((u: any) => u.id === partner.userId);
+        return {
+          ...partner,
+          name: user?.fullName || `Partner ${partner.id}`,
+          email: user?.email || "No email",
+        };
+      });
     },
-    enabled: !!currentStore,
-    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   // Form for adding/editing products
@@ -440,10 +450,119 @@ export default function ShopkeeperDashboard() {
     try {
       await apiPut(`/api/orders/${orderId}/status`, { status });
       toast({ title: "Order status updated successfully" });
+
+      // Invalidate all related queries
+      queryClient.invalidateQueries({
+        queryKey: [`/api/orders/store/${currentStore?.id}`],
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/store`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+
+      // Force refetch immediately
+      if (currentStore?.id) {
+        queryClient.refetchQueries({
+          queryKey: [`/api/orders/store/${currentStore.id}`],
+        });
+      }
     } catch (error) {
+      console.error("Order status update error:", error);
       toast({
         title: "Error",
         description: "Failed to update order status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleNotifyDeliveryPartner = async (
+    orderId: number,
+    message: string,
+    urgent: boolean = false,
+  ) => {
+    try {
+      const response = await apiPost("/api/notifications/delivery-assignment", {
+        orderId,
+        message,
+        storeId: currentStore?.id,
+        shopkeeperId: user?.id,
+        urgent,
+        notificationType: "first_accept_first_serve",
+      });
+
+      // Add to notification history
+      const newNotification = {
+        id: Date.now(),
+        orderId,
+        message,
+        urgent,
+        sentAt: new Date().toISOString(),
+        status: "sent",
+        acceptedBy: null,
+      };
+      setNotificationHistory((prev) => [newNotification, ...prev]);
+
+      toast({
+        title: urgent
+          ? "Urgent delivery notification sent"
+          : "Delivery notification sent",
+        description: "All available delivery partners have been notified",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to notify delivery partners",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBroadcastNotification = async (
+    message: string,
+    targetOrders: number[],
+  ) => {
+    try {
+      await apiPost("/api/notifications/broadcast-delivery", {
+        message,
+        orderIds: targetOrders,
+        storeId: currentStore?.id,
+        shopkeeperId: user?.id,
+      });
+
+      toast({
+        title: "Broadcast notification sent",
+        description: `Notified delivery partners about ${targetOrders.length} orders`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send broadcast notification",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAssignDeliveryPartner = async (
+    orderId: number,
+    deliveryPartnerId: number,
+  ) => {
+    try {
+      await apiPost(`/api/orders/${orderId}/assign-delivery`, {
+        deliveryPartnerId,
+      });
+
+      toast({
+        title: "Delivery partner assigned",
+        description: "Delivery partner has been notified about the order",
+      });
+
+      // Refresh orders data
+      queryClient.invalidateQueries({
+        queryKey: [`/api/orders/store/${currentStore?.id}`],
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to assign delivery partner",
         variant: "destructive",
       });
     }
@@ -482,91 +601,21 @@ export default function ShopkeeperDashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList
-            className={`grid w-full gap-1 mb-16 ${currentStore ? "grid-cols-3 md:grid-cols-6" : "grid-cols-2"}`}
+            className={`grid w-full ${currentStore ? "grid-cols-6" : "grid-cols-2"}`}
           >
-            <TabsTrigger
-              value="overview"
-              className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
-            >
-              <div className="flex flex-col items-center gap-1">
-                <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
-                <span className="hidden sm:inline">Overview</span>
-                <span className="sm:hidden">Home</span>
-              </div>
-            </TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             {!currentStore && (
-              <TabsTrigger
-                value="create-store"
-                className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
-              >
-                <div className="flex flex-col items-center gap-1">
-                  <Store className="h-3 w-3 md:h-4 md:w-4" />
-                  <span className="hidden sm:inline">Create Store</span>
-                  <span className="sm:hidden">Store</span>
-                </div>
-              </TabsTrigger>
+              <TabsTrigger value="create-store">Create Store</TabsTrigger>
             )}
             {currentStore && (
               <>
-                <TabsTrigger
-                  value="inventory"
-                  className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <Package className="h-3 w-3 md:h-4 md:w-4" />
-                    <span className="hidden sm:inline">Inventory</span>
-                    <span className="sm:hidden">Stock</span>
-                  </div>
+                <TabsTrigger value="inventory">Inventory</TabsTrigger>
+                <TabsTrigger value="products">Products</TabsTrigger>
+                <TabsTrigger value="add-product">
+                  {editingProduct ? "Edit Product" : "Add Product"}
                 </TabsTrigger>
-                <TabsTrigger
-                  value="products"
-                  className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <Package className="h-3 w-3 md:h-4 md:w-4" />
-                    <span className="hidden sm:inline">Products</span>
-                    <span className="sm:hidden">Items</span>
-                  </div>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="add-product"
-                  className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <Plus className="h-3 w-3 md:h-4 md:w-4" />
-                    <span className="hidden sm:inline">
-                      {editingProduct ? "Edit Product" : "Add Product"}
-                    </span>
-                    <span className="sm:hidden">
-                      {editingProduct ? "Edit" : "Add"}
-                    </span>
-                  </div>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="orders"
-                  className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
-                    <span className="hidden sm:inline">Orders</span>
-                    <span className="sm:hidden">Orders</span>
-                  </div>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="tracking"
-                  className="px-2 md:px-3 py-1.5 text-xs md:text-sm"
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <Navigation className="h-3 w-3 md:h-4 md:w-4" />
-                    <span className="hidden sm:inline">Delivery Tracking</span>
-                    <span className="sm:hidden">Track</span>
-                    {activeDeliveries.length > 0 && (
-                      <Badge className="ml-1 bg-blue-500 text-white text-xs h-4 min-w-4 px-1">
-                        {activeDeliveries.length}
-                      </Badge>
-                    )}
-                  </div>
-                </TabsTrigger>
+                <TabsTrigger value="orders">Orders</TabsTrigger>
+                <TabsTrigger value="notifications">Notifications</TabsTrigger>
               </>
             )}
           </TabsList>
@@ -1535,7 +1584,7 @@ export default function ShopkeeperDashboard() {
                     </div>
 
                     {/* Food-specific fields for restaurants */}
-                    {currentStore && (currentStore.storeType === "restaurant" || currentStore.name?.toLowerCase().includes("restaurant") || currentStore.name?.toLowerCase().includes("food")) && (
+                    {currentStore?.storeType === "restaurant" && (
                       <div className="space-y-4 p-4 border rounded-lg bg-orange-50">
                         <h3 className="font-medium text-lg flex items-center gap-2">
                           <UtensilsCrossed className="h-5 w-5" />
@@ -1699,19 +1748,6 @@ export default function ShopkeeperDashboard() {
                 <CardTitle>Order Management</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Link href="/seller/dashboard">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        title="Back to Dashboard"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
                 {orders.length === 0 ? (
                   <div className="text-center py-8">
                     <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -1731,33 +1767,113 @@ export default function ShopkeeperDashboard() {
                               {new Date(order.createdAt).toLocaleDateString()}
                             </p>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right space-y-2">
                             <p className="font-semibold text-lg">
                               ₹{Number(order.totalAmount).toLocaleString()}
                             </p>
-                            <Select
-                              value={order.status}
-                              onValueChange={(value) =>
-                                handleOrderStatusUpdate(order.id, value)
-                              }
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="processing">
-                                  Processing
-                                </SelectItem>
-                                <SelectItem value="shipped">Shipped</SelectItem>
-                                <SelectItem value="delivered">
-                                  Delivered
-                                </SelectItem>
-                                <SelectItem value="cancelled">
-                                  Cancelled
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <div className="flex gap-2">
+                              <Select
+                                value={order.status}
+                                onValueChange={(value) =>
+                                  handleOrderStatusUpdate(order.id, value)
+                                }
+                              >
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">
+                                    Pending
+                                  </SelectItem>
+                                  <SelectItem value="processing">
+                                    Processing
+                                  </SelectItem>
+                                  <SelectItem value="ready_for_pickup">
+                                    Ready for Pickup
+                                  </SelectItem>
+                                  <SelectItem value="assigned_for_delivery">
+                                    Assigned for Delivery
+                                  </SelectItem>
+                                  <SelectItem value="shipped">
+                                    Shipped
+                                  </SelectItem>
+                                  <SelectItem value="delivered">
+                                    Delivered
+                                  </SelectItem>
+                                  <SelectItem value="cancelled">
+                                    Cancelled
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Delivery Partner Assignment Section */}
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {order.status !== "assigned_for_delivery" &&
+                                order.status !== "delivered" &&
+                                order.status !== "cancelled" && (
+                                  <div className="flex gap-2">
+                                    <Select
+                                      onValueChange={(value) => {
+                                        if (value === "all") {
+                                          handleNotifyDeliveryPartner(
+                                            order.id,
+                                            `🚚 New Order Available: Order #${order.id} from ${currentStore?.name}. Customer: ${order.customerName}. Total: ₹${order.totalAmount}. First to accept gets delivery!`,
+                                            false,
+                                          );
+                                        } else {
+                                          handleAssignDeliveryPartner(
+                                            order.id,
+                                            parseInt(value),
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      <SelectTrigger className="w-64">
+                                        <SelectValue placeholder="Assign Delivery Partner" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem
+                                          value="all"
+                                          className="bg-orange-50 hover:bg-orange-100"
+                                        >
+                                          <div className="flex items-center">
+                                            <Bell className="h-4 w-4 mr-2 text-orange-600" />
+                                            <span className="font-medium text-orange-600">
+                                              All Partners (First Accept)
+                                            </span>
+                                          </div>
+                                        </SelectItem>
+                                        {deliveryPartners
+                                          .filter(
+                                            (partner: any) =>
+                                              partner.status === "approved" &&
+                                              partner.isAvailable,
+                                          )
+                                          .map((partner: any) => (
+                                            <SelectItem
+                                              key={partner.id}
+                                              value={partner.id.toString()}
+                                            >
+                                              {partner.name} - Available
+                                            </SelectItem>
+                                          ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                )}
+
+                              {order.status === "assigned_for_delivery" && (
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-3 w-full">
+                                  <p className="text-sm text-green-700 font-medium">
+                                    ✅ Delivery partner assigned and notified
+                                  </p>
+                                  <p className="text-xs text-green-600 mt-1">
+                                    Order is being processed for delivery
+                                  </p>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
 
@@ -1779,138 +1895,316 @@ export default function ShopkeeperDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Delivery Tracking Tab */}
-          <TabsContent value="tracking" className="space-y-6">
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-6">
+            {/* Quick Actions Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Ready for Pickup
+                      </p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {
+                          orders.filter(
+                            (order) => order.status === "ready_for_pickup",
+                          ).length
+                        }
+                      </p>
+                    </div>
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Processing
+                      </p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {
+                          orders.filter(
+                            (order) => order.status === "processing",
+                          ).length
+                        }
+                      </p>
+                    </div>
+                    <Timer className="h-8 w-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Notifications Sent
+                      </p>
+                      <p className="text-2xl font-bold text-purple-600">
+                        {notificationHistory.length}
+                      </p>
+                    </div>
+                    <Bell className="h-8 w-8 text-purple-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* First Accept First Serve Notification System */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Navigation className="h-5 w-5" />
-                  Delivery Tracking
-                  {activeDeliveries.length > 0 && (
-                    <Badge className="bg-blue-500 text-white">
-                      {activeDeliveries.length} active
-                    </Badge>
-                  )}
+                  <Truck className="h-5 w-5" />
+                  First Accept First Serve - Delivery Notifications
                 </CardTitle>
                 <p className="text-muted-foreground">
-                  Track delivery partners coming to pick up orders from your
-                  store
+                  Send notifications to all available delivery partners. The
+                  first one to accept gets the delivery.
                 </p>
               </CardHeader>
-              <CardContent>
-                {activeDeliveries.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      No active deliveries at the moment
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {/* Active Deliveries List */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {activeDeliveries.map((delivery) => (
-                        <Card
-                          key={delivery.id}
-                          className={`cursor-pointer transition-all hover:shadow-md ${
-                            selectedDeliveryId === delivery.id
-                              ? "border-blue-500 bg-blue-50"
-                              : ""
-                          }`}
-                          onClick={() => setSelectedDeliveryId(delivery.id)}
+              <CardContent className="space-y-6">
+                {/* Bulk Actions */}
+                <div className="flex flex-wrap gap-3 p-4 bg-gray-50 rounded-lg">
+                  <Button
+                    onClick={() => {
+                      const readyOrders = orders.filter(
+                        (order) => order.status === "ready_for_pickup",
+                      );
+                      if (readyOrders.length > 0) {
+                        handleBroadcastNotification(
+                          `🚨 URGENT: ${readyOrders.length} orders ready for immediate pickup from ${currentStore?.name}`,
+                          readyOrders.map((o) => o.id),
+                        );
+                      }
+                    }}
+                    disabled={
+                      orders.filter(
+                        (order) => order.status === "ready_for_pickup",
+                      ).length === 0
+                    }
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    Broadcast All Ready Orders (Urgent)
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const processingOrders = orders.filter(
+                        (order) => order.status === "processing",
+                      );
+                      if (processingOrders.length > 0) {
+                        handleBroadcastNotification(
+                          `📦 ${processingOrders.length} orders being prepared at ${currentStore?.name}`,
+                          processingOrders.map((o) => o.id),
+                        );
+                      }
+                    }}
+                    disabled={
+                      orders.filter((order) => order.status === "processing")
+                        .length === 0
+                    }
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Notify About Processing Orders
+                  </Button>
+                </div>
+
+                {/* Individual Order Notifications */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">
+                    Individual Order Notifications
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {orders
+                      .filter(
+                        (order) =>
+                          order.status === "processing" ||
+                          order.status === "ready_for_pickup",
+                      )
+                      .map((order) => (
+                        <div
+                          key={order.id}
+                          className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow"
                         >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                <span className="text-sm font-medium">
-                                  Delivery #{delivery.id}
-                                </span>
-                              </div>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-medium">Order #{order.id}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {order.customerName}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {order.phone}
+                              </p>
                               <Badge
                                 variant={
-                                  delivery.status === "en_route_pickup"
+                                  order.status === "ready_for_pickup"
                                     ? "default"
-                                    : delivery.status === "assigned"
-                                      ? "secondary"
-                                      : "outline"
+                                    : "secondary"
+                                }
+                                className={
+                                  order.status === "ready_for_pickup"
+                                    ? "bg-green-100 text-green-800"
+                                    : ""
                                 }
                               >
-                                {delivery.status === "assigned"
-                                  ? "Assigned"
-                                  : delivery.status === "en_route_pickup"
-                                    ? "Coming to Store"
-                                    : delivery.status === "picked_up"
-                                      ? "Picked Up"
-                                      : delivery.status}
+                                {order.status.replace("_", " ").toUpperCase()}
                               </Badge>
                             </div>
-                            <div className="space-y-1 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-2">
-                                <Users className="h-3 w-3" />
-                                <span>{delivery.customerName}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Phone className="h-3 w-3" />
-                                <span>{delivery.customerPhone}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <MapPin className="h-3 w-3" />
-                                <span className="truncate">
-                                  {delivery.deliveryAddress}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <DollarSign className="h-3 w-3" />
-                                <span>₹{delivery.totalAmount}</span>
-                              </div>
-                              {delivery.deliveryPartner && (
-                                <div className="flex items-center gap-2 mt-2 p-2 bg-blue-100 rounded">
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                  <span className="text-blue-700 font-medium">
-                                    {delivery.deliveryPartner.name}
-                                  </span>
-                                  <span className="text-blue-600">
-                                    {delivery.deliveryPartner.phone}
-                                  </span>
-                                </div>
-                              )}
+                            <div className="text-right">
+                              <p className="font-semibold">
+                                ₹{Number(order.totalAmount).toLocaleString()}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(order.createdAt).toLocaleDateString()}
+                              </p>
                             </div>
-                          </CardContent>
-                        </Card>
+                          </div>
+
+                          <div className="text-sm text-muted-foreground">
+                            <p className="truncate">
+                              📍 {order.shippingAddress}
+                            </p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Button
+                              size="sm"
+                              className="w-full bg-red-600 hover:bg-red-700"
+                              onClick={() =>
+                                handleNotifyDeliveryPartner(
+                                  order.id,
+                                  `🚨 URGENT PICKUP: Order #${order.id} ready NOW from ${currentStore?.name}! Customer: ${order.customerName}, Amount: ₹${order.totalAmount}. First to accept gets this delivery!`,
+                                  true,
+                                )
+                              }
+                            >
+                              <AlertCircle className="h-4 w-4 mr-2" />
+                              Send Urgent Alert (First Accept First Serve)
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full"
+                              onClick={() =>
+                                handleNotifyDeliveryPartner(
+                                  order.id,
+                                  `📦 Pickup Available: Order #${order.id} at ${currentStore?.name}. Customer: ${order.customerName}, Amount: ₹${order.totalAmount}. Accept to claim this delivery!`,
+                                  false,
+                                )
+                              }
+                            >
+                              <Send className="h-4 w-4 mr-2" />
+                              Send Standard Notification
+                            </Button>
+                          </div>
+                          {/* Display Delivery Tracking Map if a delivery partner is assigned */}
+                          {order.deliveryPartner && (
+                            <div className="mt-4 border-t pt-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <h5 className="font-semibold flex items-center gap-2">
+                                  <MapPin className="h-4 w-4" />
+                                  Live Delivery Tracking
+                                </h5>
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-green-100 text-green-800"
+                                >
+                                  Live
+                                </Badge>
+                              </div>
+                              <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                                <p className="text-sm">
+                                  <strong>Contact Delivery Partner:</strong>
+                                  <a
+                                    href={`tel:${order.deliveryPartner.phone}`}
+                                    className="text-blue-600 hover:underline ml-2"
+                                  >
+                                    <Phone className="inline h-4 w-4 mr-1" />
+                                    {order.deliveryPartner.phone}
+                                  </a>
+                                </p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  Partner:{" "}
+                                  {order.deliveryPartner.name ||
+                                    "Assigned Partner"}
+                                </p>
+                              </div>
+                              <div className="h-64 rounded-lg overflow-hidden border">
+                                <DeliveryTrackingMap
+                                  deliveryId={order.id}
+                                  userType="shopkeeper"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+
+                  {orders.filter(
+                    (order) =>
+                      order.status === "processing" ||
+                      order.status === "ready_for_pickup",
+                  ).length === 0 && (
+                    <div className="text-center py-8">
+                      <Truck className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">
+                        No orders ready for delivery notifications
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Orders with "Processing" or "Ready for Pickup" status
+                        will appear here
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Notification History */}
+                {notificationHistory.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">
+                      Recent Notifications
+                    </h3>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {notificationHistory.slice(0, 10).map((notification) => (
+                        <div
+                          key={notification.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            {notification.urgent ? (
+                              <AlertCircle className="h-4 w-4 text-red-500" />
+                            ) : (
+                              <Bell className="h-4 w-4 text-blue-500" />
+                            )}
+                            <div>
+                              <p className="text-sm font-medium">
+                                Order #{notification.orderId}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(notification.sentAt).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge
+                            variant={
+                              notification.urgent ? "destructive" : "secondary"
+                            }
+                          >
+                            {notification.urgent ? "Urgent" : "Standard"}
+                          </Badge>
+                        </div>
                       ))}
                     </div>
-
-                    {/* Map View */}
-                    {selectedDeliveryId && (
-                      <div className="mt-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              <MapPin className="h-5 w-5" />
-                              Live Tracking - Delivery #{selectedDeliveryId}
-                            </CardTitle>
-                            <p className="text-muted-foreground">
-                              Watch the delivery partner's real-time location as
-                              they come to your store
-                            </p>
-                          </CardHeader>
-                          <CardContent className="p-6">
-                            <div className="text-center py-8 bg-gray-50 rounded-lg">
-                              <MapPin className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-                              <h3 className="text-lg font-semibold mb-2">Live Tracking</h3>
-                              <p className="text-muted-foreground mb-4">
-                                Delivery partner location tracking for delivery #{selectedDeliveryId}
-                              </p>
-                              <div className="flex items-center justify-center gap-2 text-green-600">
-                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                <span className="text-sm font-medium">Active Tracking</span>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    )}
                   </div>
                 )}
               </CardContent>

@@ -49,30 +49,42 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
   const [previousCount, setPreviousCount] = useState(0);
 
   const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ["/api/delivery-notifications", deliveryPartnerId],
+    queryKey: ["/api/notifications/user", deliveryPartnerId],
     queryFn: async () => {
-      const response = await fetch("/api/delivery-notifications");
+      const response = await fetch(`/api/notifications/user/${deliveryPartnerId}`);
       if (!response.ok) {
         throw new Error("Failed to fetch notifications");
       }
       const allNotifications = await response.json();
-      console.log('All delivery notifications:', allNotifications);
+      console.log('User notifications:', allNotifications);
 
-      // Show all available orders (not filtered by delivery partner)
-      return allNotifications.filter((notification: DeliveryNotification) => 
-        notification.status === 'pending'
-      );
+      // Filter for delivery assignment notifications that haven't been read/accepted
+      return allNotifications.filter((notification: any) => {
+        try {
+          if (notification.type === 'delivery' && !notification.isRead && notification.data) {
+            const data = JSON.parse(notification.data);
+            return data.canAccept === true;
+          }
+        } catch (e) {
+          console.log('Error parsing notification data:', e);
+        }
+        return false;
+      });
     },
     enabled: !!deliveryPartnerId,
     refetchInterval: 3000, // Poll every 3 seconds for new orders
   });
 
   const acceptMutation = useMutation({
-    mutationFn: async (orderId: number) => {
-      const response = await fetch(`/api/delivery-notifications/${orderId}/accept`, {
+    mutationFn: async ({ orderId, notificationId }: { orderId: number; notificationId: number }) => {
+      const response = await fetch("/api/delivery/accept-assignment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deliveryPartnerId })
+        body: JSON.stringify({ 
+          deliveryPartnerId, 
+          orderId,
+          notificationId 
+        })
       });
 
       if (!response.ok) {
@@ -82,13 +94,13 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
 
       return response.json();
     },
-    onSuccess: (data, orderId) => {
+    onSuccess: (data, variables) => {
       toast({
         title: "Order Accepted!",
-        description: `You have successfully accepted order #${orderId}`,
+        description: `You have successfully accepted order #${variables.orderId}`,
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/delivery-notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/deliveries/active"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/deliveries/partner"] });
       setAcceptingOrder(null);
     },
     onError: (error: Error) => {
@@ -174,9 +186,9 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
     setPreviousCount(notifications.length);
   }, [notifications.length, previousCount, toast]);
 
-  const handleAcceptOrder = (orderId: number) => {
+  const handleAcceptOrder = (orderId: number, notificationId: number) => {
     setAcceptingOrder(orderId);
-    acceptMutation.mutate(orderId);
+    acceptMutation.mutate({ orderId, notificationId });
   };
 
   const handleRejectOrder = (orderId: number) => {
@@ -227,13 +239,13 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 sm:space-y-4 max-h-64 sm:max-h-96 overflow-y-auto px-2 sm:px-6 pb-2 sm:pb-6">
-          {notifications.map((notification: DeliveryNotification) => {
-            let notificationData: NotificationData;
+          {notifications.map((notification: any) => {
+            let notificationData: any;
             try {
-              notificationData = JSON.parse(notification.notification_data);
+              notificationData = notification.data ? JSON.parse(notification.data) : {};
             } catch (error) {
               console.error('Failed to parse notification data:', error);
-              return null;
+              notificationData = {};
             }
 
             return (
@@ -258,7 +270,7 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
                           New Delivery Assignment
                         </h3>
                         <p className="text-xs sm:text-sm text-gray-600 mb-2 break-words">
-                          You have been assigned Order #{notification.order_id}
+                          {notification.message || `You have been assigned Order #${notification.orderId || 'N/A'}`}
                         </p>
                       </div>
                     </div>
@@ -304,8 +316,8 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
 
                     <div className="flex flex-col sm:flex-row gap-2 pt-2 w-full">
                       <Button
-                        onClick={() => handleAcceptOrder(notification.order_id)}
-                        disabled={acceptingOrder === notification.order_id}
+                        onClick={() => handleAcceptOrder(notification.orderId || notification.order_id, notification.id)}
+                        disabled={acceptingOrder === (notification.orderId || notification.order_id)}
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm py-2 sm:py-2.5 min-w-0"
                         size="sm"
                       >
