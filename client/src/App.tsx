@@ -46,6 +46,8 @@ import SellerPromotions from "@/pages/SellerPromotions";
 import SellerOrders from "@/pages/SellerOrders";
 import SellerStore from "@/pages/SellerStore";
 import AddProduct from "@/pages/AddProduct";
+import RestaurantDashboard from "@/pages/RestaurantDashboard";
+import DashboardRouter from "@/components/DashboardRouter";
 import DeliveryPartnerDashboard from "./pages/DeliveryPartnerDashboard";
 import DeliveryPartnerTest from "./pages/DeliveryPartnerTest";
 import DeliveryPartnerNotifications from "./pages/DeliveryPartnerNotifications";
@@ -94,6 +96,7 @@ function AppRouter() {
 
         {/* Seller Hub Routes */}
         <Route path="/seller/dashboard" component={SellerDashboard} />
+        <Route path="/restaurant/dashboard" component={RestaurantDashboard} />
         <Route path="/seller/store" component={SellerStore} />
         <Route path="/seller/inventory" component={SellerInventory} />
         <Route path="/seller/promotions" component={SellerPromotions} />

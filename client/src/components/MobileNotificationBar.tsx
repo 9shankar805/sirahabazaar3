@@ -5,7 +5,11 @@ import { Bell, X, Smartphone } from 'lucide-react';
 import { testNotificationSetup, supportsNotifications, isMobileDevice } from '@/lib/firebaseNotifications';
 import { useUser } from '@/hooks/use-user';
 
-export default function MobileNotificationBar() {
+interface MobileNotificationBarProps {
+  className?: string;
+}
+
+export default function MobileNotificationBar({ className }: MobileNotificationBarProps) {
   const { user } = useUser();
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -54,7 +58,7 @@ export default function MobileNotificationBar() {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:max-w-sm">
+    <div className={`fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:max-w-sm ${className || ''}`}>
       <Card className="border-blue-200 bg-blue-50">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">

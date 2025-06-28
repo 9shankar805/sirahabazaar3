@@ -83,6 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Redirect delivery partners directly to their dashboard
     if (user.role === 'delivery_partner') {
       window.location.href = '/delivery-partner/dashboard';
+    } else if (user.role === 'shopkeeper') {
+      // Check if user has a restaurant and redirect accordingly
+      checkAndRedirectShopkeeper(user.id);
     }
   };
 
@@ -101,6 +104,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { user } = await response.json();
     setUser(user);
     localStorage.setItem("user", JSON.stringify(user));
+  };
+
+  const isRestaurantByName = (storeName: string): boolean => {
+    const restaurantKeywords = [
+      'restaurant', 'cafe', 'food', 'kitchen', 'dining', 'eatery', 'bistro',
+      'pizzeria', 'burger', 'pizza', 'chicken', 'biryani', 'dosa', 'samosa',
+      'chinese', 'indian', 'nepali', 'thai', 'continental', 'fast food',
+      'dhaba', 'hotel', 'canteen', 'mess', 'tiffin', 'sweet', 'bakery',
+      'tyres' // Your specific restaurant name
+    ];
+    
+    const lowerName = storeName.toLowerCase();
+    return restaurantKeywords.some(keyword => lowerName.includes(keyword));
+  };
+
+  const checkAndRedirectShopkeeper = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/stores/user/${userId}`);
+      if (response.ok) {
+        const stores = await response.json();
+        if (stores.length > 0) {
+          const store = stores[0];
+          const isRestaurant = store.storeType === 'restaurant' || 
+            isRestaurantByName(store.name);
+          
+          if (isRestaurant) {
+            window.location.href = '/restaurant/dashboard';
+          } else {
+            window.location.href = '/seller/dashboard';
+          }
+        } else {
+          window.location.href = '/seller/dashboard';
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check store type:', error);
+      window.location.href = '/seller/dashboard';
+    }
   };
 
   const refreshUser = async () => {

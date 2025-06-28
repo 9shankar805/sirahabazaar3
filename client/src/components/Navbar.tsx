@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield, Home, Package, LogOut, Tag, UtensilsCrossed, ChefHat, ShoppingBag, Bell } from "lucide-react";
+import SmartDashboardLink from "./SmartDashboardLink";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -163,10 +164,7 @@ export default function Navbar() {
             {/* Seller Navigation */}
             {user?.role === "shopkeeper" ? (
               <>
-                <Link href="/seller/dashboard" className="flex items-center space-x-1 hover:text-accent transition-colors">
-                  <Home className="h-4 w-4" />
-                  <span>Dashboard</span>
-                </Link>
+                <SmartDashboardLink />
                 <Link href="/seller/store" className="flex items-center space-x-1 hover:text-accent transition-colors">
                   <Store className="h-4 w-4" />
                   <span>Store</span>
