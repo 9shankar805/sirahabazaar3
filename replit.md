@@ -120,6 +120,23 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### June 28, 2025 - Delivery Partner Notification System Diagnostic and Prevention
+- ✓ Identified critical issue: Delivery partners with "pending" status cannot receive notifications
+- ✓ Fixed Shekhar's delivery partner status from "pending" to "approved" 
+- ✓ Verified notification system works properly for approved delivery partners
+- ✓ Added automatic approval notification when delivery partner gets approved
+- ✓ Created diagnostic process for future delivery partner notification issues:
+  * Check delivery partner approval status first (must be "approved")
+  * Verify isAvailable flag is set to true
+  * Confirm delivery partner exists in database with correct userId mapping
+  * Test notification endpoints are accessible and functional
+- ✓ Documented common causes of notification failures:
+  * Delivery partner status = "pending" (most common)
+  * Delivery partner isAvailable = false
+  * Incorrect userId mapping between users and delivery_partners tables
+  * Missing adminId during approval process
+- → Future delivery partner notification issues can be quickly diagnosed using this checklist
+
 ### June 28, 2025 - Store Creation System Enhanced with Conditional Field Display
 - ✓ Fixed "invalid data" errors preventing store creation (e.g., "bhuvi fancy", "bhuvi retails")
 - ✓ Enhanced backend validation schema to handle null/undefined values gracefully
