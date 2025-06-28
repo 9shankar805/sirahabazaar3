@@ -159,71 +159,11 @@ export default function DeliveryPartnerTest() {
     };
   });
 
-  // Add some mock notifications for better demo
-  const mockNotifications: DeliveryNotification[] = [
-    {
-      id: 999,
-      type: 'new_delivery',
-      title: 'New Delivery Assignment',
-      message: 'Order #1001 from Rajesh Kumar. Distance: 3.2km, Earn: ₹38',
-      isRead: false,
-      createdAt: new Date().toISOString(),
-      orderId: 1001,
-      deliveryDetails: {
-        customerName: 'Rajesh Kumar',
-        customerPhone: '+91 9876543210',
-        pickupAddress: 'Green Valley Restaurant, Sector 14, Siraha',
-        deliveryAddress: 'Block A, Ward 2, Siraha (26.6590, 86.2100)',
-        deliveryFee: 45,
-        estimatedDistance: 3.2,
-        estimatedTime: 55,
-        platformCommission: 7,
-        yourEarnings: 38,
-        paymentMethod: 'cod',
-        orderItems: 2,
-        urgent: false,
-        specialInstructions: 'Ring the doorbell twice. Customer is on 2nd floor.'
-      }
-    },
-    {
-      id: 998,
-      type: 'pickup_reminder',
-      title: 'Pickup Reminder',
-      message: 'Order #1002 from Priya Sharma. Distance: 2.8km, Earn: ₹30',
-      isRead: false,
-      createdAt: new Date(Date.now() - 300000).toISOString(),
-      orderId: 1002,
-      deliveryDetails: {
-        customerName: 'Priya Sharma',
-        customerPhone: '+91 9876543211',
-        pickupAddress: 'Spice Garden Restaurant, Main Road, Siraha',
-        deliveryAddress: 'Ward 5, Siraha Municipality (26.6650, 86.2050)',
-        deliveryFee: 35,
-        estimatedDistance: 2.8,
-        estimatedTime: 42,
-        platformCommission: 5,
-        yourEarnings: 30,
-        paymentMethod: 'online',
-        orderItems: 1,
-        urgent: false,
-      }
-    },
-    {
-      id: 997,
-      type: 'payment_received',
-      title: 'Payment Received',
-      message: 'You have received ₹55 for Order #1000 delivery',
-      isRead: true,
-      createdAt: new Date(Date.now() - 900000).toISOString(),
-      orderId: 1000,
-    }
-  ];
+  // Use only real notifications from API - no mock data
+  const allNotifications = transformedNotifications;
 
-  // Combine real and mock notifications
-  const allNotifications = [...transformedNotifications, ...mockNotifications];
-
-  // Transform deliveries or use mock data
-  const mockActiveDeliveries: DeliveryOrder[] = deliveries.length > 0 ? deliveries.map((d: any) => ({
+  // Transform deliveries to use real data
+  const activeDeliveries: DeliveryOrder[] = deliveries.length > 0 ? deliveries.map((d: any) => ({
     id: d.id,
     orderId: d.orderId,
     customerName: d.customerName || 'Customer',
@@ -238,36 +178,7 @@ export default function DeliveryPartnerTest() {
     assignedAt: d.assignedAt || new Date().toISOString(),
     pickedUpAt: d.pickedUpAt,
     deliveredAt: d.deliveredAt,
-  })) : [
-    {
-      id: 1,
-      orderId: 1001,
-      customerName: 'Rajesh Kumar',
-      customerPhone: '+91 9876543210',
-      pickupAddress: 'Green Valley Restaurant, Sector 14, Gurugram',
-      deliveryAddress: 'Block A, DLF Phase 2, Gurugram',
-      deliveryFee: 45,
-      estimatedDistance: 3.2,
-      estimatedTime: 25,
-      status: 'assigned',
-      specialInstructions: 'Ring the doorbell twice. Customer is on 3rd floor.',
-      assignedAt: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      orderId: 1002,
-      customerName: 'Priya Sharma',
-      customerPhone: '+91 9876543211',
-      pickupAddress: 'Spice Garden, Cyber Hub, Gurugram',
-      deliveryAddress: 'Golf Course Road, Gurugram',
-      deliveryFee: 35,
-      estimatedDistance: 2.8,
-      estimatedTime: 20,
-      status: 'picked_up',
-      assignedAt: new Date(Date.now() - 600000).toISOString(),
-      pickedUpAt: new Date(Date.now() - 300000).toISOString(),
-    }
-  ];
+  })) : [];
 
   const currentStats: DeliveryPartnerStats = stats || {
     totalDeliveries: partner?.totalDeliveries || 147,
@@ -275,7 +186,7 @@ export default function DeliveryPartnerTest() {
     rating: partner?.rating ? parseFloat(partner.rating.toString()) : 4.8,
     todayDeliveries: 8,
     todayEarnings: 425,
-    activeDeliveries: mockActiveDeliveries.filter(d => ['assigned', 'picked_up'].includes(d.status)).length
+    activeDeliveries: activeDeliveries.filter(d => ['assigned', 'picked_up'].includes(d.status)).length
   };
 
   // Mutations for real functionality
@@ -643,7 +554,7 @@ export default function DeliveryPartnerTest() {
 
           {/* Active Deliveries Tab */}
           <TabsContent value="active" className="space-y-4">
-            {mockActiveDeliveries.map((delivery) => (
+            {activeDeliveries.map((delivery) => (
               <Card key={delivery.id} className="border-l-4 border-l-green-500">
                 <CardHeader>
                   <div className="flex items-center justify-between">
