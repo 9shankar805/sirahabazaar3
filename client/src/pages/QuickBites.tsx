@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Filter, Clock, Star, MapPin, Utensils, ChefHat, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { Search, Filter, Clock, Star, MapPin, Utensils, ChefHat, Loader2, AlertCircle, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +56,7 @@ export default function QuickBites() {
   const [sortBy, setSortBy] = useState("name");
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationEnabled, setLocationEnabled] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const { toast } = useToast();
 
   // Fetch all products
@@ -239,13 +240,25 @@ export default function QuickBites() {
         {/* Filters */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Find Your Perfect Meal
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Find Your Perfect Meal
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                {showFilters ? "Hide Filters" : "Show Filters"}
+                {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Search Bar */}
+            {/* Search Bar - Always Visible */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -256,119 +269,124 @@ export default function QuickBites() {
               />
             </div>
 
-            {/* Filter Row 1 */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Category Filter */}
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger>
-                  <Utensils className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {availableCategories.map((category) => (
-                    <SelectItem key={category} value={category!}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Collapsible Filters */}
+            {showFilters && (
+              <div className="space-y-6">
+                {/* Filter Row 1 */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {/* Category Filter */}
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger>
+                      <Utensils className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {availableCategories.map((category) => (
+                        <SelectItem key={category} value={category!}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-              {/* Restaurant Filter */}
-              <Select value={storeFilter} onValueChange={setStoreFilter}>
-                <SelectTrigger>
-                  <ChefHat className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="All Restaurants" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Restaurants</SelectItem>
-                  {availableRestaurants.map((restaurant) => (
-                    <SelectItem key={restaurant.id} value={restaurant.id.toString()}>
-                      {restaurant.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  {/* Restaurant Filter */}
+                  <Select value={storeFilter} onValueChange={setStoreFilter}>
+                    <SelectTrigger>
+                      <ChefHat className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="All Restaurants" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Restaurants</SelectItem>
+                      {availableRestaurants.map((restaurant) => (
+                        <SelectItem key={restaurant.id} value={restaurant.id.toString()}>
+                          {restaurant.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-              {/* Spice Level Filter */}
-              <Select value={spiceLevelFilter} onValueChange={setSpiceLevelFilter}>
-                <SelectTrigger>
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Spice Level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Spice Levels</SelectItem>
-                  <SelectItem value="Mild">Mild</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="Hot">Hot</SelectItem>
-                  <SelectItem value="Extra Hot">Extra Hot</SelectItem>
-                </SelectContent>
-              </Select>
+                  {/* Spice Level Filter */}
+                  <Select value={spiceLevelFilter} onValueChange={setSpiceLevelFilter}>
+                    <SelectTrigger>
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Spice Level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Spice Levels</SelectItem>
+                      <SelectItem value="Mild">Mild</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Hot">Hot</SelectItem>
+                      <SelectItem value="Extra Hot">Extra Hot</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-              {/* Location Button */}
-              {!locationEnabled && (
-                <Button variant="outline" onClick={handleGetLocation}>
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Enable Location
-                </Button>
-              )}
-            </div>
-
-            {/* Filter Row 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Dietary Filter */}
-              <Select value={dietaryFilter} onValueChange={setDietaryFilter}>
-                <SelectTrigger>
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Dietary Preferences" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Options</SelectItem>
-                  <SelectItem value="vegetarian">Vegetarian</SelectItem>
-                  <SelectItem value="vegan">Vegan</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Price Range Filter */}
-              <Select value={priceRangeFilter} onValueChange={setPriceRangeFilter}>
-                <SelectTrigger>
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Price Range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Prices</SelectItem>
-                  <SelectItem value="under-100">Under ₹100</SelectItem>
-                  <SelectItem value="100-300">₹100 - ₹300</SelectItem>
-                  <SelectItem value="300-500">₹300 - ₹500</SelectItem>
-                  <SelectItem value="over-500">Over ₹500</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Sort Filter */}
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Sort By" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">Name A-Z</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                  <SelectItem value="rating">Highest Rated</SelectItem>
-                  {locationEnabled && (
-                    <SelectItem value="distance">Nearest First</SelectItem>
+                  {/* Location Button */}
+                  {!locationEnabled && (
+                    <Button variant="outline" onClick={handleGetLocation}>
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Enable Location
+                    </Button>
                   )}
-                </SelectContent>
-              </Select>
-            </div>
+                </div>
 
-            {/* Location Status */}
-            {locationEnabled && (
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-muted-foreground">
-                  Location enabled - showing distances to restaurants
-                </span>
+                {/* Filter Row 2 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Dietary Filter */}
+                  <Select value={dietaryFilter} onValueChange={setDietaryFilter}>
+                    <SelectTrigger>
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Dietary Preferences" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Options</SelectItem>
+                      <SelectItem value="vegetarian">Vegetarian</SelectItem>
+                      <SelectItem value="vegan">Vegan</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Price Range Filter */}
+                  <Select value={priceRangeFilter} onValueChange={setPriceRangeFilter}>
+                    <SelectTrigger>
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Price Range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Prices</SelectItem>
+                      <SelectItem value="under-100">Under ₹100</SelectItem>
+                      <SelectItem value="100-300">₹100 - ₹300</SelectItem>
+                      <SelectItem value="300-500">₹300 - ₹500</SelectItem>
+                      <SelectItem value="over-500">Over ₹500</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Sort Filter */}
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger>
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Sort By" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="name">Name A-Z</SelectItem>
+                      <SelectItem value="price-low">Price: Low to High</SelectItem>
+                      <SelectItem value="price-high">Price: High to Low</SelectItem>
+                      <SelectItem value="rating">Highest Rated</SelectItem>
+                      {locationEnabled && (
+                        <SelectItem value="distance">Nearest First</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Location Status */}
+                {locationEnabled && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-muted-foreground">
+                      Location enabled - showing distances to restaurants
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
