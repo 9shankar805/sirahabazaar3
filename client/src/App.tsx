@@ -19,6 +19,7 @@ import Homepage from "@/pages/Homepage";
 import FoodHomepage from "@/pages/FoodHomepage";
 import Products from "@/pages/Products";
 import ProductDetail from "./pages/ProductDetail";
+import QuickBites from "@/pages/QuickBites";
 import StoreDetail from "./pages/StoreDetail";
 import RestaurantDetail from "./pages/RestaurantDetail";
 import Cart from "./pages/Cart";
@@ -71,6 +72,7 @@ function AppRouter() {
         <Route path="/categories" component={Categories} />
         <Route path="/food-categories" component={Categories} />
         <Route path="/products" component={Products} />
+        <Route path="/quick-bites" component={QuickBites} />
         <Route path="/products/:id" component={ProductDetail} />
         <Route path="/food/:id" component={ProductDetail} />
         <Route path="/cart" component={Cart} />

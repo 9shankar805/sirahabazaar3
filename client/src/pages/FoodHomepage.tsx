@@ -177,7 +177,7 @@ export default function FoodHomepage() {
                   Ready in 20 minutes or less
                 </p>
               </div>
-              <Link href="/quick-food">
+              <Link href="/quick-bites">
                 <Button variant="outline" className="border-green-500 text-green-500 hover:bg-green-50">
                   View All
                   <ArrowRight className="ml-2 h-4 w-4" />

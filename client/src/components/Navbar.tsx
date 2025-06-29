@@ -215,8 +215,12 @@ export default function Navbar() {
                       <UtensilsCrossed className="h-4 w-4" />
                       <span>Menu</span>
                     </Link>
-                    <Link href="/restaurants" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                    <Link href="/quick-bites" className="flex items-center space-x-1 hover:text-accent transition-colors">
                       <ChefHat className="h-4 w-4" />
+                      <span>Quick Bites</span>
+                    </Link>
+                    <Link href="/restaurants" className="flex items-center space-x-1 hover:text-accent transition-colors">
+                      <Store className="h-4 w-4" />
                       <span>Restaurants</span>
                     </Link>
                     <Link href="/restaurant-maps" className="flex items-center space-x-1 hover:text-accent transition-colors">
