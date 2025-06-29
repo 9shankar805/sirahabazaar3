@@ -111,7 +111,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-12 sm:h-14">
           {/* Logo and Mode Swiper */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <Link href="/" className="flex items-center space-x-1">
               {mode === 'food' ? (
                 <img 
@@ -337,7 +337,7 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Action Icons */}
-          <div className="md:hidden flex items-center space-x-3">
+          <div className="md:hidden flex items-center space-x-1">
             {/* Notifications - For all logged in users */}
             {user && (
               <Button
