@@ -124,11 +124,14 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - ✓ Fixed related products filtering to properly separate food and retail items based on app mode
 - ✓ Shopping mode now only shows non-food related products, excluding food items completely
 - ✓ Food mode only displays food-related products in the related section
+- ✓ Fixed restaurant display issue on food home page mobile view
+- ✓ Removed restrictive filtering that was hiding restaurants without high ratings or featured status
+- ✓ All existing restaurants now properly display in food home page mobile layout
 - ✓ Enhanced customer review system with compact and professional design
 - ✓ Reduced review component spacing and made elements smaller for better mobile experience
 - ✓ Optimized review cards with smaller avatars, compressed text, and efficient layout
 - ✓ Maintained full review functionality while significantly reducing space usage
-- → Related products now properly respect app mode context, preventing food/retail mixing
+- → Related products now properly respect app mode context, and all restaurants visible on mobile
 
 ### June 29, 2025 - Delivery Partner Dashboard Alerts and Quick Actions Fixed
 - ✓ Fixed delivery partner dashboard alerts tab to properly display notifications

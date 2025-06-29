@@ -26,7 +26,7 @@ export default function FoodHomepage() {
   });
 
   const featuredFood = foodItems?.filter(item => item.isOnOffer || item.isFastSell).slice(0, 8) || [];
-  const popularRestaurants = restaurants?.filter(restaurant => restaurant.featured || parseFloat(restaurant.rating ?? "0") >= 4.0).slice(0, 6) || [];
+  const popularRestaurants = restaurants?.slice(0, 6) || [];
   const quickBites = foodItems?.filter(item => item.preparationTime && parseInt(item.preparationTime ?? "0") <= 20).slice(0, 6) || [];
 
   return (
