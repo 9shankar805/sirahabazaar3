@@ -2848,6 +2848,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clean up test notifications
+  app.delete("/api/notifications/cleanup-test", async (req, res) => {
+    try {
+      // Delete notifications with test content
+      const result = await db
+        .delete(notifications)
+        .where(
+          sql`LOWER(title) LIKE '%test%' OR LOWER(message) LIKE '%test%' OR message LIKE '%Test Customer%'`
+        );
+
+      res.json({ 
+        success: true, 
+        message: "Test notifications cleaned up successfully"
+      });
+    } catch (error) {
+      console.error("Error cleaning up test notifications:", error);
+      res.status(500).json({ error: "Failed to clean up test notifications" });
+    }
+  });
+
   // Get order tracking information
   app.get("/api/orders/:orderId/tracking", async (req, res) => {
     try {

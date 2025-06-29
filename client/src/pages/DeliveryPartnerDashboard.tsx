@@ -10,7 +10,7 @@ import { useState } from "react";
 import DeliveryNotifications from "@/components/DeliveryNotifications";
 import DeliveryPartnerProfileSetup from "@/components/DeliveryPartnerProfileSetup";
 import DeliveryMap from "@/components/DeliveryMap";
-import NotificationTestButton from "@/components/NotificationTestButton";
+
 import SoundTestButton from "@/components/SoundTestButton";
 
 interface DeliveryPartner {
@@ -368,7 +368,7 @@ export default function DeliveryPartnerDashboard() {
                 </div>
               </CardContent>
             </Card>
-             <NotificationTestButton />
+
       <SoundTestButton />
           </TabsContent>
 

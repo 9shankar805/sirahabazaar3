@@ -13,7 +13,7 @@ import BottomNavbar from "@/components/BottomNavbar";
 import Footer from "@/components/Footer";
 import ModeSwiper from "@/components/ModeSwiper";
 import MobileNotificationBar from "@/components/MobileNotificationBar";
-import NotificationTestButton from "@/components/NotificationTestButton";
+
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Homepage from "@/pages/Homepage";
 import FoodHomepage from "@/pages/FoodHomepage";
@@ -159,9 +159,6 @@ function App() {
                       </ErrorBoundary>
                       <ErrorBoundary>
                         <BottomNavbar />
-                      </ErrorBoundary>
-                      <ErrorBoundary>
-                        <NotificationTestButton />
                       </ErrorBoundary>
                     </div>
                     <Toaster />
