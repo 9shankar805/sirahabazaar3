@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Clock, Percent, Edit, Trash2, Plus } from "lucide-react";
+import { Zap, Clock, Percent, Edit, Trash2, Plus, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -50,6 +50,25 @@ export default function FlashSales() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingFlashSale, setEditingFlashSale] = useState<FlashSale | null>(null);
   const [selectedFlashSaleId, setSelectedFlashSaleId] = useState<number | null>(null);
+  const [adminUser, setAdminUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check if user is admin
+  useEffect(() => {
+    const stored = localStorage.getItem("adminUser");
+    if (stored && stored !== "undefined" && stored !== "null") {
+      try {
+        const adminData = JSON.parse(stored);
+        setAdminUser(adminData);
+        setIsAdmin(true);
+      } catch (error) {
+        console.error('Error parsing admin user data:', error);
+        setIsAdmin(false);
+      }
+    } else {
+      setIsAdmin(false);
+    }
+  }, []);
 
   const form = useForm<FlashSaleFormData>({
     resolver: zodResolver(flashSaleSchema),
@@ -203,25 +222,48 @@ export default function FlashSales() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Warning for non-admin users */}
+      {!isAdmin && (
+        <Card className="mb-6 border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <ShieldAlert className="h-5 w-5 text-orange-600" />
+              <div>
+                <p className="text-sm font-medium text-orange-800">
+                  Read-Only Access
+                </p>
+                <p className="text-sm text-orange-600">
+                  You can view flash sales but cannot create, edit, or delete them. Admin access required for management.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Zap className="h-8 w-8 text-yellow-500" />
             Flash Sales
           </h1>
-          <p className="text-gray-600">Manage time-limited promotional sales</p>
+          <p className="text-gray-600">
+            {isAdmin ? "Manage time-limited promotional sales" : "Browse current flash sales and discounts"}
+          </p>
         </div>
-        <Button
-          onClick={() => {
-            setEditingFlashSale(null);
-            form.reset();
-            setIsCreateDialogOpen(true);
-          }}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Create Flash Sale
-        </Button>
+        {isAdmin && (
+          <Button
+            onClick={() => {
+              setEditingFlashSale(null);
+              form.reset();
+              setIsCreateDialogOpen(true);
+            }}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Create Flash Sale
+          </Button>
+        )}
       </div>
 
       {/* Active Flash Sales Section */}
@@ -275,13 +317,17 @@ export default function FlashSales() {
           <Card>
             <CardContent className="text-center py-8">
               <Zap className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No flash sales created yet</p>
-              <Button
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="mt-4"
-              >
-                Create Your First Flash Sale
-              </Button>
+              <p className="text-gray-500">
+                {isAdmin ? "No flash sales created yet" : "No flash sales available at the moment"}
+              </p>
+              {isAdmin && (
+                <Button
+                  onClick={() => setIsCreateDialogOpen(true)}
+                  className="mt-4"
+                >
+                  Create Your First Flash Sale
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
@@ -322,25 +368,27 @@ export default function FlashSales() {
                       </Badge>
                     </div>
                   </div>
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(flashSale)}
-                      className="flex-1"
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(flashSale.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(flashSale)}
+                        className="flex-1"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(flashSale.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
