@@ -541,32 +541,7 @@ export default function ShopkeeperDashboard() {
     }
   };
 
-  const handleAssignDeliveryPartner = async (
-    orderId: number,
-    deliveryPartnerId: number,
-  ) => {
-    try {
-      await apiPost(`/api/orders/${orderId}/assign-delivery`, {
-        deliveryPartnerId,
-      });
 
-      toast({
-        title: "Delivery partner assigned",
-        description: "Delivery partner has been notified about the order",
-      });
-
-      // Refresh orders data
-      queryClient.invalidateQueries({
-        queryKey: [`/api/orders/store/${currentStore?.id}`],
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to assign delivery partner",
-        variant: "destructive",
-      });
-    }
-  };
 
   if (!user || user.role !== "shopkeeper") {
     return (
@@ -1807,59 +1782,25 @@ export default function ShopkeeperDashboard() {
                               </Select>
                             </div>
 
-                            {/* Delivery Partner Assignment Section */}
+                            {/* First-Accept-First-Serve Delivery System */}
                             <div className="flex flex-wrap gap-2 mt-2">
                               {order.status !== "assigned_for_delivery" &&
                                 order.status !== "delivered" &&
                                 order.status !== "cancelled" && (
                                   <div className="flex gap-2">
-                                    <Select
-                                      onValueChange={(value) => {
-                                        if (value === "all") {
-                                          handleNotifyDeliveryPartner(
-                                            order.id,
-                                            `🚚 New Order Available: Order #${order.id} from ${currentStore?.name}. Customer: ${order.customerName}. Total: ₹${order.totalAmount}. First to accept gets delivery!`,
-                                            false,
-                                          );
-                                        } else {
-                                          handleAssignDeliveryPartner(
-                                            order.id,
-                                            parseInt(value),
-                                          );
-                                        }
+                                    <Button
+                                      onClick={() => {
+                                        handleNotifyDeliveryPartner(
+                                          order.id,
+                                          `🚚 New Order Available: Order #${order.id} from ${currentStore?.name}. Customer: ${order.customerName}. Total: ₹${order.totalAmount}. First to accept gets delivery!`,
+                                          false,
+                                        );
                                       }}
+                                      className="bg-orange-600 hover:bg-orange-700 text-white"
                                     >
-                                      <SelectTrigger className="w-64">
-                                        <SelectValue placeholder="Assign Delivery Partner" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem
-                                          value="all"
-                                          className="bg-orange-50 hover:bg-orange-100"
-                                        >
-                                          <div className="flex items-center">
-                                            <Bell className="h-4 w-4 mr-2 text-orange-600" />
-                                            <span className="font-medium text-orange-600">
-                                              All Partners (First Accept)
-                                            </span>
-                                          </div>
-                                        </SelectItem>
-                                        {deliveryPartners
-                                          .filter(
-                                            (partner: any) =>
-                                              partner.status === "approved" &&
-                                              partner.isAvailable,
-                                          )
-                                          .map((partner: any) => (
-                                            <SelectItem
-                                              key={partner.id}
-                                              value={partner.id.toString()}
-                                            >
-                                              {partner.name} - Available
-                                            </SelectItem>
-                                          ))}
-                                      </SelectContent>
-                                    </Select>
+                                      <Bell className="h-4 w-4 mr-2" />
+                                      Send to All Partners (First Accept)
+                                    </Button>
                                   </div>
                                 )}
 

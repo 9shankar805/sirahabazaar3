@@ -120,6 +120,16 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### June 29, 2025 - Simplified First-Accept-First-Serve Delivery System
+- ✓ Removed seller ability to assign specific delivery partners as requested by user
+- ✓ Simplified delivery assignment to only use first-accept-first-serve system
+- ✓ Replaced dropdown selection with direct "Send to All Partners" button
+- ✓ Updated both SellerDashboard and ShopkeeperDashboard for consistency
+- ✓ Removed handleAssignDeliveryPartner function from both components
+- ✓ Streamlined UI to prevent seller confusion about delivery partner assignment
+- ✓ All orders now automatically go to available delivery partners for fair competition
+- → Sellers can only broadcast orders to all partners, ensuring fastest delivery response times
+
 ### June 28, 2025 - First-Accept-First-Serve Delivery Notification System Implementation
 - ✓ Built complete first-accept-first-serve notification system as requested by user
 - ✓ Created streamlined single dropdown interface combining both assignment options
