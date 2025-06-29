@@ -32,10 +32,12 @@ interface StoreCardProps {
 
 export default function StoreCard({ store, showDistance = true }: StoreCardProps) {
   const [distance, setDistance] = useState<number | null>(null);
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   useEffect(() => {
     if (showDistance && store.latitude && store.longitude) {
+      setIsCalculatingDistance(true);
       getCurrentUserLocation()
         .then((location) => {
           setUserLocation(location);
@@ -44,9 +46,11 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
             { latitude: parseFloat(store.latitude!), longitude: parseFloat(store.longitude!) }
           );
           setDistance(dist);
+          setIsCalculatingDistance(false);
         })
         .catch(() => {
           // Silently fail if location access is denied
+          setIsCalculatingDistance(false);
         });
     }
   }, [store.latitude, store.longitude, showDistance]);
@@ -106,33 +110,62 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
           />
         )}
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span>{parseFloat(store.rating).toFixed(1)}</span>
-            <span>({store.totalReviews})</span>
-          </div>
-          
-          {store.deliveryTime && (
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              <span>{store.deliveryTime}</span>
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <span>{parseFloat(store.rating).toFixed(1)}</span>
+              <span>({store.totalReviews})</span>
+            </div>
+            
+            {store.deliveryTime && (
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>{store.deliveryTime}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Distance Display - Prominent */}
+          {showDistance && (
+            <div className="ml-auto">
+              {isCalculatingDistance ? (
+                <Badge variant="outline" className="text-xs animate-pulse">
+                  <MapPin className="h-3 w-3 mr-1" />
+                  Calculating...
+                </Badge>
+              ) : distance !== null ? (
+                <Badge 
+                  variant={distance <= 1 ? "default" : distance <= 5 ? "secondary" : "outline"} 
+                  className="text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                >
+                  <MapPin className="h-3 w-3 mr-1" />
+                  {formatDistance(distance)}
+                </Badge>
+              ) : (
+                <span className="text-xs text-muted-foreground">Location unavailable</span>
+              )}
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-1 text-xs">
-          <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-          <span className="text-muted-foreground flex-1 line-clamp-1">
-            {store.address}
-          </span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-1 text-xs">
+            <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <span className="text-muted-foreground flex-1 line-clamp-1">
+              {store.address}
+            </span>
+          </div>
+          
+          {/* Show precise coordinates when available */}
+          {store.latitude && store.longitude && (
+            <div className="text-xs text-muted-foreground/70 font-mono">
+              📍 {parseFloat(store.latitude).toFixed(4)}, {parseFloat(store.longitude).toFixed(4)}
+            </div>
+          )}
         </div>
 
-        {distance !== null && (
-          <Badge variant="outline" className="text-xs w-full justify-center">
-            {formatDistance(distance)} away
-          </Badge>
-        )}
+
 
         {store.latitude && store.longitude && (
           <div className="flex gap-1 pt-1">

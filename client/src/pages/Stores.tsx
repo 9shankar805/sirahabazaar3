@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import StoreCard from "@/components/StoreCard";
+import StoreDistanceFilter from "@/components/StoreDistanceFilter";
 import { getCurrentUserLocation } from "@/lib/distance";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,6 +32,10 @@ interface Store {
   isDeliveryAvailable?: boolean;
 }
 
+interface StoreWithDistance extends Store {
+  distance: number;
+}
+
 export default function Stores() {
   const [location] = useLocation();
   const isRestaurantPage = location.includes('/restaurants');
@@ -42,6 +47,8 @@ export default function Stores() {
   const [ratingFilter, setRatingFilter] = useState("all");
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationEnabled, setLocationEnabled] = useState(false);
+  const [distanceFilteredStores, setDistanceFilteredStores] = useState<StoreWithDistance[]>([]);
+  const [showDistanceFilter, setShowDistanceFilter] = useState(false);
   const { toast } = useToast();
 
   // Fetch all stores with comprehensive error handling
@@ -79,7 +86,7 @@ export default function Stores() {
   )).filter(Boolean) as string[];
 
   // Filter stores based on all criteria and page context
-  const filteredStores = stores.filter((store) => {
+  const baseFilteredStores = stores.filter((store) => {
     // Page-specific filtering: restaurants only on restaurant page, retail stores only on stores page
     if (isRestaurantPage) {
       // On restaurant page, only show restaurants
@@ -109,11 +116,17 @@ export default function Stores() {
     return matchesSearch && matchesType && matchesCuisine && matchesDelivery && matchesRating;
   });
 
+  // Use distance-filtered stores if distance filter is active, otherwise use base filtered stores
+  const filteredStores = showDistanceFilter && distanceFilteredStores.length > 0 
+    ? distanceFilteredStores.filter(store => baseFilteredStores.some(baseStore => baseStore.id === store.id))
+    : baseFilteredStores;
+
   const handleGetLocation = async () => {
     try {
       const location = await getCurrentUserLocation();
       setUserLocation(location);
       setLocationEnabled(true);
+      setShowDistanceFilter(true);
       toast({
         title: "Location enabled",
         description: "Stores will now show distance from your location",
@@ -125,6 +138,11 @@ export default function Stores() {
         variant: "destructive",
       });
     }
+  };
+
+  // Handle distance filter updates
+  const handleDistanceFilterUpdate = (filteredStores: StoreWithDistance[]) => {
+    setDistanceFilteredStores(filteredStores);
   };
 
   if (storesLoading) {
@@ -340,6 +358,15 @@ export default function Stores() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Distance Filter Component */}
+        {showDistanceFilter && (
+          <StoreDistanceFilter 
+            stores={baseFilteredStores}
+            onFilteredStores={handleDistanceFilterUpdate}
+            className="mb-6"
+          />
+        )}
 
         {/* Store Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
