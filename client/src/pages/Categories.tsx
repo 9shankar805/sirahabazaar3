@@ -51,7 +51,7 @@ export default function Categories() {
           <h1 className="text-3xl font-bold text-foreground">{pageTitle}</h1>
         </div>
         
-        <div className="grid grid-cols-5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-4">
+        <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-4">
           {categories.map((category) => (
             <Link key={category.name} href={category.href}>
               <div className="category-card text-center hover:shadow-lg transition-shadow p-2 sm:p-4">
