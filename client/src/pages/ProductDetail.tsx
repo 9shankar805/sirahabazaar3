@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Star, ShoppingCart, Heart, Minus, Plus, MapPin, Store } from "lucide-react";
@@ -10,12 +10,15 @@ import { ProductReviews } from "@/components/ProductReviews";
 import { QuickRating } from "@/components/QuickRating";
 import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
+import { getCurrentUserLocation } from "@/lib/distance";
 import type { Product, Store as StoreType } from "@shared/schema";
 
 export default function ProductDetail() {
   const { id } = useParams();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [storeDistance, setStoreDistance] = useState<number | null>(null);
   const { addToCart } = useCart();
   const { toast } = useToast();
 
@@ -33,6 +36,42 @@ export default function ProductDetail() {
     queryKey: [`/api/products`, { category: product?.categoryId }],
     enabled: !!product?.categoryId,
   });
+
+  // Get user location and calculate distance to store
+  useEffect(() => {
+    const getUserLocationAndCalculateDistance = async () => {
+      try {
+        const location = await getCurrentUserLocation();
+        setUserLocation(location);
+        
+        if (store?.latitude && store?.longitude) {
+          const storeLatitude = parseFloat(store.latitude);
+          const storeLongitude = parseFloat(store.longitude);
+          
+          if (!isNaN(storeLatitude) && !isNaN(storeLongitude)) {
+            // Calculate distance using Haversine formula
+            const R = 6371; // Earth's radius in kilometers
+            const dLat = (storeLatitude - location.latitude) * Math.PI / 180;
+            const dLon = (storeLongitude - location.longitude) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(location.latitude * Math.PI / 180) * Math.cos(storeLatitude * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c;
+            
+            setStoreDistance(distance);
+          }
+        }
+      } catch (error) {
+        // Location access denied or not available
+        setStoreDistance(null);
+      }
+    };
+
+    if (store) {
+      getUserLocationAndCalculateDistance();
+    }
+  }, [store]);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -207,7 +246,12 @@ export default function ProductDetail() {
                       <p className="font-medium">{store.name}</p>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <MapPin className="h-3 w-3 mr-1" />
-                        <span>1.2 km away • {store.rating} ⭐ ({store.totalReviews} reviews)</span>
+                        <span>
+                          {storeDistance !== null 
+                            ? `${storeDistance.toFixed(1)} km away` 
+                            : "Distance unavailable"
+                          } • {store.rating || "0.00"} ⭐ ({store.totalReviews || 0} reviews)
+                        </span>
                       </div>
                     </div>
                     <Link href={`/stores/${store.id}`}>
