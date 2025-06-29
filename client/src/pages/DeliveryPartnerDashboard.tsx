@@ -471,6 +471,22 @@ export default function DeliveryPartnerDashboard() {
             </div>
           </TabsContent>
 
+          <TabsContent value="orders" className="space-y-4 sm:space-y-6">
+            {/* Delivery Notifications - Alerts Tab */}
+            <Card className="shadow-lg border-0">
+              <CardHeader className="px-3 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+                  Delivery Alerts
+                </CardTitle>
+                <CardDescription className="text-sm">New delivery opportunities available</CardDescription>
+              </CardHeader>
+              <CardContent className="px-3 sm:px-6">
+                <DeliveryNotifications deliveryPartnerId={partner?.id || 0} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="deliveries" className="space-y-4 sm:space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Mobile Responsive Pending Deliveries */}

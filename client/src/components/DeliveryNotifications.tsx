@@ -60,13 +60,15 @@ export default function DeliveryNotifications({ deliveryPartnerId }: { deliveryP
 
       // Filter for delivery assignment notifications that haven't been read/accepted
       return allNotifications.filter((notification: any) => {
+        console.log('Checking notification:', notification);
         try {
-          if (notification.type === 'delivery' && !notification.isRead && notification.data) {
-            const data = JSON.parse(notification.data);
-            return data.canAccept === true;
+          // Check for delivery type notifications that are unread
+          if (notification.type === 'delivery' && !notification.isRead) {
+            // For new delivery assignments, we should show them regardless of data structure
+            return true;
           }
         } catch (e) {
-          console.log('Error parsing notification data:', e);
+          console.log('Error filtering notification:', e);
         }
         return false;
       });
