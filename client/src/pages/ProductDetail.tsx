@@ -10,6 +10,7 @@ import { ProductReviews } from "@/components/ProductReviews";
 import { QuickRating } from "@/components/QuickRating";
 import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
+import { useAppMode } from "@/hooks/useAppMode";
 import { getCurrentUserLocation } from "@/lib/distance";
 import type { Product, Store as StoreType } from "@shared/schema";
 
@@ -21,6 +22,7 @@ export default function ProductDetail() {
   const [storeDistance, setStoreDistance] = useState<number | null>(null);
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { mode } = useAppMode();
 
   const { data: product, isLoading } = useQuery<Product>({
     queryKey: [`/api/products/${id}`],
@@ -32,10 +34,21 @@ export default function ProductDetail() {
     enabled: !!product?.storeId,
   });
 
-  const { data: relatedProducts = [] } = useQuery<Product[]>({
+  const { data: allRelatedProducts = [] } = useQuery<Product[]>({
     queryKey: [`/api/products`, { category: product?.categoryId }],
     enabled: !!product?.categoryId,
   });
+
+  // Filter related products based on app mode
+  const relatedProducts = allRelatedProducts.filter((relatedProduct: Product) => {
+    if (mode === "shopping") {
+      // In shopping mode, exclude food items
+      return relatedProduct.productType !== "food";
+    } else {
+      // In food mode, show only food items
+      return relatedProduct.productType === "food";
+    }
+  }).filter((relatedProduct: Product) => relatedProduct.id !== product?.id); // Exclude current product
 
   // Get user location and calculate distance to store
   useEffect(() => {
