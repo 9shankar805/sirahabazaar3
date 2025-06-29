@@ -458,7 +458,11 @@ export default function Stores() {
             </CardContent>
           </Card>
         ) : storesLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
+          <div className={`grid gap-2 sm:gap-4 ${
+            isRestaurantPage || storeTypeFilter === "restaurant"
+              ? "grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2" 
+              : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+          }`}>
             {Array.from({ length: 6 }).map((_, index) => (
               <Card key={index} className="animate-pulse">
                 <CardContent className="p-3">
@@ -471,7 +475,11 @@ export default function Stores() {
             ))}
           </div>
         ) : filteredStores.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
+          <div className={`grid gap-2 sm:gap-4 ${
+            isRestaurantPage || storeTypeFilter === "restaurant"
+              ? "grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2" 
+              : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+          }`}>
             {filteredStores.map((store) => (
               <StoreCard
                 key={store.id}
