@@ -628,9 +628,13 @@ export const insertCouponSchema = createInsertSchema(coupons).omit({
   createdAt: true,
 });
 
-export const insertFlashSaleSchema = createInsertSchema(flashSales).omit({
-  id: true,
-  createdAt: true,
+export const insertFlashSaleSchema = z.object({
+  title: z.string(),
+  description: z.string().optional(),
+  discountPercentage: z.number(),
+  startsAt: z.string().transform((str) => new Date(str)),
+  endsAt: z.string().transform((str) => new Date(str)),
+  isActive: z.boolean().default(true),
 });
 
 export const insertProductTagSchema = createInsertSchema(productTags).omit({

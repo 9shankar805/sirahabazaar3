@@ -18,7 +18,7 @@ import {
   insertOrderTrackingSchema, insertReturnPolicySchema, insertReturnSchema, insertCategorySchema,
   insertPromotionSchema, insertAdvertisementSchema, insertProductReviewSchema, insertSettlementSchema,
   insertStoreAnalyticsSchema, insertInventoryLogSchema, insertCouponSchema, insertBannerSchema,
-  stores,
+  insertFlashSaleSchema, stores,
   insertSupportTicketSchema, insertSiteSettingSchema, insertFraudAlertSchema, insertCommissionSchema,
   insertProductAttributeSchema, insertVendorVerificationSchema, insertAdminLogSchema,
   insertDeliveryPartnerSchema, insertDeliverySchema,
@@ -2804,6 +2804,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(visits);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch page views" });
+    }
+  });
+
+  // Flash Sales routes
+  app.get("/api/flash-sales", async (req, res) => {
+    try {
+      const flashSales = await storage.getAllFlashSales();
+      res.json(flashSales);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch flash sales" });
+    }
+  });
+
+  app.get("/api/flash-sales/active", async (req, res) => {
+    try {
+      const activeFlashSales = await storage.getActiveFlashSales();
+      res.json(activeFlashSales);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch active flash sales" });
+    }
+  });
+
+  app.get("/api/flash-sales/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const flashSale = await storage.getFlashSale(id);
+      if (!flashSale) {
+        return res.status(404).json({ error: "Flash sale not found" });
+      }
+      res.json(flashSale);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch flash sale" });
+    }
+  });
+
+  app.get("/api/flash-sales/:id/products", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const products = await storage.getFlashSaleProducts(id);
+      res.json(products);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch flash sale products" });
+    }
+  });
+
+  // Create test flash sale endpoint
+  app.post("/api/test/flash-sale", async (req, res) => {
+    try {
+      const flashSaleData = {
+        title: "Weekend Super Sale",
+        description: "Massive discounts on electronics and fashion items",
+        discountPercentage: 40,
+        startsAt: new Date("2025-06-29T06:00:00Z"),
+        endsAt: new Date("2025-06-30T23:59:59Z"),
+        isActive: true,
+      };
+      
+      const flashSale = await storage.createFlashSale(flashSaleData);
+      res.json(flashSale);
+    } catch (error) {
+      console.error("Test flash sale creation error:", error);
+      res.status(400).json({ 
+        error: "Failed to create test flash sale", 
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.post("/api/admin/flash-sales", async (req, res) => {
+    try {
+      // Convert date strings to Date objects before validation
+      const requestData = {
+        ...req.body,
+        startsAt: new Date(req.body.startsAt),
+        endsAt: new Date(req.body.endsAt),
+      };
+      
+      const flashSale = await storage.createFlashSale(requestData);
+      res.json(flashSale);
+    } catch (error) {
+      console.error("Flash sale creation error:", error);
+      res.status(400).json({ 
+        error: "Failed to create flash sale", 
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.put("/api/admin/flash-sales/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const flashSale = await storage.updateFlashSale(id, updates);
+      if (!flashSale) {
+        return res.status(404).json({ error: "Flash sale not found" });
+      }
+      res.json(flashSale);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update flash sale" });
+    }
+  });
+
+  app.delete("/api/admin/flash-sales/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteFlashSale(id);
+      if (!success) {
+        return res.status(404).json({ error: "Flash sale not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to delete flash sale" });
     }
   });
 

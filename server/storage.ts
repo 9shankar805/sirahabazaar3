@@ -3,7 +3,7 @@ import {
   admins, websiteVisits, notifications, orderTracking, returnPolicies, returns,
   promotions, advertisements, productReviews, settlements, storeAnalytics, inventoryLogs,
   paymentTransactions, coupons, banners, supportTickets, siteSettings, deliveryPartners, deliveries,
-  vendorVerifications, fraudAlerts, commissions, productAttributes, adminLogs, deliveryZones,
+  vendorVerifications, fraudAlerts, commissions, productAttributes, adminLogs, deliveryZones, flashSales,
   type User, type InsertUser, type AdminUser, type InsertAdminUser, type Store, type InsertStore, 
   type Category, type InsertCategory, type Product, type InsertProduct,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
@@ -16,13 +16,13 @@ import {
   type StoreAnalytics, type InsertStoreAnalytics, type InventoryLog, type InsertInventoryLog,
   type DeliveryPartner, type InsertDeliveryPartner, type Delivery, type InsertDelivery, type DeliveryZone, type InsertDeliveryZone,
   type PaymentTransaction, type Coupon, type InsertCoupon, type Banner, type InsertBanner,
-  type SupportTicket, type InsertSupportTicket, type SiteSetting,
+  type SupportTicket, type InsertSupportTicket, type SiteSetting, type FlashSale, type InsertFlashSale,
   type VendorVerification, type InsertVendorVerification, type FraudAlert, type InsertFraudAlert,
   type Commission, type InsertCommission, type ProductAttribute, type InsertProductAttribute,
   type AdminLog, type InsertAdminLog
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, ilike, or, desc, count, sql, gte, lt, inArray } from "drizzle-orm";
+import { eq, and, ilike, or, desc, count, sql, gte, gt, lt, lte, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -172,6 +172,15 @@ export interface IStorage {
   getInventoryLogs(storeId: number, productId?: number): Promise<InventoryLog[]>;
   createInventoryLog(log: InsertInventoryLog): Promise<InventoryLog>;
   updateProductStock(productId: number, quantity: number, type: string, reason?: string): Promise<boolean>;
+
+  // Flash Sales operations
+  getAllFlashSales(): Promise<FlashSale[]>;
+  getActiveFlashSales(): Promise<FlashSale[]>;
+  getFlashSale(id: number): Promise<FlashSale | undefined>;
+  createFlashSale(flashSale: InsertFlashSale): Promise<FlashSale>;
+  updateFlashSale(id: number, updates: Partial<InsertFlashSale>): Promise<FlashSale | undefined>;
+  deleteFlashSale(id: number): Promise<boolean>;
+  getFlashSaleProducts(flashSaleId: number): Promise<Product[]>;
 
   // Enhanced admin management methods
   getAllOrders(): Promise<Order[]>;
@@ -1237,6 +1246,93 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  // Flash Sales operations
+  async getAllFlashSales(): Promise<FlashSale[]> {
+    try {
+      return await db.select().from(flashSales).orderBy(desc(flashSales.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async getActiveFlashSales(): Promise<FlashSale[]> {
+    try {
+      const now = new Date();
+      return await db.select()
+        .from(flashSales)
+        .where(
+          and(
+            eq(flashSales.isActive, true),
+            lte(flashSales.startsAt, now),
+            gt(flashSales.endsAt, now)
+          )
+        )
+        .orderBy(desc(flashSales.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async getFlashSale(id: number): Promise<FlashSale | undefined> {
+    try {
+      const [flashSale] = await db.select().from(flashSales).where(eq(flashSales.id, id));
+      return flashSale;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async createFlashSale(flashSale: InsertFlashSale): Promise<FlashSale> {
+    const [newFlashSale] = await db.insert(flashSales).values(flashSale).returning();
+    return newFlashSale;
+  }
+
+  async updateFlashSale(id: number, updates: Partial<InsertFlashSale>): Promise<FlashSale | undefined> {
+    try {
+      const [updated] = await db.update(flashSales).set(updates).where(eq(flashSales.id, id)).returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async deleteFlashSale(id: number): Promise<boolean> {
+    try {
+      await db.delete(flashSales).where(eq(flashSales.id, id));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getFlashSaleProducts(flashSaleId: number): Promise<Product[]> {
+    try {
+      // Get current flash sale
+      const flashSale = await this.getFlashSale(flashSaleId);
+      if (!flashSale || !flashSale.isActive) {
+        return [];
+      }
+
+      const now = new Date();
+      if (flashSale.startsAt > now || flashSale.endsAt < now) {
+        return [];
+      }
+
+      // Return products marked as fast sell that could be part of flash sales
+      return await db.select()
+        .from(products)
+        .where(
+          and(
+            eq(products.isActive, true),
+            eq(products.isFastSell, true)
+          )
+        )
+        .orderBy(desc(products.createdAt));
+    } catch {
+      return [];
     }
   }
 

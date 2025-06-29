@@ -181,6 +181,12 @@ export default function Homepage() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  // Fetch active flash sales
+  const { data: activeFlashSales } = useQuery({
+    queryKey: ["/api/flash-sales/active"],
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
   // Slider data
   const slides = [
     {
@@ -589,26 +595,36 @@ export default function Homepage() {
       </section>
 
       {/* Flash Deals Banner */}
-      <section className="py-8 bg-accent">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="text-white">
-            <h2 className="text-2xl font-bold mb-2">
-              ⚡ Flash Deals - Up to 50% Off!
-            </h2>
-            <p className="text-lg mb-4">
-              Limited time offers on selected products
-            </p>
-            <Link href="/products">
-              <Button
-                variant="outline"
-                className="bg-white text-accent hover:bg-gray-100"
-              >
-                Shop Now
-              </Button>
-            </Link>
+      {activeFlashSales && activeFlashSales.length > 0 && (
+        <section className="py-8 bg-accent">
+          <div className="max-w-7xl mx-auto px-4 text-center">
+            <div className="text-white">
+              <h2 className="text-2xl font-bold mb-2">
+                ⚡ Flash Sale - {activeFlashSales[0].discountPercentage}% Off!
+              </h2>
+              <p className="text-lg mb-2">
+                {activeFlashSales[0].title}
+              </p>
+              {activeFlashSales[0].description && (
+                <p className="text-base mb-4 opacity-90">
+                  {activeFlashSales[0].description}
+                </p>
+              )}
+              <p className="text-sm mb-4 opacity-75">
+                Ends: {new Date(activeFlashSales[0].endsAt).toLocaleString()}
+              </p>
+              <Link href="/flash-sales">
+                <Button
+                  variant="outline"
+                  className="bg-white text-accent hover:bg-gray-100"
+                >
+                  View Flash Sales
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }
