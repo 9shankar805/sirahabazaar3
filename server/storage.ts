@@ -888,23 +888,41 @@ export class DatabaseStorage implements IStorage {
 
   async getStoresWithDistance(userLat: number, userLon: number, storeType?: string): Promise<(Store & { distance: number })[]> {
     try {
+      console.log(`[DEBUG] getStoresWithDistance called with userLat: ${userLat}, userLon: ${userLon}, storeType: ${storeType}`);
+      
       let allStores = await db.select().from(stores);
+      console.log(`[DEBUG] Found ${allStores.length} total stores`);
 
-      if (storeType) {
-        allStores = allStores.filter(store => store.type === storeType);
+      if (storeType && storeType !== 'all') {
+        allStores = allStores.filter(store => store.storeType === storeType);
+        console.log(`[DEBUG] After filtering by storeType '${storeType}': ${allStores.length} stores`);
       }
+
+      // Log store coordinates for debugging
+      allStores.forEach(store => {
+        console.log(`[DEBUG] Store ${store.name}: lat=${store.latitude}, lon=${store.longitude}, type=${store.storeType}`);
+      });
 
       const storesWithDistance = allStores.map((store) => {
         const storeLat = parseFloat(store.latitude || '0');
         const storeLon = parseFloat(store.longitude || '0');
+        
+        // Skip stores without coordinates
+        if (!store.latitude || !store.longitude || storeLat === 0 || storeLon === 0) {
+          console.log(`[DEBUG] Skipping store ${store.name} - missing coordinates`);
+          return null;
+        }
+        
         const distance = this.calculateDistance(userLat, userLon, storeLat, storeLon);
+        console.log(`[DEBUG] Store ${store.name} distance: ${distance} km`);
 
         return {
           ...store,
           distance: Math.round(distance * 100) / 100 // Round to 2 decimal places
         };
-      });
+      }).filter(store => store !== null) as (Store & { distance: number })[];
 
+      console.log(`[DEBUG] Returning ${storesWithDistance.length} stores with valid coordinates`);
       return storesWithDistance.sort((a, b) => a.distance - b.distance);
     } catch (error) {
       console.error('Error getting stores with distance:', error);

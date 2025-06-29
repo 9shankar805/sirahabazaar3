@@ -18,6 +18,7 @@ import {
   insertOrderTrackingSchema, insertReturnPolicySchema, insertReturnSchema, insertCategorySchema,
   insertPromotionSchema, insertAdvertisementSchema, insertProductReviewSchema, insertSettlementSchema,
   insertStoreAnalyticsSchema, insertInventoryLogSchema, insertCouponSchema, insertBannerSchema,
+  stores,
   insertSupportTicketSchema, insertSiteSettingSchema, insertFraudAlertSchema, insertCommissionSchema,
   insertProductAttributeSchema, insertVendorVerificationSchema, insertAdminLogSchema,
   insertDeliveryPartnerSchema, insertDeliverySchema,
@@ -3020,6 +3021,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(returnItem);
     } catch (error) {
       res.status(500).json({ error: "Failed to update return status" });
+    }
+  });
+
+  // Debug endpoint to check store data
+  app.get("/api/stores/debug", async (req, res) => {
+    try {
+      console.log("Debug endpoint called - trying to fetch stores");
+      const allStores = await db.select().from(stores);
+      console.log(`Found ${allStores.length} stores in database`);
+      
+      const storeData = allStores.map(store => ({
+        id: store.id,
+        name: store.name,
+        storeType: store.storeType,
+        latitude: store.latitude,
+        longitude: store.longitude,
+        hasCoordinates: !!(store.latitude && store.longitude)
+      }));
+      res.json({ total: allStores.length, stores: storeData });
+    } catch (error) {
+      console.error("Debug endpoint error:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch store debug data", 
+        details: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
     }
   });
 
