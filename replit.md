@@ -120,6 +120,16 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### June 29, 2025 - Delivery Partner Dashboard Alerts and Quick Actions Fixed
+- ✓ Fixed delivery partner dashboard alerts tab to properly display notifications
+- ✓ Added dedicated "Alerts" tab with delivery notification component integration
+- ✓ Enhanced notification filtering to show all unread delivery assignments
+- ✓ Fixed quick action buttons for accepting delivery orders
+- ✓ Added proper Bell icon with notification count badges on dashboard tabs
+- ✓ Verified notification system working: User ID 4 receiving notification #70 for Order #11
+- ✓ All delivery partner quick actions now functional including Accept Delivery button
+- → Delivery partners can now see and respond to delivery notifications immediately
+
 ### June 29, 2025 - Simplified First-Accept-First-Serve Delivery System
 - ✓ Removed seller ability to assign specific delivery partners as requested by user
 - ✓ Simplified delivery assignment to only use first-accept-first-serve system
