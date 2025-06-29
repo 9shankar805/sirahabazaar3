@@ -345,10 +345,7 @@ body::-webkit-scrollbar {
   }
 
   /* Additional mobile responsiveness fixes */
-  .grid-cols-2 {
-    grid-template-columns: 1fr !important;
-    gap: 0.5rem !important;
-  }
+  /* Removed grid-cols-2 override to allow 2 items per row on mobile */
 
   .flex-wrap {
     flex-wrap: wrap !important;
