@@ -378,15 +378,32 @@ export default function QuickBites() {
                   </Select>
                 </div>
 
-                {/* Location Status */}
-                {locationEnabled && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-green-500" />
-                    <span className="text-sm text-muted-foreground">
-                      Location enabled - showing distances to restaurants
-                    </span>
-                  </div>
-                )}
+                {/* Location Controls */}
+                <div className="flex items-center justify-between">
+                  {locationEnabled ? (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-green-500" />
+                      <span className="text-sm text-muted-foreground">
+                        Location enabled - showing distances to restaurants
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-muted-foreground">
+                        Enable location to see distances to restaurants
+                      </span>
+                      <Button
+                        onClick={handleGetLocation}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        <MapPin className="h-4 w-4" />
+                        Enable Location
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </CardContent>

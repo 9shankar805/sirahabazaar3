@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Star, ShoppingCart, Heart } from "lucide-react";
+import { Star, ShoppingCart, Heart, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -10,7 +10,11 @@ import { useToast } from "@/hooks/use-toast";
 import type { Product } from "@shared/schema";
 
 interface ProductCardProps {
-  product: Product;
+  product: Product & {
+    storeDistance?: number;
+    storeName?: string;
+    deliveryTime?: string;
+  };
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
@@ -77,7 +81,26 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.name}
           </h3>
           
+          {/* Restaurant name and distance info for food items */}
+          {product.storeName && (
+            <div className="text-[9px] text-muted-foreground mb-1 flex items-center justify-between">
+              <span className="truncate">{product.storeName}</span>
+              {product.storeDistance !== undefined && (
+                <div className="flex items-center gap-1 text-[8px] text-blue-600">
+                  <MapPin className="h-2 w-2" />
+                  <span>{product.storeDistance.toFixed(1)}km</span>
+                </div>
+              )}
+            </div>
+          )}
           
+          {/* Delivery time for food items */}
+          {product.deliveryTime && (
+            <div className="text-[8px] text-muted-foreground mb-1 flex items-center gap-1">
+              <Clock className="h-2 w-2" />
+              <span>{product.deliveryTime}</span>
+            </div>
+          )}
           
           <div className="flex items-center space-x-1 mb-2">
             <span className="text-xs font-bold text-foreground">
