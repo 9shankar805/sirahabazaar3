@@ -883,7 +883,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const itemsWithProducts = await Promise.all(
             items.map(async (item) => {
               const product = await storage.getProduct(item.productId);
-              return { ...item, product };
+              // Prefer images array over single imageUrl, and ensure we have a valid image
+              let finalImageUrl = product?.imageUrl || '';
+              
+              if (product?.images && product.images.length > 0) {
+                // Use the first image from the images array if available
+                finalImageUrl = product.images[0];
+              }
+              
+              // If still no image, use a default placeholder based on product type
+              if (!finalImageUrl || finalImageUrl.trim() === '') {
+                if (product?.productType === 'food') {
+                  finalImageUrl = '/assets/slide3.jpg'; // Food placeholder
+                } else {
+                  finalImageUrl = '/assets/icon1.png'; // General product placeholder
+                }
+              }
+              
+              return { 
+                ...item, 
+                product: product ? {
+                  ...product,
+                  imageUrl: finalImageUrl,
+                  displayImage: finalImageUrl // Additional field for display
+                } : null
+              };
             })
           );
           allOrders.push({ ...order, items: itemsWithProducts });
@@ -909,7 +933,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const itemsWithProducts = await Promise.all(
             items.map(async (item) => {
               const product = await storage.getProduct(item.productId);
-              return { ...item, product };
+              // Prefer images array over single imageUrl, and ensure we have a valid image
+              let finalImageUrl = product?.imageUrl || '';
+              
+              if (product?.images && product.images.length > 0) {
+                // Use the first image from the images array if available
+                finalImageUrl = product.images[0];
+              }
+              
+              // If still no image, use a default placeholder based on product type
+              if (!finalImageUrl || finalImageUrl.trim() === '') {
+                if (product?.productType === 'food') {
+                  finalImageUrl = '/assets/slide3.jpg'; // Food placeholder
+                } else {
+                  finalImageUrl = '/assets/icon1.png'; // General product placeholder
+                }
+              }
+              
+              return { 
+                ...item, 
+                product: product ? {
+                  ...product,
+                  imageUrl: finalImageUrl,
+                  displayImage: finalImageUrl // Additional field for display
+                } : null
+              };
             })
           );
           return { ...order, items: itemsWithProducts };
@@ -1160,7 +1208,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const itemsWithProducts = await Promise.all(
         items.map(async (item) => {
           const product = await storage.getProduct(item.productId);
-          return { ...item, product };
+          // Prefer images array over single imageUrl, and ensure we have a valid image
+          let finalImageUrl = product?.imageUrl || '';
+          
+          if (product?.images && product.images.length > 0) {
+            // Use the first image from the images array if available
+            finalImageUrl = product.images[0];
+          }
+          
+          // If still no image, use a default placeholder based on product type
+          if (!finalImageUrl || finalImageUrl.trim() === '') {
+            if (product?.productType === 'food') {
+              finalImageUrl = '/assets/slide3.jpg'; // Food placeholder
+            } else {
+              finalImageUrl = '/assets/icon1.png'; // General product placeholder
+            }
+          }
+          
+          return { 
+            ...item, 
+            product: product ? {
+              ...product,
+              imageUrl: finalImageUrl,
+              displayImage: finalImageUrl // Additional field for display
+            } : null
+          };
         })
       );
 
