@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Store, Facebook, Twitter, Instagram, Youtube, Mail, Phone } from "lucide-react";
+import { Store, Facebook, Twitter, Instagram, Youtube, Mail, Phone, Download, Smartphone } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -15,6 +15,21 @@ export default function Footer() {
             <p className="text-gray-300 text-sm mb-4">
               Your trusted local marketplace connecting you with the best vendors in Siraha.
             </p>
+            
+            {/* Download App Section */}
+            <div className="mb-6">
+              <a 
+                href="/SirahaBazaar.apk" 
+                download="SirahaBazaar.apk"
+                className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+              >
+                <Smartphone className="h-4 w-4" />
+                <Download className="h-4 w-4" />
+                <span>Download App</span>
+              </a>
+              <p className="text-gray-400 text-xs mt-2">Get our mobile app for faster shopping</p>
+            </div>
+            
             <div className="flex space-x-4">
               <a href="#" className="text-gray-300 hover:text-white transition-colors">
                 <Facebook className="h-5 w-5" />
