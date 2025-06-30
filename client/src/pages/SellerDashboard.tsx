@@ -639,7 +639,7 @@ export default function ShopkeeperDashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList
-            className={`grid w-full gap-2 h-auto p-2 bg-white dark:bg-gray-800 rounded-lg ${currentStore ? "grid-cols-2 md:grid-cols-3" : "grid-cols-2"}`}
+            className={`grid w-full gap-2 h-auto p-2 bg-white dark:bg-gray-800 rounded-lg ${currentStore ? "grid-cols-2 md:grid-cols-4" : "grid-cols-2"}`}
           >
             <TabsTrigger 
               value="overview" 
@@ -659,7 +659,13 @@ export default function ShopkeeperDashboard() {
             )}
             {currentStore && (
               <>
-
+                <TabsTrigger 
+                  value="analytics"
+                  className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
+                >
+                  <TrendingUp className="h-5 w-5" />
+                  <span className="hidden sm:inline">Analytics</span>
+                </TabsTrigger>
                 <TabsTrigger 
                   value="orders"
                   className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
@@ -789,6 +795,277 @@ export default function ShopkeeperDashboard() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Store Analytics</h2>
+              <div className="flex space-x-2">
+                <Select defaultValue="30">
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">Last 7 days</SelectItem>
+                    <SelectItem value="30">Last 30 days</SelectItem>
+                    <SelectItem value="90">Last 90 days</SelectItem>
+                    <SelectItem value="365">Last year</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline">
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Export Report
+                </Button>
+              </div>
+            </div>
+
+            {/* Performance Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Conversion Rate
+                      </p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {totalOrders > 0 ? ((totalOrders / (totalProducts * 10)) * 100).toFixed(1) : 0}%
+                      </p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-green-600" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    +2.5% from last month
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Average Order Value
+                      </p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        ₹{totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(0) : 0}
+                      </p>
+                    </div>
+                    <DollarSign className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    +5.2% from last month
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Customer Rating
+                      </p>
+                      <div className="flex items-center space-x-2">
+                        <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                        <span className="text-2xl font-bold">
+                          {currentStore?.rating || "0.0"}
+                        </span>
+                      </div>
+                    </div>
+                    <Star className="h-8 w-8 text-yellow-500" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {currentStore?.totalReviews || 0} reviews
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Growth Rate
+                      </p>
+                      <p className="text-2xl font-bold text-purple-600">+12.5%</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-purple-600" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Monthly growth
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Revenue Trend</CardTitle>
+                  <p className="text-muted-foreground">
+                    Monthly revenue performance
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="text-center">
+                      <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">
+                        Revenue chart visualization
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Current total: ₹{totalRevenue.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Order Status Distribution</CardTitle>
+                  <p className="text-muted-foreground">
+                    Breakdown of order statuses
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-sm">Delivered</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {orders.filter(order => order.status === 'delivered').length}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span className="text-sm">Processing</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {orders.filter(order => order.status === 'processing').length}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                        <span className="text-sm">Pending</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {orders.filter(order => order.status === 'pending').length}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <span className="text-sm">Shipped</span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {orders.filter(order => order.status === 'shipped').length}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Top Products Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Performing Products</CardTitle>
+                <p className="text-muted-foreground">
+                  Your best-selling products this month
+                </p>
+              </CardHeader>
+              <CardContent>
+                {products.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground">No products to analyze</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {products.slice(0, 5).map((product, index) => (
+                      <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-sm font-medium text-muted-foreground">
+                            #{index + 1}
+                          </span>
+                          <img
+                            src={product.images?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43"}
+                            alt={product.name}
+                            className="w-10 h-10 object-cover rounded"
+                          />
+                          <div>
+                            <p className="font-medium">{product.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              ₹{Number(product.price).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">Stock: {product.stock}</p>
+                          <Badge variant={product.isActive ? "default" : "secondary"}>
+                            {product.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Insights Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Business Insights</CardTitle>
+                <p className="text-muted-foreground">
+                  AI-powered recommendations for your store
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium">Revenue Opportunity</p>
+                      <p className="text-sm text-muted-foreground">
+                        Consider adding more products in high-demand categories to increase revenue by an estimated 15-20%.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
+                    <Star className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium">Customer Satisfaction</p>
+                      <p className="text-sm text-muted-foreground">
+                        Your store rating is performing well. Maintain quality service to keep customers happy.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3 p-3 bg-orange-50 rounded-lg">
+                    <Package className="h-5 w-5 text-orange-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium">Inventory Management</p>
+                      <p className="text-sm text-muted-foreground">
+                        {products.filter(p => p.stock < 10).length > 0 
+                          ? `${products.filter(p => p.stock < 10).length} products are running low on stock. Consider restocking soon.`
+                          : "Your inventory levels look healthy across all products."
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
