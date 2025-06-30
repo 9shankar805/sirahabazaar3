@@ -18,6 +18,7 @@ import { useEffect } from "react";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Homepage from "@/pages/Homepage";
+import SmartHomepage from "@/pages/SmartHomepage";
 import FoodHomepage from "@/pages/FoodHomepage";
 import Products from "@/pages/Products";
 import ProductDetail from "./pages/ProductDetail";
@@ -71,7 +72,7 @@ function AppRouter() {
   return (
     <div className="relative">
       <Switch>
-        <Route path="/" component={mode === 'shopping' ? Homepage : FoodHomepage} />
+        <Route path="/" component={mode === 'shopping' ? SmartHomepage : FoodHomepage} />
         <Route path="/categories" component={Categories} />
         <Route path="/food-categories" component={Categories} />
         <Route path="/products" component={Products} />

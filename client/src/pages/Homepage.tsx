@@ -7,10 +7,13 @@ import {
   RefreshCw,
   AlertCircle,
   Loader2,
+  Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import ProductCard from "@/components/ProductCard";
 import StoreCard from "@/components/StoreCard";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +22,7 @@ import type { Product, Store } from "@shared/schema";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import { useEffect, useRef, useState } from "react";
+import { apiRequest } from "@/lib/queryClient";
 
 // Countdown Timer Component
 const CountdownTimer = () => {

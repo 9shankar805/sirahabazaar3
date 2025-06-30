@@ -5348,6 +5348,201 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Smart Recommendations API - Track user behavior and get personalized recommendations
+  app.post("/api/recommendations/track", async (req, res) => {
+    try {
+      const { userId, page, action, productId, storeId } = req.body;
+      const ipAddress = req.ip || req.connection.remoteAddress || null;
+      const userAgent = req.get('User-Agent') || null;
+      
+      // Track website visit for analytics
+      await db.insert(websiteVisits).values({
+        userId: userId || null,
+        page,
+        ipAddress,
+        userAgent,
+        sessionId: req.session?.id || null,
+        referrer: req.get('Referer') || null
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking user behavior:", error);
+      res.status(500).json({ error: "Failed to track behavior" });
+    }
+  });
+
+  // Get smart recommendations for homepage
+  app.get("/api/recommendations/homepage", async (req, res) => {
+    try {
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : null;
+      const mode = req.query.mode as string || 'shopping';
+      
+      // Get user's recent visits for personalization
+      let userVisits: any[] = [];
+      if (userId) {
+        try {
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - 30);
+          
+          userVisits = await db.select()
+            .from(websiteVisits)
+            .where(and(
+              eq(websiteVisits.userId, userId),
+              gte(websiteVisits.visitedAt, cutoffDate)
+            ))
+            .orderBy(desc(websiteVisits.visitedAt))
+            .limit(100);
+        } catch (err) {
+          console.log('Could not fetch user visits:', err);
+        }
+      }
+      
+      // Get all products and stores
+      const allProducts = await storage.getAllProducts();
+      const allStores = await storage.getAllStores();
+      
+      // Filter by mode (shopping vs food)
+      const filteredProducts = allProducts.filter(product => {
+        if (mode === 'food') {
+          return product.productType === 'food';
+        } else {
+          return product.productType !== 'food';
+        }
+      });
+      
+      const filteredStores = allStores.filter(store => {
+        if (mode === 'food') {
+          return store.storeType === 'restaurant';
+        } else {
+          return store.storeType !== 'restaurant';
+        }
+      });
+
+      // Calculate recommendation scores
+      const productScores = new Map();
+      const storeScores = new Map();
+      
+      // Base scoring for all products and stores
+      filteredProducts.forEach(product => {
+        let score = 0;
+        
+        // Featured/promoted products get higher score
+        if (product.featured) score += 50;
+        if (product.isOnOffer) score += 30;
+        if (product.isFastSell) score += 25;
+        
+        // Popular products (high rating, many orders)
+        const rating = parseFloat(product.rating || '0');
+        score += rating * 10;
+        
+        // Recent products get slight boost
+        const daysSinceCreated = (new Date().getTime() - new Date(product.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSinceCreated < 7) score += 15;
+        
+        // Stock availability
+        if (product.stock && product.stock > 0) score += 10;
+        
+        // Random factor for variety
+        score += Math.random() * 10;
+        
+        productScores.set(product.id, { product, score });
+      });
+      
+      filteredStores.forEach(store => {
+        let score = 0;
+        
+        // Featured/active stores get higher score
+        if (store.featured) score += 50;
+        if (store.isActive) score += 20;
+        
+        // Store rating
+        const rating = parseFloat(store.rating || '0');
+        score += rating * 10;
+        
+        // Recent stores get slight boost
+        const daysSinceCreated = (new Date().getTime() - new Date(store.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSinceCreated < 30) score += 10;
+        
+        // Random factor for variety
+        score += Math.random() * 10;
+        
+        storeScores.set(store.id, { store, score });
+      });
+      
+      // Apply user behavior-based scoring if we have visit data
+      if (userId && userVisits.length > 0) {
+        const visitedPages = userVisits.map(v => v.page);
+        const visitedProducts = new Set<number>();
+        const visitedStores = new Set<number>();
+        
+        // Extract product and store IDs from visited pages
+        visitedPages.forEach(page => {
+          const productMatch = page.match(/\/products\/(\d+)/);
+          const storeMatch = page.match(/\/stores\/(\d+)/);
+          
+          if (productMatch) visitedProducts.add(parseInt(productMatch[1]));
+          if (storeMatch) visitedStores.add(parseInt(storeMatch[1]));
+        });
+        
+        // Boost scores for related items
+        [...visitedProducts].forEach(productId => {
+          const productData = productScores.get(productId);
+          if (productData) {
+            // Boost the visited product
+            productData.score += 100;
+            
+            // Boost products from same store
+            filteredProducts.forEach(p => {
+              if (p.id !== productId && p.storeId === productData.product.storeId) {
+                const relatedData = productScores.get(p.id);
+                if (relatedData) relatedData.score += 30;
+              }
+            });
+          }
+        });
+        
+        [...visitedStores].forEach(storeId => {
+          const storeData = storeScores.get(storeId);
+          if (storeData) {
+            // Boost the visited store
+            storeData.score += 100;
+            
+            // Boost stores in same category
+            filteredStores.forEach(s => {
+              if (s.id !== storeId && s.storeType === storeData.store.storeType) {
+                const relatedData = storeScores.get(s.id);
+                if (relatedData) relatedData.score += 15;
+              }
+            });
+          }
+        });
+      }
+      
+      // Sort by score and limit results
+      const recommendedProducts = Array.from(productScores.values())
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 20)
+        .map(item => item.product);
+        
+      const recommendedStores = Array.from(storeScores.values())
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+        .map(item => item.store);
+
+      res.json({
+        products: recommendedProducts,
+        stores: recommendedStores,
+        totalProducts: filteredProducts.length,
+        totalStores: filteredStores.length,
+        isPersonalized: userId && userVisits.length > 0
+      });
+    } catch (error) {
+      console.error("Error getting homepage recommendations:", error);
+      res.status(500).json({ error: "Failed to get recommendations" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Initialize WebSocket service for real-time tracking

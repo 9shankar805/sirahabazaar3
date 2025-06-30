@@ -4,6 +4,7 @@ import {
   promotions, advertisements, productReviews, settlements, storeAnalytics, inventoryLogs,
   paymentTransactions, coupons, banners, supportTickets, siteSettings, deliveryPartners, deliveries,
   vendorVerifications, fraudAlerts, commissions, productAttributes, adminLogs, deliveryZones, flashSales,
+  pushNotificationTokens,
   type User, type InsertUser, type AdminUser, type InsertAdminUser, type Store, type InsertStore, 
   type Category, type InsertCategory, type Product, type InsertProduct,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
@@ -2238,6 +2239,50 @@ export class DatabaseStorage implements IStorage {
       return tokens.map(t => t.token);
     } catch (error) {
       console.error('Error getting device tokens by role:', error);
+      return [];
+    }
+  }
+
+  // Website Visit Tracking for Smart Recommendations
+  async trackWebsiteVisit(visitData: {
+    userId: number | null;
+    page: string;
+    ipAddress: string | null;
+    userAgent: string | null;
+    sessionId: string | null;
+    referrer: string | null;
+  }): Promise<void> {
+    try {
+      await db.insert(websiteVisits).values({
+        userId: visitData.userId,
+        page: visitData.page,
+        ipAddress: visitData.ipAddress,
+        userAgent: visitData.userAgent,
+        sessionId: visitData.sessionId,
+        referrer: visitData.referrer
+      });
+    } catch (error) {
+      console.error('Error tracking website visit:', error);
+    }
+  }
+
+  async getUserVisitHistory(userId: number, days: number = 30): Promise<any[]> {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      const visits = await db.select()
+        .from(websiteVisits)
+        .where(and(
+          eq(websiteVisits.userId, userId),
+          gte(websiteVisits.visitedAt, cutoffDate)
+        ))
+        .orderBy(desc(websiteVisits.visitedAt))
+        .limit(100);
+      
+      return visits;
+    } catch (error) {
+      console.error('Error getting user visit history:', error);
       return [];
     }
   }
