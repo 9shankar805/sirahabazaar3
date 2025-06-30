@@ -29,6 +29,8 @@ import {
   Home,
   Archive,
   X,
+  Upload,
+  Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -2534,31 +2536,102 @@ export default function ShopkeeperDashboard() {
                     <div>
                       <FormLabel className="text-base font-medium">Product Images</FormLabel>
                       <div className="mt-2 space-y-4">
-                        {/* Image URL Input */}
-                        <div className="flex gap-2">
-                          <FormField
-                            control={form.control}
-                            name="imageUrl"
-                            render={({ field }) => (
-                              <FormItem className="flex-1">
-                                <FormControl>
-                                  <Input 
-                                    placeholder="Enter image URL" 
-                                    className="h-11"
-                                    {...field} 
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <Button 
-                            type="button" 
-                            onClick={handleAddImage}
-                            className="h-11"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
+                        {/* File Upload and Camera Options */}
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* File Upload */}
+                            <div className="flex items-center justify-center w-full">
+                              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                  <Plus className="w-6 h-6 mb-2 text-gray-500" />
+                                  <p className="text-sm text-gray-500 font-semibold">Upload Photos</p>
+                                  <p className="text-xs text-gray-500">PNG, JPG, GIF</p>
+                                </div>
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  multiple
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    const files = Array.from(e.target.files || []);
+                                    files.forEach(file => {
+                                      const reader = new FileReader();
+                                      reader.onload = (event) => {
+                                        const imageUrl = event.target?.result as string;
+                                        if (imageUrl) {
+                                          const currentImages = form.getValues("images");
+                                          if (currentImages.length < 6) {
+                                            form.setValue("images", [...currentImages, imageUrl]);
+                                          }
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    });
+                                  }}
+                                />
+                              </label>
+                            </div>
+
+                            {/* Camera Capture */}
+                            <div className="flex items-center justify-center w-full">
+                              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-orange-300 border-dashed rounded-lg cursor-pointer bg-orange-50 hover:bg-orange-100">
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                  <Camera className="w-6 h-6 mb-2 text-orange-500" />
+                                  <p className="text-sm text-orange-600 font-semibold">Take Photo</p>
+                                  <p className="text-xs text-orange-500">Camera capture</p>
+                                </div>
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  capture="environment"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onload = (event) => {
+                                        const imageUrl = event.target?.result as string;
+                                        if (imageUrl) {
+                                          const currentImages = form.getValues("images");
+                                          if (currentImages.length < 6) {
+                                            form.setValue("images", [...currentImages, imageUrl]);
+                                          }
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
+                          </div>
+                          
+                          {/* URL Input as Alternative */}
+                          <div className="flex gap-2">
+                            <FormField
+                              control={form.control}
+                              name="imageUrl"
+                              render={({ field }) => (
+                                <FormItem className="flex-1">
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="Or enter image URL" 
+                                      className="h-11"
+                                      {...field} 
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <Button 
+                              type="button" 
+                              onClick={handleAddImage}
+                              className="h-11"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
 
                         {/* Display Added Images */}
