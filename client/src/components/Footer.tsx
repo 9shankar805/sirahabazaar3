@@ -16,7 +16,7 @@ export default function Footer() {
             <img 
               src="/assets/icon2.png" 
               alt="Siraha Bazaar" 
-              className="h-6 w-6 object-contain"
+              className="h-6 w-6 object-contain rounded-lg"
             />
           </div>
 
