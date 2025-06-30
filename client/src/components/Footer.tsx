@@ -6,7 +6,7 @@ export default function Footer() {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <footer className="bg-gray-800 text-white mt-8">
+    <footer className="bg-gray-800 text-white mt-8 mb-20">
       {/* Mobile-First Compact Footer */}
       <div className="max-w-7xl mx-auto px-3 py-3">
         {/* Main Mobile Row */}
