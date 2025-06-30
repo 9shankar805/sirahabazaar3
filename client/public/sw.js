@@ -30,25 +30,70 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Push event
+// Professional push notification handling
 self.addEventListener('push', (event) => {
   if (!event.data) {
     return;
   }
 
   const data = event.data.json();
-  const { title, body, icon, badge, actions, requireInteraction, data: notificationData } = data;
+  const { title, body, icon, badge, actions, requireInteraction, data: notificationData, type } = data;
 
-  const options = {
-    body,
-    icon: icon || '/icons/notification-icon.png',
-    badge: badge || '/icons/badge-icon.png',
-    data: notificationData,
-    requireInteraction: requireInteraction || false,
-    actions: actions || [],
-    vibrate: [100, 50, 100],
-    sound: '/sounds/notification.mp3'
+  // Professional notification options based on type
+  const getNotificationOptions = (type) => {
+    const baseOptions = {
+      body,
+      icon: icon || '/favicon.ico',
+      badge: badge || '/favicon.ico',
+      data: notificationData,
+      tag: `siraha-${type || 'general'}-${Date.now()}`,
+      timestamp: Date.now(),
+      silent: false
+    };
+
+    switch (type) {
+      case 'delivery_assignment':
+        return {
+          ...baseOptions,
+          requireInteraction: true,
+          vibrate: [300, 200, 300, 200, 300],
+          actions: [
+            { action: 'accept', title: '✅ Accept', icon: '/favicon.ico' },
+            { action: 'view', title: '👁️ View Details', icon: '/favicon.ico' }
+          ]
+        };
+      
+      case 'order_update':
+        return {
+          ...baseOptions,
+          requireInteraction: false,
+          vibrate: [200, 100, 200],
+          actions: [
+            { action: 'track', title: '📍 Track Order', icon: '/favicon.ico' }
+          ]
+        };
+      
+      case 'approval':
+        return {
+          ...baseOptions,
+          requireInteraction: true,
+          vibrate: [500, 200, 500],
+          actions: [
+            { action: 'view', title: '🎉 View Dashboard', icon: '/favicon.ico' }
+          ]
+        };
+      
+      default:
+        return {
+          ...baseOptions,
+          requireInteraction: false,
+          vibrate: [200, 100, 200],
+          actions: actions || []
+        };
+    }
   };
+
+  const options = getNotificationOptions(notificationData?.type);
 
   event.waitUntil(
     self.registration.showNotification(title, options)
