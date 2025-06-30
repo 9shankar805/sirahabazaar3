@@ -120,6 +120,16 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### June 30, 2025 - Enhanced Order Management with Product Images from Inventory
+- ✓ Fixed order items API to fetch actual product images from inventory database
+- ✓ Enhanced image fetching logic to prefer images array over single imageUrl field
+- ✓ Added smart fallback images based on product type (food vs retail items)
+- ✓ Updated seller orders page to display real product images with names and quantities
+- ✓ Added order items display to seller dashboard orders tab with product thumbnails
+- ✓ Applied consistent image handling across all order management interfaces
+- ✓ Fixed TypeScript errors and improved error handling for broken images
+- → Sellers can now see actual product images from their inventory in all order views
+
 ### June 30, 2025 - Firebase Notification System for Android App Integration
 - ✓ Created complete Android Studio integration setup with Firebase Cloud Messaging
 - ✓ Added MainActivity.java with WebView wrapper and notification permissions

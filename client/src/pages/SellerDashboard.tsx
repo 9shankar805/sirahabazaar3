@@ -70,10 +70,22 @@ import { LocationPicker } from "@/components/LocationPicker";
 import type {
   Product,
   Order,
-  OrderItem,
+  OrderItem as BaseOrderItem,
   Store as StoreType,
   Category,
 } from "@shared/schema";
+
+// Extended OrderItem interface to include product details from API
+interface OrderItem extends BaseOrderItem {
+  product?: {
+    id: number;
+    name: string;
+    imageUrl?: string;
+    images?: string[];
+    description?: string;
+    category?: string;
+  };
+}
 import { LeafletDeliveryMap } from "@/components/tracking/LeafletDeliveryMap";
 import { LocationTracker } from "@/components/LocationTracker";
 import { DeliveryTrackingMap } from "@/components/tracking/DeliveryTrackingMap";
@@ -2279,6 +2291,55 @@ export default function ShopkeeperDashboard() {
                         </div>
 
                         <Separator className="my-3" />
+
+                        {/* Order Items Section with Product Images */}
+                        {order.items && order.items.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-sm font-medium mb-2">Order Items:</p>
+                            <div className="space-y-2">
+                              {order.items.map((item) => {
+                                // Enhanced image handling - prefer images array over single imageUrl
+                                const getProductImage = () => {
+                                  if (item.product?.images && item.product.images.length > 0) {
+                                    return item.product.images[0];
+                                  }
+                                  if (item.product?.imageUrl) {
+                                    return item.product.imageUrl;
+                                  }
+                                  return null;
+                                };
+                                
+                                const productImage = getProductImage();
+                                
+                                return (
+                                  <div key={item.id} className="flex items-center space-x-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                    <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0 relative">
+                                      {productImage ? (
+                                        <img 
+                                          src={productImage} 
+                                          alt={item.product?.name || 'Product'}
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            e.currentTarget.classList.add('hidden');
+                                            const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon') as HTMLElement;
+                                            if (fallback) fallback.classList.remove('hidden');
+                                          }}
+                                        />
+                                      ) : null}
+                                      <Package className={`fallback-icon w-6 h-6 text-gray-400 absolute inset-0 m-auto ${productImage ? 'hidden' : 'flex'}`} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">{item.product?.name || `Product #${item.productId}`}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        Qty: {item.quantity} × ₹{Number(item.price).toLocaleString()} = ₹{(item.quantity * Number(item.price)).toLocaleString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
 
                         <div>
                           <p className="text-sm font-medium mb-2">
