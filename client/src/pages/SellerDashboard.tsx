@@ -25,6 +25,9 @@ import {
   Timer,
   Truck,
   Phone,
+  Store,
+  Home,
+  Archive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,7 +61,7 @@ import type {
   Product,
   Order,
   OrderItem,
-  Store,
+  Store as StoreType,
   Category,
 } from "@shared/schema";
 import { LeafletDeliveryMap } from "@/components/tracking/LeafletDeliveryMap";
@@ -127,7 +130,7 @@ export default function ShopkeeperDashboard() {
   const { toast } = useToast();
 
   // Queries
-  const { data: stores = [] } = useQuery<Store[]>({
+  const { data: stores = [] } = useQuery<StoreType[]>({
     queryKey: [`/api/stores/owner`, user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -576,21 +579,68 @@ export default function ShopkeeperDashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList
-            className={`grid w-full ${currentStore ? "grid-cols-6" : "grid-cols-2"}`}
+            className={`grid w-full gap-2 h-auto p-2 bg-white dark:bg-gray-800 rounded-lg ${currentStore ? "grid-cols-3 md:grid-cols-6" : "grid-cols-2"}`}
           >
-            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger 
+              value="overview" 
+              className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
+            >
+              <Home className="h-5 w-5" />
+              <span className="hidden sm:inline">Overview</span>
+            </TabsTrigger>
             {!currentStore && (
-              <TabsTrigger value="create-store">Create Store</TabsTrigger>
+              <TabsTrigger 
+                value="create-store"
+                className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
+              >
+                <Store className="h-5 w-5" />
+                <span className="hidden sm:inline">Create Store</span>
+              </TabsTrigger>
             )}
             {currentStore && (
               <>
-                <TabsTrigger value="inventory">Inventory</TabsTrigger>
-                <TabsTrigger value="products">Products</TabsTrigger>
-                <TabsTrigger value="add-product">
-                  {editingProduct ? "Edit Product" : "Add Product"}
+                <TabsTrigger 
+                  value="add-product"
+                  className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span className="hidden sm:inline">{editingProduct ? "Edit" : "Add Product"}</span>
                 </TabsTrigger>
-                <TabsTrigger value="orders">Orders</TabsTrigger>
-                <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                <TabsTrigger 
+                  value="inventory"
+                  className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
+                >
+                  <Package className="h-5 w-5" />
+                  <span className="hidden sm:inline">Inventory</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="products"
+                  className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
+                >
+                  <Archive className="h-5 w-5" />
+                  <span className="hidden sm:inline">Products</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="store"
+                  className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
+                >
+                  <Store className="h-5 w-5" />
+                  <span className="hidden sm:inline">Store</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="orders"
+                  className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  <span className="hidden sm:inline">Orders</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="notifications"
+                  className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
+                >
+                  <Bell className="h-5 w-5" />
+                  <span className="hidden sm:inline">Notifications</span>
+                </TabsTrigger>
               </>
             )}
           </TabsList>
@@ -1714,6 +1764,102 @@ export default function ShopkeeperDashboard() {
                 </Form>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Store Tab */}
+          <TabsContent value="store" className="space-y-6">
+            {currentStore ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Store className="h-5 w-5" />
+                    Store Information
+                  </CardTitle>
+                  <p className="text-muted-foreground">
+                    Manage your store details and settings
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Store Name</label>
+                      <p className="text-sm text-muted-foreground">{currentStore.name}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Store Type</label>
+                      <p className="text-sm text-muted-foreground capitalize">{currentStore.storeType}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Address</label>
+                      <p className="text-sm text-muted-foreground">{currentStore.address}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Phone</label>
+                      <p className="text-sm text-muted-foreground">{currentStore.phone || "Not set"}</p>
+                    </div>
+                    {currentStore.storeType === "restaurant" && (
+                      <>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Cuisine Type</label>
+                          <p className="text-sm text-muted-foreground capitalize">{currentStore.cuisineType || "Not set"}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Delivery Time</label>
+                          <p className="text-sm text-muted-foreground">{currentStore.deliveryTime || "Not set"}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Minimum Order</label>
+                          <p className="text-sm text-muted-foreground">₹{currentStore.minimumOrder || "Not set"}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Delivery Fee</label>
+                          <p className="text-sm text-muted-foreground">₹{currentStore.deliveryFee || "Not set"}</p>
+                        </div>
+                      </>
+                    )}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Rating</label>
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm text-muted-foreground">{currentStore.rating || "0.0"} ({currentStore.totalReviews || 0} reviews)</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Status</label>
+                      <Badge variant={currentStore.isApproved ? "default" : "secondary"}>
+                        {currentStore.isApproved ? "Approved" : "Pending Approval"}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="flex gap-4">
+                    <Button variant="outline" className="flex-1">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Store Details
+                    </Button>
+                    <Button variant="outline" className="flex-1">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Update Location
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <Store className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Please create a store first</p>
+                  <Button 
+                    className="mt-4" 
+                    onClick={() => setActiveTab("create-store")}
+                  >
+                    Create Store
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Orders Tab */}
