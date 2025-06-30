@@ -1,128 +1,127 @@
 import { Link } from "wouter";
-import { Store, Facebook, Twitter, Instagram, Youtube, Mail, Phone, Download, Smartphone } from "lucide-react";
+import { Store, Facebook, Twitter, Instagram, Youtube, Mail, Phone, Download, Smartphone, ChevronUp, ChevronDown } from "lucide-react";
+import { useState } from "react";
 
 export default function Footer() {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
-    <footer className="bg-gray-800 text-white py-12 mt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <Store className="h-6 w-6" />
-              <span className="text-xl font-bold">Siraha Bazaar</span>
+    <footer className="bg-gray-800 text-white mt-8">
+      {/* Mobile-First Compact Footer */}
+      <div className="max-w-7xl mx-auto px-3 py-3">
+        {/* Main Mobile Row */}
+        <div className="flex items-center justify-between">
+          {/* Left: Brand */}
+          <div className="flex items-center space-x-2">
+            <Store className="h-4 w-4" />
+            <span className="font-bold text-sm">Siraha Bazaar</span>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center space-x-3">
+            {/* Download Button - Mobile Optimized */}
+            <a 
+              href="/SirahaBazaar.apk" 
+              download="SirahaBazaar.apk"
+              className="inline-flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
+            >
+              <Download className="h-3 w-3" />
+              <span className="hidden xs:inline">App</span>
+            </a>
+
+            {/* Social Icons - Minimal */}
+            <div className="flex space-x-2">
+              <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <Facebook className="h-3.5 w-3.5" />
+              </a>
+              <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <Instagram className="h-3.5 w-3.5" />
+              </a>
             </div>
-            <p className="text-gray-300 text-sm mb-4">
-              Your trusted local marketplace connecting you with the best vendors in Siraha.
-            </p>
             
-            {/* Download App Section */}
-            <div className="mb-6">
-              <a 
-                href="/SirahaBazaar.apk" 
-                download="SirahaBazaar.apk"
-                className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
-              >
-                <Smartphone className="h-4 w-4" />
-                <Download className="h-4 w-4" />
-                <span>Download App</span>
-              </a>
-              <p className="text-gray-400 text-xs mt-2">Get our mobile app for faster shopping</p>
-            </div>
-            
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                <Youtube className="h-5 w-5" />
-              </a>
-            </div>
-          </div>
-
-          {/* Quick Links */}
-          <div>
-            <h4 className="font-semibold mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-gray-300 text-sm">
-              <li>
-                <Link href="/" className="hover:text-white transition-colors">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="/products" className="hover:text-white transition-colors">
-                  Products
-                </Link>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Contact
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Categories */}
-          <div>
-            <h4 className="font-semibold mb-4">Categories</h4>
-            <ul className="space-y-2 text-gray-300 text-sm">
-              <li>
-                <Link href="/products?category=1" className="hover:text-white transition-colors">
-                  Groceries
-                </Link>
-              </li>
-              <li>
-                <Link href="/products?category=2" className="hover:text-white transition-colors">
-                  Clothing
-                </Link>
-              </li>
-              <li>
-                <Link href="/products?category=3" className="hover:text-white transition-colors">
-                  Electronics
-                </Link>
-              </li>
-              <li>
-                <Link href="/products?category=4" className="hover:text-white transition-colors">
-                  Home & Kitchen
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Contact Info */}
-          <div>
-            <h4 className="font-semibold mb-4">Contact Info</h4>
-            <div className="space-y-3 text-gray-300 text-sm">
-              <div className="flex items-center space-x-2">
-                <Mail className="h-4 w-4" />
-                <span>sirahabazzar@gmail.com</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Phone className="h-4 w-4" />
-                <span>+9779805916598</span>
-              </div>
-              <div>
-                <p>Siraha, Nepal</p>
-              </div>
-            </div>
+            {/* Expand Button */}
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="flex items-center text-gray-300 hover:text-white transition-colors"
+            >
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
           </div>
         </div>
 
-        <div className="border-t border-gray-700 mt-8 pt-8 text-center">
-          <p className="text-gray-300">&copy; 2024 Siraha Bazaar. All rights reserved.</p>
+        {/* Mobile Copyright */}
+        <div className="mt-2 pt-2 border-t border-gray-700">
+          <div className="flex flex-col xs:flex-row items-center justify-between space-y-1 xs:space-y-0 text-xs text-gray-400">
+            <span>&copy; 2024 Siraha Bazaar</span>
+            <div className="flex items-center space-x-1">
+              <Mail className="h-3 w-3" />
+              <span className="truncate">sirahabazzar@gmail.com</span>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Mobile Expanded Section */}
+      {isExpanded && (
+        <div className="border-t border-gray-700 bg-gray-900">
+          <div className="max-w-7xl mx-auto px-3 py-4">
+            {/* Mobile Grid - 2 columns max */}
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              {/* Quick Links */}
+              <div>
+                <h4 className="font-semibold mb-2 text-white text-sm">Links</h4>
+                <ul className="space-y-1 text-gray-300">
+                  <li><Link href="/" className="hover:text-white transition-colors">Home</Link></li>
+                  <li><Link href="/products" className="hover:text-white transition-colors">Products</Link></li>
+                  <li><a href="#" className="hover:text-white transition-colors">About</a></li>
+                  <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+                </ul>
+              </div>
+
+              {/* Categories */}
+              <div>
+                <h4 className="font-semibold mb-2 text-white text-sm">Shop</h4>
+                <ul className="space-y-1 text-gray-300">
+                  <li><Link href="/products?category=1" className="hover:text-white transition-colors">Groceries</Link></li>
+                  <li><Link href="/products?category=2" className="hover:text-white transition-colors">Clothing</Link></li>
+                  <li><Link href="/products?category=3" className="hover:text-white transition-colors">Electronics</Link></li>
+                  <li><Link href="/products?category=4" className="hover:text-white transition-colors">Kitchen</Link></li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Contact & Social Row */}
+            <div className="mt-4 pt-3 border-t border-gray-700">
+              <div className="flex flex-col space-y-2">
+                {/* Contact */}
+                <div className="flex items-center justify-between text-xs text-gray-300">
+                  <div className="flex items-center space-x-2">
+                    <Phone className="h-3 w-3" />
+                    <span>+9779805916598</span>
+                  </div>
+                  <span>Siraha, Nepal</span>
+                </div>
+                
+                {/* Social Links */}
+                <div className="flex items-center justify-center space-x-4">
+                  <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                    <Facebook className="h-4 w-4" />
+                  </a>
+                  <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                    <Twitter className="h-4 w-4" />
+                  </a>
+                  <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                    <Instagram className="h-4 w-4" />
+                  </a>
+                  <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                    <Youtube className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </footer>
   );
 }
