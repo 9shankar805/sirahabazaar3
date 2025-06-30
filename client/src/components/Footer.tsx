@@ -13,8 +13,11 @@ export default function Footer() {
         <div className="flex items-center justify-between">
           {/* Left: Brand */}
           <div className="flex items-center space-x-2">
-            <Store className="h-4 w-4" />
-            <span className="font-bold text-sm">Siraha Bazaar</span>
+            <img 
+              src="/assets/icon2.png" 
+              alt="Siraha Bazaar" 
+              className="h-6 w-6 object-contain"
+            />
           </div>
 
           {/* Right: Actions */}
