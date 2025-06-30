@@ -639,7 +639,7 @@ export default function ShopkeeperDashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList
-            className={`grid w-full gap-2 h-auto p-2 bg-white dark:bg-gray-800 rounded-lg ${currentStore ? "grid-cols-3 md:grid-cols-6" : "grid-cols-2"}`}
+            className={`grid w-full gap-2 h-auto p-2 bg-white dark:bg-gray-800 rounded-lg ${currentStore ? "grid-cols-2 md:grid-cols-3" : "grid-cols-2"}`}
           >
             <TabsTrigger 
               value="overview" 
@@ -659,34 +659,7 @@ export default function ShopkeeperDashboard() {
             )}
             {currentStore && (
               <>
-                <TabsTrigger 
-                  value="add-product"
-                  className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
-                >
-                  <Plus className="h-5 w-5" />
-                  <span className="hidden sm:inline">{editingProduct ? "Edit" : "Add Product"}</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="inventory"
-                  className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
-                >
-                  <Package className="h-5 w-5" />
-                  <span className="hidden sm:inline">Inventory</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="products"
-                  className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
-                >
-                  <Archive className="h-5 w-5" />
-                  <span className="hidden sm:inline">Products</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="store"
-                  className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
-                >
-                  <Store className="h-5 w-5" />
-                  <span className="hidden sm:inline">Store</span>
-                </TabsTrigger>
+
                 <TabsTrigger 
                   value="orders"
                   className="flex flex-col items-center gap-1 p-3 text-xs font-medium data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 dark:data-[state=active]:bg-orange-900 dark:data-[state=active]:text-orange-400"
