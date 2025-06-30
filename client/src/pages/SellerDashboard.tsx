@@ -827,9 +827,8 @@ export default function ShopkeeperDashboard() {
                     <SelectItem value="365">Last year</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Export Report
+                <Button variant="outline" size="sm">
+                  <TrendingUp className="h-4 w-4" />
                 </Button>
               </div>
             </div>
