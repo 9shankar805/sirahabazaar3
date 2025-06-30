@@ -91,11 +91,11 @@ export default function Footer() {
             <div className="space-y-3 text-gray-300 text-sm">
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4" />
-                <span>info@sirahbazaar.com</span>
+                <span>sirahabazzar@gmail.com</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="h-4 w-4" />
-                <span>+977-33-123456</span>
+                <span>+9779805916598</span>
               </div>
               <div>
                 <p>Siraha, Nepal</p>

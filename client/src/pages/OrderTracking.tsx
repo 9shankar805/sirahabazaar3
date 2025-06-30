@@ -411,14 +411,14 @@ const OrderTracking = () => {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-primary" />
-                    <a href="tel:+977-33-123456" className="text-primary hover:underline">
-                      +977-33-123456
+                    <a href="tel:+9779805916598" className="text-primary hover:underline">
+                      +9779805916598
                     </a>
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-primary" />
-                    <a href="mailto:support@sirahbazaar.com" className="text-primary hover:underline">
-                      support@sirahbazaar.com
+                    <a href="mailto:sirahabazzar@gmail.com" className="text-primary hover:underline">
+                      sirahabazzar@gmail.com
                     </a>
                   </div>
                 </div>

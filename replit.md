@@ -120,6 +120,15 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### June 30, 2025 - Updated Contact Information and Logo Branding
+- ✓ Updated email address from info@sirahabazaar.com to sirahabazzar@gmail.com across all components
+- ✓ Updated phone number from +977-33-123456 to +9779805916598 throughout the application
+- ✓ Updated logo alt text to reflect "Siraha Bazaar" branding with icon2.png in navbar
+- ✓ Modified Footer component with new Gmail contact email and phone number
+- ✓ Updated OrderConfirmation, OrderTracking, AdminLogin, and ComprehensiveAdminDashboard pages
+- ✓ Ensured consistent branding and contact information across all customer-facing components
+- → All contact information now uses the official Gmail address and updated phone number
+
 ### June 29, 2025 - Related Products Filtering and Mobile Review System Enhancement
 - ✓ Fixed related products filtering to properly separate food and retail items based on app mode
 - ✓ Shopping mode now only shows non-food related products, excluding food items completely

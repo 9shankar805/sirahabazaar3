@@ -100,7 +100,7 @@ export default function AdminLogin() {
                         <Input
                           {...field}
                           type="email"
-                          placeholder="admin@sirahbazaar.com"
+                          placeholder="sirahabazzar@gmail.com"
                           className="pl-10"
                           disabled={loginMutation.isPending}
                         />
@@ -146,7 +146,7 @@ export default function AdminLogin() {
 
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <h4 className="font-medium text-sm mb-2">Default Admin Credentials:</h4>
-            <p className="text-xs text-gray-600">Email: admin@sirahbazaar.com</p>
+            <p className="text-xs text-gray-600">Email: sirahabazzar@gmail.com</p>
             <p className="text-xs text-gray-600">Password: admin123</p>
           </div>
         </CardContent>

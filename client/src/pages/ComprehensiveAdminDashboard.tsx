@@ -139,8 +139,8 @@ export default function ComprehensiveAdminDashboard() {
   const [settingsForm, setSettingsForm] = useState({
     siteName: "Siraha Bazaar",
     siteDescription: "Multi-vendor e-commerce platform",
-    adminEmail: "admin@sirahbazaar.com",
-    contactPhone: "+977-33-123456",
+    adminEmail: "sirahabazzar@gmail.com",
+    contactPhone: "+9779805916598",
     commissionRate: "5",
     minOrder: "100",
     deliveryFee: "50",

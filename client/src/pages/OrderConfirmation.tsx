@@ -136,8 +136,8 @@ export default function OrderConfirmation() {
               {/* Contact Information */}
               <div className="text-center text-sm text-muted-foreground">
                 <p>Need help with your order?</p>
-                <p>Contact us at <a href="mailto:support@sirahbazaar.com" className="text-primary hover:underline">support@sirahbazaar.com</a></p>
-                <p>or call <a href="tel:+977-33-123456" className="text-primary hover:underline">+977-33-123456</a></p>
+                <p>Contact us at <a href="mailto:sirahabazzar@gmail.com" className="text-primary hover:underline">sirahabazzar@gmail.com</a></p>
+                <p>or call <a href="tel:+9779805916598" className="text-primary hover:underline">+9779805916598</a></p>
               </div>
             </div>
           </CardContent>

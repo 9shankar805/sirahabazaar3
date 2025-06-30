@@ -122,7 +122,7 @@ export default function Navbar() {
               ) : (
                 <img 
                   src="/assets/icon2.png" 
-                  alt="Shop" 
+                  alt="Siraha Bazaar" 
                   className="h-8 w-auto rounded-lg"
                 />
               )}
