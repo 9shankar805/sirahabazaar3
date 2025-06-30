@@ -131,8 +131,11 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - ✓ Added SirahaBazaar.apk mobile app file to public folder for download
 - ✓ Redesigned footer to be mobile-first and compact with collapsible design
 - ✓ Added bottom margin to footer to prevent overlap with mobile navigation
+- ✓ Replaced footer text with icon2.png logo and added rounded corners
+- ✓ Made entire StoreCard and RestaurantCard components clickable for better UX
+- ✓ Added click event prevention for map/direction buttons within clickable cards
 - ✓ Integrated JSON-LD structured data for better search engine understanding
-- → Complete SEO optimization, mobile app distribution, and mobile-optimized footer now available
+- → Complete SEO optimization, mobile app distribution, and enhanced card interactions now available
 
 ### June 30, 2025 - Updated Contact Information and Logo Branding
 - ✓ Updated email address from info@sirahabazaar.com to sirahabazzar@gmail.com across all components

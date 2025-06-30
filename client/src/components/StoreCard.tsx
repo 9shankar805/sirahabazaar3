@@ -73,24 +73,23 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
-      <CardHeader className="pb-2 p-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <Link href={`/store/${store.id}`}>
-              <h3 className="font-semibold text-sm hover:text-primary cursor-pointer line-clamp-1">
+    <Link href={`/store/${store.id}`}>
+      <Card className="hover:shadow-lg transition-shadow duration-200 cursor-pointer group">
+        <CardHeader className="pb-2 p-3">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="font-semibold text-sm group-hover:text-primary transition-colors line-clamp-1">
                 {store.name}
               </h3>
-            </Link>
-            <div className="flex items-center gap-1 mt-1">
-              <Badge variant={store.storeType === 'restaurant' ? 'default' : 'secondary'} className="text-xs px-1 py-0">
-                {store.storeType === 'restaurant' ? 'Restaurant' : 'Retail'}
-              </Badge>
-              {store.cuisineType && (
-                <Badge variant="outline" className="text-xs px-1 py-0">{store.cuisineType}</Badge>
-              )}
+              <div className="flex items-center gap-1 mt-1">
+                <Badge variant={store.storeType === 'restaurant' ? 'default' : 'secondary'} className="text-xs px-1 py-0">
+                  {store.storeType === 'restaurant' ? 'Restaurant' : 'Retail'}
+                </Badge>
+                {store.cuisineType && (
+                  <Badge variant="outline" className="text-xs px-1 py-0">{store.cuisineType}</Badge>
+                )}
+              </div>
             </div>
-          </div>
           {store.logo && (
             <img
               src={store.logo}
@@ -172,7 +171,11 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
             <Button
               variant="outline"
               size="sm"
-              onClick={openGoogleMaps}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openGoogleMaps();
+              }}
               className="flex-1 text-xs h-7 w-7 p-0"
             >
               <ExternalLink className="h-3 w-3" />
@@ -180,7 +183,11 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
             <Button
               variant="outline"
               size="sm"
-              onClick={getDirections}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                getDirections();
+              }}
               className="flex-1 text-xs h-7 w-7 p-0"
             >
               <Navigation className="h-3 w-3" />
@@ -195,5 +202,6 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
         )}
       </CardContent>
     </Card>
+    </Link>
   );
 }
