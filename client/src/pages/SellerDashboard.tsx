@@ -28,6 +28,7 @@ import {
   Store,
   Home,
   Archive,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -91,6 +92,7 @@ const productSchema = z.object({
   isOnOffer: z.boolean().default(false),
   offerPercentage: z.number().min(0).max(100).default(0),
   offerEndDate: z.string().optional(),
+  productType: z.enum(["retail", "food"]).default("retail"),
   // Food-specific fields
   preparationTime: z.string().optional(),
   ingredients: z.array(z.string()).default([]),
@@ -134,8 +136,61 @@ export default function ShopkeeperDashboard() {
   const [notificationHistory, setNotificationHistory] = useState<any[]>([]);
   const [pendingDeliveries, setPendingDeliveries] = useState<any[]>([]);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [ingredients, setIngredients] = useState<string[]>([]);
+  const [allergens, setAllergens] = useState<string[]>([]);
+  const [newIngredient, setNewIngredient] = useState("");
+  const [newAllergen, setNewAllergen] = useState("");
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Helper functions for ingredients and allergens
+  const handleAddIngredient = () => {
+    if (newIngredient.trim() && !ingredients.includes(newIngredient.trim())) {
+      const updated = [...ingredients, newIngredient.trim()];
+      setIngredients(updated);
+      form.setValue("ingredients", updated);
+      setNewIngredient("");
+    }
+  };
+
+  const handleRemoveIngredient = (ingredient: string) => {
+    const updated = ingredients.filter(i => i !== ingredient);
+    setIngredients(updated);
+    form.setValue("ingredients", updated);
+  };
+
+  const handleAddAllergen = () => {
+    if (newAllergen.trim() && !allergens.includes(newAllergen.trim())) {
+      const updated = [...allergens, newAllergen.trim()];
+      setAllergens(updated);
+      form.setValue("allergens", updated);
+      setNewAllergen("");
+    }
+  };
+
+  const handleRemoveAllergen = (allergen: string) => {
+    const updated = allergens.filter(a => a !== allergen);
+    setAllergens(updated);
+    form.setValue("allergens", updated);
+  };
+
+  const handleAddImage = () => {
+    const imageUrl = form.getValues("imageUrl");
+    if (imageUrl && imageUrl.trim()) {
+      const currentImages = form.getValues("images");
+      if (!currentImages.includes(imageUrl.trim()) && currentImages.length < 6) {
+        form.setValue("images", [...currentImages, imageUrl.trim()]);
+        form.setValue("imageUrl", "");
+      }
+    }
+  };
+
+  const handleRemoveImage = (imageUrl: string) => {
+    const currentImages = form.getValues("images");
+    form.setValue("images", currentImages.filter(img => img !== imageUrl));
+  };
+
+
 
   // Queries
   const { data: stores = [] } = useQuery<StoreType[]>({
@@ -150,6 +205,10 @@ export default function ShopkeeperDashboard() {
   });
 
   const currentStore = stores[0]; // Assuming one store per shopkeeper
+
+  // Enhanced restaurant detection
+  const isRestaurant = currentStore?.storeType === 'restaurant' || 
+    (currentStore?.name && currentStore.name.toLowerCase().includes('restaurant'));
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: [`/api/products/store/${currentStore?.id}`],
@@ -314,33 +373,23 @@ export default function ShopkeeperDashboard() {
         isOnOffer: data.isOnOffer || false,
         offerPercentage: data.offerPercentage || 0,
         offerEndDate: data.offerEndDate || undefined,
-        productType:
-          currentStore.storeType === "restaurant" ? "food" : "retail", // Auto-set based on store type
+        productType: (currentStore?.storeType === 'restaurant' || 
+          (currentStore?.name && currentStore.name.toLowerCase().includes('restaurant'))) ? "food" : "retail",
         // Food-specific fields for restaurants
-        preparationTime:
-          currentStore.storeType === "restaurant"
-            ? data.preparationTime || null
-            : null,
-        ingredients:
-          currentStore.storeType === "restaurant" ? data.ingredients || [] : [],
-        allergens:
-          currentStore.storeType === "restaurant" ? data.allergens || [] : [],
-        spiceLevel:
-          currentStore.storeType === "restaurant"
-            ? data.spiceLevel || null
-            : null,
-        isVegetarian:
-          currentStore.storeType === "restaurant"
-            ? data.isVegetarian || false
-            : false,
-        isVegan:
-          currentStore.storeType === "restaurant"
-            ? data.isVegan || false
-            : false,
-        nutritionInfo:
-          currentStore.storeType === "restaurant"
-            ? data.nutritionInfo || null
-            : null,
+        preparationTime: (currentStore?.storeType === 'restaurant' || 
+          (currentStore?.name && currentStore.name.toLowerCase().includes('restaurant'))) ? data.preparationTime || null : null,
+        ingredients: (currentStore?.storeType === 'restaurant' || 
+          (currentStore?.name && currentStore.name.toLowerCase().includes('restaurant'))) ? ingredients : [],
+        allergens: (currentStore?.storeType === 'restaurant' || 
+          (currentStore?.name && currentStore.name.toLowerCase().includes('restaurant'))) ? allergens : [],
+        spiceLevel: (currentStore?.storeType === 'restaurant' || 
+          (currentStore?.name && currentStore.name.toLowerCase().includes('restaurant'))) ? data.spiceLevel || null : null,
+        isVegetarian: (currentStore?.storeType === 'restaurant' || 
+          (currentStore?.name && currentStore.name.toLowerCase().includes('restaurant'))) ? data.isVegetarian || false : false,
+        isVegan: (currentStore?.storeType === 'restaurant' || 
+          (currentStore?.name && currentStore.name.toLowerCase().includes('restaurant'))) ? data.isVegan || false : false,
+        nutritionInfo: (currentStore?.storeType === 'restaurant' || 
+          (currentStore?.name && currentStore.name.toLowerCase().includes('restaurant'))) ? data.nutritionInfo || null : null,
       };
 
       if (editingProduct) {
@@ -2338,71 +2387,22 @@ export default function ShopkeeperDashboard() {
                 <Form {...form}>
                   <form
                     onSubmit={form.handleSubmit(handleAddProduct)}
-                    className="space-y-4"
+                    className="space-y-6"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Product Name</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Enter product name"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="categoryId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Category</FormLabel>
-                            <Select
-                              onValueChange={(value) =>
-                                field.onChange(parseInt(value))
-                              }
-                              value={field.value?.toString()}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {categories.map((category) => (
-                                  <SelectItem
-                                    key={category.id}
-                                    value={category.id.toString()}
-                                  >
-                                    {category.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
+                    {/* Product Name */}
                     <FormField
                       control={form.control}
-                      name="description"
+                      name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            {isRestaurant ? 'Menu Item Name *' : 'Product Name *'}
+                          </FormLabel>
                           <FormControl>
-                            <Textarea
-                              placeholder="Enter product description"
-                              className="min-h-20"
-                              {...field}
+                            <Input 
+                              placeholder={isRestaurant ? "Enter menu item name" : "Enter product name"} 
+                              className="h-11"
+                              {...field} 
                             />
                           </FormControl>
                           <FormMessage />
@@ -2410,18 +2410,77 @@ export default function ShopkeeperDashboard() {
                       )}
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+
+                    {/* Category */}
+                    <FormField
+                      control={form.control}
+                      name="categoryId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-base font-medium">Category *</FormLabel>
+                          <Select 
+                            onValueChange={(value) => field.onChange(parseInt(value))}
+                            defaultValue={field.value?.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder="Select a category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {categories.length > 0 ? (
+                                categories.map((category) => (
+                                  <SelectItem key={category.id} value={category.id.toString()}>
+                                    {category.name}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="1" disabled>
+                                  Loading categories...
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Description */}
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-base font-medium">Description</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Enter product description" 
+                              rows={4}
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Price and Original Price */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="price"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Price (₹)</FormLabel>
+                            <FormLabel className="text-base font-medium">Price *</FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="Enter price"
-                                {...field}
+                              <Input 
+                                type="number" 
+                                step="0.01" 
+                                placeholder="0.00" 
+                                className="h-11"
+                                {...field} 
                               />
                             </FormControl>
                             <FormMessage />
@@ -2434,33 +2493,14 @@ export default function ShopkeeperDashboard() {
                         name="originalPrice"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Original Price (₹)</FormLabel>
+                            <FormLabel className="text-base font-medium">Original Price</FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="Enter original price"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="stock"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Stock Quantity</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="Enter quantity"
-                                {...field}
-                                onChange={(e) =>
-                                  field.onChange(parseInt(e.target.value) || 0)
-                                }
+                              <Input 
+                                type="number" 
+                                step="0.01" 
+                                placeholder="0.00" 
+                                className="h-11"
+                                {...field} 
                               />
                             </FormControl>
                             <FormMessage />
@@ -2469,23 +2509,272 @@ export default function ShopkeeperDashboard() {
                       />
                     </div>
 
+                    {/* Stock */}
                     <FormField
                       control={form.control}
-                      name="images"
+                      name="stock"
                       render={({ field }) => (
                         <FormItem>
-                          <ImageUpload
-                            label="Product Images"
-                            maxImages={6}
-                            minImages={1}
-                            onImagesChange={field.onChange}
-                            initialImages={field.value || []}
-                            className="col-span-full"
-                          />
+                          <FormLabel className="text-base font-medium">Stock Quantity *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder="Enter stock quantity" 
+                              className="h-11"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                    {/* Image Upload */}
+                    <div>
+                      <FormLabel className="text-base font-medium">Product Images</FormLabel>
+                      <div className="mt-2 space-y-4">
+                        {/* Image URL Input */}
+                        <div className="flex gap-2">
+                          <FormField
+                            control={form.control}
+                            name="imageUrl"
+                            render={({ field }) => (
+                              <FormItem className="flex-1">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="Enter image URL" 
+                                    className="h-11"
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <Button 
+                            type="button" 
+                            onClick={handleAddImage}
+                            className="h-11"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        {/* Display Added Images */}
+                        {form.getValues("images") && form.getValues("images").length > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            {form.getValues("images").map((imageUrl, index) => (
+                              <div key={index} className="relative group">
+                                <img 
+                                  src={imageUrl} 
+                                  alt={`Product ${index + 1}`}
+                                  className="w-full h-32 object-cover rounded border"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100"
+                                  onClick={() => handleRemoveImage(imageUrl)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Food-specific fields (shown only for restaurants) */}
+                    {isRestaurant && (
+                      <div className="space-y-6 border-t pt-6">
+                        <h3 className="text-lg font-semibold text-orange-600">Food Item Details</h3>
+                        
+                        {/* Preparation Time */}
+                        <FormField
+                          control={form.control}
+                          name="preparationTime"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-medium">Preparation Time</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="e.g., 15-20 minutes" 
+                                  className="h-11"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Ingredients */}
+                        <div>
+                          <FormLabel className="text-base font-medium">Ingredients</FormLabel>
+                          <div className="mt-2 space-y-3">
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Enter ingredient"
+                                value={newIngredient}
+                                onChange={(e) => setNewIngredient(e.target.value)}
+                                className="h-11"
+                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddIngredient())}
+                              />
+                              <Button type="button" onClick={handleAddIngredient} className="h-11">
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            {ingredients.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {ingredients.map((ingredient, index) => (
+                                  <span 
+                                    key={index}
+                                    className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm"
+                                  >
+                                    {ingredient}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-4 w-4 p-0 hover:bg-orange-200"
+                                      onClick={() => handleRemoveIngredient(ingredient)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Allergens */}
+                        <div>
+                          <FormLabel className="text-base font-medium">Allergens</FormLabel>
+                          <div className="mt-2 space-y-3">
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Enter allergen"
+                                value={newAllergen}
+                                onChange={(e) => setNewAllergen(e.target.value)}
+                                className="h-11"
+                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAllergen())}
+                              />
+                              <Button type="button" onClick={handleAddAllergen} className="h-11">
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            {allergens.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {allergens.map((allergen, index) => (
+                                  <span 
+                                    key={index}
+                                    className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm"
+                                  >
+                                    {allergen}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-4 w-4 p-0 hover:bg-red-200"
+                                      onClick={() => handleRemoveAllergen(allergen)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Spice Level */}
+                        <FormField
+                          control={form.control}
+                          name="spiceLevel"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-medium">Spice Level</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-11">
+                                    <SelectValue placeholder="Select spice level" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="mild">Mild</SelectItem>
+                                  <SelectItem value="medium">Medium</SelectItem>
+                                  <SelectItem value="hot">Hot</SelectItem>
+                                  <SelectItem value="extra-hot">Extra Hot</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Dietary Options */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="isVegetarian"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <input
+                                    type="checkbox"
+                                    checked={field.value}
+                                    onChange={field.onChange}
+                                    className="h-4 w-4"
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-base font-medium">Vegetarian</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="isVegan"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <input
+                                    type="checkbox"
+                                    checked={field.value}
+                                    onChange={field.onChange}
+                                    className="h-4 w-4"
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-base font-medium">Vegan</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        {/* Nutrition Info */}
+                        <FormField
+                          control={form.control}
+                          name="nutritionInfo"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-medium">Nutrition Information</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Enter nutrition information (optional)" 
+                                  rows={3}
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
 
                     <div className="flex gap-3 pt-4">
                       <Button type="submit" className="flex-1">
