@@ -1347,20 +1347,21 @@ export default function ShopkeeperDashboard() {
           </TabsContent>
 
           {/* Add/Edit Product Tab */}
-          <TabsContent value="add-product" className="space-y-6">
+          <TabsContent value="add-product" className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle>
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Plus className="h-5 w-5" />
                   {editingProduct ? "Edit Product" : "Add New Product"}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4">
                 <Form {...form}>
                   <form
                     onSubmit={form.handleSubmit(handleAddProduct)}
-                    className="space-y-6"
+                    className="space-y-3 max-h-[70vh] overflow-y-auto"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <FormField
                         control={form.control}
                         name="name"
@@ -1743,14 +1744,17 @@ export default function ShopkeeperDashboard() {
                       </div>
                     )}
 
-                    <div className="flex space-x-4">
-                      <Button type="submit" className="btn-primary">
+                    <div className="flex gap-3 pt-2">
+                      <Button type="submit" className="flex-1 h-10" size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
                         {editingProduct ? "Update Product" : "Add Product"}
                       </Button>
                       {editingProduct && (
                         <Button
                           type="button"
                           variant="outline"
+                          size="sm"
+                          className="h-10"
                           onClick={() => {
                             setEditingProduct(null);
                             form.reset();
