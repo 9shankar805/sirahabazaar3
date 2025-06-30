@@ -109,8 +109,8 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
           />
         )}
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="flex items-center gap-1">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
               <span>{parseFloat(store.rating).toFixed(1)}</span>
@@ -120,30 +120,27 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
             {store.deliveryTime && (
               <div className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                <span>{store.deliveryTime}</span>
+                <span className="truncate">{store.deliveryTime}</span>
               </div>
             )}
           </div>
 
-          {/* Distance Display - Prominent */}
+          {/* Distance Display - Fixed width to prevent overflow */}
           {showDistance && (
-            <div className="ml-auto">
+            <div className="flex-shrink-0">
               {isCalculatingDistance ? (
                 <Badge variant="outline" className="text-xs animate-pulse">
                   <MapPin className="h-3 w-3 mr-1" />
-                  Calculating...
+                  ...
                 </Badge>
               ) : distance !== null ? (
                 <Badge 
                   variant={distance <= 1 ? "default" : distance <= 5 ? "secondary" : "outline"} 
                   className="text-xs font-medium bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
                 >
-                  <MapPin className="h-3 w-3 mr-1" />
                   {formatDistance(distance)}
                 </Badge>
-              ) : (
-                <span className="text-xs text-muted-foreground">Location unavailable</span>
-              )}
+              ) : null}
             </div>
           )}
         </div>
