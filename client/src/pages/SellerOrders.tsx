@@ -51,6 +51,13 @@ interface OrderItem {
   quantity: number;
   price: string;
   storeId: number;
+  product?: {
+    id: number;
+    name: string;
+    imageUrl?: string;
+    description?: string;
+    category?: string;
+  };
 }
 
 export default function SellerOrders() {
@@ -382,15 +389,35 @@ export default function SellerOrders() {
                       </div>
                       
                       {order.items && order.items.length > 0 && (
-                        <div className="text-xs text-muted-foreground">
+                        <div className="space-y-2">
                           {order.items.slice(0, 2).map((item, index) => (
-                            <div key={index} className="truncate">
-                              {item.product?.name || `Product #${item.productId}`}
-                              {index === 0 && order.items.length > 1 && (
-                                <span className="ml-1">+{order.items.length - 1} more</span>
-                              )}
+                            <div key={index} className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
+                                {item.product?.imageUrl ? (
+                                  <img 
+                                    src={item.product.imageUrl} 
+                                    alt={item.product.name || 'Product'}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.classList.add('hidden');
+                                      const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon') as HTMLElement;
+                                      if (fallback) fallback.classList.remove('hidden');
+                                    }}
+                                  />
+                                ) : null}
+                                <Package className={`h-4 w-4 text-gray-400 ${item.product?.imageUrl ? 'hidden' : 'flex'}`} />
+                              </div>
+                              <div className="flex-1 text-xs text-muted-foreground">
+                                <div className="truncate font-medium">{item.product?.name || `Product #${item.productId}`}</div>
+                                <div className="text-xs">Qty: {item.quantity} × ₹{parseFloat(item.price).toFixed(2)}</div>
+                              </div>
                             </div>
                           ))}
+                          {order.items.length > 2 && (
+                            <div className="text-xs text-muted-foreground pl-10">
+                              +{order.items.length - 2} more items
+                            </div>
+                          )}
                         </div>
                       )}
                       
@@ -456,15 +483,35 @@ export default function SellerOrders() {
                         <div className="space-y-1">
                           <p className="font-mono text-sm">#{order.id}</p>
                           {order.items && order.items.length > 0 && (
-                            <div className="text-xs text-muted-foreground">
+                            <div className="space-y-1">
                               {order.items.slice(0, 2).map((item, index) => (
-                                <div key={index} className="truncate">
-                                  {item.product?.name || `Product #${item.productId}`}
-                                  {index === 0 && order.items.length > 1 && (
-                                    <span className="ml-1">+{order.items.length - 1} more</span>
-                                  )}
+                                <div key={index} className="flex items-center gap-2">
+                                  <div className="w-6 h-6 bg-gray-100 rounded-sm overflow-hidden flex items-center justify-center">
+                                    {item.product?.imageUrl ? (
+                                      <img 
+                                        src={item.product.imageUrl} 
+                                        alt={item.product.name || 'Product'}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.classList.add('hidden');
+                                          const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon') as HTMLElement;
+                                          if (fallback) fallback.classList.remove('hidden');
+                                        }}
+                                      />
+                                    ) : null}
+                                    <Package className={`fallback-icon h-3 w-3 text-gray-400 ${item.product?.imageUrl ? 'hidden' : 'flex'}`} />
+                                  </div>
+                                  <div className="flex-1 text-xs text-muted-foreground">
+                                    <div className="truncate font-medium">{item.product?.name || `Product #${item.productId}`}</div>
+                                    <div className="text-xs opacity-75">Qty: {item.quantity}</div>
+                                  </div>
                                 </div>
                               ))}
+                              {order.items.length > 2 && (
+                                <div className="text-xs text-muted-foreground pl-8">
+                                  +{order.items.length - 2} more items
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -647,9 +694,9 @@ export default function SellerOrders() {
                                       alt={item.product.name || 'Product'}
                                       className="w-full h-full object-cover"
                                       onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                        const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon');
-                                        if (fallback) fallback.style.display = 'flex';
+                                        e.currentTarget.classList.add('hidden');
+                                        const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon') as HTMLElement;
+                                        if (fallback) fallback.classList.remove('hidden');
                                       }}
                                     />
                                     <Package className="fallback-icon h-8 w-8 text-gray-400 absolute inset-0 m-auto hidden" />
