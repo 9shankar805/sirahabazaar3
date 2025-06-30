@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { 
-  Store, Edit, MapPin, Phone, Globe, Star, Plus, Camera, Save, UtensilsCrossed, Clock
+  Store, Edit, MapPin, Phone, Globe, Star, Plus, Camera, Save, UtensilsCrossed, Clock, X, Link as LinkIcon
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -973,6 +973,227 @@ export default function SellerStore() {
                   </FormItem>
                 )}
               />
+
+              {/* Image Upload Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="logo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">Store Logo</FormLabel>
+                      <div className="space-y-4">
+                        {/* File Upload and Camera Options */}
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 gap-4">
+                            {/* File Upload */}
+                            <div className="flex items-center justify-center w-full">
+                              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                  <Plus className="w-6 h-6 mb-2 text-gray-500" />
+                                  <p className="text-sm text-gray-500 font-semibold">Upload Logo</p>
+                                  <p className="text-xs text-gray-500">PNG, JPG recommended</p>
+                                </div>
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onload = (event) => {
+                                        const imageUrl = event.target?.result as string;
+                                        if (imageUrl) {
+                                          field.onChange(imageUrl);
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
+
+                            {/* Camera Capture */}
+                            <div className="flex items-center justify-center w-full">
+                              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-orange-300 border-dashed rounded-lg cursor-pointer bg-orange-50 hover:bg-orange-100">
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                  <Camera className="w-6 h-6 mb-2 text-orange-500" />
+                                  <p className="text-sm text-orange-600 font-semibold">Take Photo</p>
+                                  <p className="text-xs text-orange-500">Camera capture</p>
+                                </div>
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  capture="environment"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onload = (event) => {
+                                        const imageUrl = event.target?.result as string;
+                                        if (imageUrl) {
+                                          field.onChange(imageUrl);
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* URL Input Alternative */}
+                          <div className="relative">
+                            <Input
+                              placeholder="Or paste image URL..."
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              className="pr-10"
+                            />
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                              <LinkIcon className="h-4 w-4 text-gray-400" />
+                            </div>
+                          </div>
+
+                          {/* Image Preview */}
+                          {field.value && (
+                            <div className="relative">
+                              <img
+                                src={field.value}
+                                alt="Store logo preview"
+                                className="w-full h-24 object-cover rounded-lg border"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="absolute top-2 right-2"
+                                onClick={() => field.onChange("")}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="coverImage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">Cover Image</FormLabel>
+                      <div className="space-y-4">
+                        {/* File Upload and Camera Options */}
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 gap-4">
+                            {/* File Upload */}
+                            <div className="flex items-center justify-center w-full">
+                              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                  <Plus className="w-6 h-6 mb-2 text-gray-500" />
+                                  <p className="text-sm text-gray-500 font-semibold">Upload Cover</p>
+                                  <p className="text-xs text-gray-500">Wide format preferred</p>
+                                </div>
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onload = (event) => {
+                                        const imageUrl = event.target?.result as string;
+                                        if (imageUrl) {
+                                          field.onChange(imageUrl);
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
+
+                            {/* Camera Capture */}
+                            <div className="flex items-center justify-center w-full">
+                              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-orange-300 border-dashed rounded-lg cursor-pointer bg-orange-50 hover:bg-orange-100">
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                  <Camera className="w-6 h-6 mb-2 text-orange-500" />
+                                  <p className="text-sm text-orange-600 font-semibold">Take Photo</p>
+                                  <p className="text-xs text-orange-500">Camera capture</p>
+                                </div>
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  capture="environment"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const reader = new FileReader();
+                                      reader.onload = (event) => {
+                                        const imageUrl = event.target?.result as string;
+                                        if (imageUrl) {
+                                          field.onChange(imageUrl);
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* URL Input Alternative */}
+                          <div className="relative">
+                            <Input
+                              placeholder="Or paste image URL..."
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value)}
+                              className="pr-10"
+                            />
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                              <LinkIcon className="h-4 w-4 text-gray-400" />
+                            </div>
+                          </div>
+
+                          {/* Image Preview */}
+                          {field.value && (
+                            <div className="relative">
+                              <img
+                                src={field.value}
+                                alt="Store cover preview"
+                                className="w-full h-24 object-cover rounded-lg border"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="absolute top-2 right-2"
+                                onClick={() => field.onChange("")}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               {/* Restaurant-specific fields for edit form */}
               {form.watch("storeType") === "restaurant" && (
