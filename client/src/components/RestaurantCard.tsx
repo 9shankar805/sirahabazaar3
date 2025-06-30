@@ -1,16 +1,40 @@
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Star, Clock, MapPin, Bike } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { calculateDistance, formatDistance, getCurrentUserLocation } from "@/lib/distance";
 import type { Store } from "@shared/schema";
 
 interface RestaurantCardProps {
   restaurant: Store;
+  showDistance?: boolean;
 }
 
-export default function RestaurantCard({ restaurant }: RestaurantCardProps) {
+export default function RestaurantCard({ restaurant, showDistance = true }: RestaurantCardProps) {
+  const [distance, setDistance] = useState<number | null>(null);
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+  
   const deliveryFee = restaurant.deliveryFee ? `₹${restaurant.deliveryFee}` : "Free";
   const minimumOrder = restaurant.minimumOrder ? `₹${restaurant.minimumOrder}` : "";
+
+  useEffect(() => {
+    if (showDistance && restaurant.latitude && restaurant.longitude) {
+      setIsCalculatingDistance(true);
+      getCurrentUserLocation()
+        .then((location) => {
+          const dist = calculateDistance(
+            location,
+            { latitude: parseFloat(restaurant.latitude!), longitude: parseFloat(restaurant.longitude!) }
+          );
+          setDistance(dist);
+          setIsCalculatingDistance(false);
+        })
+        .catch(() => {
+          setIsCalculatingDistance(false);
+        });
+    }
+  }, [restaurant.latitude, restaurant.longitude, showDistance]);
 
   return (
     <Link href={`/restaurant/${restaurant.id}`}>
@@ -58,7 +82,7 @@ export default function RestaurantCard({ restaurant }: RestaurantCardProps) {
             </Badge>
           )}
 
-          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
             <div className="flex items-center space-x-1">
               <Clock className="h-4 w-4" />
               <span>{restaurant.deliveryTime || "25-35 mins"}</span>
@@ -69,16 +93,38 @@ export default function RestaurantCard({ restaurant }: RestaurantCardProps) {
             </div>
           </div>
 
+          {/* Distance and Address Row */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center space-x-1 text-xs text-gray-500 flex-1 min-w-0">
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{restaurant.address}</span>
+            </div>
+            
+            {/* Distance Badge */}
+            {showDistance && (
+              <div className="flex-shrink-0">
+                {isCalculatingDistance ? (
+                  <Badge variant="outline" className="text-xs animate-pulse">
+                    <MapPin className="h-3 w-3 mr-1" />
+                    ...
+                  </Badge>
+                ) : distance !== null ? (
+                  <Badge 
+                    variant={distance <= 1 ? "default" : distance <= 5 ? "secondary" : "outline"} 
+                    className="text-xs font-medium bg-blue-50 text-blue-700 border-blue-200"
+                  >
+                    {formatDistance(distance)}
+                  </Badge>
+                ) : null}
+              </div>
+            )}
+          </div>
+
           {minimumOrder && (
             <div className="mt-2 text-xs text-gray-500">
               Min order: {minimumOrder}
             </div>
           )}
-
-          <div className="flex items-center space-x-1 mt-2 text-xs text-gray-500">
-            <MapPin className="h-3 w-3" />
-            <span className="line-clamp-1">{restaurant.address}</span>
-          </div>
         </CardContent>
       </Card>
     </Link>
