@@ -4544,6 +4544,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Firebase token management for Android app
+  app.post("/api/firebase-token", async (req, res) => {
+    try {
+      const { token, platform, userId } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({ error: "Token is required" });
+      }
+      
+      console.log(`Received FCM token from ${platform || 'web'}:`, token.substring(0, 20) + '...');
+      
+      // Store token in your database or send to Firebase service
+      // You can extend this to save tokens per user
+      if (userId) {
+        // Save token associated with user
+        console.log(`Saving token for user ${userId}`);
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "Token registered successfully",
+        platform: platform || 'web'
+      });
+    } catch (error) {
+      console.error("Firebase token registration error:", error);
+      res.status(500).json({ error: "Failed to register token" });
+    }
+  });
+
   // Admin current user endpoint
   app.get("/api/admin/current", async (req, res) => {
     try {

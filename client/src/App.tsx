@@ -13,6 +13,8 @@ import BottomNavbar from "@/components/BottomNavbar";
 import Footer from "@/components/Footer";
 import ModeSwiper from "@/components/ModeSwiper";
 import MobileNotificationBar from "@/components/MobileNotificationBar";
+import { AndroidBridge } from "@/lib/androidBridge";
+import { useEffect } from "react";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Homepage from "@/pages/Homepage";
@@ -132,6 +134,12 @@ function AppRouter() {
 }
 
 function App() {
+  // Initialize Android bridge on app startup
+  useEffect(() => {
+    AndroidBridge.initialize();
+    console.log('React app mounted successfully');
+  }, []);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
