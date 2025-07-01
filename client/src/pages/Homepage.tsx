@@ -574,7 +574,7 @@ export default function Homepage() {
       {/* Featured Products */}
       <section className="py-8 sm:py-12 lg:py-16 bg-secondary/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-6 sm:mb-10 pr-2.5">
+          <div className="flex justify-between items-start mb-6 sm:mb-10 pr-2.5">
             <div className="flex items-center gap-2 flex-1">
               <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
                 {isPersonalized ? "Recommended for You" : "Featured Products"}
@@ -586,7 +586,7 @@ export default function Homepage() {
                 </Badge>
               )}
             </div>
-            <Link href="/products" className="flex-shrink-0">
+            <Link href="/products" className="flex-shrink-0 mt-1">
               <Button
                 variant="outline"
                 className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0"
@@ -621,7 +621,7 @@ export default function Homepage() {
       {/* Popular Stores */}
       <section className="py-8 sm:py-12 lg:py-16 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-6 sm:mb-10 pr-2.5">
+          <div className="flex justify-between items-start mb-6 sm:mb-10 pr-2.5">
             <div className="flex items-center gap-2 flex-1">
               <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
                 {isPersonalized ? "Stores You Might Like" : `Popular ${mode === "shopping" ? "Stores" : "Restaurants"}`}
@@ -633,7 +633,7 @@ export default function Homepage() {
                 </Badge>
               )}
             </div>
-            <Link href={mode === "shopping" ? "/stores" : "/restaurants"} className="flex-shrink-0">
+            <Link href={mode === "shopping" ? "/stores" : "/restaurants"} className="flex-shrink-0 mt-1">
               <Button
                 variant="outline"
                 className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0"
