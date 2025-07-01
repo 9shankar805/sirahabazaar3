@@ -261,8 +261,9 @@ const OrderTracking = () => {
 
         {/* Progress Timeline */}
         <Card className="mb-8">
-          <CardContent className="p-8">
-            <div className="relative">
+          <CardContent className="p-3 md:p-8">
+            {/* Desktop Timeline */}
+            <div className="hidden md:block relative">
               {/* Progress Line */}
               <div className="absolute top-6 left-0 right-0 h-1 bg-gray-200">
                 <div 
@@ -303,6 +304,53 @@ const OrderTracking = () => {
                          index <= currentStepIndex ? format(new Date(), 'MMM dd') :
                          format(estimatedDeliveryDate, 'MMM dd')}
                       </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Mobile Timeline */}
+            <div className="md:hidden">
+              <div className="space-y-4">
+                {trackingSteps.map((step, index) => {
+                  const isCompleted = index <= currentStepIndex;
+                  const isCurrent = index === currentStepIndex;
+                  const StepIcon = step.icon;
+
+                  return (
+                    <div key={step.key} className="flex items-center space-x-4">
+                      {/* Icon Circle */}
+                      <div className={`
+                        w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                        ${isCompleted 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-gray-200 text-gray-400'
+                        }
+                        ${isCurrent ? 'ring-4 ring-green-200' : ''}
+                      `}>
+                        <StepIcon className="w-5 h-5" />
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm font-semibold ${isCompleted ? 'text-green-600' : 'text-gray-500'}`}>
+                          {step.label}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {index === 0 ? format(new Date(order.createdAt), 'MMM dd') :
+                           index <= currentStepIndex ? format(new Date(), 'MMM dd') :
+                           format(estimatedDeliveryDate, 'MMM dd')}
+                        </div>
+                      </div>
+
+                      {/* Status Indicator */}
+                      {isCompleted && (
+                        <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                      )}
+                      {!isCompleted && (
+                        <Circle className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                      )}
                     </div>
                   );
                 })}

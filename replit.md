@@ -120,6 +120,19 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### July 1, 2025 - Mobile-Optimized Order Tracking Timeline and Fixed Distance Calculation
+- ✓ Fixed order tracking "Order Not Found" errors with robust fallback system for database query failures
+- ✓ Replaced hardcoded 1.2km distance calculation with dynamic store-to-customer distance calculation
+- ✓ Updated cart and checkout pages to fetch actual store coordinates from product database
+- ✓ Distance calculation now uses real store latitude/longitude instead of mock Siraha coordinates
+- ✓ Created responsive order tracking timeline with separate mobile and desktop layouts
+- ✓ Mobile timeline displays steps vertically with larger touch targets and clearer typography
+- ✓ Desktop timeline maintains horizontal grid layout with progress line visualization
+- ✓ Enhanced mobile timeline with status indicators, better spacing, and improved readability
+- ✓ Order tracking system now provides proper fallback data when database queries fail
+- ✓ Improved error handling for missing store location data in distance calculations
+- → Order tracking now works reliably with mobile-friendly interface and accurate delivery distance calculations
+
 ### July 1, 2025 - Account Deletion Feature Implementation
 - ✓ Created comprehensive `/delete-account` page with professional confirmation interface
 - ✓ Added multi-step verification process requiring "DELETE" text confirmation and checkbox acknowledgment
