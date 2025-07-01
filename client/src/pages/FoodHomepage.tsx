@@ -172,8 +172,8 @@ export default function FoodHomepage() {
         {/* Featured Offers */}
         {featuredFood.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-8 mr-2.5">
-              <div>
+            <div className="flex justify-between items-start mb-8 pr-2.5">
+              <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
                     <TrendingUp className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-red-500" />
@@ -190,7 +190,7 @@ export default function FoodHomepage() {
                   {isPersonalized ? "Personalized food recommendations based on your preferences" : "Limited time deals you don't want to miss"}
                 </p>
               </div>
-              <Link href="/food-offers">
+              <Link href="/food-offers" className="flex-shrink-0 mt-1">
                 <Button variant="outline" className="border-red-500 text-red-500 hover:bg-red-50 w-8 h-8 p-0">
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -223,8 +223,8 @@ export default function FoodHomepage() {
         {/* Popular Restaurants */}
         {popularRestaurants.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-8 mr-2.5">
-              <div>
+            <div className="flex justify-between items-start mb-8 pr-2.5">
+              <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
                     <Star className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-yellow-500" />
@@ -241,7 +241,7 @@ export default function FoodHomepage() {
                   {isPersonalized ? "Personalized restaurant recommendations based on your taste" : "Highly rated restaurants in your area"}
                 </p>
               </div>
-              <Link href="/restaurants">
+              <Link href="/restaurants" className="flex-shrink-0 mt-1">
                 <Button variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-50 w-8 h-8 p-0">
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -259,8 +259,8 @@ export default function FoodHomepage() {
         {/* Quick Bites */}
         {quickBites.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-8 mr-2.5">
-              <div>
+            <div className="flex justify-between items-start mb-8 pr-2.5">
+              <div className="flex-1">
                 <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
                   <Clock className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-green-500" />
                   Quick Bites
@@ -269,7 +269,7 @@ export default function FoodHomepage() {
                   Ready in 20 minutes or less
                 </p>
               </div>
-              <Link href="/quick-bites">
+              <Link href="/quick-bites" className="flex-shrink-0 mt-1">
                 <Button variant="outline" className="border-green-500 text-green-500 hover:bg-green-50 w-8 h-8 p-0">
                   <ArrowRight className="h-4 w-4" />
                 </Button>
