@@ -1,33 +1,111 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowRight, Star, Clock, TrendingUp, ChefHat } from "lucide-react";
+import { ArrowRight, Star, Clock, TrendingUp, ChefHat, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import FoodCard from "@/components/FoodCard";
 import RestaurantCard from "@/components/RestaurantCard";
 import { useAuth } from "@/hooks/useAuth";
+import { useAppMode } from "@/hooks/useAppMode";
 import type { Product, Store } from "@shared/schema";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import { useEffect } from "react";
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
+// Smart Recommendations Response Type
+interface SmartRecommendationsResponse {
+  products: Product[];
+  stores: Store[];
+  totalProducts: number;
+  totalStores: number;
+  isPersonalized: boolean;
+}
+
 export default function FoodHomepage() {
   const { user } = useAuth();
+  const { mode } = useAppMode();
 
+  // Track homepage visit for recommendations
+  useEffect(() => {
+    const trackVisit = async () => {
+      try {
+        await fetch('/api/recommendations/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            userId: user?.id || null,
+            page: '/',
+            action: 'homepage_visit'
+          })
+        });
+      } catch (error) {
+        console.log('Visit tracking failed (non-critical):', error);
+      }
+    };
+
+    trackVisit();
+  }, [user]);
+
+  // Get smart recommendations for food mode
+  const {
+    data: recommendations,
+    isLoading: recommendationsLoading,
+    error: recommendationsError,
+  } = useQuery<SmartRecommendationsResponse>({
+    queryKey: [`/api/recommendations/homepage`, 'food', user?.id],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        mode: 'food',
+        ...(user?.id && { userId: user.id.toString() })
+      });
+      
+      const response = await fetch(`/api/recommendations/homepage?${params}`, {
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch recommendations: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    retry: 3,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fallback to regular API calls if recommendations fail
   const { data: foodItems } = useQuery<Product[]>({
     queryKey: ["/api/products"],
-    select: (data) => data?.filter(product => product.productType === 'food') || []
+    select: (data) => data?.filter(product => product.productType === 'food') || [],
+    enabled: !recommendations?.products?.length, // Only fetch if no recommendations
   });
 
   const { data: restaurants } = useQuery<Store[]>({
     queryKey: ["/api/stores"],
-    select: (data) => data?.filter(store => store.storeType === 'restaurant') || []
+    select: (data) => data?.filter(store => store.storeType === 'restaurant') || [],
+    enabled: !recommendations?.stores?.length, // Only fetch if no recommendations
   });
 
-  const featuredFood = foodItems?.filter(item => item.isOnOffer || item.isFastSell).slice(0, 8) || [];
-  const popularRestaurants = restaurants?.slice(0, 6) || [];
-  const quickBites = foodItems?.filter(item => item.preparationTime && parseInt(item.preparationTime ?? "0") <= 20).slice(0, 6) || [];
+  // Use recommendations if available, otherwise fallback to regular data
+  const recommendedProducts = recommendations?.products || [];
+  const recommendedStores = recommendations?.stores || [];
+  const isPersonalized = recommendations?.isPersonalized || false;
+
+  const featuredFood = recommendedProducts.length > 0 
+    ? recommendedProducts.slice(0, 8)
+    : foodItems?.filter(item => item.isOnOffer || item.isFastSell).slice(0, 8) || [];
+
+  const popularRestaurants = recommendedStores.length > 0
+    ? recommendedStores.slice(0, 6)
+    : restaurants?.slice(0, 6) || [];
+
+  const quickBites = recommendedProducts.length > 0
+    ? recommendedProducts.filter(item => item.preparationTime && parseInt(item.preparationTime ?? "0") <= 20).slice(0, 6)
+    : foodItems?.filter(item => item.preparationTime && parseInt(item.preparationTime ?? "0") <= 20).slice(0, 6) || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800">
@@ -96,17 +174,25 @@ export default function FoodHomepage() {
           <section>
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
-                  <TrendingUp className="mr-3 h-8 w-8 text-red-500" />
-                  Special Offers
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  Limited time deals you don't want to miss
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+                    <TrendingUp className="mr-3 h-8 w-8 text-red-500" />
+                    {isPersonalized ? "Recommended for You" : "Special Offers"}
+                  </h2>
+                  {isPersonalized && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      Smart Pick
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {isPersonalized ? "Personalized food recommendations based on your preferences" : "Limited time deals you don't want to miss"}
                 </p>
               </div>
               <Link href="/food-offers">
                 <Button variant="outline" className="border-red-500 text-red-500 hover:bg-red-50">
-                  View All
+                  View All ({recommendations?.totalProducts || (foodItems?.length || 0)})
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -140,17 +226,25 @@ export default function FoodHomepage() {
           <section>
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
-                  <Star className="mr-3 h-8 w-8 text-yellow-500" />
-                  Top Restaurants
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  Highly rated restaurants in your area
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+                    <Star className="mr-3 h-8 w-8 text-yellow-500" />
+                    {isPersonalized ? "Restaurants You Might Like" : "Top Restaurants"}
+                  </h2>
+                  {isPersonalized && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Curated
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {isPersonalized ? "Personalized restaurant recommendations based on your taste" : "Highly rated restaurants in your area"}
                 </p>
               </div>
               <Link href="/restaurants">
                 <Button variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-50">
-                  View All
+                  View All ({recommendations?.totalStores || (restaurants?.length || 0)})
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
