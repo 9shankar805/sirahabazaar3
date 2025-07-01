@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
 import { ShoppingCart, User, Menu, X, Store, Heart, MapPin, Shield, Home, Package, LogOut, Tag, UtensilsCrossed, ChefHat, ShoppingBag, Bell } from "lucide-react";
 import SmartDashboardLink from "./SmartDashboardLink";
@@ -9,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { useAppMode } from "@/hooks/useAppMode";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import SearchWithSuggestions from "@/components/SearchWithSuggestions";
 import NotificationCenter from "@/components/NotificationCenter";
 import MobileNotificationCenter from "@/components/MobileNotificationCenter";
@@ -37,6 +38,8 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
   const { mode, setMode } = useAppMode();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const cartItemCount = cartItems?.length || 0;
 
@@ -50,6 +53,52 @@ export default function Navbar() {
   const unreadCount = useMemo(() => {
     return notifications.filter((n) => !n.isRead).length;
   }, [notifications]);
+
+  // Mark single notification as read
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationId: number) => {
+      const response = await fetch(`/api/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to mark as read');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/notifications/user/${user?.id}`] });
+      toast({
+        title: "Notification marked as read",
+        description: "The notification has been marked as read successfully.",
+      });
+    },
+  });
+
+  // Mark all notifications as read
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/notifications/user/${user?.id}/read-all`, {
+        method: 'PUT',
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to mark all as read');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/notifications/user/${user?.id}`] });
+      toast({
+        title: "All notifications marked as read",
+        description: "All notifications have been marked as read successfully.",
+      });
+    },
+  });
+
+  const handleMarkAsRead = (notificationId: number) => {
+    markAsReadMutation.mutate(notificationId);
+  };
+
+  const handleMarkAllAsRead = () => {
+    markAllAsReadMutation.mutate();
+  };
 
   const formatTimeAgo = (dateString: string) => {
     const now = new Date();
@@ -445,15 +494,35 @@ export default function Navbar() {
             <Card className="h-full rounded-none border-0">
               {/* Header */}
               <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-primary text-white">
-                <h3 className="text-base sm:text-lg font-semibold">Notifications</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:text-white hover:bg-white/20 p-1"
-                  onClick={() => setIsMobileNotificationOpen(false)}
-                >
-                  <X className="h-5 w-5" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-semibold">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <Badge variant="secondary" className="bg-white/20 text-white text-xs">
+                      {unreadCount} new
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-white hover:text-white hover:bg-white/20 text-xs px-2 py-1"
+                      onClick={handleMarkAllAsRead}
+                      disabled={markAllAsReadMutation.isPending}
+                    >
+                      Mark all read
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:text-white hover:bg-white/20 p-1"
+                    onClick={() => setIsMobileNotificationOpen(false)}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
 
               {/* Content */}
@@ -469,40 +538,80 @@ export default function Navbar() {
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`p-3 sm:p-4 hover:bg-gray-50 transition-colors ${
+                          className={`relative group hover:bg-gray-50 transition-colors cursor-pointer ${
                             !notification.isRead
                               ? "bg-blue-50 border-l-4 border-l-primary"
                               : ""
                           }`}
+                          onClick={() => {
+                            if (!notification.isRead) {
+                              handleMarkAsRead(notification.id);
+                            }
+                          }}
                         >
-                          <div className="flex items-start space-x-2 sm:space-x-3">
-                            <div className="text-base sm:text-lg flex-shrink-0 mt-0.5">
-                              {getNotificationIcon(notification.type)}
-                            </div>
-                            <div className="flex-1 min-w-0 overflow-hidden">
-                              <div className="flex items-start justify-between mb-1 gap-2">
-                                <p className="text-xs sm:text-sm font-medium text-gray-900 leading-tight line-clamp-2">
-                                  {notification.title}
+                          <div className="p-3 sm:p-4">
+                            <div className="flex items-start space-x-2 sm:space-x-3">
+                              <div className="text-base sm:text-lg flex-shrink-0 mt-0.5">
+                                {getNotificationIcon(notification.type)}
+                              </div>
+                              <div className="flex-1 min-w-0 overflow-hidden">
+                                <div className="flex items-start justify-between mb-1 gap-2">
+                                  <p className="text-xs sm:text-sm font-medium text-gray-900 leading-tight line-clamp-2">
+                                    {notification.title}
+                                  </p>
+                                  <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+                                    <Badge
+                                      className={`text-xs px-1.5 py-0.5 ${getNotificationColor(notification.type)}`}
+                                    >
+                                      {notification.type}
+                                    </Badge>
+                                    {!notification.isRead && (
+                                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full flex-shrink-0 animate-pulse"></div>
+                                    )}
+                                  </div>
+                                </div>
+                                <p className="text-xs sm:text-sm text-gray-600 mb-2 leading-relaxed word-wrap break-words overflow-wrap-anywhere">
+                                  {notification.message}
                                 </p>
-                                <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-                                  <Badge
-                                    className={`text-xs px-1.5 py-0.5 ${getNotificationColor(notification.type)}`}
-                                  >
-                                    {notification.type}
-                                  </Badge>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-xs text-gray-400">
+                                    {formatTimeAgo(notification.createdAt)}
+                                  </p>
                                   {!notification.isRead && (
-                                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full flex-shrink-0"></div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-xs h-6 px-2 text-primary hover:bg-primary hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleMarkAsRead(notification.id);
+                                      }}
+                                      disabled={markAsReadMutation.isPending}
+                                    >
+                                      Mark as read
+                                    </Button>
                                   )}
                                 </div>
                               </div>
-                              <p className="text-xs sm:text-sm text-gray-600 mb-2 leading-relaxed word-wrap break-words overflow-wrap-anywhere">
-                                {notification.message}
-                              </p>
-                              <p className="text-xs text-gray-400">
-                                {formatTimeAgo(notification.createdAt)}
-                              </p>
                             </div>
                           </div>
+                          {!notification.isRead && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="absolute top-2 right-2 h-6 w-6 p-0 text-primary hover:bg-primary hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleMarkAsRead(notification.id);
+                              }}
+                              disabled={markAsReadMutation.isPending}
+                              title="Mark as read"
+                            >
+                              ✓
+                            </Button>
+                          )}
                         </div>
                       ))}
                     </div>
