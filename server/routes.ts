@@ -154,6 +154,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete user account endpoint
+  app.delete("/api/auth/delete-account", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      const { reason } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+
+      const parsedUserId = parseInt(userId as string);
+      if (isNaN(parsedUserId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      // Check if user exists
+      const user = await storage.getUser(parsedUserId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Log the deletion reason if provided
+      if (reason) {
+        console.log(`User ${user.email} (ID: ${parsedUserId}) deleted account. Reason: ${reason}`);
+      } else {
+        console.log(`User ${user.email} (ID: ${parsedUserId}) deleted account. No reason provided.`);
+      }
+
+      // Delete user account and all associated data
+      await storage.deleteUserAccount(parsedUserId);
+      
+      res.json({ message: "Account deleted successfully" });
+    } catch (error) {
+      console.error("Account deletion error:", error);
+      res.status(500).json({ error: "Failed to delete account" });
+    }
+  });
+
   // User lookup by email endpoint
   app.get("/api/users/by-email", async (req, res) => {
     try {

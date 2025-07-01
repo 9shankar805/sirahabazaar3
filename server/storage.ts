@@ -33,6 +33,7 @@ export interface IStorage {
   getUserByPhone(phone: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUserAccount(userId: number): Promise<void>;
 
   // Admin user operations
   getAdminUser(id: number): Promise<AdminUser | undefined>;
@@ -335,6 +336,76 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
     const [updatedUser] = await db.update(users).set(updates).where(eq(users.id, id)).returning();
     return updatedUser;
+  }
+
+  async deleteUserAccount(userId: number): Promise<void> {
+    // Delete user account and all associated data in the correct order to respect foreign key constraints
+    
+    // 1. Delete cart items
+    await db.delete(cartItems).where(eq(cartItems.userId, userId));
+    
+    // 2. Delete wishlist items
+    await db.delete(wishlistItems).where(eq(wishlistItems.userId, userId));
+    
+    // 3. Delete notifications
+    await db.delete(notifications).where(eq(notifications.userId, userId));
+    
+    // 4. Delete push notification tokens
+    await db.delete(pushNotificationTokens).where(eq(pushNotificationTokens.userId, userId));
+    
+    // 5. Get user's stores first
+    const userStores = await db.select().from(stores).where(eq(stores.ownerId, userId));
+    
+    // 6. For each store, delete associated data
+    for (const store of userStores) {
+      // Delete store products and their related data
+      const storeProducts = await db.select().from(products).where(eq(products.storeId, store.id));
+      
+      for (const product of storeProducts) {
+        // Delete product reviews
+        await db.delete(productReviews).where(eq(productReviews.productId, product.id));
+        
+        // Delete product attributes
+        await db.delete(productAttributes).where(eq(productAttributes.productId, product.id));
+      }
+      
+      // Delete all products for this store
+      await db.delete(products).where(eq(products.storeId, store.id));
+      
+      // Delete store analytics
+      await db.delete(storeAnalytics).where(eq(storeAnalytics.storeId, store.id));
+    }
+    
+    // 7. Delete all stores owned by user
+    await db.delete(stores).where(eq(stores.ownerId, userId));
+    
+    // 8. Handle delivery partner data if user is a delivery partner
+    const deliveryPartner = await db.select().from(deliveryPartners).where(eq(deliveryPartners.userId, userId)).limit(1);
+    if (deliveryPartner.length > 0) {
+      const partnerId = deliveryPartner[0].id;
+      
+      // Delete delivery location tracking
+      await db.delete(deliveryLocationTracking).where(eq(deliveryLocationTracking.deliveryPartnerId, partnerId));
+      
+      // Update deliveries to remove partner reference (don't delete delivery records for audit purposes)
+      await db.update(deliveries).set({ deliveryPartnerId: null }).where(eq(deliveries.deliveryPartnerId, partnerId));
+      
+      // Delete delivery partner record
+      await db.delete(deliveryPartners).where(eq(deliveryPartners.userId, userId));
+    }
+    
+    // 9. Handle orders - we'll anonymize rather than delete for business records
+    await db.update(orders).set({ 
+      customerName: 'Deleted User',
+      email: null,
+      phone: 'Deleted'
+    }).where(eq(orders.customerId, userId));
+    
+    // 10. Delete website visits
+    await db.delete(websiteVisits).where(eq(websiteVisits.userId, userId));
+    
+    // 11. Finally, delete the user account
+    await db.delete(users).where(eq(users.id, userId));
   }
 
   // Admin user operations

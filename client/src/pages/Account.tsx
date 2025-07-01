@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { User, Mail, Phone, MapPin, Calendar, ShoppingBag, Store, Settings, Edit, Clock, AlertCircle, Check } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, ShoppingBag, Store, Settings, Edit, Clock, AlertCircle, Check, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import PushNotificationSettings from "@/components/PushNotificationSettings";
 import SoundTestButton from "@/components/SoundTestButton";
@@ -155,6 +155,15 @@ export default function Account() {
                     </Button>
                   </Link>
                 )}
+                <Link href="/delete-account">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Account
+                  </Button>
+                </Link>
                 <Button 
                   variant="outline" 
                   className="w-full justify-start text-red-600 hover:text-red-700"

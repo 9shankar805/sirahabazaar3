@@ -32,6 +32,7 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Stores from "@/pages/Stores";
 import Account from "@/pages/Account";
+import DeleteAccount from "@/pages/DeleteAccount";
 import ShopkeeperDashboard from "@/pages/ShopkeeperDashboard";
 import CustomerDashboard from "@/pages/CustomerDashboard";
 import AdminPanel from "@/pages/AdminPanel";
@@ -91,6 +92,7 @@ function AppRouter() {
         <Route path="/store/:id" component={StoreDetail} />
         <Route path="/restaurant/:id" component={RestaurantDetail} />
         <Route path="/account" component={Account} />
+        <Route path="/delete-account" component={DeleteAccount} />
         <Route path="/shopkeeper-dashboard" component={ShopkeeperDashboard} />
         <Route path="/customer-dashboard" component={CustomerDashboard} />
         <Route path="/admin" component={ImprovedAdminDashboard} />

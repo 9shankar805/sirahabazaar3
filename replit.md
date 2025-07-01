@@ -120,6 +120,19 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### July 1, 2025 - Account Deletion Feature Implementation
+- ✓ Created comprehensive `/delete-account` page with professional confirmation interface
+- ✓ Added multi-step verification process requiring "DELETE" text confirmation and checkbox acknowledgment
+- ✓ Implemented detailed warning system showing all data types that will be deleted
+- ✓ Built role-specific data deletion warnings (shopkeepers see store data, delivery partners see earnings)
+- ✓ Created secure API endpoint `/api/auth/delete-account` for permanent account removal
+- ✓ Implemented comprehensive database cleanup function in storage layer
+- ✓ Added proper foreign key constraint handling for safe data deletion
+- ✓ Included order anonymization rather than deletion for business record preservation
+- ✓ Added "Delete Account" button to main Account page with trash icon
+- ✓ Integrated optional deletion reason tracking for platform improvement insights
+- → Users can now permanently delete their accounts with all associated data through a secure multi-step process
+
 ### July 1, 2025 - Professional Mobile Notification System with Mark as Read Functionality
 - ✓ Enhanced mobile notification interface with professional "mark as read" functionality
 - ✓ Added individual "mark as read" buttons that appear on hover/touch for each notification
