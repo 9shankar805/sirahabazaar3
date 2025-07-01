@@ -118,6 +118,15 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/autoplay";
 
+// Smart Recommendations Response Type
+interface SmartRecommendationsResponse {
+  products: Product[];
+  stores: Store[];
+  totalProducts: number;
+  totalStores: number;
+  isPersonalized: boolean;
+}
+
 // Slider image paths - using direct paths from public directory
 const slider1 = "/assets/slider2.jpg";
 const slider2 = "/assets/slider1.jpg";
@@ -163,6 +172,56 @@ export default function Homepage() {
 
   const categories = mode === "shopping" ? shoppingCategories : foodCategories;
 
+  // Track homepage visit for recommendations
+  useEffect(() => {
+    const trackVisit = async () => {
+      try {
+        await apiRequest('/api/recommendations/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user?.id || null,
+            page: '/',
+            action: 'homepage_visit'
+          })
+        });
+      } catch (error) {
+        console.log('Visit tracking failed (non-critical):', error);
+      }
+    };
+
+    trackVisit();
+  }, [user]);
+
+  // Get smart recommendations
+  const {
+    data: recommendations,
+    isLoading: recommendationsLoading,
+    error: recommendationsError,
+    refetch: refetchRecommendations,
+  } = useQuery<SmartRecommendationsResponse>({
+    queryKey: [`/api/recommendations/homepage`, mode, user?.id],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        mode: mode,
+        ...(user?.id && { userId: user.id.toString() })
+      });
+      
+      const response = await fetch(`/api/recommendations/homepage?${params}`, {
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch recommendations: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    retry: 3,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fallback to regular API calls if recommendations fail
   const {
     data: products,
     isLoading: productsLoading,
@@ -172,6 +231,7 @@ export default function Homepage() {
     queryKey: ["/api/products"],
     retry: 3,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !recommendations?.products?.length, // Only fetch if no recommendations
   });
 
   const {
@@ -183,10 +243,11 @@ export default function Homepage() {
     queryKey: ["/api/stores"],
     retry: 3,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !recommendations?.stores?.length, // Only fetch if no recommendations
   });
 
   // Fetch active flash sales
-  const { data: activeFlashSales } = useQuery({
+  const { data: activeFlashSales } = useQuery<any[]>({
     queryKey: ["/api/flash-sales/active"],
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
@@ -245,22 +306,36 @@ export default function Homepage() {
   if (products) console.log("Products loaded:", products.length);
   if (stores) console.log("Stores loaded:", stores.length);
 
-  const featuredProducts =
-    products
-      ?.filter((product) =>
-        mode === "shopping"
-          ? product.productType !== "food"
-          : product.productType === "food",
-      )
-      .slice(0, 6) || [];
-  const popularStores =
-    stores
-      ?.filter((store) =>
-        mode === "shopping"
-          ? store.storeType !== "restaurant"
-          : store.storeType === "restaurant",
-      )
-      .slice(0, 4) || [];
+  // Use recommendations if available, otherwise fallback to regular products
+  const recommendedProducts = recommendations?.products || [];
+  const recommendedStores = recommendations?.stores || [];
+  const isPersonalized = recommendations?.isPersonalized || false;
+
+  const featuredProducts = recommendedProducts.length > 0 
+    ? recommendedProducts.slice(0, 6)
+    : products
+        ?.filter((product) =>
+          mode === "shopping"
+            ? product.productType !== "food"
+            : product.productType === "food",
+        )
+        .slice(0, 6) || [];
+
+  const popularStores = recommendedStores.length > 0
+    ? recommendedStores.slice(0, 4)
+    : stores
+        ?.filter((store) =>
+          mode === "shopping"
+            ? store.storeType !== "restaurant"
+            : store.storeType === "restaurant",
+        )
+        .slice(0, 4) || [];
+
+  // Determine loading states
+  const isProductsLoading = recommendationsLoading || (productsLoading && !recommendedProducts.length);
+  const isStoresLoading = recommendationsLoading || (storesLoading && !recommendedStores.length);
+  const productsHaveError = recommendationsError && productsError;
+  const storesHaveError = recommendationsError && storesError;
 
   // Error handling component for products
   const ProductsErrorState = () => (
@@ -366,7 +441,7 @@ export default function Homepage() {
             "--swiper-pagination-bullet-inactive-opacity": "1",
             "--swiper-pagination-bullet-size": "10px",
             "--swiper-pagination-bullet-horizontal-gap": "6px",
-          }}
+          } as React.CSSProperties}
         >
           {slides.map((slide) => (
             <SwiperSlide key={slide.id}>
@@ -500,33 +575,30 @@ export default function Homepage() {
       <section className="py-8 sm:py-12 lg:py-16 bg-secondary/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-              Products
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+                {isPersonalized ? "Recommended for You" : "Featured Products"}
+              </h2>
+              {isPersonalized && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  Smart Pick
+                </Badge>
+              )}
+            </div>
             <Link href="/products">
               <Button
                 variant="outline"
-                className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0"
+                className="border-primary text-primary hover:bg-primary hover:text-white"
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
+                View All ({recommendations?.totalProducts || (products?.length || 0)})
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
-          {productsError ? (
+          {productsHaveError ? (
             <ProductsErrorState />
-          ) : productsLoading ? (
+          ) : isProductsLoading ? (
             <ProductsLoadingState />
           ) : featuredProducts.length === 0 ? (
             <div className="text-center py-12">
@@ -551,33 +623,30 @@ export default function Homepage() {
       <section className="py-8 sm:py-12 lg:py-16 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-              Stores
-            </h2>
-            <Link href="/stores">
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+                {isPersonalized ? "Stores You Might Like" : `Popular ${mode === "shopping" ? "Stores" : "Restaurants"}`}
+              </h2>
+              {isPersonalized && (
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Curated
+                </Badge>
+              )}
+            </div>
+            <Link href={mode === "shopping" ? "/stores" : "/restaurants"}>
               <Button
                 variant="outline"
-                className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0"
+                className="border-primary text-primary hover:bg-primary hover:text-white"
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
+                View All ({recommendations?.totalStores || (stores?.length || 0)})
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
-          {storesError ? (
+          {storesHaveError ? (
             <StoresErrorState />
-          ) : storesLoading ? (
+          ) : isStoresLoading ? (
             <StoresLoadingState />
           ) : popularStores.length === 0 ? (
             <div className="text-center py-12">
