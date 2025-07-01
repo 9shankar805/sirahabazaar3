@@ -172,7 +172,7 @@ export default function FoodHomepage() {
         {/* Featured Offers */}
         {featuredFood.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-8 mr-2.5">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
@@ -191,7 +191,7 @@ export default function FoodHomepage() {
                 </p>
               </div>
               <Link href="/food-offers">
-                <Button variant="outline" className="border-red-500 text-red-500 hover:bg-red-50 w-8 h-8 p-0 mr-2.5">
+                <Button variant="outline" className="border-red-500 text-red-500 hover:bg-red-50 w-8 h-8 p-0">
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -223,7 +223,7 @@ export default function FoodHomepage() {
         {/* Popular Restaurants */}
         {popularRestaurants.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-8 mr-2.5">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
@@ -242,7 +242,7 @@ export default function FoodHomepage() {
                 </p>
               </div>
               <Link href="/restaurants">
-                <Button variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-50 w-8 h-8 p-0 mr-2.5">
+                <Button variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-50 w-8 h-8 p-0">
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -259,7 +259,7 @@ export default function FoodHomepage() {
         {/* Quick Bites */}
         {quickBites.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-8 mr-2.5">
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
                   <Clock className="mr-2 sm:mr-3 h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-green-500" />
@@ -270,7 +270,7 @@ export default function FoodHomepage() {
                 </p>
               </div>
               <Link href="/quick-bites">
-                <Button variant="outline" className="border-green-500 text-green-500 hover:bg-green-50 w-8 h-8 p-0 mr-2.5">
+                <Button variant="outline" className="border-green-500 text-green-500 hover:bg-green-50 w-8 h-8 p-0">
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>

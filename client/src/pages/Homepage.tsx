@@ -574,7 +574,7 @@ export default function Homepage() {
       {/* Featured Products */}
       <section className="py-8 sm:py-12 lg:py-16 bg-secondary/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4 mr-2.5">
             <div className="flex items-center gap-2">
               <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
                 {isPersonalized ? "Recommended for You" : "Featured Products"}
@@ -589,7 +589,7 @@ export default function Homepage() {
             <Link href="/products">
               <Button
                 variant="outline"
-                className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0 mr-2.5"
+                className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0"
               >
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -621,7 +621,7 @@ export default function Homepage() {
       {/* Popular Stores */}
       <section className="py-8 sm:py-12 lg:py-16 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4 mr-2.5">
             <div className="flex items-center gap-2">
               <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
                 {isPersonalized ? "Stores You Might Like" : `Popular ${mode === "shopping" ? "Stores" : "Restaurants"}`}
@@ -636,7 +636,7 @@ export default function Homepage() {
             <Link href={mode === "shopping" ? "/stores" : "/restaurants"}>
               <Button
                 variant="outline"
-                className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0 mr-2.5"
+                className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0"
               >
                 <ArrowRight className="h-4 w-4" />
               </Button>
