@@ -576,7 +576,7 @@ export default function Homepage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
                 {isPersonalized ? "Recommended for You" : "Featured Products"}
               </h2>
               {isPersonalized && (
@@ -589,10 +589,11 @@ export default function Homepage() {
             <Link href="/products">
               <Button
                 variant="outline"
-                className="border-primary text-primary hover:bg-primary hover:text-white"
+                size="sm"
+                className="border-primary text-primary hover:bg-primary hover:text-white text-xs sm:text-sm"
               >
                 View All ({recommendations?.totalProducts || (products?.length || 0)})
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </Link>
           </div>
@@ -624,7 +625,7 @@ export default function Homepage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-10 gap-4">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
                 {isPersonalized ? "Stores You Might Like" : `Popular ${mode === "shopping" ? "Stores" : "Restaurants"}`}
               </h2>
               {isPersonalized && (
@@ -637,10 +638,11 @@ export default function Homepage() {
             <Link href={mode === "shopping" ? "/stores" : "/restaurants"}>
               <Button
                 variant="outline"
-                className="border-primary text-primary hover:bg-primary hover:text-white"
+                size="sm"
+                className="border-primary text-primary hover:bg-primary hover:text-white text-xs sm:text-sm"
               >
                 View All ({recommendations?.totalStores || (stores?.length || 0)})
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </Link>
           </div>

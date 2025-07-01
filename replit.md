@@ -120,7 +120,7 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### July 1, 2025 - Mobile-Optimized Food Mode Text and Interface
+### July 1, 2025 - Mobile-Optimized Interface for Both Shopping and Food Modes
 - ✓ Optimized all text sizes in food mode for mobile screens
 - ✓ Reduced hero section headings from text-4xl to text-2xl on mobile with progressive scaling
 - ✓ Made section headings responsive: text-lg on mobile, text-3xl on desktop
@@ -130,8 +130,11 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - ✓ Made all buttons smaller and more mobile-appropriate (size="sm")
 - ✓ Reduced button padding and icon sizes for better mobile fit
 - ✓ Adjusted container padding and spacing for mobile screens
-- ✓ Optimized "View All" buttons with smaller text and responsive sizing
-- → Food mode now provides excellent mobile experience with appropriately sized text and elements
+- ✓ Optimized "View All" buttons with smaller text and responsive sizing in both modes
+- ✓ Applied consistent mobile-friendly button styling to shopping homepage "View All" buttons
+- ✓ Made section headings in shopping mode responsive to match food mode styling
+- ✓ Ensured complete consistency between shopping and food mode interfaces
+- → Both shopping and food modes now provide excellent mobile experience with appropriately sized text and elements
 
 ### June 30, 2025 - Smart Recommendations System for Both Shopping and Food Modes
 - ✓ Integrated smart recommendations system into both Homepage (shopping) and FoodHomepage (food)
