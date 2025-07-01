@@ -3179,15 +3179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/orders/:orderId/tracking", async (req, res) => {
-    try {
-      const orderId = parseInt(req.params.orderId);
-      const tracking = await storage.getOrderTracking(orderId);
-      res.json(tracking);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch order tracking" });
-    }
-  });
+
 
   // Return policy routes
   app.post("/api/stores/:storeId/return-policy", async (req, res) => {

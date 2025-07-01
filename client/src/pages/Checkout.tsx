@@ -248,9 +248,21 @@ export default function Checkout() {
         throw new Error("Product information not available");
       }
 
-      // For demo purposes, using mock store coordinates
-      // In real implementation, you'd get this from the store data
-      const storeCoords = { latitude: 26.6618, longitude: 86.2025 }; // Siraha, Nepal
+      // Get actual store coordinates from product's store
+      const storeResponse = await fetch(`/api/stores/${firstItem.product.storeId}`);
+      if (!storeResponse.ok) {
+        throw new Error("Failed to fetch store information");
+      }
+      const store = await storeResponse.json();
+      
+      if (!store.latitude || !store.longitude) {
+        throw new Error("Store location not available");
+      }
+
+      const storeCoords = { 
+        latitude: parseFloat(store.latitude), 
+        longitude: parseFloat(store.longitude) 
+      };
 
       // Calculate distance
       const distance = calculateDistance(storeCoords, location);
@@ -309,9 +321,21 @@ export default function Checkout() {
         throw new Error("Product information not available");
       }
 
-      // For demo purposes, using mock store coordinates
-      // In real implementation, you'd get this from the store data
-      const storeCoords = { latitude: 26.6618, longitude: 86.2025 }; // Siraha, Nepal
+      // Get actual store coordinates from product's store
+      const storeResponse = await fetch(`/api/stores/${firstItem.product.storeId}`);
+      if (!storeResponse.ok) {
+        throw new Error("Failed to fetch store information");
+      }
+      const store = await storeResponse.json();
+      
+      if (!store.latitude || !store.longitude) {
+        throw new Error("Store location not available");
+      }
+
+      const storeCoords = { 
+        latitude: parseFloat(store.latitude), 
+        longitude: parseFloat(store.longitude) 
+      };
       
       // Use enhanced geocoding with validation
       const geocodingResult = await geocodeAddressWithValidation(shippingAddress);
