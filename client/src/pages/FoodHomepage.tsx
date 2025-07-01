@@ -191,7 +191,7 @@ export default function FoodHomepage() {
                 </p>
               </div>
               <Link href="/food-offers">
-                <Button variant="outline" className="border-red-500 text-red-500 hover:bg-red-50 w-8 h-8 p-0">
+                <Button variant="outline" className="border-red-500 text-red-500 hover:bg-red-50 w-8 h-8 p-0 mr-2.5">
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -242,7 +242,7 @@ export default function FoodHomepage() {
                 </p>
               </div>
               <Link href="/restaurants">
-                <Button variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-50 w-8 h-8 p-0">
+                <Button variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-50 w-8 h-8 p-0 mr-2.5">
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -270,7 +270,7 @@ export default function FoodHomepage() {
                 </p>
               </div>
               <Link href="/quick-bites">
-                <Button variant="outline" className="border-green-500 text-green-500 hover:bg-green-50 w-8 h-8 p-0">
+                <Button variant="outline" className="border-green-500 text-green-500 hover:bg-green-50 w-8 h-8 p-0 mr-2.5">
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
