@@ -589,11 +589,9 @@ export default function Homepage() {
             <Link href="/products">
               <Button
                 variant="outline"
-                size="sm"
-                className="border-primary text-primary hover:bg-primary hover:text-white text-xs sm:text-sm"
+                className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0"
               >
-                View All ({recommendations?.totalProducts || (products?.length || 0)})
-                <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -638,11 +636,9 @@ export default function Homepage() {
             <Link href={mode === "shopping" ? "/stores" : "/restaurants"}>
               <Button
                 variant="outline"
-                size="sm"
-                className="border-primary text-primary hover:bg-primary hover:text-white text-xs sm:text-sm"
+                className="border-primary text-primary hover:bg-primary hover:text-white w-8 h-8 p-0"
               >
-                View All ({recommendations?.totalStores || (stores?.length || 0)})
-                <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
