@@ -120,6 +120,18 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### June 30, 2025 - Smart Recommendations System for Both Shopping and Food Modes
+- ✓ Integrated smart recommendations system into both Homepage (shopping) and FoodHomepage (food)
+- ✓ Added personalized product recommendations with "Smart Pick" badges for logged-in users
+- ✓ Created curated store/restaurant recommendations with "Curated" badges
+- ✓ Enhanced recommendation tracking for user behavior analysis and personalization
+- ✓ Built fallback system to show regular products when recommendations aren't available
+- ✓ Added automatic homepage navigation when switching between shopping and food modes
+- ✓ Mode-specific filtering ensures shopping mode shows retail items and food mode shows restaurants
+- ✓ Real-time updates with 5-minute cache refresh for dynamic recommendations
+- ✓ Seamless integration with existing product and store display components
+- → Both shopping and food modes now provide personalized recommendations that improve with usage
+
 ### June 30, 2025 - Enhanced Order Management with Product Images from Inventory
 - ✓ Fixed order items API to fetch actual product images from inventory database
 - ✓ Enhanced image fetching logic to prefer images array over single imageUrl field
