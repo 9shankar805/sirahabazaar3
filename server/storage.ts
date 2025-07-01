@@ -889,9 +889,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOrderTracking(orderId: number): Promise<OrderTracking[]> {
-    return await db.select().from(orderTracking)
-      .where(eq(orderTracking.orderId, orderId))
-      .orderBy(desc(orderTracking.createdAt));
+    try {
+      const result = await db.select().from(orderTracking)
+        .where(eq(orderTracking.orderId, orderId))
+        .orderBy(sql`updated_at DESC`);
+      return result;
+    } catch (error) {
+      console.error('Error in getOrderTracking:', error);
+      // Return empty array as fallback
+      return [];
+    }
   }
 
   async updateOrderTracking(orderId: number, status: string, description?: string, location?: string): Promise<OrderTracking> {
@@ -900,7 +907,7 @@ export class DatabaseStorage implements IStorage {
       status,
       description: description || `Order ${status}`,
       location: location || 'Unknown',
-      createdAt: new Date()
+      updatedAt: new Date()
     };
 
     const [newTracking] = await db.insert(orderTracking).values(trackingData).returning();
