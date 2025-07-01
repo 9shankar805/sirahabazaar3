@@ -486,85 +486,183 @@ export default function CustomerDashboard() {
 
             {/* Live Delivery Tracking */}
             {activeTab === "tracking" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Truck className="h-5 w-5" />
-                    <span>Live Delivery Tracking</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {/* Show active deliveries */}
-                  {(() => {
-                    const activeOrders = orders.filter(order => 
-                      order.status === 'shipped' || 
-                      order.status === 'processing' || 
-                      order.status === 'out for delivery'
-                    );
-                    
-                    if (activeOrders.length === 0) {
-                      return (
-                        <div className="text-center py-12">
-                          <Truck className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                          <h3 className="text-lg font-semibold mb-2">No active deliveries</h3>
-                          <p className="text-muted-foreground mb-4">
-                            You don't have any orders currently being delivered.
-                          </p>
+              <div className="space-y-6">
+                {/* Order Tracking System */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Package className="h-5 w-5" />
+                        <span>Order Tracking System</span>
+                      </div>
+                      <Badge variant="secondary">{orders.length} orders</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {orders.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">No orders found</h3>
+                        <p className="text-muted-foreground mb-4">
+                          You haven't placed any orders yet. Start shopping to see your order tracking here.
+                        </p>
+                        <Link href="/">
                           <Button>Start Shopping</Button>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="space-y-6">
-                        {activeOrders.map((order) => (
-                          <div key={order.id} className="space-y-4">
-                            <div className="flex items-center justify-between p-4 border rounded-lg">
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {orders.slice(0, 5).map((order) => (
+                          <div key={order.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-center justify-between mb-4">
                               <div>
-                                <h4 className="font-medium">Order #{order.id}</h4>
+                                <h4 className="font-semibold text-lg">Order #{order.id}</h4>
                                 <p className="text-sm text-muted-foreground">
-                                  Status: <Badge variant="secondary">{order.status}</Badge>
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  Total: ₹{Number(order.totalAmount).toLocaleString()}
+                                  Placed on {new Date(order.createdAt).toLocaleDateString()}
                                 </p>
                               </div>
                               <div className="text-right">
-                                <p className="text-sm text-muted-foreground">
-                                  Ordered on {new Date(order.createdAt).toLocaleDateString()}
+                                <Badge className={`
+                                  ${order.status === 'delivered' ? 'bg-green-500' : 
+                                    order.status === 'pending' ? 'bg-yellow-500' : 
+                                    'bg-blue-500'} text-white
+                                `}>
+                                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                </Badge>
+                                <p className="text-sm font-semibold mt-1">
+                                  ₹{Number(order.totalAmount).toLocaleString()}
                                 </p>
                               </div>
                             </div>
                             
-                            {/* Delivery Tracking Map for this order */}
-                            <div className="h-96 border rounded-lg">
-                              <DeliveryTrackingMap
-                                deliveryId={order.id}
-                                userType="customer"
-                                onStatusUpdate={(status) => {
-                                  // Handle status updates
-                                  console.log(`Order ${order.id} status updated to: ${status}`);
-                                }}
-                              />
+                            {/* Quick Status Display */}
+                            <div className="flex items-center space-x-2 mb-4">
+                              <CheckCircle className={`h-4 w-4 ${order.status !== 'pending' ? 'text-green-500' : 'text-gray-300'}`} />
+                              <span className="text-sm">Order Placed</span>
+                              <div className="h-px bg-gray-300 flex-1"></div>
+                              <CheckCircle className={`h-4 w-4 ${order.status === 'delivered' ? 'text-green-500' : 'text-gray-300'}`} />
+                              <span className="text-sm">Delivered</span>
                             </div>
                             
                             <div className="flex gap-2">
                               <Link href={`/orders/${order.id}/tracking`}>
-                                <Button variant="outline" size="sm">
-                                  View Full Details
+                                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4" />
+                                  Track Order
                                 </Button>
                               </Link>
-                              <Button variant="outline" size="sm">
-                                Contact Delivery Partner
-                              </Button>
+                              {order.status !== 'delivered' && (
+                                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                                  <Truck className="h-4 w-4" />
+                                  Contact Support
+                                </Button>
+                              )}
                             </div>
                           </div>
                         ))}
+                        
+                        {orders.length > 5 && (
+                          <div className="text-center pt-4">
+                            <Button variant="outline">View All Orders</Button>
+                          </div>
+                        )}
                       </div>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Live Delivery Tracking */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Truck className="h-5 w-5" />
+                      <span>Live Delivery Tracking</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Show active deliveries */}
+                    {(() => {
+                      const activeOrders = orders.filter(order => 
+                        order.status === 'shipped' || 
+                        order.status === 'processing' || 
+                        order.status === 'out for delivery' ||
+                        order.status === 'picked_up' ||
+                        order.status === 'en_route_delivery'
+                      );
+                      
+                      if (activeOrders.length === 0) {
+                        return (
+                          <div className="text-center py-12">
+                            <Truck className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">No active deliveries</h3>
+                            <p className="text-muted-foreground mb-4">
+                              You don't have any orders currently being delivered.
+                            </p>
+                            <Link href="/">
+                              <Button>Start Shopping</Button>
+                            </Link>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="space-y-6">
+                          {activeOrders.map((order) => (
+                            <div key={order.id} className="space-y-4">
+                              <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-50">
+                                <div>
+                                  <h4 className="font-medium">Order #{order.id}</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    Status: <Badge variant="secondary">{order.status}</Badge>
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Total: ₹{Number(order.totalAmount).toLocaleString()}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                    <span className="text-sm font-medium text-green-600">Live Tracking</span>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    Ordered on {new Date(order.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {/* Delivery Tracking Map for this order */}
+                              <div className="h-96 border rounded-lg">
+                                <DeliveryTrackingMap
+                                  deliveryId={order.id}
+                                  userType="customer"
+                                  onStatusUpdate={(status) => {
+                                    console.log(`Order ${order.id} status updated to: ${status}`);
+                                  }}
+                                />
+                              </div>
+                              
+                              <div className="flex gap-2">
+                                <Link href={`/orders/${order.id}/tracking`}>
+                                  <Button variant="outline" size="sm">
+                                    View Full Timeline
+                                  </Button>
+                                </Link>
+                                <Button variant="outline" size="sm">
+                                  Contact Delivery Partner
+                                </Button>
+                                <Button variant="outline" size="sm">
+                                  <RefreshCw className="h-4 w-4 mr-2" />
+                                  Refresh
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {/* Profile Settings */}
