@@ -88,31 +88,31 @@ export default function FoodCard({ food }: FoodCardProps) {
           )}
         </div>
         
-        <CardContent className="p-4">
+        <CardContent className="p-3 sm:p-4">
           <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-lg group-hover:text-red-600 transition-colors line-clamp-1">
+            <h3 className="font-semibold text-sm sm:text-base md:text-lg group-hover:text-red-600 transition-colors line-clamp-1">
               {food.name}
             </h3>
             <div className="flex flex-col items-end">
-              <span className="font-bold text-lg text-red-600">
+              <span className="font-bold text-sm sm:text-base md:text-lg text-red-600">
                 ₹{discountedPrice}
               </span>
               {food.isOnOffer && (
-                <span className="text-sm text-gray-500 line-through">
+                <span className="text-xs sm:text-sm text-gray-500 line-through">
                   ₹{food.price}
                 </span>
               )}
             </div>
           </div>
           
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
+          <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2">
             {food.description}
           </p>
           
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
             {food.preparationTime && (
-              <div className="flex items-center space-x-1 text-sm text-gray-600">
-                <Clock className="h-4 w-4" />
+              <div className="flex items-center space-x-1 text-xs sm:text-sm text-gray-600">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>{food.preparationTime}</span>
               </div>
             )}
@@ -125,12 +125,12 @@ export default function FoodCard({ food }: FoodCardProps) {
           </div>
           
           {food.rating && parseFloat(food.rating) > 0 && (
-            <div className="flex items-center space-x-1 mb-3">
+            <div className="flex items-center space-x-1 mb-2 sm:mb-3">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
                   <span
                     key={i}
-                    className={`text-sm ${
+                    className={`text-xs sm:text-sm ${
                       i < Math.floor(parseFloat(food.rating ?? "0"))
                         ? 'text-yellow-400'
                         : 'text-gray-300'
@@ -140,7 +140,7 @@ export default function FoodCard({ food }: FoodCardProps) {
                   </span>
                 ))}
               </div>
-              <span className="text-sm text-gray-600">
+              <span className="text-xs sm:text-sm text-gray-600">
                 ({food.totalReviews} reviews)
               </span>
             </div>

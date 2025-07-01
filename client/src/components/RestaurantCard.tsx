@@ -61,18 +61,18 @@ export default function RestaurantCard({ restaurant, showDistance = true }: Rest
           )}
         </div>
 
-        <CardContent className="p-4">
+        <CardContent className="p-3 sm:p-4">
           <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-lg group-hover:text-red-600 transition-colors line-clamp-1">
+            <h3 className="font-semibold text-sm sm:text-base md:text-lg group-hover:text-red-600 transition-colors line-clamp-1">
               {restaurant.name}
             </h3>
             <div className="flex items-center space-x-1 flex-shrink-0">
-              <Star className="h-4 w-4 text-yellow-400 fill-current" />
-              <span className="text-sm font-medium">{restaurant.rating}</span>
+              <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-400 fill-current" />
+              <span className="text-xs sm:text-sm font-medium">{restaurant.rating}</span>
             </div>
           </div>
 
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
+          <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2">
             {restaurant.description || `Delicious ${restaurant.cuisineType || 'multi-cuisine'} food delivered to your doorstep`}
           </p>
 
@@ -82,13 +82,13 @@ export default function RestaurantCard({ restaurant, showDistance = true }: Rest
             </Badge>
           )}
 
-          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+          <div className="flex items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2">
             <div className="flex items-center space-x-1">
-              <Clock className="h-4 w-4" />
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>{restaurant.deliveryTime || "25-35 mins"}</span>
             </div>
             <div className="flex items-center space-x-1">
-              <Bike className="h-4 w-4" />
+              <Bike className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>{deliveryFee}</span>
             </div>
           </div>
