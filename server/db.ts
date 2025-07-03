@@ -2,8 +2,8 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-// PostgreSQL database URL - using Replit's provided PostgreSQL database
-const DATABASE_URL = process.env.DATABASE_URL;
+// PostgreSQL database URL - using Neon database with existing data
+const DATABASE_URL = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_8S1tihPQpDuH@ep-lucky-meadow-a8x292uf-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
 
 if (!DATABASE_URL) {
   throw new Error(
@@ -11,7 +11,7 @@ if (!DATABASE_URL) {
   );
 }
 
-console.log(`🔌 Using Replit PostgreSQL database with crash prevention`);
+console.log(`🔌 Using Neon PostgreSQL database with existing data and crash prevention`);
 
 // Ultra-robust pool configuration with advanced crash prevention
 export const pool = new Pool({
