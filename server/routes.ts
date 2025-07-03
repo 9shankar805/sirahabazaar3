@@ -18,15 +18,15 @@ import {
   insertOrderTrackingSchema, insertReturnPolicySchema, insertReturnSchema, insertCategorySchema,
   insertPromotionSchema, insertAdvertisementSchema, insertProductReviewSchema, insertSettlementSchema,
   insertStoreAnalyticsSchema, insertInventoryLogSchema, insertCouponSchema, insertBannerSchema,
-  insertFlashSaleSchema, stores,
+  insertFlashSaleSchema,
   insertSupportTicketSchema, insertSiteSettingSchema, insertFraudAlertSchema, insertCommissionSchema,
   insertProductAttributeSchema, insertVendorVerificationSchema, insertAdminLogSchema,
   insertDeliveryPartnerSchema, insertDeliverySchema,
   users, orders, deliveries, deliveryPartners, notifications, deliveryLocationTracking, 
-  deliveryRoutes, deliveryStatusHistory, stores
+  deliveryRoutes, deliveryStatusHistory, stores, websiteVisits
 } from "@shared/schema";
 
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, gte } from "drizzle-orm";
 
 // Initialize real-time tracking service
 const realTimeTrackingService = new RealTimeTrackingService();
