@@ -120,6 +120,19 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### July 3, 2025 - Automatic Delivery Partner Notifications for Ready for Pickup Orders
+- ✓ Fixed critical issue where delivery partners weren't receiving notifications when orders were marked "ready for pickup"
+- ✓ Enhanced /api/orders/:id/status endpoint to automatically notify all available delivery partners
+- ✓ Added comprehensive notification system that triggers when order status changes to "ready_for_pickup"
+- ✓ Notifications include complete order details: store name, customer info, total amount, and delivery fee
+- ✓ Implemented first-accept-first-serve system for pickup-ready orders
+- ✓ Added automatic store address lookup and customer location details in notifications
+- ✓ System now sends "📦 Pickup Available" notifications to all approved and available delivery partners
+- ✓ Verified fix works correctly: Order #18 automatically notified 2 delivery partners when marked ready for pickup
+- ✓ Notifications include comprehensive data: pickup address, delivery address, earnings info, and order details
+- ✓ Added error handling to prevent notification failures from affecting order status updates
+- → Delivery partners now receive instant notifications when any order becomes ready for pickup, eliminating manual notification steps
+
 ### July 3, 2025 - Enterprise-Level Delivery Partner Dashboard Implementation
 - ✓ Created professional delivery partner dashboard matching Amazon/Flipkart standards
 - ✓ Implemented comprehensive enhanced-stats API endpoint with real performance calculations

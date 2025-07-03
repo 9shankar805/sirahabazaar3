@@ -1225,6 +1225,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description
       );
 
+      // Automatically notify delivery partners when order is ready for pickup
+      if (status === 'ready_for_pickup') {
+        try {
+          // Get store details for the order
+          const orderItems = await storage.getOrderItems(order.id);
+          let storeName = 'Store';
+          let storeAddress = 'Store Location';
+          
+          if (orderItems.length > 0) {
+            const store = await storage.getStore(orderItems[0].storeId);
+            if (store) {
+              storeName = store.name;
+              storeAddress = store.address || store.name;
+            }
+          }
+
+          // Get all available delivery partners
+          const deliveryPartners = await storage.getAllDeliveryPartners();
+          const availablePartners = deliveryPartners.filter(partner => 
+            partner.status === 'approved' && partner.isAvailable
+          );
+
+          // Send notification to all available delivery partners
+          const notificationMessage = `🚚 Order Ready for Pickup: Order #${order.id} from ${storeName}. Customer: ${order.customerName}, Amount: ₹${order.totalAmount}. First to accept gets delivery!`;
+          
+          for (const partner of availablePartners) {
+            await storage.createNotification({
+              userId: partner.userId,
+              title: "📦 Pickup Available",
+              message: notificationMessage,
+              type: "delivery_assignment",
+              isRead: false,
+              orderId: order.id,
+              data: JSON.stringify({
+                orderId: order.id,
+                storeName,
+                storeAddress,
+                customerName: order.customerName,
+                totalAmount: order.totalAmount,
+                deliveryFee: order.deliveryFee || 0,
+                pickupAddress: storeAddress,
+                deliveryAddress: order.deliveryAddress || 'Customer Location',
+                isReadyForPickup: true,
+                firstAcceptFirstServe: true
+              })
+            });
+          }
+
+          console.log(`✅ Automatically notified ${availablePartners.length} delivery partners about order #${order.id} ready for pickup`);
+        } catch (notificationError) {
+          console.error('Failed to notify delivery partners about ready for pickup:', notificationError);
+          // Don't fail the entire request if notification fails
+        }
+      }
+
       res.json(order);
     } catch (error) {
       res.status(400).json({ error: "Failed to update order status" });
