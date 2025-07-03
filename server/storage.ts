@@ -1,7 +1,7 @@
 import { 
   users, adminUsers, stores, categories, products, orders, orderItems, cartItems, wishlistItems,
   admins, websiteVisits, notifications, orderTracking, returnPolicies, returns,
-  promotions, advertisements, productReviews, settlements, storeAnalytics, inventoryLogs,
+  promotions, advertisements, productReviews, reviewLikes, settlements, storeAnalytics, inventoryLogs,
   paymentTransactions, coupons, banners, supportTickets, siteSettings, deliveryPartners, deliveries,
   vendorVerifications, fraudAlerts, commissions, productAttributes, adminLogs, deliveryZones, flashSales,
   pushNotificationTokens,
@@ -13,7 +13,7 @@ import {
   type Notification, type InsertNotification, type OrderTracking, type InsertOrderTracking,
   type ReturnPolicy, type InsertReturnPolicy, type Return, type InsertReturn,
   type Promotion, type InsertPromotion, type Advertisement, type InsertAdvertisement,
-  type ProductReview, type InsertProductReview, type Settlement, type InsertSettlement,
+  type ProductReview, type InsertProductReview, type ReviewLike, type InsertReviewLike, type Settlement, type InsertSettlement,
   type StoreAnalytics, type InsertStoreAnalytics, type InventoryLog, type InsertInventoryLog,
   type DeliveryPartner, type InsertDeliveryPartner, type Delivery, type InsertDelivery, type DeliveryZone, type InsertDeliveryZone,
   type PaymentTransaction, type Coupon, type InsertCoupon, type Banner, type InsertBanner,
@@ -1209,6 +1209,70 @@ export class DatabaseStorage implements IStorage {
       return updated;
     } catch {
       return undefined;
+    }
+  }
+
+  async markReviewAsHelpful(reviewId: number, userId: number): Promise<{ alreadyLiked: boolean; helpfulCount: number }> {
+    try {
+      // Create the review_likes table if it doesn't exist
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS review_likes (
+          id SERIAL PRIMARY KEY,
+          review_id INTEGER NOT NULL,
+          user_id INTEGER NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+          UNIQUE(review_id, user_id)
+        )
+      `);
+
+      // Check if user has already liked this review using raw SQL for better reliability
+      const existingLikeResult = await db.execute(sql`
+        SELECT COUNT(*) as count FROM review_likes 
+        WHERE review_id = ${reviewId} AND user_id = ${userId}
+      `);
+
+      const existingCount = existingLikeResult.rows[0]?.count || 0;
+      
+      if (Number(existingCount) > 0) {
+        // User has already liked this review, return current count
+        const currentReview = await db.select().from(productReviews).where(eq(productReviews.id, reviewId)).limit(1);
+        return {
+          alreadyLiked: true,
+          helpfulCount: currentReview[0]?.helpfulCount || 0
+        };
+      }
+
+      // Record the like using raw SQL to handle potential constraint violations
+      try {
+        await db.execute(sql`
+          INSERT INTO review_likes (review_id, user_id) 
+          VALUES (${reviewId}, ${userId})
+          ON CONFLICT (review_id, user_id) DO NOTHING
+        `);
+      } catch (insertError) {
+        console.log("Insert error (possibly duplicate):", insertError);
+        // If insert fails due to duplicate, check current count and return
+        const currentReview = await db.select().from(productReviews).where(eq(productReviews.id, reviewId)).limit(1);
+        return {
+          alreadyLiked: true,
+          helpfulCount: currentReview[0]?.helpfulCount || 0
+        };
+      }
+
+      // Increment the helpful count
+      const [updated] = await db
+        .update(productReviews)
+        .set({ helpfulCount: sql`${productReviews.helpfulCount} + 1` })
+        .where(eq(productReviews.id, reviewId))
+        .returning();
+
+      return {
+        alreadyLiked: false,
+        helpfulCount: updated?.helpfulCount || 0
+      };
+    } catch (error) {
+      console.error("Error marking review as helpful:", error);
+      throw error;
     }
   }
 

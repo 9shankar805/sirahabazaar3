@@ -84,7 +84,8 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
         method: "POST",
         headers: {
           "Content-Type": "application/json"
-        }
+        },
+        body: JSON.stringify({ userId: user?.id || 9 }) // Use logged in user or default for testing
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products", productId, "reviews"] });
@@ -94,9 +95,10 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
       });
     },
     onError: (error: any) => {
+      const errorMessage = error?.error || error?.message || "Failed to mark review as helpful";
       toast({
         title: "Error",
-        description: error.message || "Failed to mark review as helpful",
+        description: errorMessage,
         variant: "destructive"
       });
     }

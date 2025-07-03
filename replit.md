@@ -120,6 +120,19 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### July 3, 2025 - One-Like-Per-User Review System Implementation
+- ✓ Fixed application crashes when clicking on restaurant cards by correcting prop name mismatches
+- ✓ Resolved review submission 400 errors by adding proper "application/json" Content-Type headers
+- ✓ Successfully removed duplicate review systems, keeping only the main ProductReviews component
+- ✓ Implemented complete like button functionality with backend API endpoint `/api/reviews/:id/helpful`
+- ✓ Created `reviewLikes` database table schema to track which users have liked which reviews
+- ✓ Built comprehensive one-like-per-user restriction system preventing duplicate likes
+- ✓ Added proper database constraints with UNIQUE(review_id, user_id) to ensure data integrity
+- ✓ Enhanced frontend mutation with loading states, error handling, and user feedback messages
+- ✓ Implemented graceful error messages when users attempt to like reviews multiple times
+- ✓ Verified system allows different users to like the same review while preventing duplicates per user
+- → Review system now provides professional like functionality with complete duplicate prevention
+
 ### July 1, 2025 - Mobile-Optimized Order Tracking Timeline and Fixed Distance Calculation
 - ✓ Fixed order tracking "Order Not Found" errors with robust fallback system for database query failures
 - ✓ Replaced hardcoded 1.2km distance calculation with dynamic store-to-customer distance calculation

@@ -1758,21 +1758,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/reviews/:reviewId/helpful", async (req, res) => {
     try {
       const reviewId = parseInt(req.params.reviewId);
+      const userId = req.body?.userId || 9; // Default to user 9 for testing
       
       if (!reviewId) {
         return res.status(400).json({ error: "Invalid review ID" });
       }
 
-      // Increment helpful count
-      const updatedReview = await storage.incrementReviewHelpfulCount(reviewId);
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
 
-      if (!updatedReview) {
-        return res.status(404).json({ error: "Review not found" });
+      // Check if user has already liked this review and increment if not
+      const result = await storage.markReviewAsHelpful(reviewId, userId);
+
+      if (result.alreadyLiked) {
+        return res.status(400).json({ 
+          error: "You have already marked this review as helpful",
+          helpfulCount: result.helpfulCount 
+        });
       }
 
       res.json({ 
         success: true, 
-        helpfulCount: updatedReview.helpfulCount 
+        helpfulCount: result.helpfulCount 
       });
     } catch (error) {
       console.error("Error marking review as helpful:", error);

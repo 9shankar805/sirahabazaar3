@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, decimal, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, decimal, boolean, timestamp, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -402,6 +402,17 @@ export const productReviews = pgTable("product_reviews", {
   helpfulCount: integer("helpful_count").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// Track which users have liked which reviews
+export const reviewLikes = pgTable("review_likes", {
+  id: serial("id").primaryKey(),
+  reviewId: integer("review_id").references(() => productReviews.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  // Ensure one user can only like a review once
+  uniqueUserReview: unique().on(table.reviewId, table.userId),
+}));
 
 // Store settlements and payouts
 export const settlements = pgTable("settlements", {
@@ -996,6 +1007,15 @@ export type Advertisement = typeof advertisements.$inferSelect;
 export type InsertAdvertisement = z.infer<typeof insertAdvertisementSchema>;
 export type ProductReview = typeof productReviews.$inferSelect;
 export type InsertProductReview = z.infer<typeof insertProductReviewSchema>;
+
+// Review likes schema and types
+export const insertReviewLikeSchema = createInsertSchema(reviewLikes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ReviewLike = typeof reviewLikes.$inferSelect;
+export type InsertReviewLike = z.infer<typeof insertReviewLikeSchema>;
 export type Settlement = typeof settlements.$inferSelect;
 export type InsertSettlement = z.infer<typeof insertSettlementSchema>;
 export type StoreAnalytics = typeof storeAnalytics.$inferSelect;
