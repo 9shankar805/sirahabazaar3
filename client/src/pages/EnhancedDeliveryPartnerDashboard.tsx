@@ -425,60 +425,161 @@ export default function EnhancedDeliveryPartnerDashboard() {
 
           {/* Dashboard Overview */}
           <TabsContent value="dashboard" className="space-y-6">
-            {/* Key Performance Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card>
-                <CardContent className="p-6">
+            {/* Professional Analytics Grid - Enterprise Level */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Today's Performance */}
+              <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0 shadow-lg">
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Today's Deliveries</p>
-                      <p className="text-3xl font-bold text-green-600">{stats?.todayDeliveries || 0}</p>
-                      <p className="text-xs text-gray-500">+{((stats?.todayDeliveries || 0) * 100 / Math.max(1, (stats?.weekDeliveries || 1) / 7)).toFixed(1)}% vs avg</p>
+                    <div className="space-y-1">
+                      <p className="text-emerald-100 text-sm font-medium">Today's Performance</p>
+                      <p className="text-2xl font-bold">₹{stats?.todayEarnings || 0}</p>
+                      <div className="flex items-center gap-2 text-xs text-emerald-100">
+                        <Package className="h-3 w-3" />
+                        <span>{stats?.todayDeliveries || 0} orders</span>
+                        <Timer className="h-3 w-3" />
+                        <span>{Math.floor((stats?.todayOnlineTime || 0) / 60)}h {(stats?.todayOnlineTime || 0) % 60}m</span>
+                      </div>
                     </div>
-                    <Package className="h-8 w-8 text-green-600" />
+                    <div className="bg-white/20 p-2 rounded-lg">
+                      <TrendingUp className="h-6 w-6" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="p-6">
+              {/* Weekly Analytics */}
+              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Today's Earnings</p>
-                      <p className="text-3xl font-bold text-blue-600">₹{stats?.todayEarnings || 0}</p>
-                      <p className="text-xs text-gray-500">Target: ₹800</p>
+                    <div className="space-y-1">
+                      <p className="text-blue-100 text-sm font-medium">This Week</p>
+                      <p className="text-2xl font-bold">₹{stats?.weekEarnings || 0}</p>
+                      <div className="flex items-center gap-2 text-xs text-blue-100">
+                        <Route className="h-3 w-3" />
+                        <span>{stats?.weekDistance || 0}km</span>
+                        <Star className="h-3 w-3" />
+                        <span>{stats?.weekAvgRating || 4.5}/5.0</span>
+                      </div>
                     </div>
-                    <DollarSign className="h-8 w-8 text-blue-600" />
+                    <div className="bg-white/20 p-2 rounded-lg">
+                      <Calendar className="h-6 w-6" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="p-6">
+              {/* Monthly Progress */}
+              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Success Rate</p>
-                      <p className="text-3xl font-bold text-purple-600">{stats?.successRate || 0}%</p>
-                      <p className="text-xs text-gray-500">Last 30 days</p>
+                    <div className="space-y-1">
+                      <p className="text-purple-100 text-sm font-medium">Monthly Progress</p>
+                      <p className="text-2xl font-bold">₹{stats?.monthEarnings || 0}</p>
+                      <div className="flex items-center gap-2 text-xs text-purple-100">
+                        <Truck className="h-3 w-3" />
+                        <span>{stats?.monthDeliveries || 0} completed</span>
+                        <Navigation className="h-3 w-3" />
+                        <span>{stats?.monthDistance || 0}km</span>
+                      </div>
                     </div>
-                    <CheckCircle className="h-8 w-8 text-purple-600" />
+                    <div className="bg-white/20 p-2 rounded-lg">
+                      <Activity className="h-6 w-6" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="p-6">
+              {/* Performance Metrics */}
+              <Card className="bg-gradient-to-br from-amber-500 to-amber-600 text-white border-0 shadow-lg">
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">City Ranking</p>
-                      <p className="text-3xl font-bold text-orange-600">#{stats?.cityRank || 0}</p>
-                      <p className="text-xs text-gray-500">of {stats?.totalPartners || 0} partners</p>
+                    <div className="space-y-1">
+                      <p className="text-amber-100 text-sm font-medium">Performance</p>
+                      <p className="text-2xl font-bold">{stats?.successRate || 95}%</p>
+                      <div className="flex items-center gap-2 text-xs text-amber-100">
+                        <Star className="h-3 w-3" />
+                        <span>{stats?.overallRating || 4.5}/5.0 rating</span>
+                        <Target className="h-3 w-3" />
+                        <span>#{stats?.cityRank || 5} in city</span>
+                      </div>
                     </div>
-                    <TrendingUp className="h-8 w-8 text-orange-600" />
+                    <div className="bg-white/20 p-2 rounded-lg">
+                      <CheckCircle className="h-6 w-6" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Professional Incentives & Bonuses Section */}
+            <Card className="border-0 shadow-lg bg-gradient-to-r from-gray-50 to-gray-100">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-gray-800">
+                  <Wallet className="h-5 w-5 text-green-600" />
+                  Incentives & Bonuses (This Week)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white p-4 rounded-lg border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Weekly Target Bonus</p>
+                        <p className="text-xl font-bold text-green-600">₹{stats?.weeklyBonus || 250}</p>
+                        <p className="text-xs text-gray-500">35+ deliveries</p>
+                      </div>
+                      <Target className="h-8 w-8 text-green-500" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white p-4 rounded-lg border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Performance Bonus</p>
+                        <p className="text-xl font-bold text-blue-600">₹{stats?.performanceBonus || 150}</p>
+                        <p className="text-xs text-gray-500">4.5+ rating</p>
+                      </div>
+                      <Star className="h-8 w-8 text-blue-500" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white p-4 rounded-lg border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Fuel Allowance</p>
+                        <p className="text-xl font-bold text-orange-600">₹{stats?.fuelAllowance || 120}</p>
+                        <p className="text-xs text-gray-500">₹8 per delivery</p>
+                      </div>
+                      <Navigation className="h-8 w-8 text-orange-500" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Achievement Badges */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-purple-600" />
+                  Achievement Badges
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {(stats?.badges || []).map((badge: string, index: number) => (
+                    <Badge key={index} variant="outline" className="px-3 py-1 text-sm bg-purple-50 border-purple-200 text-purple-700">
+                      <Star className="h-3 w-3 mr-1" />
+                      {badge}
+                    </Badge>
+                  ))}
+                  {(!stats?.badges || stats.badges.length === 0) && (
+                    <p className="text-gray-500 text-sm">Complete more deliveries to earn achievement badges!</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Performance Overview */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
