@@ -13,14 +13,21 @@ if (!DATABASE_URL) {
 
 console.log(`🔌 Using Replit PostgreSQL database with crash prevention`);
 
-// Enhanced pool configuration to prevent crashes
+// Ultra-robust pool configuration with advanced crash prevention
 export const pool = new Pool({
   connectionString: DATABASE_URL,
-  // Connection limits to prevent overload
-  max: 15,                    // Maximum connections (reduced from default 20)
-  min: 2,                     // Keep minimum connections alive
-  idleTimeoutMillis: 20000,   // Close idle connections after 20 seconds
-  connectionTimeoutMillis: 3000, // Fast timeout to prevent hanging
+  // Connection limits with aggressive protection
+  max: 12,                    // Reduced max connections for stability
+  min: 3,                     // Higher minimum for availability
+  idleTimeoutMillis: 10000,   // Faster idle cleanup
+  connectionTimeoutMillis: 2000, // Even faster timeout
+  
+  // PostgreSQL-specific optimizations
+  application_name: 'siraha_bazaar_main',
+  statement_timeout: 20000,   // 20 second query timeout
+  
+  // Memory and performance tuning
+  keepAlive: true,
 });
 
 // Enhanced error handling to prevent crashes
