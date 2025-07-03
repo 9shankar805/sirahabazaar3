@@ -2716,13 +2716,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/deliveries/available", async (req, res) => {
     try {
       const { partnerId } = req.query;
+      console.log('🔍 Fetching available deliveries for partner:', partnerId);
       
-      // Get all pending deliveries that haven't been assigned yet
-      const pendingDeliveries = await storage.getPendingDeliveries();
+      // First get all pending deliveries that haven't been assigned yet
+      let availableOrders = [];
+      
+      try {
+        const pendingDeliveries = await storage.getPendingDeliveries();
+        console.log('📦 Found pending deliveries:', pendingDeliveries.length);
+        availableOrders = [...pendingDeliveries];
+      } catch (error) {
+        console.log('⚠️ No pending deliveries found, checking ready for pickup orders');
+      }
+      
+      // Also get orders that are "ready for pickup" but don't have deliveries created yet
+      try {
+        const readyForPickupOrders = await storage.getOrdersByStatus('ready_for_pickup');
+        console.log('🍔 Found ready for pickup orders:', readyForPickupOrders.length);
+        
+        // Filter out orders that already have deliveries assigned
+        for (const order of readyForPickupOrders) {
+          const existingDeliveries = await storage.getDeliveriesByOrderId(order.id);
+          if (existingDeliveries.length === 0) {
+            // Convert order to delivery-like structure
+            availableOrders.push({
+              id: `order_${order.id}`, // Temporary ID for orders without deliveries
+              orderId: order.id,
+              status: 'pending_acceptance',
+              deliveryFee: order.deliveryFee || '30'
+            });
+          }
+        }
+      } catch (error) {
+        console.log('⚠️ Error fetching ready for pickup orders:', error.message);
+      }
+      
+      console.log('📋 Total available orders:', availableOrders.length);
       
       // Transform to enhanced delivery details format
       const enhancedDeliveries = await Promise.all(
-        pendingDeliveries.slice(0, 5).map(async (delivery: any) => {
+        availableOrders.slice(0, 5).map(async (delivery: any) => {
           try {
             // Get order details
             const order = await storage.getOrder(delivery.orderId);
@@ -2744,7 +2777,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               orderId: order.id,
               orderNumber: `SB${String(order.id).padStart(6, '0')}`,
               status: delivery.status,
-              customerName: customer.fullName,
+              customerName: customer.fullName || customer.username,
               customerPhone: customer.phone || '+977-9800000000',
               
               // Pickup details
@@ -2754,15 +2787,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               pickupLatitude: parseFloat(store.latitude || '26.661'),
               pickupLongitude: parseFloat(store.longitude || '86.207'),
               
-              // Delivery details
-              deliveryAddress: order.deliveryAddress,
-              deliveryLatitude: 26.665 + Math.random() * 0.01,
-              deliveryLongitude: 86.212 + Math.random() * 0.01,
+              // Delivery details  
+              deliveryAddress: order.shippingAddress || 'Customer Location',
+              deliveryLatitude: parseFloat(order.latitude || '26.665'),
+              deliveryLongitude: parseFloat(order.longitude || '86.212'),
               
               // Financial details
-              deliveryFee: parseFloat(delivery.deliveryFee || '30'),
+              deliveryFee: parseFloat(delivery.deliveryFee || order.deliveryFee || '30'),
               extraCharges: 0,
-              totalEarnings: parseFloat(delivery.deliveryFee || '30'),
+              totalEarnings: parseFloat(delivery.deliveryFee || order.deliveryFee || '30'),
               paymentMethod: order.paymentMethod || 'COD',
               codAmount: order.paymentMethod === 'COD' ? parseFloat(order.totalAmount) : 0,
               

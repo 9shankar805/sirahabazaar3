@@ -691,6 +691,23 @@ export class DatabaseStorage implements IStorage {
     return updatedOrder;
   }
 
+  async getOrdersByStatus(status: string): Promise<Order[]> {
+    try {
+      return await db.select().from(orders).where(eq(orders.status, status));
+    } catch {
+      return [];
+    }
+  }
+
+  async getDeliveryByOrderId(orderId: number): Promise<Delivery | undefined> {
+    try {
+      const [delivery] = await db.select().from(deliveries).where(eq(deliveries.orderId, orderId));
+      return delivery;
+    } catch {
+      return undefined;
+    }
+  }
+
   // Order item operations
   async getOrderItems(orderId: number): Promise<OrderItem[]> {
     return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
