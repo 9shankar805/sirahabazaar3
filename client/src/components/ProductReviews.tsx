@@ -94,13 +94,16 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
       return;
     }
 
-    createReviewMutation.mutate({
+    const reviewPayload = {
       productId,
       customerId: user.id,
       rating: reviewData.rating,
       title: reviewData.title || null,
       comment: reviewData.comment || null
-    });
+    };
+
+    console.log("Submitting review with payload:", reviewPayload);
+    createReviewMutation.mutate(reviewPayload);
   };
 
   const averageRating = reviews.length > 0 

@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import ProductCard from "@/components/ProductCard";
 import { ProductReviews } from "@/components/ProductReviews";
-import { QuickRating } from "@/components/QuickRating";
 import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
 import { useAppMode } from "@/hooks/useAppMode";
@@ -276,15 +275,6 @@ export default function ProductDetail() {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Quick Rating Section */}
-          <div className="mt-8">
-            <Separator className="mb-8" />
-            <QuickRating 
-              productId={product.id} 
-              productName={product.name}
-            />
           </div>
 
           {/* Product Reviews */}
