@@ -120,6 +120,15 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### July 3, 2025 - PostgreSQL-Only Database Configuration 
+- ✓ Removed Neon database dependencies completely as per user request
+- ✓ Updated server/db.ts to use only PostgreSQL database connection
+- ✓ Modified .env file to use PostgreSQL database URL exclusively
+- ✓ Updated create-tables.js and migration scripts for PostgreSQL only
+- ✓ Cleaned up all Neon database references from codebase
+- ✓ Application now configured for postgresql://mydreamv50:123456@139.59.19.202:5432/mydreamv50
+- → System runs exclusively on PostgreSQL database without any Neon fallbacks
+
 ### July 3, 2025 - Distance-Based Delivery Fee System Implementation
 - ✓ Implemented new distance-based delivery fee calculation system as per user requirements
 - ✓ Updated /api/calculate-delivery-fee endpoint with flat rate pricing structure

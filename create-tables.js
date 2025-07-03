@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 
-const DATABASE_URL = "postgresql://mydreamv50:123456@139.59.19.202:5432/mydreamv50";
+const DATABASE_URL = process.env.DATABASE_URL || "postgresql://mydreamv50:123456@139.59.19.202:5432/mydreamv50";
 
 const pool = new Pool({ connectionString: DATABASE_URL });
 

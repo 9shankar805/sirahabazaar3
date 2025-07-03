@@ -9,7 +9,8 @@ const { Pool } = require('pg');
 const fs = require('fs');
 
 // Database URLs
-const OLD_DATABASE_URL = "postgresql://neondb_owner:npg_8S1tihPQpDuH@ep-lucky-meadow-a8x292uf-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
+// This script is now configured for your PostgreSQL database only
+// const OLD_DATABASE_URL = ""; // No longer needed - using PostgreSQL exclusively
 const NEW_DATABASE_URL = "postgresql://mydreamv50:123456@139.59.19.202:5432/mydreamv50";
 
 async function createBackup() {
