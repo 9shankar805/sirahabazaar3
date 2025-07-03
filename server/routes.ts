@@ -4635,40 +4635,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid distance value" });
       }
 
-      // Use mock zones for calculation
-      const mockZones = [
-        { id: 1, name: "Inner City", minDistance: "0", maxDistance: "5", baseFee: "30.00", perKmRate: "5.00", isActive: true },
-        { id: 2, name: "Suburban", minDistance: "5.01", maxDistance: "15", baseFee: "50.00", perKmRate: "8.00", isActive: true },
-        { id: 3, name: "Rural", minDistance: "15.01", maxDistance: "30", baseFee: "80.00", perKmRate: "12.00", isActive: true },
-        { id: 4, name: "Extended Rural", minDistance: "30.01", maxDistance: "100", baseFee: "120.00", perKmRate: "15.00", isActive: true }
-      ];
+      // Distance-based delivery fee calculation as per user requirements
+      let fee = 100; // Default fee for very long distances
+      let zoneName = "Extended Distance";
 
-      // Find applicable zone
-      const applicableZone = mockZones.find(zone => {
-        const minDist = parseFloat(zone.minDistance);
-        const maxDist = parseFloat(zone.maxDistance);
-        return distance >= minDist && distance <= maxDist;
-      });
-
-      let fee = 100; // Default fee
-      let zone = null;
-
-      if (applicableZone) {
-        const baseFee = parseFloat(applicableZone.baseFee);
-        const perKmRate = parseFloat(applicableZone.perKmRate);
-        fee = baseFee + (distance * perKmRate);
-        zone = applicableZone;
+      if (distance <= 5) {
+        fee = 30;
+        zoneName = "Local Delivery (0-5km)";
+      } else if (distance <= 10) {
+        fee = 50;
+        zoneName = "Nearby Delivery (5-10km)";
+      } else if (distance <= 20) {
+        fee = 80;
+        zoneName = "City Delivery (10-20km)";
+      } else if (distance <= 30) {
+        fee = 100;
+        zoneName = "Outskirts Delivery (20-30km)";
+      } else {
+        fee = 100;
+        zoneName = "Extended Delivery (30km+)";
       }
 
+      const zone = {
+        name: zoneName,
+        minDistance: distance <= 5 ? 0 : distance <= 10 ? 5 : distance <= 20 ? 10 : distance <= 30 ? 20 : 30,
+        maxDistance: distance <= 5 ? 5 : distance <= 10 ? 10 : distance <= 20 ? 20 : distance <= 30 ? 30 : 100,
+        fee: fee,
+        isActive: true
+      };
+
       res.json({ 
-        fee: Math.round(fee * 100) / 100, 
+        fee: fee, 
         zone,
         distance: Math.round(distance * 100) / 100,
-        breakdown: zone ? {
-          baseFee: parseFloat(zone.baseFee),
-          distanceFee: Math.round((distance * parseFloat(zone.perKmRate)) * 100) / 100,
-          totalFee: Math.round(fee * 100) / 100
-        } : null
+        breakdown: {
+          distanceRange: `${zone.minDistance}-${zone.maxDistance}km`,
+          flatFee: fee,
+          totalFee: fee,
+          description: zoneName
+        }
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to calculate delivery fee" });
