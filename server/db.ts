@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_8S1tihPQpDuH@ep-lucky-meadow-a8x292uf-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
+const DATABASE_URL = process.env.DATABASE_URL || "postgresql://mydreamv50:123456@139.59.19.202:5432/mydreamv50";
 
 if (!DATABASE_URL) {
   throw new Error(
