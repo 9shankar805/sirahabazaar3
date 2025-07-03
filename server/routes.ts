@@ -1657,24 +1657,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/reviews", async (req, res) => {
     try {
+      console.log("Received review request body:", req.body);
+      
       const reviewData = {
         ...req.body,
         isApproved: true, // Auto-approve reviews for now
         isVerifiedPurchase: false // TODO: Check if user actually purchased the product
       };
 
-      // Validate the review data
+      console.log("Review data after adding defaults:", reviewData);
+
+      // Validate the review data - ensuring all required fields are present
       const validatedData = {
-        productId: reviewData.productId,
-        customerId: reviewData.customerId,
-        rating: reviewData.rating,
+        productId: parseInt(reviewData.productId), // Ensure it's a number
+        customerId: parseInt(reviewData.customerId), // Ensure it's a number
+        rating: parseInt(reviewData.rating), // Ensure it's a number
         title: reviewData.title || null,
         comment: reviewData.comment || null,
         images: reviewData.images || [],
-        orderId: reviewData.orderId || null,
-        isVerifiedPurchase: reviewData.isVerifiedPurchase,
-        isApproved: reviewData.isApproved
+        orderId: reviewData.orderId ? parseInt(reviewData.orderId) : null,
+        isVerifiedPurchase: reviewData.isVerifiedPurchase || false,
+        isApproved: reviewData.isApproved || true
       };
+
+      // Validate required fields
+      if (!validatedData.productId || !validatedData.customerId || !validatedData.rating) {
+        return res.status(400).json({ 
+          error: "Missing required fields: productId, customerId, and rating are required",
+          received: { productId: validatedData.productId, customerId: validatedData.customerId, rating: validatedData.rating }
+        });
+      }
+
+      console.log("Validated data to be saved:", validatedData);
 
       // Check if user already reviewed this product
       const existingReviews = await storage.getProductReviews(validatedData.productId);
