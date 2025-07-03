@@ -1754,6 +1754,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mark review as helpful
+  app.post("/api/reviews/:reviewId/helpful", async (req, res) => {
+    try {
+      const reviewId = parseInt(req.params.reviewId);
+      
+      if (!reviewId) {
+        return res.status(400).json({ error: "Invalid review ID" });
+      }
+
+      // Increment helpful count
+      const updatedReview = await storage.incrementReviewHelpfulCount(reviewId);
+
+      if (!updatedReview) {
+        return res.status(404).json({ error: "Review not found" });
+      }
+
+      res.json({ 
+        success: true, 
+        helpfulCount: updatedReview.helpfulCount 
+      });
+    } catch (error) {
+      console.error("Error marking review as helpful:", error);
+      res.status(500).json({ error: "Failed to mark review as helpful" });
+    }
+  });
+
   app.get("/api/stores/:storeId/reviews", async (req, res) => {
     try {
       const storeId = parseInt(req.params.storeId);

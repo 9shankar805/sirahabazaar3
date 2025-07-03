@@ -1199,6 +1199,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async incrementReviewHelpfulCount(id: number): Promise<ProductReview | undefined> {
+    try {
+      const [updated] = await db
+        .update(productReviews)
+        .set({ helpfulCount: sql`${productReviews.helpfulCount} + 1` })
+        .where(eq(productReviews.id, id))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
   // Settlements
   async getStoreSettlements(storeId: number): Promise<Settlement[]> {
     try {

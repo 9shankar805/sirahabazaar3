@@ -78,6 +78,30 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
     }
   });
 
+  const markHelpfulMutation = useMutation({
+    mutationFn: (reviewId: number) => 
+      apiRequest(`/api/reviews/${reviewId}/helpful`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products", productId, "reviews"] });
+      toast({
+        title: "Thank you!",
+        description: "Review marked as helpful"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to mark review as helpful",
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleSubmitReview = () => {
     if (!user) {
       toast({
@@ -320,9 +344,13 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
                 )}
 
                 <div className="flex items-center gap-4 text-xs">
-                  <button className="flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                  <button 
+                    onClick={() => markHelpfulMutation.mutate(review.id)}
+                    disabled={markHelpfulMutation.isPending}
+                    className="flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 transition-colors"
+                  >
                     <ThumbsUp className="h-3 w-3" />
-                    Helpful ({review.helpfulCount})
+                    {markHelpfulMutation.isPending ? "..." : `Helpful (${review.helpfulCount})`}
                   </button>
                 </div>
               </CardContent>
