@@ -2,8 +2,8 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-// PostgreSQL database URL - using external PostgreSQL server
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://mydream50:123456@139.59.19.202:5432/mydreamv50";
+// PostgreSQL database URL - using Neon database
+const DATABASE_URL = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_8S1tihPQpDuH@ep-lucky-meadow-a8x292uf-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
 
 if (!DATABASE_URL) {
   throw new Error(
@@ -11,23 +11,27 @@ if (!DATABASE_URL) {
   );
 }
 
-console.log(`🔌 Using external PostgreSQL database (139.59.19.202) with crash prevention`);
+console.log(`🔌 Using Neon PostgreSQL database with enhanced delivery partner features`);
 
-// Ultra-robust pool configuration with advanced crash prevention
+// Enhanced pool configuration for Neon database with delivery partner features
 export const pool = new Pool({
   connectionString: DATABASE_URL,
-  // Connection limits with aggressive protection
-  max: 12,                    // Reduced max connections for stability
-  min: 3,                     // Higher minimum for availability
-  idleTimeoutMillis: 10000,   // Faster idle cleanup
-  connectionTimeoutMillis: 2000, // Even faster timeout
+  // Connection limits optimized for Neon
+  max: 10,                    // Optimal for Neon pooler
+  min: 2,                     // Minimum connections
+  idleTimeoutMillis: 30000,   // Keep connections alive longer
+  connectionTimeoutMillis: 5000, // Allow more time for Neon connection
   
   // PostgreSQL-specific optimizations
-  application_name: 'siraha_bazaar_main',
-  statement_timeout: 20000,   // 20 second query timeout
+  application_name: 'siraha_bazaar_delivery_enhanced',
+  statement_timeout: 30000,   // 30 second query timeout for complex operations
   
-  // Memory and performance tuning
+  // SSL configuration for Neon
+  ssl: DATABASE_URL.includes('sslmode=require') ? { rejectUnauthorized: false } : false,
+  
+  // Performance tuning
   keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
 });
 
 // Enhanced error handling to prevent crashes
