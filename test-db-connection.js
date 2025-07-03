@@ -5,10 +5,10 @@
  * Tests connection to the specified PostgreSQL database
  */
 
-const { Pool } = require('pg');
+import { Pool } from 'pg';
 
-// Your database URL
-const DATABASE_URL = "postgresql://mydreamv50:123456@139.59.19.202:5432/mydreamv50";
+// Your database URL - using postgres database
+const DATABASE_URL = "postgresql://mydreamv50:123456@139.59.19.202:5432/postgres";
 
 async function testDatabaseConnection() {
   console.log('🔍 Testing database connection...');
