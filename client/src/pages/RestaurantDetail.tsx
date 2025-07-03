@@ -235,7 +235,7 @@ export default function RestaurantDetail() {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {menuItems.map((item) => (
-                  <FoodCard key={item.id} product={item} />
+                  <FoodCard key={item.id} food={item} />
                 ))}
               </div>
             )}

@@ -18,7 +18,7 @@ export default function FoodCard({ food }: FoodCardProps) {
   const { user } = useAuth();
   
   const inWishlist = user ? isInWishlist(food.id) : false;
-  const discountedPrice = food.isOnOffer && food.offerPercentage
+  const discountedPrice = (food.isOnOffer && food.offerPercentage)
     ? (parseFloat(food.price) * (1 - food.offerPercentage / 100)).toFixed(2)
     : food.price;
 
@@ -55,7 +55,7 @@ export default function FoodCard({ food }: FoodCardProps) {
             }}
           />
           
-          {food.isOnOffer && (
+          {food.isOnOffer && food.offerPercentage && (
             <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-600">
               {food.offerPercentage}% OFF
             </Badge>
@@ -97,7 +97,7 @@ export default function FoodCard({ food }: FoodCardProps) {
               <span className="font-bold text-sm sm:text-base md:text-lg text-red-600">
                 ₹{discountedPrice}
               </span>
-              {food.isOnOffer && (
+              {food.isOnOffer && food.offerPercentage && (
                 <span className="text-xs sm:text-sm text-gray-500 line-through">
                   ₹{food.price}
                 </span>
