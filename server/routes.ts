@@ -4953,15 +4953,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ['assigned', 'picked_up', 'in_transit'].includes(d.status)
       );
 
-      res.json(activeDelivery || null);
+      if (!activeDelivery) {
+        return res.json(null);
+      }
+
+      // Enhance active delivery with complete navigation details
+      const order = await storage.getOrder(activeDelivery.orderId);
+      if (!order) {
+        return res.json(activeDelivery);
+      }
+
+      const customer = await storage.getUser(order.customerId);
+      const store = await storage.getStore(order.storeId);
+      const orderItems = await storage.getOrderItems(order.id);
+
+      // Build comprehensive active delivery data with navigation
+      const enhancedActiveDelivery = {
+        ...activeDelivery,
+        
+        // Order details
+        orderNumber: `SB${String(order.id).padStart(6, '0')}`,
+        orderValue: parseFloat(order.totalAmount),
+        paymentMethod: order.paymentMethod || 'COD',
+        
+        // Customer details
+        customerName: customer?.fullName || customer?.username || 'Customer',
+        customerPhone: customer?.phone || 'No phone',
+        
+        // Pickup location (store)
+        pickupStoreName: store?.name || 'Store',
+        pickupStorePhone: store?.phone || 'No phone',
+        pickupAddress: store?.address || 'Store Location',
+        pickupLatitude: parseFloat(store?.latitude || '26.661'),
+        pickupLongitude: parseFloat(store?.longitude || '86.207'),
+        pickupNavigationLink: `https://www.google.com/maps/dir/?api=1&destination=${store?.latitude || '26.661'},${store?.longitude || '86.207'}`,
+        
+        // Delivery location (customer)
+        deliveryAddress: order.shippingAddress || 'Customer Location',
+        deliveryLatitude: parseFloat(order.latitude || '26.665'),
+        deliveryLongitude: parseFloat(order.longitude || '86.212'),
+        deliveryNavigationLink: `https://www.google.com/maps/dir/?api=1&destination=${order.latitude || '26.665'},${order.longitude || '86.212'}`,
+        
+        // Order items
+        orderItems: orderItems.map((item: any) => ({
+          name: item.productName || 'Product',
+          quantity: item.quantity,
+          price: parseFloat(item.price),
+          image: '/images/placeholder.jpg'
+        })),
+        
+        // Calculate distance and time
+        estimatedDistance: (() => {
+          if (store?.latitude && store?.longitude && order.latitude && order.longitude) {
+            const R = 6371; // Earth's radius in km
+            const toRadians = (degrees: number) => degrees * (Math.PI / 180);
+            const dLat = toRadians(parseFloat(order.latitude) - parseFloat(store.latitude));
+            const dLon = toRadians(parseFloat(order.longitude) - parseFloat(store.longitude));
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
+                      Math.cos(toRadians(parseFloat(store.latitude))) * Math.cos(toRadians(parseFloat(order.latitude))) * 
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return Math.round(R * c * 100) / 100;
+          }
+          return 3.5; // Default distance
+        })(),
+        
+        // Instructions
+        customerInstructions: order.specialInstructions || '',
+        storeInstructions: 'Please collect order from store',
+        
+        // Status tracking
+        isLiveTracking: true,
+        currentStatus: activeDelivery.status,
+        assignedAt: activeDelivery.assignedAt || activeDelivery.createdAt
+      };
+
+      res.json(enhancedActiveDelivery);
     } catch (error) {
+      console.error("Error fetching active delivery tracking:", error);
       res.status(500).json({ error: "Failed to fetch active delivery tracking" });
     }
   });
 
   app.post("/api/deliveries/:id/accept", async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
+      // Handle both order_18 format and plain numeric IDs
+      let idStr = req.params.id;
+      let id: number;
+      if (idStr.startsWith('order_')) {
+        id = parseInt(idStr.replace('order_', ''));
+      } else {
+        id = parseInt(idStr);
+      }
+      
+      console.log(`Processing delivery acceptance for ID: ${idStr} -> ${id}`);
+      
+      if (isNaN(id)) {
+        console.log(`Invalid ID format: ${idStr}`);
+        return res.status(400).json({ error: "Invalid order ID format" });
+      }
+      
       const { partnerId, deliveryPartnerId } = req.body;
       
       // Handle both partnerId and deliveryPartnerId for compatibility
