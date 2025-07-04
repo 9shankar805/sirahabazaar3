@@ -6707,7 +6707,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("Error searching Unsplash images:", error);
-      res.status(500).json({ error: "Internal server error" });
+      
+      // Check if it's a rate limit error
+      if (error instanceof Error && error.message.includes('403')) {
+        return res.status(403).json({ 
+          error: "Unsplash rate limit exceeded. Please try again later or use image upload instead." 
+        });
+      }
+      
+      res.status(500).json({ error: "Failed to fetch images from Unsplash" });
     }
   });
 

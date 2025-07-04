@@ -131,7 +131,10 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - ✓ Created restaurant-specific image fetching for food items
 - ✓ Added optimized image URL generation with custom dimensions
 - ✓ Implemented multiple image selection with maximum limits
-- → Store owners can now add professional product images from Unsplash library
+- ✓ Fixed Unsplash API rate limit handling with proper error messages and graceful fallbacks
+- ✓ Enhanced error handling to show users when rate limits are exceeded with helpful guidance
+- ✓ Added proper 403 error detection and user-friendly error messages in both frontend and backend
+- → Store owners can now add professional product images from Unsplash library with robust error handling
 
 ### July 4, 2025 - Enhanced Location-Aware Delivery Notification System Implementation
 - ✓ Created comprehensive location-aware delivery notification endpoint `/api/delivery-notifications/send-with-location`

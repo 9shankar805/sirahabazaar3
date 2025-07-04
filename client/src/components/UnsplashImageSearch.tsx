@@ -53,18 +53,22 @@ const UnsplashImageSearch: React.FC<UnsplashImageSearchProps> = ({
   const queryClient = useQueryClient();
 
   // Search images from Unsplash
-  const { data: searchResults, isLoading, refetch } = useQuery({
+  const { data: searchResults, isLoading, refetch, error } = useQuery({
     queryKey: ['unsplash-search', searchQuery],
     queryFn: async () => {
       if (!searchQuery.trim()) return null;
       
       const response = await fetch(`/api/unsplash/search?query=${encodeURIComponent(searchQuery)}&per_page=20`);
       if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('Unsplash rate limit exceeded. Please try again later or use image upload instead.');
+        }
         throw new Error('Failed to search images');
       }
       return response.json();
     },
-    enabled: !!searchQuery
+    enabled: !!searchQuery,
+    retry: false // Don't retry on rate limit errors
   });
 
   // Track download mutation
@@ -210,6 +214,18 @@ const UnsplashImageSearch: React.FC<UnsplashImageSearchProps> = ({
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin" />
               <span className="ml-2">Searching images...</span>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-700 text-sm">
+                {(error as Error).message}
+              </p>
+              <p className="text-red-600 text-xs mt-1">
+                Please use the file upload option instead or try again later.
+              </p>
             </div>
           )}
 
