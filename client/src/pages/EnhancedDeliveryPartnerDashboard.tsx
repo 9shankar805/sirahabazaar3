@@ -131,22 +131,32 @@ export default function EnhancedDeliveryPartnerDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedTab, setSelectedTab] = useState("dashboard");
-  const [isOnlineMode, setIsOnlineMode] = useState(true);
+  const [isOnlineMode, setIsOnlineMode] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState<DeliveryDetails | null>(null);
 
   // Fetch delivery partner data
-  const { data: partner, isLoading: partnerLoading } = useQuery({
+  const { data: partner, isLoading: partnerLoading, error: partnerError } = useQuery({
     queryKey: ['/api/delivery-partners/user', user?.id],
     queryFn: async () => {
       const response = await fetch(`/api/delivery-partners/user?userId=${user?.id}`);
       if (!response.ok) {
-        if (response.status === 404) return null;
+        if (response.status === 404) {
+          return null;
+        }
         throw new Error('Failed to fetch partner data');
       }
       return response.json();
     },
     enabled: !!user?.id,
+    retry: 2,
   });
+
+  // Update online status when partner data is loaded
+  useEffect(() => {
+    if (partner) {
+      setIsOnlineMode(partner.isAvailable);
+    }
+  }, [partner]);
 
   // Fetch enhanced statistics
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -314,9 +324,9 @@ export default function EnhancedDeliveryPartnerDashboard() {
 
   // Fetch notifications for alerts tab
   const { data: notifications = [], isLoading: notificationsLoading } = useQuery({
-    queryKey: ['/api/notifications/user', user?.id],
+    queryKey: ['/api/delivery-notifications', user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/notifications/user/${user?.id}`);
+      const response = await fetch(`/api/delivery-notifications/${user?.id}`);
       if (!response.ok) {
         return [];
       }
@@ -338,11 +348,11 @@ export default function EnhancedDeliveryPartnerDashboard() {
 
   // Toggle online/offline status
   const toggleOnlineStatus = useMutation({
-    mutationFn: async (isOnline: boolean) => {
-      const response = await fetch(`/api/delivery-partners/${partner?.id}/toggle-status`, {
-        method: 'POST',
+    mutationFn: async (isAvailable: boolean) => {
+      const response = await fetch(`/api/delivery-partners/${partner?.id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isAvailable: isOnline })
+        body: JSON.stringify({ isAvailable }),
       });
       if (!response.ok) throw new Error('Failed to toggle status');
       return response.json();
