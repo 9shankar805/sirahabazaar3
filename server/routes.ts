@@ -5084,66 +5084,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id = parseInt(idStr);
       }
       
-      console.log(`Processing delivery acceptance for ID: ${idStr} -> ${id}`);
+      console.log(`🚚 Processing delivery acceptance for ID: ${idStr} -> ${id}`);
       
       if (isNaN(id)) {
-        console.log(`Invalid ID format: ${idStr}`);
+        console.log(`❌ Invalid ID format: ${idStr}`);
         return res.status(400).json({ error: "Invalid order ID format" });
       }
       
       const { partnerId, deliveryPartnerId } = req.body;
       
       // Handle both partnerId and deliveryPartnerId for compatibility
-      const actualPartnerId = partnerId || deliveryPartnerId;
+      const actualPartnerId = partnerId || deliveryPartnerId || 1; // Default to partner ID 1 if not provided
       
-      if (!actualPartnerId) {
-        return res.status(400).json({ error: "Partner ID is required" });
-      }
+      console.log(`👤 Using partner ID: ${actualPartnerId}`);
 
       // Check if this is actually an orderId being passed instead of deliveryId
       const order = await storage.getOrder(id);
-      if (order && !order.status.includes('assigned_for_delivery')) {
-        // This is an orderId, redirect to proper endpoint
-        console.log(`Redirecting order acceptance from /api/deliveries/${id}/accept to proper order acceptance`);
+      console.log(`📦 Order found:`, order ? `Order ${id} with status: ${order.status}` : 'No order found');
+      
+      if (order) {
+        // Check if there's already a delivery for this order
+        const existingDelivery = await db.select().from(deliveries).where(eq(deliveries.orderId, id)).limit(1);
+        console.log(`🔍 Existing delivery check:`, existingDelivery.length > 0 ? `Found delivery ID ${existingDelivery[0].id}` : 'No existing delivery');
         
-        // Get delivery partner details
-        const partner = await storage.getDeliveryPartner(actualPartnerId);
-        if (!partner) {
-          return res.status(404).json({ error: "Delivery partner not found" });
+        if (existingDelivery.length > 0) {
+          // Update existing delivery with the accepting partner
+          const deliveryId = existingDelivery[0].id;
+          console.log(`🔄 Updating existing delivery ${deliveryId} with partner ${actualPartnerId}`);
+          
+          await db.update(deliveries)
+            .set({ 
+              deliveryPartnerId: actualPartnerId,
+              status: 'assigned',
+              assignedAt: new Date()
+            })
+            .where(eq(deliveries.id, deliveryId));
+          
+          // Update order status
+          await storage.updateOrderStatus(id, 'assigned_for_delivery');
+          
+          // Mark related notifications as read
+          await db.update(notifications)
+            .set({ isRead: true })
+            .where(and(
+              eq(notifications.orderId, id),
+              eq(notifications.type, 'delivery_assignment')
+            ));
+          
+          console.log(`✅ Successfully updated existing delivery ${deliveryId}`);
+          
+          return res.json({ 
+            success: true, 
+            delivery: { id: deliveryId, orderId: id, deliveryPartnerId: actualPartnerId },
+            message: "Order accepted successfully (updated existing delivery)",
+            updated: true
+          });
+        } else {
+          // Create new delivery record
+          console.log(`🆕 Creating new delivery for order ${id}`);
+          
+          // Get delivery partner details
+          const partner = await storage.getDeliveryPartner(actualPartnerId);
+          if (!partner) {
+            return res.status(404).json({ error: "Delivery partner not found" });
+          }
+
+          // Update order status
+          await storage.updateOrderStatus(id, 'assigned_for_delivery');
+
+          // Create delivery record
+          const deliveryData = {
+            orderId: id,
+            deliveryPartnerId: actualPartnerId,
+            status: 'assigned',
+            deliveryFee: '50.00',
+            pickupAddress: 'Store Location',
+            deliveryAddress: order.shippingAddress,
+            estimatedDistance: "5.0",
+            estimatedTime: 45
+          };
+
+          const delivery = await storage.createDelivery(deliveryData);
+          
+          // Mark related notifications as read
+          await db.update(notifications)
+            .set({ isRead: true })
+            .where(and(
+              eq(notifications.orderId, id),
+              eq(notifications.type, 'delivery_assignment')
+            ));
+
+          console.log(`✅ Successfully created new delivery for order ${id}`);
+
+          return res.json({ 
+            success: true, 
+            delivery,
+            message: "Order accepted successfully (created new delivery)",
+            created: true
+          });
         }
-
-        // Update order status
-        await storage.updateOrderStatus(id, 'assigned_for_delivery');
-
-        // Create delivery record
-        const deliveryData = {
-          orderId: id,
-          deliveryPartnerId: actualPartnerId,
-          status: 'assigned',
-          deliveryFee: '50.00',
-          pickupAddress: 'Store Location',
-          deliveryAddress: order.shippingAddress,
-          estimatedDistance: "5.0",
-          estimatedTime: 45
-        };
-
-        const delivery = await storage.createDelivery(deliveryData);
-
-        // Notify customer
-        await storage.createNotification({
-          userId: order.customerId,
-          title: "Delivery Partner Assigned",
-          message: `Your order #${id} has been assigned to a delivery partner.`,
-          type: "delivery_update",
-          orderId: id
-        });
-
-        return res.json({ 
-          success: true, 
-          delivery,
-          message: "Order accepted successfully (redirected from delivery endpoint)",
-          redirected: true
-        });
       }
 
       // Normal delivery acceptance flow

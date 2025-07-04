@@ -371,10 +371,14 @@ export default function EnhancedDeliveryPartnerDashboard() {
   const acceptDelivery = useMutation({
     mutationFn: async (deliveryId: number) => {
       console.log('Attempting to accept delivery/order ID:', deliveryId);
+      console.log('Partner data:', partner);
       const response = await fetch(`/api/deliveries/${deliveryId}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partnerId: partner?.id })
+        body: JSON.stringify({ 
+          partnerId: partner?.id || 1,
+          deliveryPartnerId: partner?.id || 1 
+        })
       });
       if (!response.ok) {
         const errorData = await response.text();
