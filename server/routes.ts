@@ -5209,6 +5209,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fix delivery fee for specific order (admin/correction endpoint)
+  app.patch("/api/orders/:id/delivery-fee", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { deliveryFee } = req.body;
+
+      if (!orderId || !deliveryFee) {
+        return res.status(400).json({ error: "Order ID and delivery fee required" });
+      }
+
+      console.log(`🔧 Fixing delivery fee for Order #${orderId} to ₹${deliveryFee}`);
+
+      // Update order delivery fee
+      await storage.updateOrder(orderId, { deliveryFee: deliveryFee.toString() });
+
+      // Update delivery record if exists
+      const deliveries = await storage.getDeliveriesByOrderId(orderId);
+      if (deliveries.length > 0) {
+        // Update delivery fee in delivery records too
+        for (const delivery of deliveries) {
+          await storage.updateDelivery(delivery.id, { deliveryFee: deliveryFee.toString() });
+        }
+        console.log(`✅ Updated ${deliveries.length} delivery record(s)`);
+      }
+
+      res.json({ success: true, message: `Delivery fee updated to ₹${deliveryFee}` });
+    } catch (error) {
+      console.error('Error fixing delivery fee:', error);
+      res.status(500).json({ error: "Failed to update delivery fee" });
+    }
+  });
+
   // Calculate delivery fee based on distance
   app.post("/api/calculate-delivery-fee", async (req, res) => {
     try {
