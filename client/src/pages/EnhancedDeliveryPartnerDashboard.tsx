@@ -1235,16 +1235,107 @@ export default function EnhancedDeliveryPartnerDashboard() {
                               <p className="text-xs xs:text-sm text-gray-600 mt-0.5 xs:mt-1 line-clamp-2">
                                 {notification.message}
                               </p>
+                              
+                              {/* Enhanced location and order data display */}
                               {notification.orderId && (
-                                <div className="flex items-center gap-2 mt-1 xs:mt-2">
-                                  <Badge variant="outline" className="text-[8px] xs:text-[9px] sm:text-xs px-1 xs:px-2 py-0.5">
-                                    Order #{notification.orderId}
-                                  </Badge>
-                                  {notification.data && JSON.parse(notification.data).deliveryFee && (
-                                    <Badge variant="secondary" className="text-[8px] xs:text-[9px] sm:text-xs px-1 xs:px-2 py-0.5">
-                                      ₹{JSON.parse(notification.data).deliveryFee} earnings
+                                <div className="space-y-1 xs:space-y-2 mt-1 xs:mt-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant="outline" className="text-[8px] xs:text-[9px] sm:text-xs px-1 xs:px-2 py-0.5">
+                                      Order #{notification.orderId}
                                     </Badge>
-                                  )}
+                                    {notification.data && (() => {
+                                      try {
+                                        const data = JSON.parse(notification.data);
+                                        return (
+                                          <>
+                                            {data.deliveryFee && (
+                                              <Badge variant="secondary" className="text-[8px] xs:text-[9px] sm:text-xs px-1 xs:px-2 py-0.5">
+                                                ₹{data.deliveryFee} earnings
+                                              </Badge>
+                                            )}
+                                            {data.deliveryInfo?.estimatedDistance && (
+                                              <Badge variant="secondary" className="text-[8px] xs:text-[9px] sm:text-xs px-1 xs:px-2 py-0.5">
+                                                📍 {data.deliveryInfo.estimatedDistance}
+                                              </Badge>
+                                            )}
+                                            {data.hasCompleteLocationData && (
+                                              <Badge variant="default" className="text-[8px] xs:text-[9px] sm:text-xs px-1 xs:px-2 py-0.5 bg-green-100 text-green-700">
+                                                📍 GPS Available
+                                              </Badge>
+                                            )}
+                                          </>
+                                        );
+                                      } catch (e) {
+                                        return null;
+                                      }
+                                    })()}
+                                  </div>
+                                  
+                                  {/* Enhanced location information display */}
+                                  {notification.data && (() => {
+                                    try {
+                                      const data = JSON.parse(notification.data);
+                                      
+                                      if (data.pickupLocation || data.deliveryLocation) {
+                                        return (
+                                          <div className="grid grid-cols-1 gap-1 xs:gap-2 text-[9px] xs:text-[10px] sm:text-xs text-gray-600">
+                                            {data.pickupLocation && (
+                                              <div className="flex items-center gap-1">
+                                                <MapPin className="h-2.5 w-2.5 xs:h-3 xs:w-3 text-orange-500 flex-shrink-0" />
+                                                <span className="truncate">
+                                                  📦 {data.pickupLocation.name || 'Pickup'}: {data.pickupLocation.address}
+                                                </span>
+                                                {data.pickupLocation.googleMapsLink && (
+                                                  <a 
+                                                    href={data.pickupLocation.googleMapsLink}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 hover:text-blue-800 ml-1"
+                                                  >
+                                                    🗺️
+                                                  </a>
+                                                )}
+                                              </div>
+                                            )}
+                                            {data.deliveryLocation && (
+                                              <div className="flex items-center gap-1">
+                                                <MapPin className="h-2.5 w-2.5 xs:h-3 xs:w-3 text-green-500 flex-shrink-0" />
+                                                <span className="truncate">
+                                                  🏠 Delivery: {data.deliveryLocation.address}
+                                                </span>
+                                                {data.deliveryLocation.googleMapsLink && (
+                                                  <a 
+                                                    href={data.deliveryLocation.googleMapsLink}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 hover:text-blue-800 ml-1"
+                                                  >
+                                                    🗺️
+                                                  </a>
+                                                )}
+                                              </div>
+                                            )}
+                                            
+                                            {/* Order details summary */}
+                                            {data.orderDetails && (
+                                              <div className="flex items-center gap-2 text-gray-700">
+                                                <span>👤 {data.orderDetails.customerName}</span>
+                                                {data.orderDetails.customerPhone && (
+                                                  <span>📞 {data.orderDetails.customerPhone}</span>
+                                                )}
+                                                {data.orderDetails.totalAmount && (
+                                                  <span>💰 ₹{data.orderDetails.totalAmount}</span>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    } catch (e) {
+                                      return null;
+                                    }
+                                  })()}
                                 </div>
                               )}
                             </div>

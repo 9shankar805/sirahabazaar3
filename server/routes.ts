@@ -1247,33 +1247,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
             partner.status === 'approved' && partner.isAvailable
           );
 
-          // Send notification to all available delivery partners
-          const notificationMessage = `🚚 Order Ready for Pickup: Order #${order.id} from ${storeName}. Customer: ${order.customerName}, Amount: ₹${order.totalAmount}. First to accept gets delivery!`;
-          
-          for (const partner of availablePartners) {
-            await storage.createNotification({
-              userId: partner.userId,
-              title: "📦 Pickup Available",
-              message: notificationMessage,
-              type: "delivery_assignment",
-              isRead: false,
-              orderId: order.id,
-              data: JSON.stringify({
+          // Use enhanced location-aware notification system
+          try {
+            const enhancedResponse = await fetch('http://localhost:5000/api/delivery-notifications/send-with-location', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
                 orderId: order.id,
-                storeName,
-                storeAddress,
-                customerName: order.customerName,
-                totalAmount: order.totalAmount,
-                deliveryFee: order.deliveryFee || 0,
                 pickupAddress: storeAddress,
-                deliveryAddress: order.deliveryAddress || 'Customer Location',
-                isReadyForPickup: true,
-                firstAcceptFirstServe: true
+                deliveryAddress: order.shippingAddress
               })
             });
-          }
 
-          console.log(`✅ Automatically notified ${availablePartners.length} delivery partners about order #${order.id} ready for pickup`);
+            if (enhancedResponse.ok) {
+              const enhancedResult = await enhancedResponse.json();
+              console.log(`📍 Enhanced location-aware notifications sent to ${enhancedResult.partnersNotified} partners for order #${order.id} with complete GPS data`);
+            } else {
+              throw new Error('Enhanced notification failed');
+            }
+          } catch (enhancedError) {
+            console.log('Enhanced notification failed, using fallback system:', enhancedError.message);
+            
+            // Fallback to basic notifications
+            const notificationMessage = `🚚 Order Ready for Pickup: Order #${order.id} from ${storeName}. Customer: ${order.customerName}, Amount: ₹${order.totalAmount}. First to accept gets delivery!`;
+            
+            for (const partner of availablePartners) {
+              await storage.createNotification({
+                userId: partner.userId,
+                title: "📦 Pickup Available",
+                message: notificationMessage,
+                type: "delivery_assignment",
+                isRead: false,
+                orderId: order.id,
+                data: JSON.stringify({
+                  orderId: order.id,
+                  storeName,
+                  storeAddress,
+                  customerName: order.customerName,
+                  totalAmount: order.totalAmount,
+                  deliveryFee: order.deliveryFee || 0,
+                  pickupAddress: storeAddress,
+                  deliveryAddress: order.deliveryAddress || 'Customer Location',
+                  isReadyForPickup: true,
+                  firstAcceptFirstServe: true
+                })
+              });
+            }
+            
+            console.log(`✅ Fallback notifications sent to ${availablePartners.length} delivery partners about order #${order.id} ready for pickup`);
+          }
         } catch (notificationError) {
           console.error('Failed to notify delivery partners about ready for pickup:', notificationError);
           // Don't fail the entire request if notification fails
@@ -4642,6 +4666,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating delivery location:", error);
       res.status(500).json({ error: "Failed to update delivery location" });
+    }
+  });
+
+  // Enhanced delivery notifications with complete location data
+  app.post("/api/delivery-notifications/send-with-location", async (req, res) => {
+    try {
+      const { orderId, pickupAddress, deliveryAddress } = req.body;
+
+      // Get all available delivery partners
+      const allPartners = await storage.getAllDeliveryPartners();
+      const availablePartners = allPartners.filter(partner => 
+        partner.status === 'approved' && partner.isAvailable
+      );
+
+      if (availablePartners.length === 0) {
+        return res.status(400).json({ 
+          error: "No delivery partners available",
+          message: "All delivery partners are currently busy or unavailable"
+        });
+      }
+
+      // Get order details with complete location data
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Get store details with location coordinates
+      const store = await storage.getStore(order.storeId);
+      const storeLocationData = store ? {
+        name: store.name,
+        address: store.address,
+        phone: store.phone,
+        coordinates: store.latitude && store.longitude ? {
+          latitude: parseFloat(store.latitude),
+          longitude: parseFloat(store.longitude)
+        } : null
+      } : null;
+
+      // Extract customer location from order
+      const customerLocationData = order.latitude && order.longitude ? {
+        latitude: parseFloat(order.latitude),
+        longitude: parseFloat(order.longitude),
+        address: order.shippingAddress
+      } : null;
+
+      // Calculate actual distance and delivery fee
+      let calculatedDistance = 3.5; // Default distance in km
+      let calculatedDeliveryFee = order.deliveryFee || '30';
+      let estimatedTime = '25 mins';
+
+      if (storeLocationData?.coordinates && customerLocationData) {
+        // Calculate distance using Haversine formula
+        const R = 6371; // Earth's radius in km
+        const toRadians = (degrees: number) => degrees * (Math.PI / 180);
+        const dLat = toRadians(customerLocationData.latitude - storeLocationData.coordinates.latitude);
+        const dLon = toRadians(customerLocationData.longitude - storeLocationData.coordinates.longitude);
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
+                  Math.cos(toRadians(storeLocationData.coordinates.latitude)) * Math.cos(toRadians(customerLocationData.latitude)) * 
+                  Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        calculatedDistance = Math.round(R * c * 100) / 100; // Round to 2 decimal places
+
+        // Calculate delivery fee based on distance ranges
+        if (calculatedDistance <= 5) {
+          calculatedDeliveryFee = '30';
+        } else if (calculatedDistance <= 10) {
+          calculatedDeliveryFee = '50';
+        } else if (calculatedDistance <= 20) {
+          calculatedDeliveryFee = '80';
+        } else if (calculatedDistance <= 30) {
+          calculatedDeliveryFee = '100';
+        } else {
+          calculatedDeliveryFee = '100';
+        }
+
+        // Estimate time based on distance (assuming 20 km/h average speed)
+        const estimatedMinutes = Math.ceil((calculatedDistance / 20) * 60);
+        estimatedTime = `${estimatedMinutes} mins`;
+      }
+
+      // Create enhanced notifications for all available partners
+      const notifications = [];
+      for (const partner of availablePartners) {
+        const enhancedNotificationData = {
+          orderId,
+          pickupLocation: {
+            address: pickupAddress || storeLocationData?.address || 'Store Location',
+            coordinates: storeLocationData?.coordinates,
+            name: storeLocationData?.name,
+            phone: storeLocationData?.phone,
+            googleMapsLink: storeLocationData?.coordinates 
+              ? `https://www.google.com/maps/dir/?api=1&destination=${storeLocationData.coordinates.latitude},${storeLocationData.coordinates.longitude}`
+              : null
+          },
+          deliveryLocation: {
+            address: deliveryAddress || customerLocationData?.address || order.shippingAddress,
+            coordinates: customerLocationData,
+            googleMapsLink: customerLocationData
+              ? `https://www.google.com/maps/dir/?api=1&destination=${customerLocationData.latitude},${customerLocationData.longitude}`
+              : null
+          },
+          orderDetails: {
+            customerName: order.customerName,
+            customerPhone: order.phone,
+            totalAmount: order.totalAmount,
+            paymentMethod: order.paymentMethod || 'COD',
+            specialInstructions: order.specialInstructions
+          },
+          deliveryInfo: {
+            deliveryFee: calculatedDeliveryFee,
+            estimatedDistance: `${calculatedDistance} km`,
+            estimatedTime,
+            earnings: calculatedDeliveryFee
+          },
+          hasCompleteLocationData: !!(storeLocationData?.coordinates && customerLocationData),
+          timestamp: new Date().toISOString()
+        };
+
+        const notification = await storage.createNotification({
+          userId: partner.userId,
+          type: 'delivery_assignment_with_location',
+          title: '📍 New Delivery with GPS Location',
+          message: `${storeLocationData?.name || 'Store'} → ${order.customerName} | ${calculatedDistance}km | ₹${calculatedDeliveryFee}`,
+          isRead: false,
+          orderId: orderId,
+          data: JSON.stringify(enhancedNotificationData)
+        });
+        notifications.push(notification);
+      }
+
+      console.log(`📍 Enhanced location-aware delivery notifications sent to ${availablePartners.length} partners for order #${orderId} with ${calculatedDistance}km distance and ₹${calculatedDeliveryFee} fee`);
+
+      res.json({ 
+        success: true, 
+        partnersNotified: availablePartners.length,
+        notifications,
+        locationData: {
+          storeLocation: storeLocationData,
+          customerLocation: customerLocationData,
+          calculatedDistance,
+          calculatedDeliveryFee,
+          hasCompleteLocationData: !!(storeLocationData?.coordinates && customerLocationData)
+        }
+      });
+    } catch (error) {
+      console.error("Enhanced delivery notification error:", error);
+      res.status(500).json({ error: "Failed to send location-aware notifications" });
     }
   });
 
