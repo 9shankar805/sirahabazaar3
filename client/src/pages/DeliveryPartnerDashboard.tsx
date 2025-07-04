@@ -665,7 +665,7 @@ export default function DeliveryPartnerDashboard() {
                             <div className="mt-3 p-2 bg-white rounded-md border">
                               <DeliveryTimer 
                                 createdAt={delivery.createdAt} 
-                                estimatedTime={delivery.estimatedTime || 45} 
+                                estimatedTime={45} 
                               />
                             </div>
                           </div>

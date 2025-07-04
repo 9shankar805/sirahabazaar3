@@ -3746,10 +3746,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Could not fetch delivery partner:", err);
       }
 
-      // Create realistic tracking timeline based on order age and current status
+      // Auto-update order status based on time elapsed
       const orderCreatedAt = new Date(order.createdAt);
       const now = new Date();
-      const hoursSinceOrder = (now.getTime() - orderCreatedAt.getTime()) / (1000 * 60 * 60);
+      const minutesSinceOrder = (now.getTime() - orderCreatedAt.getTime()) / (1000 * 60);
+      
+      let newStatus = order.status;
+      let statusUpdated = false;
+
+      // Progressive status updates based on time (for demonstration, using fast intervals)
+      if (minutesSinceOrder >= 2 && order.status === 'pending') {
+        newStatus = 'processing';
+        statusUpdated = true;
+      } else if (minutesSinceOrder >= 4 && order.status === 'processing') {
+        newStatus = 'ready_for_pickup';
+        statusUpdated = true;
+      } else if (minutesSinceOrder >= 6 && order.status === 'ready_for_pickup') {
+        newStatus = 'assigned_for_delivery';
+        statusUpdated = true;
+      } else if (minutesSinceOrder >= 8 && order.status === 'assigned_for_delivery') {
+        newStatus = 'en_route_pickup';
+        statusUpdated = true;
+      } else if (minutesSinceOrder >= 10 && order.status === 'en_route_pickup') {
+        newStatus = 'picked_up';
+        statusUpdated = true;
+      } else if (minutesSinceOrder >= 12 && order.status === 'picked_up') {
+        newStatus = 'en_route_delivery';
+        statusUpdated = true;
+      } else if (minutesSinceOrder >= 15 && order.status === 'en_route_delivery') {
+        newStatus = 'delivered';
+        statusUpdated = true;
+      }
+
+      // Update order status in database if it changed
+      if (statusUpdated) {
+        await storage.updateOrderStatus(orderId, newStatus);
+        order.status = newStatus;
+        console.log(`Auto-updated order ${orderId} status from ${order.status} to: ${newStatus} (${minutesSinceOrder.toFixed(1)} minutes elapsed)`);
+      }
+
+      // Create realistic tracking timeline based on current status
+      const hoursSinceOrder = minutesSinceOrder / 60;
       
       // Generate progressive tracking based on time elapsed
       const tracking = [];
@@ -3764,9 +3801,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedAt: orderCreatedAt.toISOString()
       });
 
-      // Add processing status if order is older than 30 minutes or status indicates processing
-      if (hoursSinceOrder > 0.5 || ['processing', 'ready_for_pickup', 'assigned_for_delivery', 'en_route_pickup', 'picked_up', 'en_route_delivery', 'delivered'].includes(order.status)) {
-        const processingTime = new Date(orderCreatedAt.getTime() + (30 * 60 * 1000)); // 30 minutes after order
+      // Add processing status if we've reached it
+      if (['processing', 'ready_for_pickup', 'assigned_for_delivery', 'en_route_pickup', 'picked_up', 'en_route_delivery', 'delivered'].includes(order.status)) {
+        const processingTime = new Date(orderCreatedAt.getTime() + (2 * 60 * 1000)); // 2 minutes after order
         tracking.push({
           id: 2,
           orderId: orderId,
@@ -3777,9 +3814,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Add ready for pickup if order is older than 1 hour or has delivery partner
-      if (hoursSinceOrder > 1 || ['ready_for_pickup', 'assigned_for_delivery', 'en_route_pickup', 'picked_up', 'en_route_delivery', 'delivered'].includes(order.status)) {
-        const readyTime = new Date(orderCreatedAt.getTime() + (60 * 60 * 1000)); // 1 hour after order
+      // Add ready for pickup
+      if (['ready_for_pickup', 'assigned_for_delivery', 'en_route_pickup', 'picked_up', 'en_route_delivery', 'delivered'].includes(order.status)) {
+        const readyTime = new Date(orderCreatedAt.getTime() + (4 * 60 * 1000)); // 4 minutes after order
         tracking.push({
           id: 3,
           orderId: orderId,
@@ -3790,69 +3827,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Add delivery partner assignment if one exists
-      if (deliveryPartner) {
-        const assignedTime = new Date(orderCreatedAt.getTime() + (75 * 60 * 1000)); // 1 hour 15 minutes after order
+      // Add delivery partner assignment
+      if (['assigned_for_delivery', 'en_route_pickup', 'picked_up', 'en_route_delivery', 'delivered'].includes(order.status)) {
+        const assignedTime = new Date(orderCreatedAt.getTime() + (6 * 60 * 1000)); // 6 minutes after order
         tracking.push({
           id: 4,
           orderId: orderId,
           status: 'assigned_for_delivery',
-          description: `Delivery partner ${deliveryPartner.name} has been assigned to your order.`,
-          location: `Delivery Partner: ${deliveryPartner.name}`,
+          description: `Delivery partner ${deliveryPartner?.name || 'has been'} assigned to your order.`,
+          location: `Delivery Partner: ${deliveryPartner?.name || 'Assigned'}`,
           updatedAt: assignedTime.toISOString()
         });
 
-        // Add en route to pickup if order status indicates it
-        if (['en_route_pickup', 'picked_up', 'en_route_delivery', 'delivered'].includes(order.status)) {
-          const enRoutePickupTime = new Date(orderCreatedAt.getTime() + (90 * 60 * 1000)); // 1.5 hours after order
-          tracking.push({
-            id: 5,
-            orderId: orderId,
-            status: 'en_route_pickup',
-            description: `${deliveryPartner.name} is en route to pickup your order from ${storeInfo?.name || 'the store'}.`,
-            location: `En route to ${storeInfo?.name || 'Store'}`,
-            updatedAt: enRoutePickupTime.toISOString()
-          });
-        }
+      }
 
-        // Add picked up status
-        if (['picked_up', 'en_route_delivery', 'delivered'].includes(order.status)) {
-          const pickedUpTime = new Date(orderCreatedAt.getTime() + (105 * 60 * 1000)); // 1 hour 45 minutes after order
-          tracking.push({
-            id: 6,
-            orderId: orderId,
-            status: 'picked_up',
-            description: `Order picked up by ${deliveryPartner.name}. Now heading to your location.`,
-            location: `With ${deliveryPartner.name}`,
-            updatedAt: pickedUpTime.toISOString()
-          });
-        }
+      // Add en route to pickup
+      if (['en_route_pickup', 'picked_up', 'en_route_delivery', 'delivered'].includes(order.status)) {
+        const enRoutePickupTime = new Date(orderCreatedAt.getTime() + (8 * 60 * 1000)); // 8 minutes after order
+        tracking.push({
+          id: 5,
+          orderId: orderId,
+          status: 'en_route_pickup',
+          description: `${deliveryPartner?.name || 'Delivery partner'} is en route to pickup your order.`,
+          location: `En route to ${storeInfo?.name || 'Store'}`,
+          updatedAt: enRoutePickupTime.toISOString()
+        });
+      }
 
-        // Add en route to delivery
-        if (['en_route_delivery', 'delivered'].includes(order.status)) {
-          const enRouteDeliveryTime = new Date(orderCreatedAt.getTime() + (110 * 60 * 1000)); // 1 hour 50 minutes after order
-          tracking.push({
-            id: 7,
-            orderId: orderId,
-            status: 'en_route_delivery',
-            description: `${deliveryPartner.name} is en route to your delivery address.`,
-            location: `En route to ${order.shippingAddress}`,
-            updatedAt: enRouteDeliveryTime.toISOString()
-          });
-        }
+      // Add picked up status
+      if (['picked_up', 'en_route_delivery', 'delivered'].includes(order.status)) {
+        const pickedUpTime = new Date(orderCreatedAt.getTime() + (10 * 60 * 1000)); // 10 minutes after order
+        tracking.push({
+          id: 6,
+          orderId: orderId,
+          status: 'picked_up',
+          description: `Order picked up by ${deliveryPartner?.name || 'delivery partner'}. Now heading to your location.`,
+          location: `With ${deliveryPartner?.name || 'Delivery Partner'}`,
+          updatedAt: pickedUpTime.toISOString()
+        });
+      }
 
-        // Add delivered status if applicable
-        if (order.status === 'delivered') {
-          const deliveredTime = new Date(orderCreatedAt.getTime() + (120 * 60 * 1000)); // 2 hours after order
-          tracking.push({
-            id: 8,
-            orderId: orderId,
-            status: 'delivered',
-            description: `Order successfully delivered by ${deliveryPartner.name}. Thank you for your order!`,
-            location: order.shippingAddress,
-            updatedAt: deliveredTime.toISOString()
-          });
-        }
+      // Add en route to delivery
+      if (['en_route_delivery', 'delivered'].includes(order.status)) {
+        const enRouteDeliveryTime = new Date(orderCreatedAt.getTime() + (12 * 60 * 1000)); // 12 minutes after order
+        tracking.push({
+          id: 7,
+          orderId: orderId,
+          status: 'en_route_delivery',
+          description: `${deliveryPartner?.name || 'Delivery partner'} is en route to your delivery address.`,
+          location: `En route to ${order.shippingAddress}`,
+          updatedAt: enRouteDeliveryTime.toISOString()
+        });
+      }
+
+      // Add delivered status
+      if (order.status === 'delivered') {
+        const deliveredTime = new Date(orderCreatedAt.getTime() + (15 * 60 * 1000)); // 15 minutes after order
+        tracking.push({
+          id: 8,
+          orderId: orderId,
+          status: 'delivered',
+          description: `Order successfully delivered by ${deliveryPartner?.name || 'delivery partner'}. Thank you for your order!`,
+          location: order.shippingAddress,
+          updatedAt: deliveredTime.toISOString()
+        });
       }
 
       console.log(`Returning enhanced tracking data for order ${orderId} with ${tracking.length} status updates`);
