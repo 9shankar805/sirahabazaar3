@@ -383,12 +383,28 @@ export default function EnhancedDeliveryPartnerDashboard() {
       }
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data, orderId) => {
       console.log('Delivery accepted successfully:', data);
+      
+      // Mark related notifications as read
+      try {
+        // Find and mark notification as read
+        const relatedNotification = notificationsArray.find((n: any) => n.orderId === orderId);
+        if (relatedNotification) {
+          await fetch(`/api/notifications/${relatedNotification.id}/read`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      } catch (error) {
+        console.log('Failed to mark notification as read:', error);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/deliveries/available'] });
       queryClient.invalidateQueries({ queryKey: ['/api/deliveries/partner'] });
       queryClient.invalidateQueries({ queryKey: ['/api/deliveries/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/delivery-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       toast({
         title: "Order Accepted",
         description: "You have successfully accepted this delivery order"
@@ -1246,7 +1262,9 @@ export default function EnhancedDeliveryPartnerDashboard() {
                                 className="text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
                                 onClick={() => {
                                   const orderId = notification.orderId;
+                                  console.log('Notification structure:', notification);
                                   console.log('Accepting delivery for order:', orderId);
+                                  console.log('Notification ID:', notification.id);
                                   acceptDelivery.mutate(orderId);
                                 }}
                                 disabled={acceptDelivery.isPending}
