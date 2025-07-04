@@ -4729,9 +4729,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/delivery-notifications/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
-      const notifications = await storage.getUserNotifications(userId);
+      
+      // Fetch only unread delivery assignment notifications
+      const notifications = await db.select()
+        .from(dbNotifications)
+        .where(and(
+          eq(dbNotifications.userId, userId),
+          eq(dbNotifications.type, 'delivery_assignment'),
+          eq(dbNotifications.isRead, false)
+        ))
+        .orderBy(desc(dbNotifications.createdAt));
+      
+      console.log(`📢 Delivery notifications for user ${userId}: ${notifications.length} unread notifications`);
       res.json(notifications);
     } catch (error) {
+      console.error('Failed to fetch delivery notifications:', error);
       res.status(500).json({ error: "Failed to fetch delivery notifications" });
     }
   });
