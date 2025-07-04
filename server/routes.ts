@@ -2738,12 +2738,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const order of readyForPickupOrders) {
           const existingDeliveries = await storage.getDeliveriesByOrderId(order.id);
           if (existingDeliveries.length === 0) {
-            // Convert order to delivery-like structure
+            // Get store for distance calculation
+            const store = await storage.getStore(order.storeId);
+            
+            // Calculate correct delivery fee based on distance
+            let calculatedDeliveryFee = 30; // Default fee
+            if (store && store.latitude && store.longitude && order.latitude && order.longitude) {
+              // Calculate distance using Haversine formula
+              const R = 6371; // Earth's radius in km
+              const toRadians = (degrees: number) => degrees * (Math.PI / 180);
+              const storeCoords = {
+                latitude: parseFloat(store.latitude),
+                longitude: parseFloat(store.longitude)
+              };
+              const customerCoords = {
+                latitude: parseFloat(order.latitude),
+                longitude: parseFloat(order.longitude)
+              };
+              const dLat = toRadians(customerCoords.latitude - storeCoords.latitude);
+              const dLon = toRadians(customerCoords.longitude - storeCoords.longitude);
+              const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
+                        Math.cos(toRadians(storeCoords.latitude)) * Math.cos(toRadians(customerCoords.latitude)) * 
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              const distance = R * c;
+              
+              // Calculate delivery fee based on distance ranges
+              if (distance <= 5) {
+                calculatedDeliveryFee = 30;
+              } else if (distance <= 10) {
+                calculatedDeliveryFee = 50;
+              } else if (distance <= 20) {
+                calculatedDeliveryFee = 80;
+              } else if (distance <= 30) {
+                calculatedDeliveryFee = 100;
+              } else {
+                calculatedDeliveryFee = 100;
+              }
+            }
+            
+            // Convert order to delivery-like structure with calculated fee
             availableOrders.push({
               id: `order_${order.id}`, // Temporary ID for orders without deliveries
               orderId: order.id,
               status: 'pending_acceptance',
-              deliveryFee: order.deliveryFee || '30'
+              deliveryFee: calculatedDeliveryFee.toString()
             });
           }
         }
@@ -2772,6 +2811,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Get order items
             const orderItems = await storage.getOrderItems(order.id);
             
+            // Calculate correct delivery fee based on distance
+            const storeCoords = {
+              latitude: parseFloat(store.latitude || '26.661'),
+              longitude: parseFloat(store.longitude || '86.207')
+            };
+            const customerCoords = {
+              latitude: parseFloat(order.latitude || '26.665'),
+              longitude: parseFloat(order.longitude || '86.212')
+            };
+            
+            // Calculate distance using Haversine formula
+            const R = 6371; // Earth's radius in km
+            const toRadians = (degrees: number) => degrees * (Math.PI / 180);
+            const dLat = toRadians(customerCoords.latitude - storeCoords.latitude);
+            const dLon = toRadians(customerCoords.longitude - storeCoords.longitude);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
+                      Math.cos(toRadians(storeCoords.latitude)) * Math.cos(toRadians(customerCoords.latitude)) * 
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c;
+            
+            // Calculate correct delivery fee based on current distance-based system
+            let correctDeliveryFee = 100; // Default fee
+            if (distance <= 5) {
+              correctDeliveryFee = 30;
+            } else if (distance <= 10) {
+              correctDeliveryFee = 50;
+            } else if (distance <= 20) {
+              correctDeliveryFee = 80;
+            } else if (distance <= 30) {
+              correctDeliveryFee = 100;
+            }
+            
             return {
               id: delivery.id,
               orderId: order.id,
@@ -2784,18 +2856,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               pickupStoreName: store.name,
               pickupStorePhone: store.phone || '+977-9850000000',
               pickupAddress: store.address,
-              pickupLatitude: parseFloat(store.latitude || '26.661'),
-              pickupLongitude: parseFloat(store.longitude || '86.207'),
+              pickupLatitude: storeCoords.latitude,
+              pickupLongitude: storeCoords.longitude,
               
               // Delivery details  
               deliveryAddress: order.shippingAddress || 'Customer Location',
-              deliveryLatitude: parseFloat(order.latitude || '26.665'),
-              deliveryLongitude: parseFloat(order.longitude || '86.212'),
+              deliveryLatitude: customerCoords.latitude,
+              deliveryLongitude: customerCoords.longitude,
               
-              // Financial details
-              deliveryFee: parseFloat(delivery.deliveryFee || order.deliveryFee || '30'),
+              // Financial details (using correct calculated delivery fee)
+              deliveryFee: correctDeliveryFee,
               extraCharges: 0,
-              totalEarnings: parseFloat(delivery.deliveryFee || order.deliveryFee || '30'),
+              totalEarnings: correctDeliveryFee,
               paymentMethod: order.paymentMethod || 'COD',
               codAmount: order.paymentMethod === 'COD' ? parseFloat(order.totalAmount) : 0,
               
@@ -2808,9 +2880,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 image: '/images/placeholder.jpg'
               })),
               
-              // Time and distance
-              estimatedDistance: 2.5 + Math.random() * 3,
-              estimatedTime: 20 + Math.floor(Math.random() * 20),
+              // Time and distance (using calculated values)
+              estimatedDistance: Math.round(distance * 100) / 100,
+              estimatedTime: Math.round(30 + (distance * 8)), // Base 30min + 8min per km
               assignedAt: delivery.createdAt || new Date().toISOString(),
               
               // Special instructions

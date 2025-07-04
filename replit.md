@@ -120,6 +120,18 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### July 4, 2025 - Distance-Based Delivery Fee Calculation Fixed for Available Deliveries
+- ✓ Fixed critical delivery fee calculation issue where Order #18 showed incorrect ₹49.40 instead of correct ₹30
+- ✓ Implemented dynamic distance-based delivery fee calculation in available deliveries endpoint
+- ✓ Added Haversine formula for accurate distance calculation between store and customer locations
+- ✓ Enhanced delivery fee logic with proper distance-based pricing: 0-5km (₹30), 5-10km (₹50), 10-20km (₹80), 20-30km+ (₹100)
+- ✓ Fixed both initial order structure and enhanced delivery details to use calculated fees instead of stored database values
+- ✓ Resolved delivery partner dashboard displaying incorrect historical delivery fees from previous system configurations
+- ✓ Updated estimated distance and time calculations to use real geographical data instead of random values
+- ✓ Verified fix: Order #18 now correctly shows ₹30 delivery fee for 3.88km distance in delivery partner dashboard
+- ✓ System now dynamically recalculates delivery fees based on actual store-to-customer distance regardless of stored database values
+- → Delivery partners now see accurate, distance-based delivery fees that reflect current pricing structure rather than historical incorrect data
+
 ### July 3, 2025 - Automatic Delivery Partner Notifications for Ready for Pickup Orders
 - ✓ Fixed critical issue where delivery partners weren't receiving notifications when orders were marked "ready for pickup"
 - ✓ Enhanced /api/orders/:id/status endpoint to automatically notify all available delivery partners
