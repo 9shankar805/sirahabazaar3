@@ -3170,7 +3170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get customer details
       const customer = await storage.getUser(order.customerId);
       const customerName = customer?.fullName || order.customerName || "Customer";
-      const customerPhone = order.customerPhone || order.phone || "Contact customer";
+      const customerPhone = order.phone || "Contact customer";
       const deliveryAddress = order.shippingAddress;
 
       // Create Google Maps link for delivery location
@@ -4676,7 +4676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get all available delivery partners
       const allPartners = await storage.getAllDeliveryPartners();
-      const availablePartners = allPartners.filter(partner => 
+      const availablePartners = allPartners.filter((partner: any) => 
         partner.status === 'approved' && partner.isAvailable
       );
 
