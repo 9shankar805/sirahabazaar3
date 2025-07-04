@@ -266,30 +266,30 @@ export default function DeliveryPartnerDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Mobile Responsive Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-2 sm:p-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full">
-                <Truck className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 w-full overflow-x-hidden">
+      {/* Mobile-First Header - Full Width Coverage */}
+      <div className="bg-white shadow-sm border-b w-full">
+        <div className="w-full max-w-none px-2 xs:px-3 sm:px-4 lg:px-6 py-2 xs:py-3 sm:py-4">
+          <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 xs:gap-3 sm:gap-4 min-w-0 flex-1">
+              <div className="p-1.5 xs:p-2 sm:p-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex-shrink-0">
+                <Truck className="h-3 w-3 xs:h-4 xs:w-4 sm:h-6 sm:w-6 text-white" />
               </div>
-              <div>
-                <h1 className="text-lg sm:text-2xl font-bold text-gray-800">Delivery Dashboard</h1>
-                <p className="text-sm sm:text-base text-gray-600 truncate">Welcome back, {user?.fullName}</p>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm xs:text-base sm:text-lg lg:text-2xl font-bold text-gray-800 truncate">Delivery Dashboard</h1>
+                <p className="text-xs xs:text-sm sm:text-base text-gray-600 truncate">Welcome, {user?.fullName}</p>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <div className="flex flex-row xs:flex-col sm:flex-row items-center xs:items-end sm:items-center gap-2 xs:gap-1 sm:gap-4 flex-shrink-0">
               <Badge 
                 variant={partner.isAvailable ? "default" : "secondary"}
-                className={`px-3 py-1.5 text-xs sm:text-sm font-medium ${
+                className={`px-2 xs:px-3 py-1 xs:py-1.5 text-[10px] xs:text-xs sm:text-sm font-medium ${
                   partner.isAvailable 
                     ? "bg-green-100 text-green-800 border-green-200" 
                     : "bg-gray-100 text-gray-800 border-gray-200"
                 }`}
               >
-                <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full mr-2 ${
+                <div className={`w-1 h-1 xs:w-1.5 xs:h-1.5 sm:w-2 sm:h-2 rounded-full mr-1 xs:mr-2 ${
                   partner.isAvailable ? "bg-green-500" : "bg-gray-400"
                 }`}></div>
                 {partner.isAvailable ? "Online" : "Offline"}
@@ -298,114 +298,114 @@ export default function DeliveryPartnerDashboard() {
                 variant={partner.isAvailable ? "outline" : "default"}
                 onClick={() => toggleAvailability.mutate(!partner.isAvailable)}
                 disabled={toggleAvailability.isPending}
-                className={`text-xs sm:text-sm px-3 sm:px-4 py-2 ${partner.isAvailable 
+                className={`text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 py-1 xs:py-2 h-6 xs:h-7 sm:h-auto ${partner.isAvailable 
                   ? "border-red-200 text-red-600 hover:bg-red-50" 
                   : "bg-green-600 hover:bg-green-700 text-white"
                 }`}
                 size="sm"
               >
-                {partner.isAvailable ? "Go Offline" : "Go Online"}
+                {partner.isAvailable ? "Offline" : "Online"}
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto p-3 sm:p-4 lg:p-6">
+      <div className="w-full max-w-none px-1 xs:px-2 sm:px-3 lg:px-6 py-2 xs:py-3 sm:py-4 lg:py-6">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          {/* Mobile Responsive Tabs - Clear Icons with Better Visibility */}
-          <TabsList className="grid grid-cols-6 mb-4 sm:mb-8 bg-white shadow-sm h-auto p-1">
-            <TabsTrigger value="dashboard" className="flex flex-col items-center justify-center py-2 px-1 gap-1" title="Dashboard">
-              <TrendingUp className="h-6 w-6 text-blue-600" />
-              <span className="text-[10px] font-medium text-gray-600">Home</span>
+          {/* Mobile-First Tabs - Optimized for All Screen Sizes */}
+          <TabsList className="grid grid-cols-6 mb-3 xs:mb-4 sm:mb-8 bg-white shadow-sm h-auto p-0.5 xs:p-1 w-full">
+            <TabsTrigger value="dashboard" className="flex flex-col items-center justify-center py-1.5 xs:py-2 px-0.5 xs:px-1 gap-0.5 xs:gap-1 h-auto min-h-[60px] xs:min-h-[70px]" title="Dashboard">
+              <TrendingUp className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-blue-600" />
+              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-gray-600 leading-tight">Home</span>
             </TabsTrigger>
-            <TabsTrigger value="orders" className="flex flex-col items-center justify-center py-2 px-1 gap-1 relative" title="Notifications">
+            <TabsTrigger value="orders" className="flex flex-col items-center justify-center py-1.5 xs:py-2 px-0.5 xs:px-1 gap-0.5 xs:gap-1 relative h-auto min-h-[60px] xs:min-h-[70px]" title="Notifications">
               <div className="relative">
-                <Bell className="h-6 w-6 text-orange-600" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                <Bell className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-orange-600" />
+                <div className="absolute -top-0.5 xs:-top-1 -right-0.5 xs:-right-1 w-2 h-2 xs:w-3 xs:h-3 bg-red-500 rounded-full flex items-center justify-center">
+                  <div className="w-1 h-1 xs:w-1.5 xs:h-1.5 bg-white rounded-full"></div>
                 </div>
               </div>
-              <span className="text-[10px] font-medium text-gray-600">Alerts</span>
+              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-gray-600 leading-tight">Alerts</span>
             </TabsTrigger>
-            <TabsTrigger value="deliveries" className="flex flex-col items-center justify-center py-2 px-1 gap-1 relative" title="Active Deliveries">
+            <TabsTrigger value="deliveries" className="flex flex-col items-center justify-center py-1.5 xs:py-2 px-0.5 xs:px-1 gap-0.5 xs:gap-1 relative h-auto min-h-[60px] xs:min-h-[70px]" title="Active Deliveries">
               <div className="relative">
-                <Truck className="h-6 w-6 text-green-600" />
+                <Truck className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-green-600" />
                 {(pendingDeliveries.length + activeDeliveriesArray.length) > 0 && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-[8px] font-bold text-white">{pendingDeliveries.length + activeDeliveriesArray.length}</span>
+                  <div className="absolute -top-0.5 xs:-top-1 -right-0.5 xs:-right-1 w-3 h-3 xs:w-4 xs:h-4 bg-green-500 rounded-full flex items-center justify-center">
+                    <span className="text-[6px] xs:text-[8px] font-bold text-white">{pendingDeliveries.length + activeDeliveriesArray.length}</span>
                   </div>
                 )}
               </div>
-              <span className="text-[10px] font-medium text-gray-600">Active</span>
+              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-gray-600 leading-tight">Active</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex flex-col items-center justify-center py-2 px-1 gap-1" title="Delivery History">
-              <MapPin className="h-6 w-6 text-purple-600" />
-              <span className="text-[10px] font-medium text-gray-600">Track</span>
+            <TabsTrigger value="history" className="flex flex-col items-center justify-center py-1.5 xs:py-2 px-0.5 xs:px-1 gap-0.5 xs:gap-1 h-auto min-h-[60px] xs:min-h-[70px]" title="Delivery History">
+              <MapPin className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-purple-600" />
+              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-gray-600 leading-tight">Track</span>
             </TabsTrigger>
-            <TabsTrigger value="earnings" className="flex flex-col items-center justify-center py-2 px-1 gap-1" title="Earnings">
-              <DollarSign className="h-6 w-6 text-green-600" />
-              <span className="text-[10px] font-medium text-gray-600">Earn</span>
+            <TabsTrigger value="earnings" className="flex flex-col items-center justify-center py-1.5 xs:py-2 px-0.5 xs:px-1 gap-0.5 xs:gap-1 h-auto min-h-[60px] xs:min-h-[70px]" title="Earnings">
+              <DollarSign className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-green-600" />
+              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-gray-600 leading-tight">Earn</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex flex-col items-center justify-center py-2 px-1 gap-1" title="Reports">
-              <Calendar className="h-6 w-6 text-indigo-600" />
-              <span className="text-[10px] font-medium text-gray-600">Report</span>
+            <TabsTrigger value="profile" className="flex flex-col items-center justify-center py-1.5 xs:py-2 px-0.5 xs:px-1 gap-0.5 xs:gap-1 h-auto min-h-[60px] xs:min-h-[70px]" title="Reports">
+              <Calendar className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-indigo-600" />
+              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-gray-600 leading-tight">Report</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard" className="space-y-4 sm:space-y-6">
-            {/* Mobile Responsive Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          <TabsContent value="dashboard" className="space-y-2 xs:space-y-3 sm:space-y-4 lg:space-y-6">
+            {/* Mobile-First Stats Cards - Full Width Coverage */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 xs:gap-2 sm:gap-3 lg:gap-6 w-full">
               <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                  <CardTitle className="text-xs sm:text-sm font-medium opacity-90">Total Deliveries</CardTitle>
-                  <Package className="h-4 w-4 sm:h-5 sm:w-5 opacity-80" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 xs:pb-2 px-2 xs:px-3 sm:px-6 pt-2 xs:pt-3 sm:pt-6">
+                  <CardTitle className="text-[10px] xs:text-xs sm:text-sm font-medium opacity-90 leading-tight">Total Deliveries</CardTitle>
+                  <Package className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 opacity-80 flex-shrink-0" />
                 </CardHeader>
-                <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                  <div className="text-xl sm:text-3xl font-bold">{currentStats.totalDeliveries}</div>
-                  <p className="text-[10px] sm:text-xs opacity-80 mt-1">
+                <CardContent className="px-2 xs:px-3 sm:px-6 pb-2 xs:pb-3 sm:pb-6">
+                  <div className="text-base xs:text-lg sm:text-xl lg:text-3xl font-bold">{currentStats.totalDeliveries}</div>
+                  <p className="text-[8px] xs:text-[9px] sm:text-[10px] lg:text-xs opacity-80 mt-0.5 xs:mt-1 leading-tight">
                     +{currentStats.todayDeliveries} today
                   </p>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow-lg">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                  <CardTitle className="text-xs sm:text-sm font-medium opacity-90">Total Earnings</CardTitle>
-                  <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 opacity-80" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 xs:pb-2 px-2 xs:px-3 sm:px-6 pt-2 xs:pt-3 sm:pt-6">
+                  <CardTitle className="text-[10px] xs:text-xs sm:text-sm font-medium opacity-90 leading-tight">Total Earnings</CardTitle>
+                  <DollarSign className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 opacity-80 flex-shrink-0" />
                 </CardHeader>
-                <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                  <div className="text-xl sm:text-3xl font-bold">₹{currentStats.totalEarnings.toFixed(2)}</div>
-                  <p className="text-[10px] sm:text-xs opacity-80 mt-1">
+                <CardContent className="px-2 xs:px-3 sm:px-6 pb-2 xs:pb-3 sm:pb-6">
+                  <div className="text-base xs:text-lg sm:text-xl lg:text-3xl font-bold">₹{currentStats.totalEarnings.toFixed(2)}</div>
+                  <p className="text-[8px] xs:text-[9px] sm:text-[10px] lg:text-xs opacity-80 mt-0.5 xs:mt-1 leading-tight">
                     +₹{currentStats.todayEarnings.toFixed(2)} today
                   </p>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0 shadow-lg">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                  <CardTitle className="text-xs sm:text-sm font-medium opacity-90">Active Deliveries</CardTitle>
-                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 opacity-80" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 xs:pb-2 px-2 xs:px-3 sm:px-6 pt-2 xs:pt-3 sm:pt-6">
+                  <CardTitle className="text-[10px] xs:text-xs sm:text-sm font-medium opacity-90 leading-tight">Active Deliveries</CardTitle>
+                  <Clock className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 opacity-80 flex-shrink-0" />
                 </CardHeader>
-                <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                  <div className="text-xl sm:text-3xl font-bold">{currentStats.activeDeliveries}</div>
-                  <p className="text-[10px] sm:text-xs opacity-80 mt-1">
-                    {pendingDeliveries.length} pending, {activeDeliveriesArray.length} in progress
+                <CardContent className="px-2 xs:px-3 sm:px-6 pb-2 xs:pb-3 sm:pb-6">
+                  <div className="text-base xs:text-lg sm:text-xl lg:text-3xl font-bold">{currentStats.activeDeliveries}</div>
+                  <p className="text-[8px] xs:text-[9px] sm:text-[10px] lg:text-xs opacity-80 mt-0.5 xs:mt-1 leading-tight">
+                    {pendingDeliveries.length} pending, {activeDeliveriesArray.length} active
                   </p>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                  <CardTitle className="text-xs sm:text-sm font-medium opacity-90">Rating</CardTitle>
-                  <Star className="h-4 w-4 sm:h-5 sm:w-5 opacity-80" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 xs:pb-2 px-2 xs:px-3 sm:px-6 pt-2 xs:pt-3 sm:pt-6">
+                  <CardTitle className="text-[10px] xs:text-xs sm:text-sm font-medium opacity-90 leading-tight">Rating</CardTitle>
+                  <Star className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 opacity-80 flex-shrink-0" />
                 </CardHeader>
-                <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                  <div className="text-xl sm:text-3xl font-bold">
+                <CardContent className="px-2 xs:px-3 sm:px-6 pb-2 xs:pb-3 sm:pb-6">
+                  <div className="text-base xs:text-lg sm:text-xl lg:text-3xl font-bold">
                     {currentStats.rating > 0 ? `${currentStats.rating.toFixed(1)}★` : "N/A"}
                   </div>
-                  <p className="text-[10px] sm:text-xs opacity-80 mt-1">
-                    Based on customer feedback
+                  <p className="text-[8px] xs:text-[9px] sm:text-[10px] lg:text-xs opacity-80 mt-0.5 xs:mt-1 leading-tight">
+                    Customer feedback
                   </p>
                 </CardContent>
               </Card>
@@ -557,60 +557,60 @@ export default function DeliveryPartnerDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="deliveries" className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              {/* Mobile Responsive Pending Deliveries */}
-              <Card className="shadow-lg border-0">
-                <CardHeader className="px-3 sm:px-6">
-                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
-                    Pending Deliveries ({pendingDeliveries.length})
+          <TabsContent value="deliveries" className="space-y-2 xs:space-y-3 sm:space-y-4 lg:space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 xs:gap-3 sm:gap-4 lg:gap-6 w-full">
+              {/* Mobile-First Pending Deliveries */}
+              <Card className="shadow-lg border-0 w-full">
+                <CardHeader className="px-2 xs:px-3 sm:px-6 py-2 xs:py-3 sm:py-4">
+                  <CardTitle className="flex items-center gap-1 xs:gap-2 text-sm xs:text-base sm:text-lg">
+                    <Clock className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 text-orange-500 flex-shrink-0" />
+                    <span className="truncate">Pending ({pendingDeliveries.length})</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
+                <CardContent className="space-y-2 xs:space-y-3 sm:space-y-4 px-2 xs:px-3 sm:px-6 pb-2 xs:pb-3 sm:pb-6">
                   {pendingDeliveries.length === 0 ? (
-                    <div className="text-center py-6 sm:py-8">
-                      <Package className="h-10 w-10 sm:h-12 sm:w-12 text-gray-300 mx-auto mb-3 sm:mb-4" />
-                      <p className="text-sm sm:text-base text-gray-500">No pending deliveries</p>
+                    <div className="text-center py-4 xs:py-6 sm:py-8">
+                      <Package className="h-6 w-6 xs:h-8 xs:w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-gray-300 mx-auto mb-2 xs:mb-3 sm:mb-4" />
+                      <p className="text-xs xs:text-sm sm:text-base text-gray-500">No pending deliveries</p>
                     </div>
                   ) : (
                     pendingDeliveries.map((delivery: Delivery) => (
-                      <Card key={delivery.id} className="border border-orange-200 bg-orange-50 max-w-full overflow-hidden">
-                        <CardContent className="p-2 sm:p-4">
-                          <div className="flex items-center justify-between mb-2 gap-2">
-                            <div className="font-semibold text-xs sm:text-lg truncate min-w-0">Order #{delivery.orderId}</div>
-                            <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs flex-shrink-0">
+                      <Card key={delivery.id} className="border border-orange-200 bg-orange-50 w-full overflow-hidden">
+                        <CardContent className="p-1.5 xs:p-2 sm:p-4">
+                          <div className="flex items-center justify-between mb-1.5 xs:mb-2 gap-1 xs:gap-2">
+                            <div className="font-semibold text-[10px] xs:text-xs sm:text-sm lg:text-lg truncate min-w-0">Order #{delivery.orderId}</div>
+                            <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-[8px] xs:text-[9px] sm:text-xs flex-shrink-0 px-1 xs:px-2 py-0.5">
                               ₹{delivery.deliveryFee}
                             </Badge>
                           </div>
-                          <div className="space-y-2 text-xs sm:text-sm">
-                            <div className="flex items-start gap-2">
-                              <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                          <div className="space-y-1 xs:space-y-1.5 sm:space-y-2 text-[9px] xs:text-[10px] sm:text-xs lg:text-sm">
+                            <div className="flex items-start gap-1 xs:gap-1.5 sm:gap-2">
+                              <MapPin className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 text-green-500 mt-0.5 flex-shrink-0" />
                               <div className="min-w-0 flex-1">
-                                <p className="font-medium text-xs sm:text-sm">Pickup</p>
-                                <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 word-wrap break-words overflow-wrap-anywhere">{delivery.pickupAddress}</p>
+                                <p className="font-medium text-[9px] xs:text-[10px] sm:text-xs">Pickup</p>
+                                <p className="text-gray-600 text-[8px] xs:text-[9px] sm:text-xs line-clamp-2 break-words">{delivery.pickupAddress}</p>
                               </div>
                             </div>
-                            <div className="flex items-start gap-2">
-                              <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                            <div className="flex items-start gap-1 xs:gap-1.5 sm:gap-2">
+                              <MapPin className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4 text-red-500 mt-0.5 flex-shrink-0" />
                               <div className="min-w-0 flex-1">
-                                <p className="font-medium text-xs sm:text-sm">Delivery</p>
-                                <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 word-wrap break-words overflow-wrap-anywhere">{delivery.deliveryAddress}</p>
+                                <p className="font-medium text-[9px] xs:text-[10px] sm:text-xs">Delivery</p>
+                                <p className="text-gray-600 text-[8px] xs:text-[9px] sm:text-xs line-clamp-2 break-words">{delivery.deliveryAddress}</p>
                               </div>
                             </div>
                           </div>
-                          <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2">
+                          <div className="mt-2 xs:mt-2.5 sm:mt-3 lg:mt-4 flex flex-col xs:flex-row gap-1 xs:gap-1.5 sm:gap-2">
                             <Button
                               onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'picked_up' })}
                               disabled={updateDeliveryStatus.isPending}
-                              className="flex-1 bg-green-600 hover:bg-green-700 text-xs py-2"
+                              className="flex-1 bg-green-600 hover:bg-green-700 text-[8px] xs:text-[9px] sm:text-xs py-1 xs:py-1.5 sm:py-2 h-6 xs:h-7 sm:h-auto"
                               size="sm"
                             >
-                              <span className="hidden sm:inline">Accept & Pickup</span>
-                              <span className="sm:hidden">Accept</span>
+                              <span className="hidden xs:inline">Accept & Pickup</span>
+                              <span className="xs:hidden">Accept</span>
                             </Button>
-                            <Button variant="outline" size="sm" className="sm:w-auto">
-                              <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <Button variant="outline" size="sm" className="xs:w-auto h-6 xs:h-7 sm:h-auto px-2">
+                              <MapPin className="h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-4 sm:w-4" />
                             </Button>
                           </div>
                         </CardContent>
