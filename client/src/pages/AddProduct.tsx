@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Upload, Camera, Plus, X } from "lucide-react";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import ImageUpload from "@/components/ImageUpload";
 
 const productSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters"),
@@ -22,7 +23,6 @@ const productSchema = z.object({
   originalPrice: z.string().optional(),
   stock: z.number().min(0, "Stock cannot be negative"),
   images: z.array(z.string()).default([]),
-  imageUrl: z.string().optional(),
   productType: z.enum(["retail", "food"]).default("retail"),
   // Food-specific fields
   preparationTime: z.string().optional(),
@@ -111,7 +111,6 @@ export default function AddProduct() {
       originalPrice: "",
       stock: 0,
       images: [],
-      imageUrl: "",
       productType: defaultProductType,
       preparationTime: "",
       ingredients: [],
@@ -123,7 +122,6 @@ export default function AddProduct() {
     },
   });
 
-  const watchImageUrl = form.watch("imageUrl");
   const watchProductType = form.watch("productType");
 
   const handleAddIngredient = () => {
@@ -154,22 +152,6 @@ export default function AddProduct() {
     const updated = allergens.filter(a => a !== allergen);
     setAllergens(updated);
     form.setValue("allergens", updated);
-  };
-
-  const handleAddImage = () => {
-    const imageUrl = form.getValues("imageUrl");
-    if (imageUrl && imageUrl.trim()) {
-      const currentImages = form.getValues("images");
-      if (!currentImages.includes(imageUrl.trim()) && currentImages.length < 6) {
-        form.setValue("images", [...currentImages, imageUrl.trim()]);
-        form.setValue("imageUrl", "");
-      }
-    }
-  };
-
-  const handleRemoveImage = (imageUrl: string) => {
-    const currentImages = form.getValues("images");
-    form.setValue("images", currentImages.filter(img => img !== imageUrl));
   };
 
   const onSubmit = async (data: ProductForm) => {
@@ -669,97 +651,23 @@ export default function AddProduct() {
                 )}
 
                 {/* Product Images */}
-                <div className="space-y-4">
-                  <FormLabel className="text-base font-medium">Product Images (1-6 images)</FormLabel>
-                  
-                  {/* Image Upload Section */}
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                    <div className="flex flex-col items-center space-y-4">
-                      <div className="flex space-x-4">
-                        <div className="flex flex-col items-center space-y-2">
-                          <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                            <Upload className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-                          </div>
-                          <span className="text-sm text-gray-600 dark:text-gray-300">Upload</span>
-                        </div>
-                        
-                        <div className="flex flex-col items-center space-y-2">
-                          <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                            <Camera className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-                          </div>
-                          <span className="text-sm text-gray-600 dark:text-gray-300">Camera</span>
-                        </div>
-                        
-                        <div className="flex flex-col items-center space-y-2">
-                          <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                            <span className="text-sm font-medium text-blue-600 dark:text-blue-300">URL</span>
-                          </div>
-                          <span className="text-sm text-gray-600 dark:text-gray-300">URL</span>
-                        </div>
-                      </div>
-                      
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        Click to select images from your device
-                      </p>
-                      
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Auto-compressed to ~200KB for optimal performance
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* URL Input */}
-                  <div className="flex gap-2">
-                    <FormField
-                      control={form.control}
-                      name="imageUrl"
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormControl>
-                            <Input 
-                              placeholder="Enter image URL" 
-                              className="h-11"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={handleAddImage}
-                      disabled={!watchImageUrl || !watchImageUrl.trim()}
-                      className="h-11"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add
-                    </Button>
-                  </div>
-
-                  {/* Image Preview */}
-                  {form.watch("images").length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      {form.watch("images").map((imageUrl, index) => (
-                        <div key={index} className="relative group">
-                          <img 
-                            src={imageUrl} 
-                            alt={`Product ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg border"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(imageUrl)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                <FormField
+                  control={form.control}
+                  name="images"
+                  render={({ field }) => (
+                    <FormItem>
+                      <ImageUpload
+                        label="Product Images"
+                        maxImages={6}
+                        minImages={1}
+                        onImagesChange={field.onChange}
+                        initialImages={field.value || []}
+                        className="col-span-full"
+                      />
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
 
                 {/* Submit Button */}
                 <Button 
