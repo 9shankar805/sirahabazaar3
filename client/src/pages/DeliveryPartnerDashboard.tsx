@@ -4,14 +4,71 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/use-user";
-import { Truck, Package, DollarSign, Clock, MapPin, CheckCircle, Star, Bell, TrendingUp, Calendar, Navigation, Phone, AlertCircle } from "lucide-react";
+import { Truck, Package, DollarSign, Clock, MapPin, CheckCircle, Star, Bell, TrendingUp, Calendar, Navigation, Phone, AlertCircle, Timer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DeliveryNotifications from "@/components/DeliveryNotifications";
 import DeliveryPartnerProfileSetup from "@/components/DeliveryPartnerProfileSetup";
 import DeliveryMap from "@/components/DeliveryMap";
 
 import SoundTestButton from "@/components/SoundTestButton";
+
+// Timer component for delivery time tracking
+const DeliveryTimer = ({ createdAt, estimatedTime }: { createdAt: string; estimatedTime: number }) => {
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [isOverdue, setIsOverdue] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      const start = new Date(createdAt);
+      const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000 / 60); // minutes
+      setElapsedTime(elapsed);
+      setIsOverdue(elapsed > estimatedTime);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [createdAt, estimatedTime]);
+
+  const formatTime = (minutes: number) => {
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
+  const remainingTime = Math.max(0, estimatedTime - elapsedTime);
+  const progress = Math.min(100, (elapsedTime / estimatedTime) * 100);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center gap-1">
+          <Timer className="h-3 w-3" />
+          <span className={isOverdue ? 'text-red-600 font-medium' : 'text-gray-600'}>
+            {formatTime(elapsedTime)} elapsed
+          </span>
+        </div>
+        <div className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-green-600'}`}>
+          {isOverdue ? 'Overdue' : `${formatTime(remainingTime)} left`}
+        </div>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-1.5">
+        <div 
+          className={`h-1.5 rounded-full transition-all duration-1000 ${
+            isOverdue ? 'bg-red-500' : 'bg-green-500'
+          }`}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      <div className="text-xs text-gray-500 text-center">
+        Target: {formatTime(estimatedTime)} | Status: {isOverdue ? 'Behind Schedule' : 'On Track'}
+      </div>
+    </div>
+  );
+};
 
 interface DeliveryPartner {
   id: number;
@@ -603,6 +660,13 @@ export default function DeliveryPartnerDashboard() {
                                 <p className="font-medium text-xs sm:text-sm">Delivery Address</p>
                                 <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 word-wrap break-words overflow-wrap-anywhere">{delivery.deliveryAddress}</p>
                               </div>
+                            </div>
+                            {/* Delivery Timer */}
+                            <div className="mt-3 p-2 bg-white rounded-md border">
+                              <DeliveryTimer 
+                                createdAt={delivery.createdAt} 
+                                estimatedTime={delivery.estimatedTime || 45} 
+                              />
                             </div>
                           </div>
                           <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2">
