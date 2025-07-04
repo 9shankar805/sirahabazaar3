@@ -189,21 +189,7 @@ export default function ShopkeeperDashboard() {
     form.setValue("allergens", updated);
   };
 
-  const handleAddImage = () => {
-    const imageUrl = form.getValues("imageUrl");
-    if (imageUrl && imageUrl.trim()) {
-      const currentImages = form.getValues("images");
-      if (!currentImages.includes(imageUrl.trim()) && currentImages.length < 6) {
-        form.setValue("images", [...currentImages, imageUrl.trim()]);
-        form.setValue("imageUrl", "");
-      }
-    }
-  };
 
-  const handleRemoveImage = (imageUrl: string) => {
-    const currentImages = form.getValues("images");
-    form.setValue("images", currentImages.filter(img => img !== imageUrl));
-  };
 
 
 
@@ -2862,133 +2848,42 @@ export default function ShopkeeperDashboard() {
                       )}
                     />
 
-                    {/* Image Upload */}
-                    <div>
-                      <FormLabel className="text-base font-medium">Product Images</FormLabel>
-                      <div className="mt-2 space-y-4">
-                        {/* File Upload and Camera Options */}
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* File Upload */}
-                            <div className="flex items-center justify-center w-full">
-                              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                  <Plus className="w-6 h-6 mb-2 text-gray-500" />
-                                  <p className="text-sm text-gray-500 font-semibold">Upload Photos</p>
-                                  <p className="text-xs text-gray-500">PNG, JPG, GIF</p>
-                                </div>
-                                <input
-                                  type="file"
-                                  className="hidden"
-                                  multiple
-                                  accept="image/*"
-                                  onChange={(e) => {
-                                    const files = Array.from(e.target.files || []);
-                                    files.forEach(file => {
-                                      const reader = new FileReader();
-                                      reader.onload = (event) => {
-                                        const imageUrl = event.target?.result as string;
-                                        if (imageUrl) {
-                                          const currentImages = form.getValues("images");
-                                          if (currentImages.length < 6) {
-                                            form.setValue("images", [...currentImages, imageUrl]);
-                                          }
-                                        }
-                                      };
-                                      reader.readAsDataURL(file);
-                                    });
-                                  }}
-                                />
-                              </label>
-                            </div>
-
-                            {/* Camera Capture */}
-                            <div className="flex items-center justify-center w-full">
-                              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-orange-300 border-dashed rounded-lg cursor-pointer bg-orange-50 hover:bg-orange-100">
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                  <Camera className="w-6 h-6 mb-2 text-orange-500" />
-                                  <p className="text-sm text-orange-600 font-semibold">Take Photo</p>
-                                  <p className="text-xs text-orange-500">Camera capture</p>
-                                </div>
-                                <input
-                                  type="file"
-                                  className="hidden"
-                                  accept="image/*"
-                                  capture="environment"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                      const reader = new FileReader();
-                                      reader.onload = (event) => {
-                                        const imageUrl = event.target?.result as string;
-                                        if (imageUrl) {
-                                          const currentImages = form.getValues("images");
-                                          if (currentImages.length < 6) {
-                                            form.setValue("images", [...currentImages, imageUrl]);
-                                          }
-                                        }
-                                      };
-                                      reader.readAsDataURL(file);
-                                    }
-                                  }}
-                                />
-                              </label>
-                            </div>
-                          </div>
-                          
-                          {/* URL Input as Alternative */}
-                          <div className="flex gap-2">
-                            <FormField
-                              control={form.control}
-                              name="imageUrl"
-                              render={({ field }) => (
-                                <FormItem className="flex-1">
-                                  <FormControl>
-                                    <Input 
-                                      placeholder="Or enter image URL" 
-                                      className="h-11"
-                                      {...field} 
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
+                    <FormField
+                      control={form.control}
+                      name="images"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Product Images</FormLabel>
+                          <div className="space-y-4">
+                            <ImageUpload
+                              label=""
+                              maxImages={6}
+                              minImages={1}
+                              onImagesChange={field.onChange}
+                              initialImages={field.value || []}
+                              className="col-span-full"
                             />
-                            <Button 
-                              type="button" 
-                              onClick={handleAddImage}
-                              className="h-11"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 border-t border-gray-200"></div>
+                              <span className="text-sm text-gray-500 px-2">or</span>
+                              <div className="flex-1 border-t border-gray-200"></div>
+                            </div>
+                            <UnsplashImageSearch
+                              onImageSelect={(imageUrl) => {
+                                const currentImages = field.value || [];
+                                if (currentImages.length < 6) {
+                                  field.onChange([...currentImages, imageUrl]);
+                                }
+                              }}
+                              category={form.watch('categoryId') ? categories?.find(c => c.id === form.watch('categoryId'))?.name : ''}
+                              maxImages={6 - (field.value?.length || 0)}
+                              buttonText="Add from Unsplash"
+                            />
                           </div>
-                        </div>
-
-                        {/* Display Added Images */}
-                        {form.getValues("images") && form.getValues("images").length > 0 && (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            {form.getValues("images").map((imageUrl, index) => (
-                              <div key={index} className="relative group">
-                                <img 
-                                  src={imageUrl} 
-                                  alt={`Product ${index + 1}`}
-                                  className="w-full h-32 object-cover rounded border"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="sm"
-                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100"
-                                  onClick={() => handleRemoveImage(imageUrl)}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     {/* Food-specific fields (shown only for restaurants) */}
                     {isRestaurant && (
