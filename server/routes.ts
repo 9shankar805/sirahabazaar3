@@ -2811,37 +2811,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Get order items
             const orderItems = await storage.getOrderItems(order.id);
             
-            // Calculate correct delivery fee based on distance
+            // Calculate correct delivery fee based on distance using actual coordinates
             const storeCoords = {
-              latitude: parseFloat(store.latitude || '26.661'),
-              longitude: parseFloat(store.longitude || '86.207')
+              latitude: store.latitude ? parseFloat(store.latitude) : null,
+              longitude: store.longitude ? parseFloat(store.longitude) : null
             };
             const customerCoords = {
-              latitude: parseFloat(order.latitude || '26.665'),
-              longitude: parseFloat(order.longitude || '86.212')
+              latitude: order.latitude ? parseFloat(order.latitude) : null,
+              longitude: order.longitude ? parseFloat(order.longitude) : null
             };
             
-            // Calculate distance using Haversine formula
-            const R = 6371; // Earth's radius in km
-            const toRadians = (degrees: number) => degrees * (Math.PI / 180);
-            const dLat = toRadians(customerCoords.latitude - storeCoords.latitude);
-            const dLon = toRadians(customerCoords.longitude - storeCoords.longitude);
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
-                      Math.cos(toRadians(storeCoords.latitude)) * Math.cos(toRadians(customerCoords.latitude)) * 
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            const distance = R * c;
+            // Calculate distance using Haversine formula if coordinates are available
+            let distance = 3.5; // Default distance in km
+            let correctDeliveryFee = 30; // Default fee
             
-            // Calculate correct delivery fee based on current distance-based system
-            let correctDeliveryFee = 100; // Default fee
-            if (distance <= 5) {
-              correctDeliveryFee = 30;
-            } else if (distance <= 10) {
-              correctDeliveryFee = 50;
-            } else if (distance <= 20) {
-              correctDeliveryFee = 80;
-            } else if (distance <= 30) {
-              correctDeliveryFee = 100;
+            if (storeCoords.latitude && storeCoords.longitude && customerCoords.latitude && customerCoords.longitude) {
+              const R = 6371; // Earth's radius in km
+              const toRadians = (degrees: number) => degrees * (Math.PI / 180);
+              const dLat = toRadians(customerCoords.latitude! - storeCoords.latitude!);
+              const dLon = toRadians(customerCoords.longitude! - storeCoords.longitude!);
+              const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
+                        Math.cos(toRadians(storeCoords.latitude!)) * Math.cos(toRadians(customerCoords.latitude!)) * 
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              distance = R * c;
+              
+              // Calculate correct delivery fee based on current distance-based system
+              if (distance <= 5) {
+                correctDeliveryFee = 30;
+              } else if (distance <= 10) {
+                correctDeliveryFee = 50;
+              } else if (distance <= 20) {
+                correctDeliveryFee = 80;
+              } else if (distance <= 30) {
+                correctDeliveryFee = 100;
+              } else {
+                correctDeliveryFee = 100;
+              }
             }
             
             return {
@@ -4731,17 +4737,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       
       // Fetch only unread delivery assignment notifications
-      const notifications = await db.select()
-        .from(dbNotifications)
+      const deliveryNotifications = await db.select()
+        .from(notifications)
         .where(and(
-          eq(dbNotifications.userId, userId),
-          eq(dbNotifications.type, 'delivery_assignment'),
-          eq(dbNotifications.isRead, false)
+          eq(notifications.userId, userId),
+          eq(notifications.type, 'delivery_assignment'),
+          eq(notifications.isRead, false)
         ))
-        .orderBy(desc(dbNotifications.createdAt));
+        .orderBy(desc(notifications.createdAt));
       
-      console.log(`📢 Delivery notifications for user ${userId}: ${notifications.length} unread notifications`);
-      res.json(notifications);
+      console.log(`📢 Delivery notifications for user ${userId}: ${deliveryNotifications.length} unread notifications`);
+      res.json(deliveryNotifications);
     } catch (error) {
       console.error('Failed to fetch delivery notifications:', error);
       res.status(500).json({ error: "Failed to fetch delivery notifications" });
@@ -5030,19 +5036,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customerName: customer?.fullName || customer?.username || 'Customer',
         customerPhone: customer?.phone || 'No phone',
         
-        // Pickup location (store)
+        // Pickup location (store) - use actual store coordinates
         pickupStoreName: store?.name || 'Store',
         pickupStorePhone: store?.phone || 'No phone',
         pickupAddress: store?.address || 'Store Location',
-        pickupLatitude: parseFloat(store?.latitude || '26.661'),
-        pickupLongitude: parseFloat(store?.longitude || '86.207'),
-        pickupNavigationLink: `https://www.google.com/maps/dir/?api=1&destination=${store?.latitude || '26.661'},${store?.longitude || '86.207'}`,
+        pickupLatitude: store?.latitude ? parseFloat(store.latitude) : null,
+        pickupLongitude: store?.longitude ? parseFloat(store.longitude) : null,
+        pickupNavigationLink: store?.latitude && store?.longitude 
+          ? `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`
+          : null,
         
-        // Delivery location (customer)
+        // Delivery location (customer) - use actual customer coordinates from order
         deliveryAddress: order.shippingAddress || 'Customer Location',
-        deliveryLatitude: parseFloat(order.latitude || '26.665'),
-        deliveryLongitude: parseFloat(order.longitude || '86.212'),
-        deliveryNavigationLink: `https://www.google.com/maps/dir/?api=1&destination=${order.latitude || '26.665'},${order.longitude || '86.212'}`,
+        deliveryLatitude: order.latitude ? parseFloat(order.latitude) : null,
+        deliveryLongitude: order.longitude ? parseFloat(order.longitude) : null,
+        deliveryNavigationLink: order.latitude && order.longitude
+          ? `https://www.google.com/maps/dir/?api=1&destination=${order.latitude},${order.longitude}`
+          : null,
         
         // Order items
         orderItems: orderItems.map((item: any) => ({
