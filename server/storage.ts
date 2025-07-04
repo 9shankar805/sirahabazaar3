@@ -252,6 +252,7 @@ export interface IStorage {
   getDeliveriesByPartnerId(partnerId: number): Promise<Delivery[]>;
   getDeliveriesByOrderId(orderId: number): Promise<Delivery[]>;
   getPendingDeliveries(): Promise<Delivery[]>;
+  getActiveDeliveries(partnerId: number): Promise<Delivery[]>;
   createDelivery(delivery: InsertDelivery): Promise<Delivery>;
   updateDeliveryStatus(id: number, status: string, partnerId?: number): Promise<Delivery | undefined>;
   assignDeliveryToPartner(deliveryId: number, partnerId: number): Promise<Delivery | undefined>;
@@ -2031,6 +2032,19 @@ export class DatabaseStorage implements IStorage {
   async getDeliveriesByPartnerId(partnerId: number): Promise<Delivery[]> {
     try {
       return await db.select().from(deliveries).where(eq(deliveries.deliveryPartnerId, partnerId));
+    } catch {
+      return [];
+    }
+  }
+
+  async getActiveDeliveries(partnerId: number): Promise<Delivery[]> {
+    try {
+      return await db.select().from(deliveries).where(
+        and(
+          eq(deliveries.deliveryPartnerId, partnerId),
+          sql`${deliveries.status} IN ('assigned', 'picked_up', 'in_transit')`
+        )
+      );
     } catch {
       return [];
     }

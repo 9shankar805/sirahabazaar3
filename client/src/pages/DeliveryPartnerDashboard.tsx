@@ -96,6 +96,19 @@ export default function DeliveryPartnerDashboard() {
     enabled: !!partner?.id,
   });
 
+  const { data: activeDeliveriesData = [], isLoading: activeDeliveriesLoading } = useQuery({
+    queryKey: ['/api/deliveries/active', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/deliveries/active/${user?.id}`);
+      if (!response.ok) {
+        return [];
+      }
+      return response.json();
+    },
+    enabled: !!user?.id,
+    refetchInterval: 5000, // Refresh active deliveries every 5 seconds
+  });
+
   const { data: stats } = useQuery({
     queryKey: ['/api/delivery-partners/stats', partner?.id],
     queryFn: async () => {
@@ -182,8 +195,8 @@ export default function DeliveryPartnerDashboard() {
   }
 
   const deliveriesArray = Array.isArray(deliveries) ? deliveries : [];
+  const activeDeliveriesArray = Array.isArray(activeDeliveriesData) ? activeDeliveriesData : [];
   const pendingDeliveries = deliveriesArray.filter((d: Delivery) => d.status === 'assigned');
-  const activeDeliveries = deliveriesArray.filter((d: Delivery) => d.status === 'picked_up');
   const completedDeliveries = deliveriesArray.filter((d: Delivery) => d.status === 'delivered');
 
   const currentStats = stats || {
@@ -192,7 +205,7 @@ export default function DeliveryPartnerDashboard() {
     rating: partner?.rating ? parseFloat(partner.rating.toString()) : 0,
     todayDeliveries: 0,
     todayEarnings: 0,
-    activeDeliveries: pendingDeliveries.length + activeDeliveries.length
+    activeDeliveries: activeDeliveriesArray.length
   };
 
   return (
@@ -261,9 +274,9 @@ export default function DeliveryPartnerDashboard() {
             <TabsTrigger value="deliveries" className="flex flex-col items-center justify-center py-2 px-1 gap-1 relative" title="Active Deliveries">
               <div className="relative">
                 <Truck className="h-6 w-6 text-green-600" />
-                {(pendingDeliveries.length + activeDeliveries.length) > 0 && (
+                {(pendingDeliveries.length + activeDeliveriesArray.length) > 0 && (
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-[8px] font-bold text-white">{pendingDeliveries.length + activeDeliveries.length}</span>
+                    <span className="text-[8px] font-bold text-white">{pendingDeliveries.length + activeDeliveriesArray.length}</span>
                   </div>
                 )}
               </div>
@@ -320,7 +333,7 @@ export default function DeliveryPartnerDashboard() {
                 <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
                   <div className="text-xl sm:text-3xl font-bold">{currentStats.activeDeliveries}</div>
                   <p className="text-[10px] sm:text-xs opacity-80 mt-1">
-                    {pendingDeliveries.length} pending, {activeDeliveries.length} in progress
+                    {pendingDeliveries.length} pending, {activeDeliveriesArray.length} in progress
                   </p>
                 </CardContent>
               </Card>
@@ -555,17 +568,26 @@ export default function DeliveryPartnerDashboard() {
                 <CardHeader className="px-3 sm:px-6">
                   <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                     <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
-                    Active Deliveries ({activeDeliveries.length})
+                    Active Deliveries ({activeDeliveriesArray.length})
+                    {activeDeliveriesLoading && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
-                  {activeDeliveries.length === 0 ? (
+                  {activeDeliveriesLoading ? (
+                    <div className="text-center py-6 sm:py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-sm sm:text-base text-gray-500">Loading active deliveries...</p>
+                    </div>
+                  ) : activeDeliveriesArray.length === 0 ? (
                     <div className="text-center py-6 sm:py-8">
                       <Truck className="h-10 w-10 sm:h-12 sm:w-12 text-gray-300 mx-auto mb-3 sm:mb-4" />
                       <p className="text-sm sm:text-base text-gray-500">No active deliveries</p>
+                      <p className="text-xs text-gray-400 mt-2">Accept delivery orders to see them here</p>
                     </div>
                   ) : (
-                    activeDeliveries.map((delivery: Delivery) => (
+                    activeDeliveriesArray.map((delivery: Delivery) => (
                       <Card key={delivery.id} className="border border-blue-200 bg-blue-50 max-w-full overflow-hidden">
                         <CardContent className="p-2 sm:p-4">
                           <div className="flex items-center justify-between mb-2 gap-2">
