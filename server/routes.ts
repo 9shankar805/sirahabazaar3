@@ -11,7 +11,7 @@ import { trackingService } from "./trackingService";
 import { hereMapService } from "./hereMapService";
 import { RealTimeTrackingService } from "./services/realTimeTrackingService";
 import PushNotificationService from "./pushNotificationService";
-import { unsplashService } from "./unsplashService";
+import { freeImageService } from "./freeImageService";
 
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
@@ -6689,7 +6689,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Unsplash API endpoints for product images
+  // Free Image API endpoints for product images
   app.get("/api/unsplash/search", async (req, res) => {
     try {
       const { query, page = 1, per_page = 12 } = req.query;
@@ -6698,24 +6698,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
-      const result = await unsplashService.searchImages(query, Number(page), Number(per_page));
+      const result = await freeImageService.searchImages(query, Number(page), Number(per_page));
       
       if (!result) {
-        return res.status(500).json({ error: "Failed to fetch images from Unsplash" });
+        return res.status(500).json({ error: "Failed to fetch free images" });
       }
 
       res.json(result);
     } catch (error) {
-      console.error("Error searching Unsplash images:", error);
-      
-      // Check if it's a rate limit error
-      if (error instanceof Error && error.message.includes('403')) {
-        return res.status(403).json({ 
-          error: "Unsplash rate limit exceeded. Please try again later or use image upload instead." 
-        });
-      }
-      
-      res.status(500).json({ error: "Failed to fetch images from Unsplash" });
+      console.error("Error searching free images:", error);
+      res.status(500).json({ error: "Failed to fetch free images" });
     }
   });
 
@@ -6724,7 +6716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { category } = req.params;
       const { count = 6 } = req.query;
       
-      const images = await unsplashService.getProductImages(category, Number(count));
+      const images = await freeImageService.getProductImages(category, Number(count));
       
       res.json({
         images,
@@ -6741,7 +6733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { query = 'product', count = 6 } = req.query;
       
-      const images = await unsplashService.getRandomImages(String(query), Number(count));
+      const images = await freeImageService.getRandomImages(Number(count));
       
       res.json({
         images,
@@ -6759,7 +6751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { cuisineType } = req.params;
       const { count = 6 } = req.query;
       
-      const images = await unsplashService.getRestaurantImages(cuisineType, Number(count));
+      const images = await freeImageService.getRestaurantImages(Number(count));
       
       res.json({
         images,
@@ -6780,7 +6772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid image data" });
       }
 
-      await unsplashService.trackDownload(image);
+      await freeImageService.trackDownload(image);
       
       res.json({ success: true });
     } catch (error) {
