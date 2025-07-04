@@ -193,8 +193,35 @@ export default function EnhancedDeliveryPartnerDashboard() {
     enabled: !!partner?.id,
   });
 
-  // Fetch available deliveries
-  const { data: availableDeliveries = [], isLoading: deliveriesLoading } = useQuery({
+  // Fetch partner deliveries (all deliveries assigned to this partner)
+  const { data: deliveries = [], isLoading: deliveriesLoading } = useQuery({
+    queryKey: ['/api/deliveries/partner', partner?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/deliveries/partner/${partner?.id}`);
+      if (!response.ok) {
+        return [];
+      }
+      return response.json();
+    },
+    enabled: !!partner?.id,
+  });
+
+  // Fetch active deliveries (currently in progress)
+  const { data: activeDeliveriesData = [], isLoading: activeDeliveriesLoading } = useQuery({
+    queryKey: ['/api/deliveries/active', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/deliveries/active/${user?.id}`);
+      if (!response.ok) {
+        return [];
+      }
+      return response.json();
+    },
+    enabled: !!user?.id,
+    refetchInterval: 5000, // Refresh active deliveries every 5 seconds
+  });
+
+  // Fetch available deliveries (orders ready for pickup)
+  const { data: availableDeliveries = [], isLoading: availableDeliveriesLoading } = useQuery({
     queryKey: ['/api/deliveries/available', partner?.id],
     queryFn: async (): Promise<DeliveryDetails[]> => {
       const response = await fetch(`/api/deliveries/available?partnerId=${partner?.id}`);
@@ -285,6 +312,30 @@ export default function EnhancedDeliveryPartnerDashboard() {
     enabled: !!partner?.id,
   });
 
+  // Fetch notifications for alerts tab
+  const { data: notifications = [], isLoading: notificationsLoading } = useQuery({
+    queryKey: ['/api/notifications/user', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/notifications/user/${user?.id}`);
+      if (!response.ok) {
+        return [];
+      }
+      return response.json();
+    },
+    enabled: !!user?.id,
+    refetchInterval: 3000, // Refresh notifications every 3 seconds
+  });
+
+  // Calculate useful statistics from real data
+  const deliveriesArray = Array.isArray(deliveries) ? deliveries : [];
+  const activeDeliveriesArray = Array.isArray(activeDeliveriesData) ? activeDeliveriesData : [];
+  const availableDeliveriesArray = Array.isArray(availableDeliveries) ? availableDeliveries : [];
+  const notificationsArray = Array.isArray(notifications) ? notifications : [];
+  
+  const pendingDeliveries = deliveriesArray.filter((d: any) => d.status === 'assigned');
+  const completedDeliveries = deliveriesArray.filter((d: any) => d.status === 'delivered');
+  const unreadNotifications = notificationsArray.filter((n: any) => !n.isRead);
+
   // Toggle online/offline status
   const toggleOnlineStatus = useMutation({
     mutationFn: async (isOnline: boolean) => {
@@ -319,11 +370,41 @@ export default function EnhancedDeliveryPartnerDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/deliveries/available'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/deliveries/partner'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/deliveries/active'] });
       toast({
         title: "Order Accepted",
         description: "You have successfully accepted this delivery order"
       });
     }
+  });
+
+  // Update delivery status
+  const updateDeliveryStatus = useMutation({
+    mutationFn: async ({ deliveryId, status }: { deliveryId: number; status: string }) => {
+      const response = await fetch(`/api/deliveries/${deliveryId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, partnerId: partner?.id }),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/deliveries/partner'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/deliveries/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/deliveries/available'] });
+      toast({
+        title: "Status Updated",
+        description: "Delivery status has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update delivery status.",
+        variant: "destructive",
+      });
+    },
   });
 
   if (partnerLoading) {
@@ -810,15 +891,159 @@ export default function EnhancedDeliveryPartnerDashboard() {
           </TabsContent>
 
           {/* Active Deliveries Tab */}
-          <TabsContent value="active" className="space-y-6">
-            <h2 className="text-2xl font-bold">Active Deliveries</h2>
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Route className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Deliveries</h3>
-                <p className="text-gray-500">Accept an order to start tracking your deliveries</p>
-              </CardContent>
-            </Card>
+          <TabsContent value="active" className="space-y-2 xs:space-y-3 sm:space-y-4 lg:space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg xs:text-xl sm:text-2xl font-bold">Active Deliveries</h2>
+              <Badge variant="outline" className="text-xs xs:text-sm">
+                {activeDeliveriesArray.length + pendingDeliveries.length} active
+              </Badge>
+            </div>
+
+            {activeDeliveriesLoading ? (
+              <Card>
+                <CardContent className="p-6 xs:p-8 sm:p-12 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 xs:h-12 xs:w-12 sm:h-16 sm:w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading active deliveries...</p>
+                </CardContent>
+              </Card>
+            ) : (activeDeliveriesArray.length === 0 && pendingDeliveries.length === 0) ? (
+              <Card>
+                <CardContent className="p-6 xs:p-8 sm:p-12 text-center">
+                  <Route className="h-8 w-8 xs:h-12 xs:w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-base xs:text-lg font-medium text-gray-900 mb-2">No Active Deliveries</h3>
+                  <p className="text-sm xs:text-base text-gray-500">Accept an order to start tracking your deliveries</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2 xs:space-y-3 sm:space-y-4">
+                {/* Pending Deliveries (Assigned but not started) */}
+                {pendingDeliveries.map((delivery: any) => (
+                  <Card key={delivery.id} className="border-l-4 border-l-orange-500">
+                    <CardContent className="p-3 xs:p-4 sm:p-6">
+                      <div className="flex items-start justify-between gap-2 xs:gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-sm xs:text-base font-semibold">Order #{delivery.orderId}</h3>
+                            <Badge variant="secondary" className="text-[8px] xs:text-[9px] sm:text-xs">
+                              Pending Start
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-1 xs:space-y-2 text-xs xs:text-sm">
+                            <div className="flex items-center gap-1 xs:gap-2">
+                              <User className="h-3 w-3 xs:h-4 xs:w-4 text-gray-500 flex-shrink-0" />
+                              <span className="font-medium truncate">{delivery.customerName}</span>
+                            </div>
+                            <div className="flex items-center gap-1 xs:gap-2">
+                              <MapPin className="h-3 w-3 xs:h-4 xs:w-4 text-gray-500 flex-shrink-0" />
+                              <span className="text-gray-600 truncate">{delivery.deliveryAddress}</span>
+                            </div>
+                            <div className="flex items-center gap-1 xs:gap-2">
+                              <DollarSign className="h-3 w-3 xs:h-4 xs:w-4 text-green-600 flex-shrink-0" />
+                              <span className="font-semibold text-green-600">₹{delivery.deliveryFee}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col gap-1 xs:gap-2 flex-shrink-0">
+                          <Button 
+                            size="sm" 
+                            className="text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
+                            onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'en_route_pickup' })}
+                            disabled={updateDeliveryStatus.isPending}
+                          >
+                            Start Pickup
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
+                          >
+                            View Details
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {/* Active Deliveries (In progress) */}
+                {activeDeliveriesArray.map((delivery: any) => (
+                  <Card key={delivery.id} className="border-l-4 border-l-green-500">
+                    <CardContent className="p-3 xs:p-4 sm:p-6">
+                      <div className="flex items-start justify-between gap-2 xs:gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-sm xs:text-base font-semibold">Order #{delivery.orderId}</h3>
+                            <Badge variant="default" className="text-[8px] xs:text-[9px] sm:text-xs bg-green-500">
+                              {delivery.status === 'en_route_pickup' ? 'Going to Pickup' :
+                               delivery.status === 'picked_up' ? 'Picked Up' :
+                               delivery.status === 'en_route_delivery' ? 'Delivering' :
+                               'In Progress'}
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-1 xs:space-y-2 text-xs xs:text-sm">
+                            <div className="flex items-center gap-1 xs:gap-2">
+                              <User className="h-3 w-3 xs:h-4 xs:w-4 text-gray-500 flex-shrink-0" />
+                              <span className="font-medium truncate">{delivery.customerName}</span>
+                            </div>
+                            <div className="flex items-center gap-1 xs:gap-2">
+                              <MapPin className="h-3 w-3 xs:h-4 xs:w-4 text-gray-500 flex-shrink-0" />
+                              <span className="text-gray-600 truncate">{delivery.deliveryAddress}</span>
+                            </div>
+                            <div className="flex items-center gap-1 xs:gap-2">
+                              <Timer className="h-3 w-3 xs:h-4 xs:w-4 text-blue-600 flex-shrink-0" />
+                              <span className="text-blue-600">ETA: {delivery.estimatedTime || 15} mins</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col gap-1 xs:gap-2 flex-shrink-0">
+                          {delivery.status === 'en_route_pickup' && (
+                            <Button 
+                              size="sm" 
+                              className="text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
+                              onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'picked_up' })}
+                              disabled={updateDeliveryStatus.isPending}
+                            >
+                              Mark Picked Up
+                            </Button>
+                          )}
+                          {delivery.status === 'picked_up' && (
+                            <Button 
+                              size="sm" 
+                              className="text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
+                              onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'en_route_delivery' })}
+                              disabled={updateDeliveryStatus.isPending}
+                            >
+                              Start Delivery
+                            </Button>
+                          )}
+                          {delivery.status === 'en_route_delivery' && (
+                            <Button 
+                              size="sm" 
+                              className="text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
+                              onClick={() => updateDeliveryStatus.mutate({ deliveryId: delivery.id, status: 'delivered' })}
+                              disabled={updateDeliveryStatus.isPending}
+                            >
+                              Mark Delivered
+                            </Button>
+                          )}
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
+                          >
+                            Track Live
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Earnings Tab */}
@@ -908,15 +1133,113 @@ export default function EnhancedDeliveryPartnerDashboard() {
           </TabsContent>
 
           {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-6">
-            <h2 className="text-2xl font-bold">Alerts & Notifications</h2>
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No New Alerts</h3>
-                <p className="text-gray-500">Delivery notifications and updates will appear here</p>
-              </CardContent>
-            </Card>
+          <TabsContent value="notifications" className="space-y-2 xs:space-y-3 sm:space-y-4 lg:space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg xs:text-xl sm:text-2xl font-bold">Alerts & Notifications</h2>
+              <Badge variant="outline" className="text-xs xs:text-sm">
+                {unreadNotifications.length} unread
+              </Badge>
+            </div>
+            
+            {notificationsLoading ? (
+              <Card>
+                <CardContent className="p-6 xs:p-8 sm:p-12 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 xs:h-12 xs:w-12 sm:h-16 sm:w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading notifications...</p>
+                </CardContent>
+              </Card>
+            ) : notificationsArray.length === 0 ? (
+              <Card>
+                <CardContent className="p-6 xs:p-8 sm:p-12 text-center">
+                  <Bell className="h-8 w-8 xs:h-12 xs:w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-base xs:text-lg font-medium text-gray-900 mb-2">No New Alerts</h3>
+                  <p className="text-sm xs:text-base text-gray-500">Delivery notifications and updates will appear here</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2 xs:space-y-3 sm:space-y-4">
+                {notificationsArray.map((notification: any) => (
+                  <Card key={notification.id} className={`transition-all hover:shadow-md ${
+                    !notification.isRead ? 'border-l-4 border-l-blue-500 bg-blue-50/30' : ''
+                  }`}>
+                    <CardContent className="p-3 xs:p-4 sm:p-6">
+                      <div className="flex items-start gap-2 xs:gap-3 sm:gap-4">
+                        <div className={`p-1.5 xs:p-2 sm:p-3 rounded-full flex-shrink-0 ${
+                          notification.type === 'delivery_assignment' ? 'bg-orange-100 text-orange-600' :
+                          notification.type === 'order_update' ? 'bg-blue-100 text-blue-600' :
+                          notification.type === 'payment' ? 'bg-green-100 text-green-600' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {notification.type === 'delivery_assignment' ? (
+                            <Package className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                          ) : notification.type === 'order_update' ? (
+                            <CheckCircle className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                          ) : notification.type === 'payment' ? (
+                            <DollarSign className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                          ) : (
+                            <Bell className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                          )}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-sm xs:text-base font-semibold text-gray-900 truncate">
+                                {notification.title}
+                              </h3>
+                              <p className="text-xs xs:text-sm text-gray-600 mt-0.5 xs:mt-1 line-clamp-2">
+                                {notification.message}
+                              </p>
+                              {notification.orderId && (
+                                <div className="flex items-center gap-2 mt-1 xs:mt-2">
+                                  <Badge variant="outline" className="text-[8px] xs:text-[9px] sm:text-xs px-1 xs:px-2 py-0.5">
+                                    Order #{notification.orderId}
+                                  </Badge>
+                                  {notification.data && JSON.parse(notification.data).deliveryFee && (
+                                    <Badge variant="secondary" className="text-[8px] xs:text-[9px] sm:text-xs px-1 xs:px-2 py-0.5">
+                                      ₹{JSON.parse(notification.data).deliveryFee} earnings
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex flex-col items-end gap-1 xs:gap-2 flex-shrink-0">
+                              <span className="text-[9px] xs:text-[10px] sm:text-xs text-gray-500">
+                                {new Date(notification.createdAt).toLocaleDateString()}
+                              </span>
+                              {!notification.isRead && (
+                                <div className="w-2 h-2 xs:w-2.5 xs:h-2.5 bg-blue-500 rounded-full"></div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {notification.type === 'delivery_assignment' && notification.orderId && (
+                            <div className="flex gap-1 xs:gap-2 mt-2 xs:mt-3">
+                              <Button 
+                                size="sm" 
+                                className="text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
+                                onClick={() => acceptDelivery.mutate(notification.orderId)}
+                                disabled={acceptDelivery.isPending}
+                              >
+                                Accept Order
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
+                              >
+                                View Details
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
