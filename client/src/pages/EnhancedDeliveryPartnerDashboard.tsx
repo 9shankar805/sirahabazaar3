@@ -370,21 +370,36 @@ export default function EnhancedDeliveryPartnerDashboard() {
   // Accept delivery order
   const acceptDelivery = useMutation({
     mutationFn: async (deliveryId: number) => {
+      console.log('Attempting to accept delivery/order ID:', deliveryId);
       const response = await fetch(`/api/deliveries/${deliveryId}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ partnerId: partner?.id })
       });
-      if (!response.ok) throw new Error('Failed to accept delivery');
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Accept delivery failed:', response.status, errorData);
+        throw new Error(`Failed to accept delivery: ${errorData}`);
+      }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Delivery accepted successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/deliveries/available'] });
       queryClient.invalidateQueries({ queryKey: ['/api/deliveries/partner'] });
       queryClient.invalidateQueries({ queryKey: ['/api/deliveries/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/delivery-notifications'] });
       toast({
         title: "Order Accepted",
         description: "You have successfully accepted this delivery order"
+      });
+    },
+    onError: (error) => {
+      console.error('Accept delivery error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to accept delivery order",
+        variant: "destructive",
       });
     }
   });
@@ -1229,10 +1244,14 @@ export default function EnhancedDeliveryPartnerDashboard() {
                               <Button 
                                 size="sm" 
                                 className="text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
-                                onClick={() => acceptDelivery.mutate(notification.orderId)}
+                                onClick={() => {
+                                  const orderId = notification.orderId;
+                                  console.log('Accepting delivery for order:', orderId);
+                                  acceptDelivery.mutate(orderId);
+                                }}
                                 disabled={acceptDelivery.isPending}
                               >
-                                Accept Order
+                                {acceptDelivery.isPending ? 'Accepting...' : 'Accept Order'}
                               </Button>
                               <Button 
                                 variant="outline" 
