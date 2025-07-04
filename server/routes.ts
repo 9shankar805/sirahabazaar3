@@ -11,6 +11,7 @@ import { trackingService } from "./trackingService";
 import { hereMapService } from "./hereMapService";
 import { RealTimeTrackingService } from "./services/realTimeTrackingService";
 import PushNotificationService from "./pushNotificationService";
+import { unsplashService } from "./unsplashService";
 
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
@@ -6685,6 +6686,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting homepage recommendations:", error);
       res.status(500).json({ error: "Failed to get recommendations" });
+    }
+  });
+
+  // Unsplash API endpoints for product images
+  app.get("/api/unsplash/search", async (req, res) => {
+    try {
+      const { query, page = 1, per_page = 12 } = req.query;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ error: "Query parameter is required" });
+      }
+
+      const result = await unsplashService.searchImages(query, Number(page), Number(per_page));
+      
+      if (!result) {
+        return res.status(500).json({ error: "Failed to fetch images from Unsplash" });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error searching Unsplash images:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/unsplash/category/:category", async (req, res) => {
+    try {
+      const { category } = req.params;
+      const { count = 6 } = req.query;
+      
+      const images = await unsplashService.getProductImages(category, Number(count));
+      
+      res.json({
+        images,
+        category,
+        total: images.length
+      });
+    } catch (error) {
+      console.error("Error fetching category images:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/unsplash/random", async (req, res) => {
+    try {
+      const { query = 'product', count = 6 } = req.query;
+      
+      const images = await unsplashService.getRandomImages(String(query), Number(count));
+      
+      res.json({
+        images,
+        query,
+        total: images.length
+      });
+    } catch (error) {
+      console.error("Error fetching random images:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/unsplash/restaurant/:cuisineType", async (req, res) => {
+    try {
+      const { cuisineType } = req.params;
+      const { count = 6 } = req.query;
+      
+      const images = await unsplashService.getRestaurantImages(cuisineType, Number(count));
+      
+      res.json({
+        images,
+        cuisineType,
+        total: images.length
+      });
+    } catch (error) {
+      console.error("Error fetching restaurant images:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/unsplash/track-download", async (req, res) => {
+    try {
+      const { image } = req.body;
+      
+      if (!image || !image.links || !image.links.download) {
+        return res.status(400).json({ error: "Invalid image data" });
+      }
+
+      await unsplashService.trackDownload(image);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking download:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 

@@ -66,6 +66,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiPost, apiPut, apiDelete } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import ImageUpload from "@/components/ImageUpload";
+import UnsplashImageSearch from "@/components/UnsplashImageSearch";
 import { LocationPicker } from "@/components/LocationPicker";
 import type {
   Product,
@@ -1796,14 +1797,33 @@ export default function ShopkeeperDashboard() {
                       name="images"
                       render={({ field }) => (
                         <FormItem>
-                          <ImageUpload
-                            label="Product Images"
-                            maxImages={6}
-                            minImages={1}
-                            onImagesChange={field.onChange}
-                            initialImages={field.value || []}
-                            className="col-span-full"
-                          />
+                          <FormLabel>Product Images</FormLabel>
+                          <div className="space-y-4">
+                            <ImageUpload
+                              label=""
+                              maxImages={6}
+                              minImages={1}
+                              onImagesChange={field.onChange}
+                              initialImages={field.value || []}
+                              className="col-span-full"
+                            />
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 border-t border-gray-200"></div>
+                              <span className="text-sm text-gray-500 px-2">or</span>
+                              <div className="flex-1 border-t border-gray-200"></div>
+                            </div>
+                            <UnsplashImageSearch
+                              onImageSelect={(imageUrl) => {
+                                const currentImages = field.value || [];
+                                if (currentImages.length < 6) {
+                                  field.onChange([...currentImages, imageUrl]);
+                                }
+                              }}
+                              category={form.watch('categoryId') ? categories?.find(c => c.id === form.watch('categoryId'))?.name : ''}
+                              maxImages={6 - (field.value?.length || 0)}
+                              buttonText="Add from Unsplash"
+                            />
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
