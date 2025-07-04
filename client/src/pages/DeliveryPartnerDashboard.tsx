@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/use-user";
-import { Truck, Package, DollarSign, Clock, MapPin, CheckCircle, Star, Bell, TrendingUp, Calendar, Navigation, Phone, AlertCircle, Timer } from "lucide-react";
+import { Truck, Package, DollarSign, Clock, MapPin, CheckCircle, Star, Bell, TrendingUp, Calendar, Navigation, Phone, AlertCircle, Timer, Home, AlertTriangle, Activity, History, Wallet, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import DeliveryNotifications from "@/components/DeliveryNotifications";
@@ -280,32 +280,27 @@ export default function DeliveryPartnerDashboard() {
                 <p className="text-xs xs:text-sm sm:text-base text-gray-600 truncate">Welcome, {user?.fullName}</p>
               </div>
             </div>
-            <div className="flex flex-row xs:flex-col sm:flex-row items-center xs:items-end sm:items-center gap-2 xs:gap-1 sm:gap-4 flex-shrink-0">
-              <Badge 
-                variant={partner.isAvailable ? "default" : "secondary"}
-                className={`px-2 xs:px-3 py-1 xs:py-1.5 text-[10px] xs:text-xs sm:text-sm font-medium ${
-                  partner.isAvailable 
-                    ? "bg-green-100 text-green-800 border-green-200" 
-                    : "bg-gray-100 text-gray-800 border-gray-200"
-                }`}
-              >
-                <div className={`w-1 h-1 xs:w-1.5 xs:h-1.5 sm:w-2 sm:h-2 rounded-full mr-1 xs:mr-2 ${
-                  partner.isAvailable ? "bg-green-500" : "bg-gray-400"
-                }`}></div>
-                {partner.isAvailable ? "Online" : "Offline"}
-              </Badge>
-              <Button
-                variant={partner.isAvailable ? "outline" : "default"}
-                onClick={() => toggleAvailability.mutate(!partner.isAvailable)}
-                disabled={toggleAvailability.isPending}
-                className={`text-[10px] xs:text-xs sm:text-sm px-2 xs:px-3 sm:px-4 py-1 xs:py-2 h-6 xs:h-7 sm:h-auto ${partner.isAvailable 
-                  ? "border-red-200 text-red-600 hover:bg-red-50" 
-                  : "bg-green-600 hover:bg-green-700 text-white"
-                }`}
-                size="sm"
-              >
-                {partner.isAvailable ? "Offline" : "Online"}
-              </Button>
+            <div className="flex flex-row items-center gap-2 xs:gap-3 flex-shrink-0">
+              <div className="flex items-center gap-1.5 xs:gap-2">
+                <span className="text-[10px] xs:text-xs text-gray-600 font-medium">
+                  {partner.isAvailable ? "Online" : "Offline"}
+                </span>
+                <button
+                  onClick={() => toggleAvailability.mutate(!partner.isAvailable)}
+                  disabled={toggleAvailability.isPending}
+                  className={`relative inline-flex h-5 xs:h-6 w-9 xs:w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    partner.isAvailable 
+                      ? "bg-green-500 focus:ring-green-500" 
+                      : "bg-gray-300 focus:ring-gray-300"
+                  } ${toggleAvailability.isPending ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <span
+                    className={`inline-block h-3 xs:h-4 w-3 xs:w-4 transform rounded-full bg-white transition-transform ${
+                      partner.isAvailable ? "translate-x-5 xs:translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -313,43 +308,35 @@ export default function DeliveryPartnerDashboard() {
 
       <div className="w-full max-w-none px-1 xs:px-2 sm:px-3 lg:px-6 py-2 xs:py-3 sm:py-4 lg:py-6">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          {/* Mobile-First Tabs - Optimized for All Screen Sizes */}
-          <TabsList className="grid grid-cols-6 mb-3 xs:mb-4 sm:mb-8 bg-white shadow-sm h-auto p-0.5 xs:p-1 w-full">
-            <TabsTrigger value="dashboard" className="flex flex-col items-center justify-center py-1.5 xs:py-2 px-0.5 xs:px-1 gap-0.5 xs:gap-1 h-auto min-h-[60px] xs:min-h-[70px]" title="Dashboard">
-              <TrendingUp className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-blue-600" />
-              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-gray-600 leading-tight">Home</span>
+          {/* Mobile-First Icon-Only Tabs - Ultra Compact */}
+          <TabsList className="grid grid-cols-6 mb-2 xs:mb-3 sm:mb-6 bg-white shadow-sm h-auto p-0.5 w-full rounded-xl">
+            <TabsTrigger value="dashboard" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 rounded-lg" title="Dashboard">
+              <Home className="h-5 w-5 xs:h-6 xs:w-6" />
             </TabsTrigger>
-            <TabsTrigger value="orders" className="flex flex-col items-center justify-center py-1.5 xs:py-2 px-0.5 xs:px-1 gap-0.5 xs:gap-1 relative h-auto min-h-[60px] xs:min-h-[70px]" title="Notifications">
+            <TabsTrigger value="orders" className="flex items-center justify-center py-2 xs:py-2.5 px-1 relative h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-orange-50 data-[state=active]:text-orange-600 rounded-lg" title="Alerts">
               <div className="relative">
-                <Bell className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-orange-600" />
-                <div className="absolute -top-0.5 xs:-top-1 -right-0.5 xs:-right-1 w-2 h-2 xs:w-3 xs:h-3 bg-red-500 rounded-full flex items-center justify-center">
-                  <div className="w-1 h-1 xs:w-1.5 xs:h-1.5 bg-white rounded-full"></div>
-                </div>
+                <AlertTriangle className="h-5 w-5 xs:h-6 xs:w-6" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 xs:w-2.5 xs:h-2.5 bg-red-500 rounded-full"></div>
               </div>
-              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-gray-600 leading-tight">Alerts</span>
             </TabsTrigger>
-            <TabsTrigger value="deliveries" className="flex flex-col items-center justify-center py-1.5 xs:py-2 px-0.5 xs:px-1 gap-0.5 xs:gap-1 relative h-auto min-h-[60px] xs:min-h-[70px]" title="Active Deliveries">
+            <TabsTrigger value="deliveries" className="flex items-center justify-center py-2 xs:py-2.5 px-1 relative h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-green-50 data-[state=active]:text-green-600 rounded-lg" title="Active Deliveries">
               <div className="relative">
-                <Truck className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-green-600" />
+                <Activity className="h-5 w-5 xs:h-6 xs:w-6" />
                 {(pendingDeliveries.length + activeDeliveriesArray.length) > 0 && (
-                  <div className="absolute -top-0.5 xs:-top-1 -right-0.5 xs:-right-1 w-3 h-3 xs:w-4 xs:h-4 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-[6px] xs:text-[8px] font-bold text-white">{pendingDeliveries.length + activeDeliveriesArray.length}</span>
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                    <span className="text-[8px] xs:text-[9px] font-bold text-white">{pendingDeliveries.length + activeDeliveriesArray.length}</span>
                   </div>
                 )}
               </div>
-              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-gray-600 leading-tight">Active</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex flex-col items-center justify-center py-1.5 xs:py-2 px-0.5 xs:px-1 gap-0.5 xs:gap-1 h-auto min-h-[60px] xs:min-h-[70px]" title="Delivery History">
-              <MapPin className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-purple-600" />
-              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-gray-600 leading-tight">Track</span>
+            <TabsTrigger value="history" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600 rounded-lg" title="History">
+              <History className="h-5 w-5 xs:h-6 xs:w-6" />
             </TabsTrigger>
-            <TabsTrigger value="earnings" className="flex flex-col items-center justify-center py-1.5 xs:py-2 px-0.5 xs:px-1 gap-0.5 xs:gap-1 h-auto min-h-[60px] xs:min-h-[70px]" title="Earnings">
-              <DollarSign className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-green-600" />
-              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-gray-600 leading-tight">Earn</span>
+            <TabsTrigger value="earnings" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-green-50 data-[state=active]:text-green-600 rounded-lg" title="Earnings">
+              <Wallet className="h-5 w-5 xs:h-6 xs:w-6" />
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex flex-col items-center justify-center py-1.5 xs:py-2 px-0.5 xs:px-1 gap-0.5 xs:gap-1 h-auto min-h-[60px] xs:min-h-[70px]" title="Reports">
-              <Calendar className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-indigo-600" />
-              <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-gray-600 leading-tight">Report</span>
+            <TabsTrigger value="profile" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-600 rounded-lg" title="Profile">
+              <User className="h-5 w-5 xs:h-6 xs:w-6" />
             </TabsTrigger>
           </TabsList>
 
@@ -398,11 +385,16 @@ export default function DeliveryPartnerDashboard() {
               <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 xs:pb-2 px-2 xs:px-3 sm:px-6 pt-2 xs:pt-3 sm:pt-6">
                   <CardTitle className="text-[10px] xs:text-xs sm:text-sm font-medium opacity-90 leading-tight">Rating</CardTitle>
-                  <Star className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 opacity-80 flex-shrink-0" />
+                  <Star className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 opacity-80 flex-shrink-0 fill-current" />
                 </CardHeader>
                 <CardContent className="px-2 xs:px-3 sm:px-6 pb-2 xs:pb-3 sm:pb-6">
-                  <div className="text-base xs:text-lg sm:text-xl lg:text-3xl font-bold">
-                    {currentStats.rating > 0 ? `${currentStats.rating.toFixed(1)}★` : "N/A"}
+                  <div className="text-base xs:text-lg sm:text-xl lg:text-3xl font-bold flex items-center gap-1">
+                    {currentStats.rating > 0 ? (
+                      <>
+                        <span>{currentStats.rating.toFixed(1)}</span>
+                        <Star className="h-3 w-3 xs:h-4 xs:w-4 fill-current text-yellow-300" />
+                      </>
+                    ) : "N/A"}
                   </div>
                   <p className="text-[8px] xs:text-[9px] sm:text-[10px] lg:text-xs opacity-80 mt-0.5 xs:mt-1 leading-tight">
                     Customer feedback
@@ -411,29 +403,32 @@ export default function DeliveryPartnerDashboard() {
               </Card>
             </div>
 
-            {/* Mobile Responsive Quick Actions */}
+            {/* Mobile-First Quick Actions - Compact Design */}
             <Card className="shadow-lg border-0">
-              <CardHeader className="px-3 sm:px-6">
-                <CardTitle className="text-lg sm:text-xl">Quick Actions</CardTitle>
-                <CardDescription className="text-sm">Common tasks and notifications</CardDescription>
+              <CardHeader className="px-2 xs:px-3 sm:px-6 py-2 xs:py-3 sm:py-4">
+                <CardTitle className="text-sm xs:text-base sm:text-lg lg:text-xl flex items-center gap-2">
+                  <Activity className="h-4 w-4 xs:h-5 xs:w-5 text-blue-600" />
+                  Quick Actions
+                </CardTitle>
+                <CardDescription className="text-xs xs:text-sm">Common tasks</CardDescription>
               </CardHeader>
-              <CardContent className="px-3 sm:px-6">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                  <Button className="h-12 sm:h-16 flex flex-col gap-1 sm:gap-2 bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm">
-                    <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span>Notifications</span>
+              <CardContent className="px-2 xs:px-3 sm:px-6 pb-2 xs:pb-3 sm:pb-6">
+                <div className="grid grid-cols-2 xs:grid-cols-4 gap-2 xs:gap-3 sm:gap-4">
+                  <Button className="h-10 xs:h-12 sm:h-16 flex flex-col gap-0.5 xs:gap-1 sm:gap-2 bg-blue-600 hover:bg-blue-700 text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2">
+                    <Bell className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                    <span className="leading-tight">Alerts</span>
                   </Button>
-                  <Button variant="outline" className="h-12 sm:h-16 flex flex-col gap-1 sm:gap-2 text-xs sm:text-sm">
-                    <Navigation className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span>Navigation</span>
+                  <Button variant="outline" className="h-10 xs:h-12 sm:h-16 flex flex-col gap-0.5 xs:gap-1 sm:gap-2 text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2">
+                    <Navigation className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                    <span className="leading-tight">Navigate</span>
                   </Button>
-                  <Button variant="outline" className="h-12 sm:h-16 flex flex-col gap-1 sm:gap-2 text-xs sm:text-sm">
-                    <Phone className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span>Support</span>
+                  <Button variant="outline" className="h-10 xs:h-12 sm:h-16 flex flex-col gap-0.5 xs:gap-1 sm:gap-2 text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2">
+                    <Phone className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                    <span className="leading-tight">Help</span>
                   </Button>
-                  <Button variant="outline" className="h-12 sm:h-16 flex flex-col gap-1 sm:gap-2 text-xs sm:text-sm">
-                    <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span>Analytics</span>
+                  <Button variant="outline" className="h-10 xs:h-12 sm:h-16 flex flex-col gap-0.5 xs:gap-1 sm:gap-2 text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2">
+                    <TrendingUp className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                    <span className="leading-tight">Stats</span>
                   </Button>
                 </div>
               </CardContent>
