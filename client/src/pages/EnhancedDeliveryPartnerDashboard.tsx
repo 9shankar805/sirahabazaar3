@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Truck, Package, Clock, Star, Navigation, MapPin, DollarSign, 
   Phone, Calendar, TrendingUp, Activity, AlertCircle, CheckCircle,
-  Timer, Route, Target, Wallet, Settings, User, Bell, Eye
+  Timer, Route, Target, Wallet, Settings, User, Bell, Eye, Home,
+  AlertTriangle, History
 } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -354,95 +355,101 @@ export default function EnhancedDeliveryPartnerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header with online status toggle */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Truck className="h-8 w-8 text-blue-600" />
-                <h1 className="text-xl font-bold text-gray-900">Partner Dashboard</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 w-full overflow-x-hidden">
+      {/* Mobile-First Header - Full Width Coverage */}
+      <div className="bg-white shadow-sm border-b w-full">
+        <div className="w-full max-w-none px-2 xs:px-3 sm:px-4 lg:px-6 py-2 xs:py-3 sm:py-4">
+          <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 xs:gap-3 sm:gap-4 min-w-0 flex-1">
+              <div className="p-1.5 xs:p-2 sm:p-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex-shrink-0">
+                <Truck className="h-3 w-3 xs:h-4 xs:w-4 sm:h-6 sm:w-6 text-white" />
               </div>
-              <Badge variant={partner.status === 'approved' ? 'default' : 'secondary'}>
-                {partner.status.charAt(0).toUpperCase() + partner.status.slice(1)}
-              </Badge>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm xs:text-base sm:text-lg lg:text-xl font-bold text-gray-800 truncate">Partner Dashboard</h1>
+                <Badge variant={partner.status === 'approved' ? 'default' : 'secondary'} className="text-[8px] xs:text-[9px] sm:text-xs px-1 xs:px-2 py-0.5">
+                  {partner.status.charAt(0).toUpperCase() + partner.status.slice(1)}
+                </Badge>
+              </div>
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Activity className={`h-5 w-5 ${isOnlineMode ? 'text-green-500' : 'text-gray-400'}`} />
-                <span className="text-sm font-medium">
-                  {isOnlineMode ? 'Online' : 'Offline'}
+            <div className="flex flex-row items-center gap-2 xs:gap-3 flex-shrink-0">
+              <div className="flex items-center gap-1.5 xs:gap-2">
+                <span className="text-[10px] xs:text-xs text-gray-600 font-medium">
+                  {isOnlineMode ? "Online" : "Offline"}
                 </span>
-                <Button
-                  size="sm"
-                  variant={isOnlineMode ? 'destructive' : 'default'}
+                <button
                   onClick={() => toggleOnlineStatus.mutate(!isOnlineMode)}
                   disabled={toggleOnlineStatus.isPending}
+                  className={`relative inline-flex h-5 xs:h-6 w-9 xs:w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    isOnlineMode 
+                      ? "bg-green-500 focus:ring-green-500" 
+                      : "bg-gray-300 focus:ring-gray-300"
+                  } ${toggleOnlineStatus.isPending ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  {isOnlineMode ? 'Go Offline' : 'Go Online'}
-                </Button>
+                  <span
+                    className={`inline-block h-3 xs:h-4 w-3 xs:w-4 transform rounded-full bg-white transition-transform ${
+                      isOnlineMode ? "translate-x-5 xs:translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
               </div>
               
-              <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-yellow-500" />
-                <span className="font-semibold">{partner.rating || '4.5'}</span>
+              <div className="flex items-center gap-1 xs:gap-1.5">
+                <Star className="h-3 w-3 xs:h-4 xs:w-4 text-yellow-500 fill-current" />
+                <span className="text-[10px] xs:text-xs font-semibold">{partner.rating || '4.5'}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Dashboard
+      <div className="w-full max-w-none px-1 xs:px-2 sm:px-3 lg:px-6 py-2 xs:py-3 sm:py-4 lg:py-6">
+        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+          {/* Mobile-First Icon-Only Tabs - Ultra Compact */}
+          <TabsList className="grid grid-cols-6 mb-2 xs:mb-3 sm:mb-6 bg-white shadow-sm h-auto p-0.5 w-full rounded-xl">
+            <TabsTrigger value="dashboard" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 rounded-lg" title="Dashboard">
+              <Home className="h-5 w-5 xs:h-6 xs:w-6" />
             </TabsTrigger>
-            <TabsTrigger value="orders" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Available Orders
+            <TabsTrigger value="orders" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-orange-50 data-[state=active]:text-orange-600 rounded-lg" title="Available Orders">
+              <Package className="h-5 w-5 xs:h-6 xs:w-6" />
             </TabsTrigger>
-            <TabsTrigger value="active" className="flex items-center gap-2">
-              <Route className="h-4 w-4" />
-              Active Deliveries
+            <TabsTrigger value="active" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-green-50 data-[state=active]:text-green-600 rounded-lg" title="Active Deliveries">
+              <Activity className="h-5 w-5 xs:h-6 xs:w-6" />
             </TabsTrigger>
-            <TabsTrigger value="earnings" className="flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
-              Earnings
+            <TabsTrigger value="earnings" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-green-50 data-[state=active]:text-green-600 rounded-lg" title="Earnings">
+              <Wallet className="h-5 w-5 xs:h-6 xs:w-6" />
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Profile
+            <TabsTrigger value="profile" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-600 rounded-lg" title="Profile">
+              <User className="h-5 w-5 xs:h-6 xs:w-6" />
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Alerts
+            <TabsTrigger value="notifications" className="flex items-center justify-center py-2 xs:py-2.5 px-1 relative h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-red-50 data-[state=active]:text-red-600 rounded-lg" title="Alerts">
+              <div className="relative">
+                <AlertTriangle className="h-5 w-5 xs:h-6 xs:w-6" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 xs:w-2.5 xs:h-2.5 bg-red-500 rounded-full"></div>
+              </div>
             </TabsTrigger>
           </TabsList>
 
           {/* Dashboard Overview */}
-          <TabsContent value="dashboard" className="space-y-6">
-            {/* Professional Analytics Grid - Enterprise Level */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <TabsContent value="dashboard" className="space-y-2 xs:space-y-3 sm:space-y-4 lg:space-y-6">
+            {/* Mobile-First Stats Cards - Full Width Coverage */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 xs:gap-2 sm:gap-3 lg:gap-4 w-full">
               {/* Today's Performance */}
               <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0 shadow-lg">
-                <CardContent className="p-4">
+                <CardContent className="p-2 xs:p-3 sm:p-4">
                   <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-emerald-100 text-sm font-medium">Today's Performance</p>
-                      <p className="text-2xl font-bold">₹{stats?.todayEarnings || 0}</p>
-                      <div className="flex items-center gap-2 text-xs text-emerald-100">
-                        <Package className="h-3 w-3" />
+                    <div className="space-y-0.5 xs:space-y-1">
+                      <p className="text-emerald-100 text-[9px] xs:text-[10px] sm:text-sm font-medium leading-tight">Today's Performance</p>
+                      <p className="text-sm xs:text-base sm:text-xl lg:text-2xl font-bold">₹{stats?.todayEarnings || 0}</p>
+                      <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 text-[7px] xs:text-[8px] sm:text-xs text-emerald-100">
+                        <Package className="h-2 w-2 xs:h-2.5 xs:w-2.5 sm:h-3 sm:w-3" />
                         <span>{stats?.todayDeliveries || 0} orders</span>
-                        <Timer className="h-3 w-3" />
+                        <Timer className="h-2 w-2 xs:h-2.5 xs:w-2.5 sm:h-3 sm:w-3" />
                         <span>{Math.floor((stats?.todayOnlineTime || 0) / 60)}h {(stats?.todayOnlineTime || 0) % 60}m</span>
                       </div>
                     </div>
-                    <div className="bg-white/20 p-2 rounded-lg">
-                      <TrendingUp className="h-6 w-6" />
+                    <div className="bg-white/20 p-1 xs:p-1.5 sm:p-2 rounded-lg">
+                      <TrendingUp className="h-3 w-3 xs:h-4 xs:w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
                     </div>
                   </div>
                 </CardContent>
