@@ -6699,45 +6699,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
+      // Try Google API first
       const result = await googleImageService.searchImages(query, Number(page), Number(per_page));
       
-      if (!result) {
-        return res.status(500).json({ error: "Failed to fetch images from Google" });
+      if (result && result.items && result.items.length > 0) {
+        // Transform Google response to match Unsplash format for compatibility
+        const transformedResult = {
+          total: parseInt(result.searchInformation?.totalResults || '0'),
+          total_pages: Math.ceil(parseInt(result.searchInformation?.totalResults || '0') / Number(per_page)),
+          results: result.items.map(item => ({
+            id: item.id || item.link,
+            urls: {
+              raw: item.link,
+              full: item.link,
+              regular: item.link,
+              small: item.image.thumbnailLink,
+              thumb: item.image.thumbnailLink
+            },
+            alt_description: item.title,
+            description: item.snippet,
+            user: {
+              name: item.displayLink,
+              username: item.displayLink
+            },
+            links: {
+              download: item.link,
+              html: item.image.contextLink
+            }
+          }))
+        };
+
+        return res.json(transformedResult);
       }
 
-      // Transform Google response to match Unsplash format for compatibility
+      // Fallback to free image service when Google API fails or returns no results
+      console.log("Google API failed or returned no results, using free image service as fallback");
+      const freeImages = await freeImageService.searchImages(query, Number(per_page));
+      
       const transformedResult = {
-        total: parseInt(result.searchInformation?.totalResults || '0'),
-        total_pages: Math.ceil(parseInt(result.searchInformation?.totalResults || '0') / Number(per_page)),
-        results: result.items?.map(item => ({
-          id: item.id || item.link,
-          urls: {
-            raw: item.link,
-            full: item.link,
-            regular: item.link,
-            small: item.image.thumbnailLink,
-            thumb: item.image.thumbnailLink
-          },
-          alt_description: item.title,
-          description: item.snippet,
-          user: {
-            name: item.displayLink,
-            username: item.displayLink
-          },
-          links: {
-            download: item.link,
-            html: item.image.contextLink
-          }
-        })) || []
+        total: freeImages.length,
+        total_pages: 1,
+        results: freeImages
       };
 
       res.json(transformedResult);
     } catch (error) {
       console.error("Error searching Google images:", error);
-      if (error.message.includes('quota exceeded')) {
-        res.status(403).json({ error: "Google API quota exceeded. Please try again later." });
-      } else {
-        res.status(500).json({ error: "Failed to fetch images from Google" });
+      
+      // Always fallback to free images on any error
+      try {
+        console.log("Using free image service as fallback due to error");
+        const freeImages = await freeImageService.searchImages(String(query), Number(per_page));
+        
+        const transformedResult = {
+          total: freeImages.length,
+          total_pages: 1,
+          results: freeImages
+        };
+
+        res.json(transformedResult);
+      } catch (fallbackError) {
+        console.error("Fallback image service also failed:", fallbackError);
+        res.status(500).json({ error: "All image services unavailable" });
       }
     }
   });
@@ -6747,27 +6770,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { category } = req.params;
       const { count = 6 } = req.query;
       
-      const images = await googleImageService.getProductImages(category, Number(count));
+      // Try Google API first
+      let images = await googleImageService.getProductImages(category, Number(count));
       
-      // Transform Google response to match Unsplash format
+      // If Google API fails, fallback to free image service
+      if (!images || images.length === 0) {
+        console.log("Google API failed for category images, using free image service as fallback");
+        images = await freeImageService.getProductImages(category, Number(count));
+      }
+      
+      // Transform response to match Unsplash format (works for both services)
       const transformedImages = images.map(item => ({
         id: item.id || item.link,
         urls: {
-          raw: item.link,
-          full: item.link,
-          regular: item.link,
-          small: item.image.thumbnailLink,
-          thumb: item.image.thumbnailLink
+          raw: item.link || item.urls?.raw,
+          full: item.link || item.urls?.full,
+          regular: item.link || item.urls?.regular,
+          small: item.image?.thumbnailLink || item.urls?.small,
+          thumb: item.image?.thumbnailLink || item.urls?.thumb
         },
-        alt_description: item.title,
-        description: item.snippet,
+        alt_description: item.title || item.alt_description,
+        description: item.snippet || item.description,
         user: {
-          name: item.displayLink,
-          username: item.displayLink
+          name: item.displayLink || item.user?.name,
+          username: item.displayLink || item.user?.username
         },
         links: {
-          download: item.link,
-          html: item.image.contextLink
+          download: item.link || item.links?.download,
+          html: item.image?.contextLink || item.links?.html
         }
       }));
       
@@ -6778,7 +6808,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error fetching category images:", error);
-      res.status(500).json({ error: "Internal server error" });
+      
+      // Always fallback to free images on any error
+      try {
+        console.log("Using free image service as fallback due to error");
+        const freeImages = await freeImageService.getProductImages(String(category), Number(count));
+        
+        const transformedImages = freeImages.map(item => ({
+          id: item.id,
+          urls: item.urls,
+          alt_description: item.alt_description,
+          description: item.description,
+          user: item.user,
+          links: item.links
+        }));
+        
+        res.json({
+          images: transformedImages,
+          category,
+          total: transformedImages.length
+        });
+      } catch (fallbackError) {
+        console.error("Fallback image service also failed:", fallbackError);
+        res.status(500).json({ error: "All image services unavailable" });
+      }
     }
   });
 
