@@ -234,7 +234,7 @@ const UnsplashImageSearch: React.FC<UnsplashImageSearchProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600">
-                  Found {searchResults.total} images
+                  Found {searchResults.results?.total || 0} images
                 </p>
                 {maxImages > 1 && selectedImageIds.length > 0 && (
                   <Button onClick={handleConfirmSelection}>
@@ -245,7 +245,7 @@ const UnsplashImageSearch: React.FC<UnsplashImageSearchProps> = ({
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {searchResults.results?.map((image: UnsplashImage) => (
+                {searchResults.results?.results?.map((image: UnsplashImage) => (
                   <Card
                     key={image.id}
                     className={`cursor-pointer transition-all hover:shadow-md ${

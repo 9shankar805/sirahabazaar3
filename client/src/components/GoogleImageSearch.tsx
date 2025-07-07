@@ -138,10 +138,10 @@ const GoogleImageSearch: React.FC<GoogleImageSearchProps> = ({
           )}
 
           {/* Search Results */}
-          {searchResults && searchResults.results && searchResults.results.length > 0 && (
+          {searchResults && searchResults.results && searchResults.results.results && searchResults.results.results.length > 0 && (
             <div className="max-h-96 overflow-y-auto">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {searchResults.results.map((image: any) => (
+                {searchResults.results.results.map((image: any) => (
                   <div key={image.id} className="group relative">
                     <div className="aspect-square overflow-hidden rounded-lg border">
                       <img
