@@ -3,7 +3,7 @@
  * Provides fallback email functionality when Firebase is not available
  */
 
-import * as nodemailer from 'nodemailer';
+import nodemailer from 'nodemailer';
 
 export interface PasswordResetEmail {
   to: string;
@@ -16,17 +16,43 @@ export class EmailService {
 
   static async initialize() {
     try {
-      // Use SendGrid SMTP settings
-      this.transporter = nodemailer.createTransporter({
-        host: 'smtp.sendgrid.net',
-        port: 587,
-        secure: false, // Use TLS
-        auth: {
-          user: 'apikey',
-          pass: process.env.SENDGRID_API_KEY || ''
-        }
+      // Try SendGrid first if API key is available
+      if (process.env.SENDGRID_API_KEY) {
+        this.transporter = nodemailer.createTransport({
+          host: 'smtp.sendgrid.net',
+          port: 587,
+          secure: false,
+          auth: {
+            user: 'apikey',
+            pass: process.env.SENDGRID_API_KEY
+          }
+        });
+        console.log('✅ Email service initialized with SendGrid');
+        return true;
+      }
+      
+      // Fallback to Gmail SMTP if credentials are available
+      if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+        this.transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.GMAIL_USER,
+            pass: process.env.GMAIL_APP_PASSWORD
+          }
+        });
+        console.log('✅ Email service initialized with Gmail');
+        return true;
+      }
+      
+      // Development fallback - log emails instead of sending
+      this.transporter = nodemailer.createTransport({
+        streamTransport: true,
+        newline: 'unix',
+        buffer: true
       });
+      console.log('⚠️ Email service running in development mode - emails will be logged only');
       return true;
+      
     } catch (error) {
       console.warn('Email service initialization failed:', error);
       return false;
@@ -110,9 +136,20 @@ export class EmailService {
         `
       };
 
-      await this.transporter.sendMail(mailOptions);
-      console.log('Password reset email sent successfully to:', emailData.to);
-      return true;
+      if (this.transporter.options && this.transporter.options.streamTransport) {
+        // Development mode - just log the email content
+        console.log('📧 [DEV MODE] Password reset email (not actually sent):');
+        console.log(`To: ${emailData.to}`);
+        console.log(`Subject: Reset Your Password - Siraha Bazaar`);
+        console.log(`Reset Link: ${resetLink}`);
+        console.log('Password reset email logged successfully');
+        return true;
+      } else {
+        // Actually send the email
+        await this.transporter.sendMail(mailOptions);
+        console.log('Password reset email sent successfully to:', emailData.to);
+        return true;
+      }
     } catch (error) {
       console.error('Failed to send password reset email:', error);
       return false;

@@ -176,16 +176,18 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - ✓ Both Buy Now and Order Now buttons use selectSingleItem function to select only the clicked product
 - → Individual item selection now works properly - clicking one item selects only that item, Buy Now buttons redirect to checkout with single item selected
 
-### July 7, 2025 - Fixed Forgot Password Internal Server Error and Created Dedicated Page
-- ✓ Fixed critical database issue where firebase_uid column was missing from users table causing 500 errors
+### July 7, 2025 - Fixed Account Creation and Password Reset Issues
+- ✓ Fixed account creation failures by removing Firebase authentication dependencies causing network errors
+- ✓ Updated registration system to work directly with backend authentication instead of Firebase
+- ✓ Enhanced error handling for duplicate email/phone scenarios during registration
+- ✓ Fixed critical database issue where firebase_uid column was missing from users table
 - ✓ Created dedicated forgot password page (/forgot-password) with professional UI design
-- ✓ Added forgot password route to app routing system
-- ✓ Updated login page to link to new dedicated forgot password page instead of inline functionality
-- ✓ Fixed emailService.ts import errors by replacing missing createTransporter with nodemailer
-- ✓ Enhanced password reset system with proper error handling and user feedback
-- ✓ Added database migration to ensure firebase_uid column exists for all users
-- ✓ Verified complete password reset flow: form submission → API call → email service integration
-- → Forgot password functionality now works correctly with dedicated page and proper database schema
+- ✓ Fixed emailService.ts nodemailer import and configuration issues
+- ✓ Enhanced email service with multiple provider support (SendGrid, Gmail, development fallback)
+- ✓ Added development mode email logging for testing without actual email delivery
+- ✓ Verified complete registration flow: form submission → backend authentication → account creation
+- ✓ Verified complete password reset flow: form submission → token generation → email service
+- → Both account creation and password reset now work reliably without Firebase dependencies
 
 ### July 7, 2025 - Fixed Selective Cart Clearing After Checkout (Previous)
 - ✓ Fixed checkout process to only remove selected items from cart instead of clearing everything
