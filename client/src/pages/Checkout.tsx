@@ -50,9 +50,13 @@ export default function Checkout() {
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [, setLocation] = useLocation();
-  const { cartItems, totalAmount, clearCart } = useCart();
+  const { cartItems, totalAmount, clearCart, getSelectedCartItems, getSelectedTotals } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Use selected items for checkout
+  const selectedCartItems = getSelectedCartItems();
+  const { amount: selectedTotalAmount, items: selectedTotalItems } = getSelectedTotals();
 
   const { data: deliveryZones = [] } = useQuery({
     queryKey: ["/api/delivery-zones"],
@@ -238,12 +242,12 @@ export default function Checkout() {
   };
 
   const calculateDeliveryFeeWithLocation = async (location: {latitude: number, longitude: number}) => {
-    if (cartItems.length === 0) return;
+    if (selectedCartItems.length === 0) return;
 
     setIsCalculatingFee(true);
     try {
       // Get store address from first item (assuming single store for now)
-      const firstItem = cartItems[0];
+      const firstItem = selectedCartItems[0];
       if (!firstItem?.product) {
         throw new Error("Product information not available");
       }
@@ -311,12 +315,12 @@ export default function Checkout() {
       return;
     }
 
-    if (!shippingAddress.trim() || cartItems.length === 0) return;
+    if (!shippingAddress.trim() || selectedCartItems.length === 0) return;
 
     setIsCalculatingFee(true);
     try {
       // Get store address from first item (assuming single store for now)
-      const firstItem = cartItems[0];
+      const firstItem = selectedCartItems[0];
       if (!firstItem?.product) {
         throw new Error("Product information not available");
       }
@@ -435,11 +439,11 @@ export default function Checkout() {
   };
 
   const onSubmit = async (data: CheckoutForm) => {
-    if (cartItems.length === 0) return;
+    if (selectedCartItems.length === 0) return;
 
     setIsLoading(true);
     try {
-      const finalTotal = totalAmount + deliveryFee;
+      const finalTotal = selectedTotalAmount + deliveryFee;
       const orderData = {
         customerId: user?.id || null,
         totalAmount: finalTotal.toString(),
@@ -448,7 +452,7 @@ export default function Checkout() {
         ...data,
       };
 
-      const orderItems = cartItems.map(item => ({
+      const orderItems = selectedCartItems.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
         price: item.product?.price || "0",
@@ -492,7 +496,7 @@ export default function Checkout() {
     return null;
   }
 
-  if (cartItems.length === 0) {
+  if (selectedCartItems.length === 0) {
     setLocation("/cart");
     return null;
   }
@@ -768,7 +772,7 @@ export default function Checkout() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 mb-4">
-                  {cartItems.map((item) => (
+                  {selectedCartItems.map((item) => (
                     <div key={item.id} className="flex justify-between text-sm">
                       <div className="flex-1">
                         <span>{item.product?.name || "Unknown Product"}</span>
@@ -782,7 +786,7 @@ export default function Checkout() {
                   
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>₹{totalAmount.toLocaleString()}</span>
+                    <span>₹{selectedTotalAmount.toLocaleString()}</span>
                   </div>
                   
                   <div className="flex justify-between">
@@ -809,7 +813,7 @@ export default function Checkout() {
                     <span>Total</span>
                     <span>
                       {deliveryFee > 0 || (userLocation || form.getValues("shippingAddress")?.trim()) ? 
-                        `₹${(totalAmount + deliveryFee).toLocaleString()}` : 
+                        `₹${(selectedTotalAmount + deliveryFee).toLocaleString()}` : 
                         "Enter address for total"
                       }
                     </span>
