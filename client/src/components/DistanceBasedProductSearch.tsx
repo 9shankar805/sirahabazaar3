@@ -296,12 +296,14 @@ export default function DistanceBasedProductSearch({
         }
       }
       
-      // Filter by distance if location is available (tertiary filter)
-      if (userLocation && product.storeDistance !== undefined) {
+      // Filter by distance if location is available (tertiary filter, but not during active search)
+      if (userLocation && product.storeDistance !== undefined && !bypassModeFiltering) {
+        console.log(`Distance filter: ${product.name} at ${product.storeDistance}km vs max ${maxDistance}km`);
         return product.storeDistance <= maxDistance;
       }
       
       // If no search query, show all products (or filtered by category/distance only)
+      console.log(`✅ Product "${product.name}" passed all filters`);
       return true;
     })
     .sort((a, b) => {
