@@ -31,7 +31,7 @@ export const useUnsplashSearch = (query: string, enabled = true) => {
   return useQuery({
     queryKey: ['unsplash-search', query],
     queryFn: async (): Promise<UnsplashSearchResponse> => {
-      const response = await fetch(`/api/unsplash/search?query=${encodeURIComponent(query)}&per_page=20`);
+      const response = await fetch(`/api/google-images/search?query=${encodeURIComponent(query)}&per_page=20`);
       if (!response.ok) {
         throw new Error('Failed to search images');
       }
@@ -46,7 +46,7 @@ export const useUnsplashCategory = (category: string, count = 6) => {
   return useQuery({
     queryKey: ['unsplash-category', category, count],
     queryFn: async () => {
-      const response = await fetch(`/api/unsplash/category/${category}?count=${count}`);
+      const response = await fetch(`/api/google-images/category/${category}?count=${count}`);
       if (!response.ok) {
         throw new Error('Failed to fetch category images');
       }
@@ -61,7 +61,7 @@ export const useUnsplashRandom = (query: string, count = 6) => {
   return useQuery({
     queryKey: ['unsplash-random', query, count],
     queryFn: async () => {
-      const response = await fetch(`/api/unsplash/random?query=${encodeURIComponent(query)}&count=${count}`);
+      const response = await fetch(`/api/google-images/random?query=${encodeURIComponent(query)}&count=${count}`);
       if (!response.ok) {
         throw new Error('Failed to fetch random images');
       }
@@ -76,7 +76,7 @@ export const useUnsplashRestaurant = (cuisineType: string, count = 6) => {
   return useQuery({
     queryKey: ['unsplash-restaurant', cuisineType, count],
     queryFn: async () => {
-      const response = await fetch(`/api/unsplash/restaurant/${cuisineType}?count=${count}`);
+      const response = await fetch(`/api/google-images/restaurant/${cuisineType}?count=${count}`);
       if (!response.ok) {
         throw new Error('Failed to fetch restaurant images');
       }
@@ -90,7 +90,7 @@ export const useUnsplashRestaurant = (cuisineType: string, count = 6) => {
 export const useTrackDownload = () => {
   return useMutation({
     mutationFn: async (image: UnsplashImage) => {
-      const response = await fetch('/api/unsplash/track-download', {
+      const response = await fetch('/api/google-images/track-download', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -74,7 +74,7 @@ const UnsplashImageSearch: React.FC<UnsplashImageSearchProps> = ({
   // Track download mutation
   const trackDownloadMutation = useMutation({
     mutationFn: async (image: UnsplashImage) => {
-      const response = await fetch('/api/unsplash/track-download', {
+      const response = await fetch('/api/google-images/track-download', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -35,7 +35,7 @@ const GoogleImageSearch: React.FC<GoogleImageSearchProps> = ({
     queryFn: async () => {
       if (!searchQuery.trim()) return null;
       
-      const response = await fetch(`/api/unsplash/search?query=${encodeURIComponent(searchQuery)}&per_page=20`);
+      const response = await fetch(`/api/google-images/search?query=${encodeURIComponent(searchQuery)}&per_page=20`);
       if (!response.ok) {
         if (response.status === 403) {
           throw new Error('Google API quota exceeded. Please try again later or contact support.');
