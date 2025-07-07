@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Clipboard, ExternalLink, Image as ImageIcon, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ImageBrowser } from './ImageBrowser';
 
 interface ManualImageInputProps {
   onImageSelect: (imageUrl: string) => void;
@@ -213,12 +214,21 @@ export function ManualImageInput({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="browse" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="browse">Browse Samples</TabsTrigger>
-            <TabsTrigger value="search">Browser Search</TabsTrigger>
+        <Tabs defaultValue="browser" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="browser">Browser</TabsTrigger>
+            <TabsTrigger value="browse">Samples</TabsTrigger>
+            <TabsTrigger value="search">Search</TabsTrigger>
             <TabsTrigger value="paste">Paste URL</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="browser" className="space-y-4">
+            <ImageBrowser
+              onImageSelect={onImageSelect}
+              selectedImages={selectedImages}
+              maxImages={maxImages}
+            />
+          </TabsContent>
           
           <TabsContent value="browse" className="space-y-4">
             <div className="text-sm text-gray-600 mb-4">
