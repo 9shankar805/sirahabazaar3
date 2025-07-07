@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Star, ShoppingCart, Heart, Minus, Plus, MapPin, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import type { Product, Store as StoreType } from "@shared/schema";
 
 export default function ProductDetail() {
   const { id } = useParams();
+  const [, setLocation] = useLocation();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -247,8 +248,8 @@ export default function ProductDetail() {
                       title: "Added to Cart",
                       description: `${product.name} has been added to your cart`,
                     });
-                    // Then navigate to checkout
-                    window.location.href = `/checkout`;
+                    // Then navigate to checkout using router
+                    setLocation("/checkout");
                   } catch (error) {
                     toast({
                       title: "Error",
