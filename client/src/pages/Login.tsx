@@ -93,8 +93,8 @@ export default function Login() {
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = "Too many requests. Please try again later.";
       } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = "Network error occurred.";
-        description = "Please check your internet connection and try again.";
+        errorMessage = "Firebase Domain Authorization Required";
+        description = "This Replit domain needs to be added to Firebase Console. Check browser console for setup instructions.";
       } else if (error.code === 'auth/unauthorized-domain') {
         errorMessage = "Domain not authorized.";
         description = "Firebase domain authorization is required. Please contact support.";

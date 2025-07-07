@@ -35,6 +35,21 @@ export async function runSimpleMigrations() {
         `
       },
 
+      // Create password reset tokens table
+      {
+        name: "Create password_reset_tokens table",
+        query: sql`
+          CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            token TEXT NOT NULL UNIQUE,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+            used BOOLEAN DEFAULT false
+          )
+        `
+      },
+
       // Ensure delivery tracking tables exist
       {
         name: "Create delivery_location_tracking table",

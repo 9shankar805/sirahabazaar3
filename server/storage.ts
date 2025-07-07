@@ -4,7 +4,7 @@ import {
   promotions, advertisements, productReviews, reviewLikes, settlements, storeAnalytics, inventoryLogs,
   paymentTransactions, coupons, banners, supportTickets, siteSettings, deliveryPartners, deliveries,
   vendorVerifications, fraudAlerts, commissions, productAttributes, adminLogs, deliveryZones, flashSales,
-  pushNotificationTokens,
+  pushNotificationTokens, passwordResetTokens,
   type User, type InsertUser, type AdminUser, type InsertAdminUser, type Store, type InsertStore, 
   type Category, type InsertCategory, type Product, type InsertProduct,
   type Order, type InsertOrder, type OrderItem, type InsertOrderItem,
@@ -20,7 +20,7 @@ import {
   type SupportTicket, type InsertSupportTicket, type SiteSetting, type FlashSale, type InsertFlashSale,
   type VendorVerification, type InsertVendorVerification, type FraudAlert, type InsertFraudAlert,
   type Commission, type InsertCommission, type ProductAttribute, type InsertProductAttribute,
-  type AdminLog, type InsertAdminLog
+  type AdminLog, type InsertAdminLog, type PasswordResetToken, type InsertPasswordResetToken
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, ilike, or, desc, count, sql, gte, gt, lt, lte, inArray } from "drizzle-orm";
@@ -40,6 +40,12 @@ export interface IStorage {
   getAdminUserByEmail(email: string): Promise<AdminUser | undefined>;
   createAdminUser(adminUser: InsertAdminUser): Promise<AdminUser>;
   getAdminUsers(): Promise<AdminUser[]>;
+
+  // Password reset operations
+  storePasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void>;
+  getPasswordResetToken(token: string): Promise<{ userId: number; expiresAt: Date } | undefined>;
+  deletePasswordResetToken(token: string): Promise<boolean>;
+  updateUserPassword(userId: number, newPassword: string): Promise<void>;
 
   // User approval operations
   getPendingUsers(): Promise<User[]>;
@@ -2480,6 +2486,63 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting user visit history:', error);
       return [];
+    }
+  }
+
+  // Password reset token operations
+  async storePasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void> {
+    try {
+      await db.insert(passwordResetTokens).values({
+        userId,
+        token,
+        expiresAt,
+        used: false
+      });
+    } catch (error) {
+      console.error('Error storing password reset token:', error);
+      throw error;
+    }
+  }
+
+  async getPasswordResetToken(token: string): Promise<{ userId: number; expiresAt: Date } | undefined> {
+    try {
+      const [result] = await db.select({
+        userId: passwordResetTokens.userId,
+        expiresAt: passwordResetTokens.expiresAt
+      })
+      .from(passwordResetTokens)
+      .where(and(
+        eq(passwordResetTokens.token, token),
+        eq(passwordResetTokens.used, false)
+      ));
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting password reset token:', error);
+      return undefined;
+    }
+  }
+
+  async deletePasswordResetToken(token: string): Promise<boolean> {
+    try {
+      await db.update(passwordResetTokens)
+        .set({ used: true })
+        .where(eq(passwordResetTokens.token, token));
+      return true;
+    } catch (error) {
+      console.error('Error deleting password reset token:', error);
+      return false;
+    }
+  }
+
+  async updateUserPassword(userId: number, newPassword: string): Promise<void> {
+    try {
+      await db.update(users)
+        .set({ password: newPassword, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+    } catch (error) {
+      console.error('Error updating user password:', error);
+      throw error;
     }
   }
 }
