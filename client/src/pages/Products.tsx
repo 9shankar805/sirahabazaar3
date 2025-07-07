@@ -14,7 +14,15 @@ export default function Products() {
   useEffect(() => {
     const params = new URLSearchParams(location.split('?')[1] || '');
     setSearchParams(params);
+    console.log("Products page location changed:", { 
+      location, 
+      searchQuery: params.get('search'), 
+      categoryQuery: params.get('category'),
+      fullURL: window.location.href 
+    });
   }, [location]);
+
+  console.log("Products page rendering with:", { searchQuery, categoryQuery });
 
   return (
     <div className="min-h-screen bg-muted">
