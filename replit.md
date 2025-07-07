@@ -120,7 +120,20 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### July 7, 2025 - Enhanced Local Image Browser Implementation
+### July 7, 2025 - Comprehensive Search Filtering System for Both Shopping and Food Modes
+- ✓ Enhanced DistanceBasedProductSearch component to support comprehensive filtering for both shopping and food modes
+- ✓ Added intelligent mode-specific filtering that automatically shows restaurant items in food mode and retail items in shopping mode
+- ✓ Implemented comprehensive food-specific filters including restaurant selection, spice level, dietary options, price ranges, and preparation time
+- ✓ Added search bypass mode that shows all relevant results when users are actively searching regardless of mode
+- ✓ Enhanced search functionality to include restaurant names in addition to product names, descriptions, and categories
+- ✓ Added visual mode indicators and badges to clearly distinguish between food and shopping filtering contexts
+- ✓ Updated Products page to properly detect app mode and apply appropriate filtering logic
+- ✓ Fixed DOM validation warnings and key duplication issues that were preventing search results from displaying
+- ✓ Added comprehensive debugging system to troubleshoot filtering issues and ensure search results are properly displayed
+- ✓ Created fallback logic for stores without explicit type definitions to prevent search results from being filtered out
+- → Search filtering now works equally well for both shopping and food modes with mode-appropriate filter options
+
+### July 7, 2025 - Enhanced Local Image Browser Implementation (Previous)
 - ✓ Created embedded browser component with iframe for direct image searching within dashboard
 - ✓ Added Google Images as primary search engine for comprehensive local item coverage
 - ✓ Integrated Amazon India, Flipkart, and BigBasket for product-specific image searches

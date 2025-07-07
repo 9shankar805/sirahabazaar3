@@ -48,6 +48,9 @@ export default function DistanceBasedProductSearch({
   // Determine if we're in food mode
   const isFoodMode = mode === 'food' || isRestaurantMode;
 
+  // Add a temporary bypass for search to show all results when searching
+  const bypassModeFiltering = searchQuery && searchQuery.trim().length > 0;
+
   // Get user location
   const getUserLocation = async () => {
     setIsGettingLocation(true);
@@ -72,9 +75,25 @@ export default function DistanceBasedProductSearch({
       category,
       searchQueryLength: searchQuery.length,
       searchQueryTrimmed: searchQuery.trim(),
-      isEmpty: !searchQuery || searchQuery.trim() === ''
+      isEmpty: !searchQuery || searchQuery.trim() === '',
+      isFoodMode,
+      mode
     });
-  }, [searchQuery, category]);
+  }, [searchQuery, category, isFoodMode, mode]);
+
+  // Debug product and store data
+  useEffect(() => {
+    console.log("Products and stores data:", {
+      totalProducts: products.length,
+      totalStores: stores.length,
+      productsWithStores: products.map(p => ({
+        id: p.id,
+        name: p.name,
+        storeId: p.storeId,
+        store: stores.find(s => s.id === p.storeId)
+      }))
+    });
+  }, [products, stores]);
 
   // Fetch products
   const { data: products = [], isLoading } = useQuery<Product[]>({
@@ -126,13 +145,37 @@ export default function DistanceBasedProductSearch({
 
   // Filter products based on mode and store type
   const modeFilteredProducts = enrichedProducts.filter((product) => {
+    // If user is searching, bypass mode filtering to show all search results
+    if (bypassModeFiltering) {
+      console.log(`Search mode: Including all products for search "${searchQuery}"`);
+      return true;
+    }
+
     const store = stores.find((s) => s.id === product.storeId);
+    console.log(`Mode filtering for product "${product.name}":`, {
+      isFoodMode,
+      storeType: store?.storeType,
+      storeName: store?.name,
+      productId: product.id,
+      storeId: product.storeId
+    });
+    
     if (isFoodMode) {
-      // In food mode, only show products from restaurants
-      return store?.storeType === 'restaurant';
+      // In food mode, prioritize restaurants but also include food items if store type is missing
+      const isRestaurant = store?.storeType === 'restaurant';
+      const isFoodItem = product.category?.toLowerCase().includes('food') || 
+                        product.name?.toLowerCase().includes('food') ||
+                        product.preparationTime; // Has preparation time, likely food
+      const shouldInclude = isRestaurant || (!store?.storeType && isFoodItem);
+      console.log(`Food mode: Product "${product.name}" ${shouldInclude ? 'INCLUDED' : 'EXCLUDED'} (store type: ${store?.storeType}, isFoodItem: ${isFoodItem})`);
+      return shouldInclude;
     } else {
-      // In shopping mode, only show products from retail stores
-      return store?.storeType === 'retail';
+      // In shopping mode, prioritize retail but include items if store type is missing  
+      const isRetail = store?.storeType === 'retail';
+      const isRetailItem = !product.preparationTime; // No preparation time, likely retail
+      const shouldInclude = isRetail || (!store?.storeType && isRetailItem);
+      console.log(`Shopping mode: Product "${product.name}" ${shouldInclude ? 'INCLUDED' : 'EXCLUDED'} (store type: ${store?.storeType}, isRetailItem: ${isRetailItem})`);
+      return shouldInclude;
     }
   });
 
@@ -254,12 +297,35 @@ export default function DistanceBasedProductSearch({
       }
     });
 
+  // Debug final filtered results
+  useEffect(() => {
+    console.log("Filtering results:", {
+      enrichedProductsCount: enrichedProducts.length,
+      modeFilteredCount: modeFilteredProducts.length,
+      finalFilteredCount: filteredAndSortedProducts.length,
+      searchQuery,
+      isFoodMode,
+      modeFilteredProducts: modeFilteredProducts.map(p => ({
+        name: p.name,
+        storeName: p.storeName,
+        category: p.category
+      })),
+      finalProducts: filteredAndSortedProducts.map(p => ({
+        name: p.name,
+        storeName: p.storeName,
+        category: p.category
+      }))
+    });
+  }, [enrichedProducts, modeFilteredProducts, filteredAndSortedProducts, searchQuery, isFoodMode]);
+
   // Get unique restaurants for food mode
-  const availableRestaurants = [...new Set(
-    modeFilteredProducts
-      .map(p => ({ id: p.storeId, name: p.storeName }))
-      .filter(r => r.name !== 'Unknown Store')
-  )];
+  const availableRestaurants = modeFilteredProducts
+    .reduce((acc: Array<{id: number, name: string}>, product) => {
+      if (product.storeName !== 'Unknown Store' && !acc.find(r => r.id === product.storeId)) {
+        acc.push({ id: product.storeId, name: product.storeName || 'Unknown Store' });
+      }
+      return acc;
+    }, []);
 
   const FilterControls = () => (
     <div className="space-y-4">
@@ -447,11 +513,11 @@ export default function DistanceBasedProductSearch({
             {searchQuery && ` • Searching for: "${searchQuery}"`}
           </p>
           {isFoodMode && (
-            <p className="text-xs text-orange-600 mt-1">
+            <div className="mt-1">
               <Badge variant="outline" className="text-orange-600 border-orange-200">
                 Restaurant Items Only
               </Badge>
-            </p>
+            </div>
           )}
         </div>
 
