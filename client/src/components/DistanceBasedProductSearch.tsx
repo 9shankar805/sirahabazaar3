@@ -106,7 +106,7 @@ export default function DistanceBasedProductSearch({
   // Filter and sort products
   const filteredAndSortedProducts = enrichedProducts
     .filter((product) => {
-      // Filter by search query first
+      // Filter by search query first - this should be the MAIN filter
       if (searchQuery && searchQuery.trim()) {
         const searchLower = searchQuery.toLowerCase().trim();
         const nameMatch = product.name.toLowerCase().includes(searchLower);
@@ -114,27 +114,36 @@ export default function DistanceBasedProductSearch({
         const categoryMatch = product.category?.toLowerCase().includes(searchLower);
         
         console.log(`Filtering product "${product.name}" with search "${searchQuery}":`, {
-          nameMatch, descriptionMatch, categoryMatch
+          nameMatch, descriptionMatch, categoryMatch,
+          name: product.name,
+          description: product.description,
+          category: product.category
         });
         
-        if (!nameMatch && !descriptionMatch && !categoryMatch) {
+        // If we have a search query, ONLY show products that match it
+        const matchesSearch = nameMatch || descriptionMatch || categoryMatch;
+        if (!matchesSearch) {
+          console.log(`❌ Product "${product.name}" filtered out - no match`);
           return false;
         }
+        console.log(`✅ Product "${product.name}" included - matches search`);
       }
       
-      // Filter by category if provided
-      if (category) {
+      // Filter by category if provided (secondary filter)
+      if (category && category.trim()) {
         const categoryLower = category.toLowerCase();
         if (!product.category?.toLowerCase().includes(categoryLower)) {
           return false;
         }
       }
       
-      // Filter by distance if location is available
+      // Filter by distance if location is available (tertiary filter)
       if (userLocation && product.storeDistance !== undefined) {
         return product.storeDistance <= maxDistance;
       }
-      return true; // Show all products if location not available
+      
+      // If no search query, show all products (or filtered by category/distance only)
+      return true;
     })
     .sort((a, b) => {
       switch (sortBy) {
