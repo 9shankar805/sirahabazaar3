@@ -40,7 +40,7 @@ export default function SearchWithSuggestions({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("SearchWithSuggestions handleSearch called with:", searchQuery);
+    console.log("SearchWithSuggestions handleSearch called with:", `"${searchQuery}"`);
     
     if (onSearch) {
       onSearch(searchQuery.trim());
@@ -51,7 +51,7 @@ export default function SearchWithSuggestions({
         setLocation(searchUrl);
       } else {
         // If search query is empty, navigate to products page without search params
-        console.log("Clearing search - navigating to /products");
+        console.log("Clearing search - navigating to /products (empty search)");
         setLocation('/products');
       }
     }
@@ -92,9 +92,14 @@ export default function SearchWithSuggestions({
           onChange={(e) => {
             setSearchQuery(e.target.value);
             setShowSuggestions(e.target.value.length >= 2);
-            console.log("Search input changed to:", e.target.value);
+            console.log("Search input changed to:", `"${e.target.value}"`);
           }}
           onFocus={() => setShowSuggestions(searchQuery.length >= 2)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              console.log("Enter key pressed with search query:", `"${searchQuery}"`);
+            }
+          }}
           className="w-full pl-4 pr-12 py-2 bg-white text-gray-900 border-none focus:ring-2 focus:ring-white"
         />
         <Button
