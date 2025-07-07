@@ -52,7 +52,12 @@ export default function DistanceBasedProductSearch({
 
   // Debug logging for search functionality
   useEffect(() => {
-    console.log("DistanceBasedProductSearch received props:", { searchQuery, category });
+    console.log("DistanceBasedProductSearch received props:", { 
+      searchQuery, 
+      category,
+      searchQueryLength: searchQuery.length,
+      searchQueryTrimmed: searchQuery.trim()
+    });
   }, [searchQuery, category]);
 
   // Fetch products

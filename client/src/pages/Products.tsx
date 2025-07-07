@@ -6,19 +6,23 @@ import { useAppMode } from "@/hooks/useAppMode";
 export default function Products() {
   const [location] = useLocation();
   const { mode } = useAppMode();
-  const [searchParams, setSearchParams] = useState(new URLSearchParams(location.split('?')[1] || ''));
+  
+  // Get search params directly from window.location.search instead of wouter location
+  const [searchParams, setSearchParams] = useState(new URLSearchParams(window.location.search));
 
   const searchQuery = searchParams.get('search') || '';
   const categoryQuery = searchParams.get('category');
 
   useEffect(() => {
-    const params = new URLSearchParams(location.split('?')[1] || '');
+    // Update search params when URL changes
+    const params = new URLSearchParams(window.location.search);
     setSearchParams(params);
     console.log("Products page location changed:", { 
       location, 
       searchQuery: params.get('search'), 
       categoryQuery: params.get('category'),
-      fullURL: window.location.href 
+      fullURL: window.location.href,
+      windowSearch: window.location.search
     });
   }, [location]);
 
