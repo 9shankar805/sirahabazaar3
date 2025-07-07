@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { signInWithGoogle, signInWithFacebook } from "@/lib/firebaseAuth";
+import { signInWithGoogle, signInWithFacebook, auth } from "@/lib/firebaseAuth";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -26,6 +26,45 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const { login } = useAuth();
   const { toast } = useToast();
+
+  // Check for redirect result on component mount
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        const { getRedirectResult } = await import('firebase/auth');
+        const result = await getRedirectResult(auth);
+        
+        if (result && result.user) {
+          console.log('Redirect result found:', result.user);
+          
+          // Process the social login
+          const response = await fetch('/api/auth/social-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: result.user.email,
+              fullName: result.user.displayName,
+              provider: 'google',
+              providerId: result.user.uid,
+              photoUrl: result.user.photoURL
+            }),
+          });
+
+          if (response.ok) {
+            toast({
+              title: "Welcome!",
+              description: "Successfully logged in with Google.",
+            });
+            setLocation("/");
+          }
+        }
+      } catch (error) {
+        console.error('Error checking redirect result:', error);
+      }
+    };
+
+    checkRedirectResult();
+  }, [setLocation, toast]);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -62,6 +101,14 @@ export default function Login() {
     try {
       console.log('Starting Google login...');
       const result = await signInWithGoogle();
+      
+      // Handle redirect case where result might be null
+      if (!result) {
+        console.log('Redirect initiated, waiting for return...');
+        setIsLoading(false);
+        return;
+      }
+      
       const user = result.user;
       
       console.log('Google login successful, user:', {
@@ -113,6 +160,8 @@ export default function Login() {
           errorMessage = "Network error. Please check your connection and try again.";
         } else if (error.message.includes('auth/unauthorized-domain')) {
           errorMessage = "This domain is not authorized for Google login.";
+        } else if (error.code === 'auth/internal-error') {
+          errorMessage = "Domain authorization required. Check browser console for setup instructions.";
         }
       }
       

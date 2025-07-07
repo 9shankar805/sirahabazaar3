@@ -30,6 +30,22 @@ console.log('Firebase config loaded:', {
   appId: firebaseConfig.appId ? 'Present' : 'Missing'
 });
 
+// Check current domain for Firebase authorization
+const currentDomain = window.location.hostname;
+console.log('Current domain:', currentDomain);
+console.log('Full origin:', window.location.origin);
+
+// Domain authorization check
+if (currentDomain.includes('replit.app') || currentDomain.includes('replit.dev')) {
+  console.warn('⚠️ DOMAIN AUTHORIZATION REQUIRED:');
+  console.warn('You need to add this domain to Firebase Console:');
+  console.warn('1. Go to https://console.firebase.google.com/');
+  console.warn('2. Select your project: sirahabazaar-bc62f');
+  console.warn('3. Go to Authentication > Settings > Authorized domains');
+  console.warn(`4. Add: ${window.location.hostname}`);
+  console.warn(`5. Also add: *.replit.app and *.replit.dev`);
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
@@ -46,9 +62,33 @@ googleProvider.setCustomParameters({
 });
 
 // Auth functions
-export const signInWithGoogle = () => {
+export const signInWithGoogle = async () => {
   console.log('Attempting Google sign-in with popup...');
-  return signInWithPopup(auth, googleProvider);
+  try {
+    // First try popup method
+    const result = await signInWithPopup(auth, googleProvider);
+    return result;
+  } catch (error: any) {
+    console.error('Popup method failed:', error);
+    
+    // If popup fails due to internal error, try redirect method
+    if (error.code === 'auth/internal-error' || error.code === 'auth/popup-blocked') {
+      console.log('Trying redirect method as fallback...');
+      const { signInWithRedirect, getRedirectResult } = await import('firebase/auth');
+      
+      // Check if we're returning from a redirect
+      const redirectResult = await getRedirectResult(auth);
+      if (redirectResult) {
+        return redirectResult;
+      }
+      
+      // Start redirect flow
+      await signInWithRedirect(auth, googleProvider);
+      return null; // Redirect will handle the return
+    }
+    
+    throw error;
+  }
 };
 
 export const signInWithFacebook = () => {
