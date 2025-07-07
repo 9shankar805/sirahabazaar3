@@ -14,8 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "@/components/ImageUpload";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { auth } from "@/lib/firebaseAuth";
+// Removed Firebase dependencies - using backend authentication only
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -202,49 +201,16 @@ export default function Register() {
   const selectedRole = form.watch("role");
   const selectedVehicleType = form.watch("vehicleType");
 
-  const handleFirebaseRegistration = async (formData: RegisterForm) => {
-    try {
-      // Create user with Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = userCredential.user;
-      
-      // Send email verification
-      await sendEmailVerification(user);
-      
-      toast({
-        title: "Verification Email Sent",
-        description: "Please check your email to verify your account.",
-      });
-      
-      return user;
-    } catch (error: any) {
-      console.error('Firebase registration error:', error);
-      
-      let errorMessage = "Failed to create account.";
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "An account with this email already exists.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Password is too weak. Please choose a stronger password.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "Please enter a valid email address.";
-      }
-      
-      throw new Error(errorMessage);
-    }
-  };
+  // Direct backend registration without Firebase dependencies
 
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
     try {
       const { confirmPassword, termsAccepted, ...registerData } = data;
       
-      // First, create Firebase user
-      const firebaseUser = await handleFirebaseRegistration(registerData);
-      
       // Set shopkeeper and delivery partner accounts as pending for admin approval
       const userData = {
         ...registerData,
-        firebaseUid: firebaseUser.uid,
         status: (registerData.role === 'shopkeeper' || registerData.role === 'delivery_partner') ? 'pending' : 'active'
       };
       
@@ -263,7 +229,20 @@ export default function Register() {
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || 'Registration failed');
+          let errorMessage = error.error || 'Registration failed';
+          
+          // Handle common registration errors
+          if (errorMessage.includes('duplicate key') || errorMessage.includes('already exists')) {
+            if (errorMessage.includes('email')) {
+              errorMessage = 'An account with this email already exists.';
+            } else if (errorMessage.includes('phone')) {
+              errorMessage = 'An account with this phone number already exists.';
+            } else {
+              errorMessage = 'An account with these credentials already exists.';
+            }
+          }
+          
+          throw new Error(errorMessage);
         }
         
         const result = await response.json();
