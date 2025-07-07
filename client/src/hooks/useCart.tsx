@@ -24,6 +24,7 @@ interface CartContextType {
   getSelectedCartItems: () => CartItemWithProduct[];
   getSelectedTotals: () => { amount: number; items: number };
   selectSingleItem: (productId: number) => Promise<void>;
+  resetSelectionState: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -268,22 +269,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // If item exists, just select it
       setSelectedItems(new Set([existingItem.id]));
     }
+    // Mark that user has made manual selections
+    localStorage.setItem('cartHasSelections', 'true');
+  };
+
+  const resetSelectionState = () => {
+    localStorage.removeItem('cartHasSelections');
+    setSelectedItems(new Set());
   };
 
   // Auto-select items only when cart is first loaded (not when items are added)
   useEffect(() => {
-    // Only auto-select if cart is empty or if it's the initial load
-    if (cartItems.length > 0 && selectedItems.size === 0) {
-      // Check if this is a fresh cart load (no previous selections)
-      const shouldAutoSelect = localStorage.getItem('cartHasSelections') !== 'true';
-      if (shouldAutoSelect) {
-        setSelectedItems(new Set(cartItems.map(item => item.id)));
-        localStorage.setItem('cartHasSelections', 'true');
-      }
-    } else if (cartItems.length === 0) {
+    // Check if user has made manual selections
+    const hasManualSelections = localStorage.getItem('cartHasSelections') === 'true';
+    
+    if (cartItems.length === 0) {
       // Reset selection state when cart is empty
       localStorage.removeItem('cartHasSelections');
       setSelectedItems(new Set());
+    } else if (cartItems.length > 0 && selectedItems.size === 0 && !hasManualSelections) {
+      // Only auto-select if this is the very first time loading the cart
+      // and user hasn't made any manual selections yet
+      setSelectedItems(new Set(cartItems.map(item => item.id)));
     }
   }, [cartItems]);
 
@@ -306,6 +313,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       getSelectedCartItems,
       getSelectedTotals,
       selectSingleItem,
+      resetSelectionState,
     }}>
       {children}
     </CartContext.Provider>

@@ -24,7 +24,8 @@ export default function Cart() {
     selectedItems,
     setSelectedItems,
     getSelectedCartItems,
-    getSelectedTotals
+    getSelectedTotals,
+    resetSelectionState
   } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -56,6 +57,8 @@ export default function Cart() {
     } else {
       newSelected.add(itemId);
     }
+    // Mark that user has made manual selections
+    localStorage.setItem('cartHasSelections', 'true');
     setSelectedItems(newSelected);
   };
 
@@ -65,6 +68,8 @@ export default function Cart() {
     } else {
       setSelectedItems(new Set(cartItems.map(item => item.id)));
     }
+    // Mark that user has made manual selections
+    localStorage.setItem('cartHasSelections', 'true');
   };
 
   // Get selected totals
@@ -495,6 +500,20 @@ export default function Cart() {
                 <div className="flex items-center justify-between">
                   <CardTitle>Cart Items ({totalItems})</CardTitle>
                   <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        resetSelectionState();
+                        toast({
+                          title: "Selection Reset",
+                          description: "Cart selection state has been reset. Try selecting items now.",
+                        });
+                      }}
+                      className="text-xs"
+                    >
+                      Reset Selection
+                    </Button>
                     <Checkbox
                       id="select-all"
                       checked={selectedItems.size === cartItems.length && cartItems.length > 0}
