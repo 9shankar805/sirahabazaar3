@@ -18,6 +18,12 @@ export async function runSimpleMigrations() {
         name: "Add data column to notifications",
         query: sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS data TEXT`
       },
+
+      // Add firebase_uid column to users table
+      {
+        name: "Add firebase_uid to users table",
+        query: sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS firebase_uid TEXT UNIQUE`
+      },
       
       // Ensure admin_users table exists with minimal schema
       {
