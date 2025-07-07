@@ -6954,6 +6954,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pixabay API Routes
+  app.get("/api/pixabay/search", async (req, res) => {
+    try {
+      const { query = '', page = 1, per_page = 20 } = req.query;
+      
+      if (!query || query.trim() === '') {
+        return res.json({ total: 0, total_pages: 0, results: [] });
+      }
+
+      console.log(`🔍 Pixabay API: Searching for "${query}"`);
+      
+      const result = await pixabayImageService.searchImages(String(query), Number(per_page));
+      
+      if (result && result.results && result.results.length > 0) {
+        console.log(`✅ Pixabay API: Found ${result.results.length} images for "${query}"`);
+        return res.json(result);
+      } else {
+        console.log("No Pixabay results, using placeholder fallback");
+        // Fallback to free image service
+        const freeImages = await freeImageService.searchImages(String(query), Number(per_page));
+        
+        const transformedResult = {
+          total: freeImages.length,
+          total_pages: 1,
+          results: freeImages
+        };
+
+        return res.json(transformedResult);
+      }
+    } catch (error) {
+      console.error("Error searching Pixabay images:", error);
+      
+      // Always fallback to free images on any error
+      try {
+        console.log("Using free image service as fallback due to error");
+        const freeImages = await freeImageService.searchImages(String(query), Number(per_page));
+        
+        const transformedResult = {
+          total: freeImages.length,
+          total_pages: 1,
+          results: freeImages
+        };
+
+        res.json(transformedResult);
+      } catch (fallbackError) {
+        console.error("Fallback image service also failed:", fallbackError);
+        res.status(500).json({ error: "All image services unavailable" });
+      }
+    }
+  });
+
+  app.get("/api/pixabay/category/:category", async (req, res) => {
+    try {
+      const { category } = req.params;
+      const { count = 6 } = req.query;
+      
+      const images = await pixabayImageService.getProductImages(category, Number(count));
+      
+      const transformedResult = {
+        total: images.length,
+        total_pages: 1,
+        results: images
+      };
+      
+      res.json(transformedResult);
+    } catch (error) {
+      console.error("Error fetching Pixabay category images:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/pixabay/random", async (req, res) => {
+    try {
+      const { query = 'product', count = 6 } = req.query;
+      
+      const images = await pixabayImageService.getRandomImages(String(query), Number(count));
+      
+      const transformedResult = {
+        total: images.length,
+        total_pages: 1,
+        results: images
+      };
+      
+      res.json(transformedResult);
+    } catch (error) {
+      console.error("Error fetching random Pixabay images:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/pixabay/track-download", async (req, res) => {
+    try {
+      const { image } = req.body;
+      
+      if (!image || !image.id) {
+        return res.status(400).json({ error: "Invalid image data" });
+      }
+
+      const success = await pixabayImageService.trackDownload(image);
+      res.json({ success });
+    } catch (error) {
+      console.error("Error tracking Pixabay download:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Initialize WebSocket service for real-time tracking

@@ -66,7 +66,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiPost, apiPut, apiDelete } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import ImageUpload from "@/components/ImageUpload";
-import GoogleImageSearch from "@/components/GoogleImageSearch";
+import PixabayImageSearch from "@/components/PixabayImageSearch";
 import { LocationPicker } from "@/components/LocationPicker";
 import type {
   Product,
@@ -1798,7 +1798,7 @@ export default function ShopkeeperDashboard() {
                               <span className="text-sm text-gray-500 px-2">or</span>
                               <div className="flex-1 border-t border-gray-200"></div>
                             </div>
-                            <GoogleImageSearch
+                            <PixabayImageSearch
                               onImageSelect={(imageUrl) => {
                                 const currentImages = field.value || [];
                                 if (currentImages.length < 6) {
@@ -1807,7 +1807,7 @@ export default function ShopkeeperDashboard() {
                               }}
                               category={form.watch('categoryId') ? categories?.find(c => c.id === form.watch('categoryId'))?.name : ''}
                               maxImages={6 - (field.value?.length || 0)}
-                              buttonText="Add from Google"
+                              buttonText="Add from Pixabay"
                             />
                           </div>
                           <FormMessage />
@@ -2868,7 +2868,7 @@ export default function ShopkeeperDashboard() {
                               <span className="text-sm text-gray-500 px-2">or</span>
                               <div className="flex-1 border-t border-gray-200"></div>
                             </div>
-                            <GoogleImageSearch
+                            <PixabayImageSearch
                               onImageSelect={(imageUrl) => {
                                 const currentImages = field.value || [];
                                 if (currentImages.length < 6) {
@@ -2877,7 +2877,7 @@ export default function ShopkeeperDashboard() {
                               }}
                               category={form.watch('categoryId') ? categories?.find(c => c.id === form.watch('categoryId'))?.name : ''}
                               maxImages={6 - (field.value?.length || 0)}
-                              buttonText="Add from Google"
+                              buttonText="Add from Pixabay"
                             />
                           </div>
                           <FormMessage />
