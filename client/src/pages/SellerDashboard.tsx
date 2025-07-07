@@ -40,6 +40,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -2700,6 +2701,9 @@ export default function ShopkeeperDashboard() {
                   <Plus className="h-5 w-5" />
                   {editingProduct ? "Edit Product" : "Add New Product"}
                 </DialogTitle>
+                <DialogDescription>
+                  {editingProduct ? "Update your product details and images" : "Add a new product to your store with images and details"}
+                </DialogDescription>
               </DialogHeader>
               <div className="mt-4">
                 <Form {...form}>

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Clipboard, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { Plus, Clipboard, ExternalLink, Image as ImageIcon, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ManualImageInputProps {
@@ -29,6 +29,7 @@ export function ManualImageInput({
   const [isValidating, setIsValidating] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('food');
+  const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
   // Sample images for different categories to show multiple options
@@ -188,6 +189,21 @@ export function ManualImageInput({
 
   const categories = Object.keys(sampleImages);
 
+  // Filter images based on search query
+  const filteredImages = sampleImages[selectedCategory as keyof typeof sampleImages]?.filter(img =>
+    img.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    img.source.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  // Enhanced search function for external sites
+  const searchExternalSite = (siteName: string, query: string) => {
+    const searchTerm = query || selectedCategory;
+    const site = quickSearchSites.find(s => s.name === siteName);
+    if (site) {
+      window.open(`${site.url}${encodeURIComponent(searchTerm)}`, '_blank');
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -198,14 +214,26 @@ export function ManualImageInput({
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="browse" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="browse">Browse Sample Images</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="browse">Browse Samples</TabsTrigger>
+            <TabsTrigger value="search">Browser Search</TabsTrigger>
             <TabsTrigger value="paste">Paste URL</TabsTrigger>
           </TabsList>
           
           <TabsContent value="browse" className="space-y-4">
             <div className="text-sm text-gray-600 mb-4">
               Choose from sample images or search professional image sites:
+            </div>
+            
+            {/* Search Input */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search images by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
             </div>
             
             {/* Category Selection */}
@@ -215,7 +243,10 @@ export function ManualImageInput({
                   key={category}
                   variant={selectedCategory === category ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setSelectedCategory(category)}
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    setSearchQuery(''); // Clear search when changing category
+                  }}
                   className="text-xs capitalize"
                 >
                   {category}
@@ -225,7 +256,7 @@ export function ManualImageInput({
 
             {/* Sample Images Grid */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-              {sampleImages[selectedCategory as keyof typeof sampleImages]?.map((img, index) => (
+              {filteredImages.length > 0 ? filteredImages.map((img, index) => (
                 <div key={index} className="border rounded-lg overflow-hidden">
                   <img 
                     src={img.url} 
@@ -245,37 +276,95 @@ export function ManualImageInput({
                     </Button>
                   </div>
                 </div>
+              )) : (
+                <div className="col-span-2 text-center py-8 text-gray-500">
+                  <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No images found for "{searchQuery}"</p>
+                  <p className="text-xs mt-1">Try a different search term or browse categories</p>
+                </div>
+              )}
+            </div>
+
+          </TabsContent>
+
+          <TabsContent value="search" className="space-y-4">
+            <div className="text-sm text-gray-600 mb-4">
+              Search professional image sites for custom images:
+            </div>
+            
+            {/* Custom Search Input */}
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="Enter search term (e.g., 'fresh vegetables', 'electronics')"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  if (searchQuery.trim()) {
+                    quickSearchSites.forEach(site => searchExternalSite(site.name, searchQuery));
+                  }
+                }}
+                disabled={!searchQuery.trim()}
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Search All Sites
+              </Button>
+            </div>
+
+            {/* Individual Search Buttons */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {quickSearchSites.map((site) => (
+                <Button
+                  key={site.name}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => searchExternalSite(site.name, searchQuery)}
+                  className="text-sm h-10"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Search {site.name}
+                </Button>
               ))}
             </div>
 
-            {/* Professional Search Sites */}
+            {/* Category Quick Search */}
             <div className="border-t pt-4">
-              <div className="text-sm font-medium mb-2">Find more professional images:</div>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {quickSearchSites.map((site) => (
+              <div className="text-sm font-medium mb-3">Quick Category Search:</div>
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {categories.map((category) => (
                   <Button
-                    key={site.name}
-                    variant="outline"
+                    key={category}
+                    variant="secondary"
                     size="sm"
-                    onClick={() => window.open(`${site.url}${selectedCategory}`, '_blank')}
-                    className="text-xs"
+                    onClick={() => {
+                      setSearchQuery(category);
+                      quickSearchSites.forEach(site => searchExternalSite(site.name, category));
+                    }}
+                    className="text-xs capitalize"
                   >
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    {site.name}
+                    {category}
                   </Button>
                 ))}
               </div>
+            </div>
 
-              <div className="border rounded-lg p-3 bg-gray-50">
-                <h4 className="font-medium mb-2 text-sm">How to get custom images:</h4>
-                <ol className="text-xs text-gray-600 space-y-1">
-                  <li>1. Click any search button above to open image site</li>
-                  <li>2. Find an image you like</li>
-                  <li>3. Right-click → "Open image in new tab"</li>
-                  <li>4. Copy URL from address bar</li>
-                  <li>5. Come back and paste in "Paste URL" tab</li>
-                </ol>
-              </div>
+            <div className="border rounded-lg p-4 bg-blue-50">
+              <h4 className="font-medium mb-2 text-sm flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                How to use Browser Search:
+              </h4>
+              <ol className="text-sm text-gray-700 space-y-1">
+                <li>1. Type your search term above (e.g., "fresh pizza", "smartphone")</li>
+                <li>2. Click "Search All Sites" or choose a specific site</li>
+                <li>3. Find an image you like on the opened website</li>
+                <li>4. Right-click the image → "Open image in new tab"</li>
+                <li>5. Copy the image URL from the address bar</li>
+                <li>6. Return here and paste in the "Paste URL" tab</li>
+              </ol>
             </div>
           </TabsContent>
           
