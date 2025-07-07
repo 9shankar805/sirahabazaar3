@@ -12,6 +12,7 @@ interface CartContextType {
   updateCartItem: (cartItemId: number, quantity: number) => Promise<void>;
   removeFromCart: (cartItemId: number) => Promise<void>;
   clearCart: () => Promise<void>;
+  clearSelectedItems: () => Promise<void>;
   totalAmount: number;
   totalItems: number;
   isLoading: boolean;
@@ -179,6 +180,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await refreshCart();
   };
 
+  const clearSelectedItems = async () => {
+    if (!user) {
+      // Handle guest cart
+      const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+      const selectedItemIds = Array.from(selectedItems);
+      const filteredCart = guestCart.filter((item: any) => !selectedItemIds.includes(item.id));
+      localStorage.setItem('guestCart', JSON.stringify(filteredCart));
+      
+      // Clear selection and refresh cart
+      setSelectedItems(new Set());
+      await refreshCart();
+      return;
+    }
+
+    // Remove each selected item for authenticated users
+    for (const itemId of selectedItems) {
+      try {
+        const response = await fetch(`/api/cart/${itemId}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          console.error(`Failed to remove item ${itemId} from cart`);
+        }
+      } catch (error) {
+        console.error(`Error removing item ${itemId}:`, error);
+      }
+    }
+
+    // Clear selection and refresh cart
+    setSelectedItems(new Set());
+    await refreshCart();
+  };
+
   const totalAmount = cartItems.reduce((sum, item) => {
     if (item.product) {
       return sum + (Number(item.product.price) * item.quantity);
@@ -239,6 +274,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       updateCartItem,
       removeFromCart,
       clearCart,
+      clearSelectedItems,
       totalAmount,
       totalItems,
       isLoading,

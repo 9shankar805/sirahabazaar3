@@ -50,7 +50,7 @@ export default function Checkout() {
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [, setLocation] = useLocation();
-  const { cartItems, totalAmount, clearCart, getSelectedCartItems, getSelectedTotals } = useCart();
+  const { cartItems, totalAmount, clearCart, clearSelectedItems, getSelectedCartItems, getSelectedTotals } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -469,7 +469,7 @@ export default function Checkout() {
         localStorage.setItem('lastOrderId', response.order.id.toString());
       }
 
-      await clearCart();
+      await clearSelectedItems();
       
       toast({
         title: "Order placed successfully!",
