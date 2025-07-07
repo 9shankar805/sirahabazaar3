@@ -32,10 +32,11 @@ export interface PixabayImageSearchResponse {
 
 export class PixabayImageService {
   private baseUrl = 'https://pixabay.com/api/';
-  private apiKey = '47458629-2ac0da0bb3d8055a970a60c54'; // Free public key
+  private apiKey: string;
   
   constructor() {
-    console.log('✅ Pixabay Image Service initialized - Free API with search-specific results');
+    this.apiKey = process.env.PIXABAY_API_KEY || '47458629-2ac0da0bb3d8055a970a60c54';
+    console.log('✅ Pixabay Image Service initialized - API configured');
   }
 
   isConfigured(): boolean {
