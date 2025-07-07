@@ -1,9 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, ExternalLink, Copy, RefreshCw, Home, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ImageBrowserProps {
@@ -14,9 +13,7 @@ interface ImageBrowserProps {
 
 export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: ImageBrowserProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentUrl, setCurrentUrl] = useState('');
   const [selectedSite, setSelectedSite] = useState('google');
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const { toast } = useToast();
 
   const imageSites = {
@@ -63,89 +60,7 @@ export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: Image
     
     const site = imageSites[selectedSite as keyof typeof imageSites];
     const searchUrl = `${site.searchUrl}${encodeURIComponent(searchTerm)}`;
-    setCurrentUrl(searchUrl);
-    
-    if (iframeRef.current) {
-      iframeRef.current.src = searchUrl;
-    }
-  };
-
-  const handleSiteChange = (siteKey: string) => {
-    setSelectedSite(siteKey);
-    const site = imageSites[siteKey as keyof typeof imageSites];
-    setCurrentUrl(site.baseUrl);
-    
-    if (iframeRef.current) {
-      iframeRef.current.src = site.baseUrl;
-    }
-  };
-
-  const handleUrlSubmit = () => {
-    if (!currentUrl.trim()) return;
-    
-    if (iframeRef.current) {
-      iframeRef.current.src = currentUrl;
-    }
-  };
-
-  const handleRefresh = () => {
-    if (iframeRef.current) {
-      iframeRef.current.src = iframeRef.current.src;
-    }
-  };
-
-  const handleGoHome = () => {
-    const site = imageSites[selectedSite as keyof typeof imageSites];
-    setCurrentUrl(site.baseUrl);
-    if (iframeRef.current) {
-      iframeRef.current.src = site.baseUrl;
-    }
-  };
-
-  const handleCopyUrl = () => {
-    if (currentUrl) {
-      navigator.clipboard.writeText(currentUrl).then(() => {
-        toast({
-          title: "URL Copied",
-          description: "Current page URL copied to clipboard"
-        });
-      });
-    }
-  };
-
-  const handleAddFromUrl = () => {
-    if (!currentUrl.trim()) {
-      toast({
-        title: "No URL",
-        description: "Please navigate to an image first",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (selectedImages.includes(currentUrl)) {
-      toast({
-        title: "Duplicate Image",
-        description: "This image URL has already been added",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (maxImages <= 0) {
-      toast({
-        title: "Image Limit Reached",
-        description: "You've reached the maximum number of images",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    onImageSelect(currentUrl);
-    toast({
-      title: "Image Added",
-      description: "Image URL has been successfully added to your product"
-    });
+    window.open(searchUrl, '_blank');
   };
 
   // Quick search categories - including local/regional items
@@ -252,44 +167,39 @@ export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: Image
             ))}
           </div>
 
-          {/* Browser Controls */}
-          <div className="flex gap-2 items-center">
-            <Button variant="outline" size="sm" onClick={handleGoHome}>
-              <Home className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleRefresh}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-            <Input
-              placeholder="Enter URL..."
-              value={currentUrl}
-              onChange={(e) => setCurrentUrl(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleUrlSubmit()}
-              className="flex-1"
-            />
-            <Button variant="outline" size="sm" onClick={handleCopyUrl}>
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
 
-          {/* Browser Frame */}
-          <div className="border rounded-lg overflow-hidden" style={{ height: '500px' }}>
-            <iframe
-              ref={iframeRef}
-              src={imageSites[selectedSite as keyof typeof imageSites].baseUrl}
-              className="w-full h-full"
-              title="Image Browser"
-              onLoad={() => {
-                // Try to get the current URL from iframe (limited due to CORS)
-                try {
-                  if (iframeRef.current?.contentWindow?.location.href) {
-                    setCurrentUrl(iframeRef.current.contentWindow.location.href);
-                  }
-                } catch (e) {
-                  // CORS restriction - this is expected
-                }
-              }}
-            />
+
+          {/* Direct Search Links */}
+          <div className="border rounded-lg p-6 bg-gradient-to-br from-blue-50 to-green-50">
+            <div className="text-center">
+              <h3 className="font-semibold mb-3 text-lg">🔍 Search for Local Items</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Click the buttons below to search for "{searchTerm || 'your product'}" on different sites
+              </p>
+              
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {Object.entries(imageSites).map(([key, site]) => (
+                  <Button
+                    key={key}
+                    variant="outline"
+                    onClick={() => {
+                      const searchUrl = `${site.searchUrl}${encodeURIComponent(searchTerm || 'mustard oil')}`;
+                      window.open(searchUrl, '_blank');
+                    }}
+                    className="flex items-center gap-2 h-12"
+                  >
+                    <span className="text-lg">{site.icon}</span>
+                    <span className="text-sm font-medium">Search on {site.name}</span>
+                  </Button>
+                ))}
+              </div>
+              
+              <div className="p-4 bg-white rounded-lg border border-blue-200">
+                <p className="text-sm font-medium text-blue-800">
+                  <strong>How to get images:</strong> Click any button above → Find your image → Right-click → "Copy image address" → Paste in "Paste URL" tab
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Local Search Helper */}
@@ -316,28 +226,11 @@ export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: Image
             </ol>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <Button
-              onClick={handleAddFromUrl}
-              disabled={maxImages <= 0 || !currentUrl}
-              className="flex-1"
-            >
-              Add Current URL as Image
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => window.open(currentUrl, '_blank')}
-              disabled={!currentUrl}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open in New Tab
-            </Button>
-          </div>
-
-          {/* URL Helper */}
-          <div className="border rounded-lg p-3 bg-yellow-50 text-sm">
-            <p><strong>💡 Pro Tip:</strong> Right-click on any image in the browser above and select "Copy image address" to get the direct image URL. Then paste it in the "Paste URL" tab!</p>
+          {/* Final Instructions */}
+          <div className="border rounded-lg p-4 bg-orange-50 text-center">
+            <p className="text-sm font-medium text-orange-800">
+              🎯 <strong>Next Step:</strong> After finding an image, right-click it → "Copy image address" → Go to "Paste URL" tab → Paste the URL there to add it to your product!
+            </p>
           </div>
         </div>
       </CardContent>
