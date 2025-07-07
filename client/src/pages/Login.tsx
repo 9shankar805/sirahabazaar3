@@ -1,17 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Store, User } from "lucide-react";
-import { FaGoogle, FaFacebook } from "react-icons/fa";
+import { Eye, EyeOff, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { signInWithGoogle, signInWithFacebook, auth } from "@/lib/firebaseAuth";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebaseAuth";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -23,48 +23,10 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [, setLocation] = useLocation();
   const { login } = useAuth();
   const { toast } = useToast();
-
-  // Check for redirect result on component mount
-  useEffect(() => {
-    const checkRedirectResult = async () => {
-      try {
-        const { getRedirectResult } = await import('firebase/auth');
-        const result = await getRedirectResult(auth);
-        
-        if (result && result.user) {
-          console.log('Redirect result found:', result.user);
-          
-          // Process the social login
-          const response = await fetch('/api/auth/social-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: result.user.email,
-              fullName: result.user.displayName,
-              provider: 'google',
-              providerId: result.user.uid,
-              photoUrl: result.user.photoURL
-            }),
-          });
-
-          if (response.ok) {
-            toast({
-              title: "Welcome!",
-              description: "Successfully logged in with Google.",
-            });
-            setLocation("/");
-          }
-        }
-      } catch (error) {
-        console.error('Error checking redirect result:', error);
-      }
-    };
-
-    checkRedirectResult();
-  }, [setLocation, toast]);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -96,50 +58,44 @@ export default function Login() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    // For now, suggest using regular email login while Firebase is being configured
-    toast({
-      title: "Google Login Temporarily Unavailable",
-      description: "Please use email login below while we configure Google authentication.",
-      variant: "destructive",
-    });
-  };
-
-  const handleFacebookLogin = async () => {
-    setIsLoading(true);
-    try {
-      const result = await signInWithFacebook();
-      const user = result.user;
-      
-      // Register user in our backend if they don't exist
-      const response = await fetch('/api/auth/social-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: user.email,
-          fullName: user.displayName,
-          provider: 'facebook',
-          providerId: user.uid,
-          photoUrl: user.photoURL
-        }),
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        toast({
-          title: "Welcome!",
-          description: "Successfully logged in with Facebook.",
-        });
-        setLocation("/");
-      }
-    } catch (error) {
+  const handleForgotPassword = async () => {
+    const email = form.getValues().email;
+    
+    if (!email) {
       toast({
-        title: "Facebook login failed",
-        description: error instanceof Error ? error.message : "Failed to login with Facebook",
+        title: "Email Required",
+        description: "Please enter your email address first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your email for password reset instructions.",
+      });
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      
+      let errorMessage = "Failed to send password reset email.";
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = "No account found with this email address.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Please enter a valid email address.";
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = "Too many requests. Please try again later.";
+      }
+      
+      toast({
+        title: "Password Reset Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsResettingPassword(false);
     }
   };
 
@@ -222,9 +178,15 @@ export default function Login() {
                       Remember me
                     </label>
                   </div>
-                  <a href="#" className="text-sm text-primary hover:underline">
-                    Forgot password?
-                  </a>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm text-primary hover:underline p-0 h-auto"
+                    onClick={handleForgotPassword}
+                    disabled={isResettingPassword}
+                  >
+                    {isResettingPassword ? "Sending..." : "Forgot password?"}
+                  </Button>
                 </div>
 
                 <Button type="submit" className="w-full btn-primary" disabled={isLoading}>
@@ -233,38 +195,7 @@ export default function Login() {
               </form>
             </Form>
 
-            {/* Social Login Options */}
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-                </div>
-              </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleGoogleLogin}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  <FaGoogle className="h-4 w-4 mr-2 text-red-500" />
-                  Google
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleFacebookLogin}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  <FaFacebook className="h-4 w-4 mr-2 text-blue-600" />
-                  Facebook
-                </Button>
-              </div>
-            </div>
 
             <div className="mt-6">
               <div className="text-center">

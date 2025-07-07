@@ -152,6 +152,18 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - → Issue persists: Firebase authentication requires proper Google OAuth client configuration beyond domain authorization
 - → Temporary solution: Google login shows helpful message directing users to email login while Firebase is being configured
 
+### July 7, 2025 - Removed Social Login and Implemented Firebase Email Authentication with Password Reset
+- ✓ Removed Google and Facebook login buttons from both Login and Register pages
+- ✓ Implemented Firebase email authentication with createUserWithEmailAndPassword
+- ✓ Added email verification functionality using sendEmailVerification
+- ✓ Created comprehensive password reset system using sendPasswordResetEmail
+- ✓ Enhanced error handling for Firebase authentication errors (email-already-in-use, weak-password, etc.)
+- ✓ Updated user schema to include firebaseUid field for Firebase integration
+- ✓ Modified registration flow to create Firebase users first, then register in backend
+- ✓ Added proper Firebase error messages for user-friendly feedback
+- ✓ Replaced "Forgot password?" link with functional button that sends reset emails
+- → Authentication now uses Gmail-based Firebase auth with password reset functionality
+
 ### July 7, 2025 - Fixed Auto-Selection Issue and Confirmed Buy Now Functionality
 - ✓ Fixed cart auto-selection issue that was selecting all items when user clicked individual items
 - ✓ Updated auto-selection logic to only trigger on initial cart load, not when items are added
