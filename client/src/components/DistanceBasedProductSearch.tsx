@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Filter, SlidersHorizontal } from "lucide-react";
+import { MapPin, Filter, SlidersHorizontal, Utensils, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { getCurrentUserLocation } from "@/lib/distance";
 import ProductCard from "@/components/ProductCard";
+import { useAppMode } from "@/hooks/useAppMode";
 import type { Product, Store } from "@shared/schema";
 
 interface ProductWithDistance extends Product {
@@ -21,17 +23,30 @@ interface DistanceBasedProductSearchProps {
   searchQuery?: string;
   category?: string;
   className?: string;
+  isRestaurantMode?: boolean;
 }
 
 export default function DistanceBasedProductSearch({ 
   searchQuery = "", 
   category = "",
-  className = ""
+  className = "",
+  isRestaurantMode = false
 }: DistanceBasedProductSearchProps) {
+  const { mode } = useAppMode();
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [sortBy, setSortBy] = useState<string>("distance");
   const [maxDistance, setMaxDistance] = useState<number>(10);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  
+  // Food-specific filters
+  const [spiceLevelFilter, setSpiceLevelFilter] = useState<string>("all");
+  const [dietaryFilter, setDietaryFilter] = useState<string>("all");
+  const [priceRangeFilter, setPriceRangeFilter] = useState<string>("all");
+  const [preparationTimeFilter, setPreparationTimeFilter] = useState<string>("all");
+  const [restaurantFilter, setRestaurantFilter] = useState<string>("all");
+  
+  // Determine if we're in food mode
+  const isFoodMode = mode === 'food' || isRestaurantMode;
 
   // Get user location
   const getUserLocation = async () => {
@@ -109,8 +124,20 @@ export default function DistanceBasedProductSearch({
     };
   });
 
+  // Filter products based on mode and store type
+  const modeFilteredProducts = enrichedProducts.filter((product) => {
+    const store = stores.find((s) => s.id === product.storeId);
+    if (isFoodMode) {
+      // In food mode, only show products from restaurants
+      return store?.storeType === 'restaurant';
+    } else {
+      // In shopping mode, only show products from retail stores
+      return store?.storeType === 'retail';
+    }
+  });
+
   // Filter and sort products
-  const filteredAndSortedProducts = enrichedProducts
+  const filteredAndSortedProducts = modeFilteredProducts
     .filter((product) => {
       // Filter by search query first - this should be the MAIN filter
       if (searchQuery && searchQuery.trim()) {
@@ -118,16 +145,18 @@ export default function DistanceBasedProductSearch({
         const nameMatch = product.name.toLowerCase().includes(searchLower);
         const descriptionMatch = product.description?.toLowerCase().includes(searchLower);
         const categoryMatch = product.category?.toLowerCase().includes(searchLower);
+        const storeNameMatch = product.storeName?.toLowerCase().includes(searchLower);
         
         console.log(`Filtering product "${product.name}" with search "${searchQuery}":`, {
-          nameMatch, descriptionMatch, categoryMatch,
+          nameMatch, descriptionMatch, categoryMatch, storeNameMatch,
           name: product.name,
           description: product.description,
-          category: product.category
+          category: product.category,
+          storeName: product.storeName
         });
         
         // If we have a search query, ONLY show products that match it
-        const matchesSearch = nameMatch || descriptionMatch || categoryMatch;
+        const matchesSearch = nameMatch || descriptionMatch || categoryMatch || storeNameMatch;
         if (!matchesSearch) {
           console.log(`❌ Product "${product.name}" filtered out - no match`);
           return false;
@@ -139,6 +168,62 @@ export default function DistanceBasedProductSearch({
       if (category && category.trim()) {
         const categoryLower = category.toLowerCase();
         if (!product.category?.toLowerCase().includes(categoryLower)) {
+          return false;
+        }
+      }
+
+      // Food-specific filters (only in food mode)
+      if (isFoodMode) {
+        // Spice level filter
+        if (spiceLevelFilter !== "all" && product.spiceLevel !== spiceLevelFilter) {
+          return false;
+        }
+
+        // Dietary filter
+        if (dietaryFilter === "vegetarian" && !product.isVegetarian) {
+          return false;
+        }
+        if (dietaryFilter === "vegan" && !product.isVegan) {
+          return false;
+        }
+
+        // Price range filter
+        if (priceRangeFilter !== "all") {
+          const price = parseFloat(product.price.replace(/[^\d.]/g, ''));
+          switch (priceRangeFilter) {
+            case "under-100":
+              if (price >= 100) return false;
+              break;
+            case "100-300":
+              if (price < 100 || price > 300) return false;
+              break;
+            case "300-500":
+              if (price < 300 || price > 500) return false;
+              break;
+            case "over-500":
+              if (price <= 500) return false;
+              break;
+          }
+        }
+
+        // Preparation time filter
+        if (preparationTimeFilter !== "all") {
+          const prepTime = parseInt(product.preparationTime || "0");
+          switch (preparationTimeFilter) {
+            case "quick":
+              if (prepTime > 20) return false;
+              break;
+            case "medium":
+              if (prepTime <= 20 || prepTime > 45) return false;
+              break;
+            case "slow":
+              if (prepTime <= 45) return false;
+              break;
+          }
+        }
+
+        // Restaurant filter
+        if (restaurantFilter !== "all" && product.storeId.toString() !== restaurantFilter) {
           return false;
         }
       }
@@ -169,8 +254,27 @@ export default function DistanceBasedProductSearch({
       }
     });
 
+  // Get unique restaurants for food mode
+  const availableRestaurants = [...new Set(
+    modeFilteredProducts
+      .map(p => ({ id: p.storeId, name: p.storeName }))
+      .filter(r => r.name !== 'Unknown Store')
+  )];
+
   const FilterControls = () => (
     <div className="space-y-4">
+      {/* Mode Indicator */}
+      <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        {isFoodMode ? (
+          <Utensils className="h-4 w-4 text-orange-600" />
+        ) : (
+          <ShoppingBag className="h-4 w-4 text-blue-600" />
+        )}
+        <span className="text-sm font-medium text-gray-700">
+          {isFoodMode ? 'Food Mode: Restaurant Items Only' : 'Shopping Mode: Retail Items Only'}
+        </span>
+      </div>
+
       {/* Location Status */}
       <div className="space-y-2">
         <Label>Location</Label>
@@ -216,6 +320,94 @@ export default function DistanceBasedProductSearch({
         </div>
       )}
 
+      {/* Food-specific filters */}
+      {isFoodMode && (
+        <>
+          {/* Restaurant Filter */}
+          <div className="space-y-2">
+            <Label>Restaurant</Label>
+            <Select value={restaurantFilter} onValueChange={setRestaurantFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Restaurants" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Restaurants</SelectItem>
+                {availableRestaurants.map((restaurant) => (
+                  <SelectItem key={restaurant.id} value={restaurant.id.toString()}>
+                    {restaurant.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Spice Level Filter */}
+          <div className="space-y-2">
+            <Label>Spice Level</Label>
+            <Select value={spiceLevelFilter} onValueChange={setSpiceLevelFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Spice Levels" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Spice Levels</SelectItem>
+                <SelectItem value="mild">Mild</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="hot">Hot</SelectItem>
+                <SelectItem value="extra_hot">Extra Hot</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Dietary Filter */}
+          <div className="space-y-2">
+            <Label>Dietary Options</Label>
+            <Select value={dietaryFilter} onValueChange={setDietaryFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Dietary Options" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Options</SelectItem>
+                <SelectItem value="vegetarian">Vegetarian</SelectItem>
+                <SelectItem value="vegan">Vegan</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Price Range Filter */}
+          <div className="space-y-2">
+            <Label>Price Range</Label>
+            <Select value={priceRangeFilter} onValueChange={setPriceRangeFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Prices" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Prices</SelectItem>
+                <SelectItem value="under-100">Under ₹100</SelectItem>
+                <SelectItem value="100-300">₹100 - ₹300</SelectItem>
+                <SelectItem value="300-500">₹300 - ₹500</SelectItem>
+                <SelectItem value="over-500">Over ₹500</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Preparation Time Filter */}
+          <div className="space-y-2">
+            <Label>Preparation Time</Label>
+            <Select value={preparationTimeFilter} onValueChange={setPreparationTimeFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Times" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Times</SelectItem>
+                <SelectItem value="quick">Quick (≤20 min)</SelectItem>
+                <SelectItem value="medium">Medium (21-45 min)</SelectItem>
+                <SelectItem value="slow">Slow (45+ min)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </>
+      )}
+
       {/* Sort Options */}
       <div className="space-y-2">
         <Label>Sort By</Label>
@@ -239,16 +431,28 @@ export default function DistanceBasedProductSearch({
       {/* Header with Filter Button */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold">
-            {searchQuery ? `Search results for "${searchQuery}"` : "Products"}
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            {isFoodMode ? (
+              <Utensils className="h-5 w-5 text-orange-600" />
+            ) : (
+              <ShoppingBag className="h-5 w-5 text-blue-600" />
+            )}
+            {searchQuery ? `Search results for "${searchQuery}"` : (isFoodMode ? "Food Items" : "Products")}
           </h2>
           <p className="text-sm text-muted-foreground">
             {userLocation 
-              ? `Showing ${filteredAndSortedProducts.length} products sorted by distance`
-              : `Showing ${filteredAndSortedProducts.length} products`
+              ? `Showing ${filteredAndSortedProducts.length} ${isFoodMode ? 'food items' : 'products'} sorted by distance`
+              : `Showing ${filteredAndSortedProducts.length} ${isFoodMode ? 'food items' : 'products'}`
             }
             {searchQuery && ` • Searching for: "${searchQuery}"`}
           </p>
+          {isFoodMode && (
+            <p className="text-xs text-orange-600 mt-1">
+              <Badge variant="outline" className="text-orange-600 border-orange-200">
+                Restaurant Items Only
+              </Badge>
+            </p>
+          )}
         </div>
 
         {/* Mobile Filter Sheet */}

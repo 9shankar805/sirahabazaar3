@@ -66,6 +66,7 @@ export default function Products() {
         <DistanceBasedProductSearch 
           searchQuery={searchQuery}
           category={categoryQuery || ""}
+          isRestaurantMode={mode === 'food'}
         />
       </div>
     </div>
