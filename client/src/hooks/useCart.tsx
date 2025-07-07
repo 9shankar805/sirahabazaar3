@@ -18,6 +18,10 @@ interface CartContextType {
   refreshCart: () => Promise<void>;
   deliveryFee: number;
   setDeliveryFee: (fee: number) => void;
+  selectedItems: Set<number>;
+  setSelectedItems: (items: Set<number>) => void;
+  getSelectedCartItems: () => CartItemWithProduct[];
+  getSelectedTotals: () => { amount: number; items: number };
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -26,6 +30,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(0);
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const { user } = useAuth();
 
   const refreshCart = async () => {
@@ -182,6 +187,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  // Helper functions for selected items
+  const getSelectedCartItems = () => {
+    return cartItems.filter(item => selectedItems.has(item.id));
+  };
+
+  const getSelectedTotals = () => {
+    const selectedCartItems = getSelectedCartItems();
+    const amount = selectedCartItems.reduce((sum, item) => {
+      if (item.product) {
+        return sum + (Number(item.product.price) * item.quantity);
+      }
+      return sum;
+    }, 0);
+    const items = selectedCartItems.reduce((sum, item) => sum + item.quantity, 0);
+    return { amount, items };
+  };
+
+  // Auto-select all items when cart items change
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      setSelectedItems(new Set(cartItems.map(item => item.id)));
+    }
+  }, [cartItems]);
+
   return (
     <CartContext.Provider value={{
       cartItems,
@@ -195,6 +224,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       refreshCart,
       deliveryFee,
       setDeliveryFee,
+      selectedItems,
+      setSelectedItems,
+      getSelectedCartItems,
+      getSelectedTotals,
     }}>
       {children}
     </CartContext.Provider>

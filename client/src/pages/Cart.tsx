@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +14,18 @@ import { calculateDistance, getCoordinatesFromAddress, geocodeAddressWithValidat
 import { useQuery } from "@tanstack/react-query";
 
 export default function Cart() {
-  const { cartItems, updateCartItem, removeFromCart, totalAmount, totalItems, isLoading } = useCart();
+  const { 
+    cartItems, 
+    updateCartItem, 
+    removeFromCart, 
+    totalAmount, 
+    totalItems, 
+    isLoading,
+    selectedItems,
+    setSelectedItems,
+    getSelectedCartItems,
+    getSelectedTotals
+  } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
   const [deliveryAddress, setDeliveryAddress] = useState("");
@@ -35,6 +47,28 @@ export default function Cart() {
   const { data: deliveryZones = [] } = useQuery({
     queryKey: ["/api/delivery-zones"],
   });
+
+  // Selection helper functions
+  const toggleSelectItem = (itemId: number) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(itemId)) {
+      newSelected.delete(itemId);
+    } else {
+      newSelected.add(itemId);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedItems.size === cartItems.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(cartItems.map(item => item.id)));
+    }
+  };
+
+  // Get selected totals
+  const { amount: selectedTotalAmount, items: selectedTotalItems } = getSelectedTotals();
 
   // Debounced address suggestion fetching
   useEffect(() => {
@@ -458,12 +492,30 @@ export default function Cart() {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Cart Items ({totalItems})</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Cart Items ({totalItems})</CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="select-all"
+                      checked={selectedItems.size === cartItems.length && cartItems.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                    <Label htmlFor="select-all" className="text-sm font-medium">
+                      Select All
+                    </Label>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg">
                     <div className="flex items-center space-x-3 w-full sm:w-auto">
+                      <Checkbox
+                        id={`item-${item.id}`}
+                        checked={selectedItems.has(item.id)}
+                        onCheckedChange={() => toggleSelectItem(item.id)}
+                        className="flex-shrink-0"
+                      />
                       <img
                         src={item.product?.images?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100"}
                         alt={item.product?.name || "Product"}
@@ -662,9 +714,14 @@ export default function Cart() {
                 <Separator className="my-4" />
 
                 <div className="space-y-3 mb-4">
+                  {selectedItems.size < cartItems.length && (
+                    <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
+                      Selected {selectedItems.size} of {cartItems.length} items
+                    </div>
+                  )}
                   <div className="flex justify-between">
-                    <span>Subtotal ({totalItems} items)</span>
-                    <span>₹{totalAmount.toLocaleString()}</span>
+                    <span>Subtotal ({selectedTotalItems} items)</span>
+                    <span>₹{selectedTotalAmount.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Delivery Fee</span>
@@ -682,7 +739,7 @@ export default function Cart() {
                     <span>Total</span>
                     <span>
                       {deliveryFee > 0 || (userLocation || deliveryAddress.trim()) ? 
-                        `₹${(totalAmount + deliveryFee).toLocaleString()}` : 
+                        `₹${(selectedTotalAmount + deliveryFee).toLocaleString()}` : 
                         "Enter address for total"
                       }
                     </span>
@@ -690,10 +747,18 @@ export default function Cart() {
                 </div>
                 
                 <Link href="/checkout">
-                  <Button className="w-full btn-primary">
-                    Proceed to Checkout
+                  <Button 
+                    className="w-full btn-primary" 
+                    disabled={selectedItems.size === 0}
+                  >
+                    Proceed to Checkout ({selectedItems.size} items)
                   </Button>
                 </Link>
+                {selectedItems.size === 0 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Select at least one item to proceed
+                  </p>
+                )}
                 
                 <Link href="/products">
                   <Button variant="outline" className="w-full mt-3">
