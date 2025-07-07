@@ -15,11 +15,17 @@ interface ImageBrowserProps {
 export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: ImageBrowserProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentUrl, setCurrentUrl] = useState('');
-  const [selectedSite, setSelectedSite] = useState('unsplash');
+  const [selectedSite, setSelectedSite] = useState('google');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { toast } = useToast();
 
   const imageSites = {
+    google: {
+      name: 'Google Images',
+      baseUrl: 'https://images.google.com',
+      searchUrl: 'https://images.google.com/search?q=',
+      icon: '🔍'
+    },
     unsplash: {
       name: 'Unsplash',
       baseUrl: 'https://unsplash.com',
@@ -32,17 +38,23 @@ export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: Image
       searchUrl: 'https://pixabay.com/images/search/',
       icon: '🖼️'
     },
-    pexels: {
-      name: 'Pexels',
-      baseUrl: 'https://pexels.com',
-      searchUrl: 'https://pexels.com/search/',
-      icon: '📸'
+    amazon: {
+      name: 'Amazon India',
+      baseUrl: 'https://amazon.in',
+      searchUrl: 'https://amazon.in/s?k=',
+      icon: '🛒'
     },
-    freepik: {
-      name: 'Freepik',
-      baseUrl: 'https://freepik.com',
-      searchUrl: 'https://freepik.com/search?format=search&query=',
-      icon: '🎨'
+    flipkart: {
+      name: 'Flipkart',
+      baseUrl: 'https://flipkart.com',
+      searchUrl: 'https://flipkart.com/search?q=',
+      icon: '🛍️'
+    },
+    bigbasket: {
+      name: 'BigBasket',
+      baseUrl: 'https://bigbasket.com',
+      searchUrl: 'https://bigbasket.com/ps/?q=',
+      icon: '🥬'
     }
   };
 
@@ -136,10 +148,12 @@ export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: Image
     });
   };
 
-  // Quick search categories
+  // Quick search categories - including local/regional items
   const quickCategories = [
-    'food', 'electronics', 'clothing', 'furniture', 'beauty', 'sports',
-    'pizza', 'burger', 'smartphone', 'laptop', 'shoes', 'chair'
+    'mustard oil', 'masala powder', 'ghee', 'rice', 'dal', 'spices',
+    'tea leaves', 'cooking oil', 'flour', 'sugar', 'salt', 'turmeric',
+    'electronics', 'mobile phone', 'clothing', 'furniture', 'beauty',
+    'traditional items', 'local products', 'indian spices', 'nepali items'
   ];
 
   return (
@@ -182,9 +196,42 @@ export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: Image
             </Button>
           </div>
 
+          {/* Specific Local Item Suggestions */}
+          <div className="mb-4">
+            <div className="text-sm font-medium mb-2">🏪 Popular Local Items:</div>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {[
+                'mashal tel mustard oil',
+                'dhara mustard oil',
+                'fortune mustard oil',
+                'patanjali mustard oil',
+                'MDH masala powder',
+                'everest spices'
+              ].map((item) => (
+                <Button
+                  key={item}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm(item);
+                    const site = imageSites[selectedSite as keyof typeof imageSites];
+                    const searchUrl = `${site.searchUrl}${encodeURIComponent(item)}`;
+                    setCurrentUrl(searchUrl);
+                    if (iframeRef.current) {
+                      iframeRef.current.src = searchUrl;
+                    }
+                  }}
+                  className="text-xs text-left justify-start"
+                >
+                  {item}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           {/* Quick Category Buttons */}
-          <div className="grid grid-cols-4 gap-1 mb-4">
-            {quickCategories.map((category) => (
+          <div className="grid grid-cols-3 gap-1 mb-4">
+            {quickCategories.slice(0, 12).map((category) => (
               <Button
                 key={category}
                 variant="secondary"
@@ -245,15 +292,27 @@ export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: Image
             />
           </div>
 
+          {/* Local Search Helper */}
+          <div className="border rounded-lg p-4 bg-green-50 mb-4">
+            <h4 className="font-medium mb-2 text-sm">🔍 Search Tips for Local Items:</h4>
+            <div className="text-sm text-gray-700 space-y-1">
+              <p><strong>For "mashal tel mustard oil":</strong> Try searching "mustard oil bottle", "cooking oil", "sarso tel"</p>
+              <p><strong>For local spices:</strong> Search brand names like "MDH masala", "Everest spices", "local spice powder"</p>
+              <p><strong>Use multiple terms:</strong> "mustard oil brand bottle", "indian cooking oil packaging"</p>
+              <p><strong>Try different sites:</strong> Amazon/Flipkart for product images, Google Images for variety</p>
+            </div>
+          </div>
+
           {/* Instructions */}
           <div className="border rounded-lg p-4 bg-blue-50">
             <h4 className="font-medium mb-2 text-sm">How to copy image URLs:</h4>
             <ol className="text-sm text-gray-700 space-y-1">
               <li>1. Search for images using the search bar above</li>
               <li>2. Click on an image you like in the browser</li>
-              <li>3. Right-click the image → "Open image in new tab"</li>
-              <li>4. Copy the image URL from the new tab's address bar</li>
+              <li>3. Right-click the image → "Copy image address" or "Open image in new tab"</li>
+              <li>4. If opened in new tab, copy the image URL from address bar</li>
               <li>5. Paste it in the "Paste URL" tab to add to your product</li>
+              <li>6. Or use "Add Current URL" button if the page shows the product</li>
             </ol>
           </div>
 
@@ -274,6 +333,11 @@ export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: Image
               <ExternalLink className="h-4 w-4 mr-2" />
               Open in New Tab
             </Button>
+          </div>
+
+          {/* URL Helper */}
+          <div className="border rounded-lg p-3 bg-yellow-50 text-sm">
+            <p><strong>💡 Pro Tip:</strong> Right-click on any image in the browser above and select "Copy image address" to get the direct image URL. Then paste it in the "Paste URL" tab!</p>
           </div>
         </div>
       </CardContent>

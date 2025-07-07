@@ -120,20 +120,20 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### July 7, 2025 - Manual Image Input System Implementation
-- ✓ Replaced embedded browser approach due to CORS/security restrictions blocking iframe content
-- ✓ Created comprehensive manual image input system with multiple sample images per category
-- ✓ Built tabbed interface: "Browse Sample Images" tab with 6 images per category + "Paste URL" tab
-- ✓ Added 6 categories (food, electronics, clothing, furniture, beauty, sports) with 6 curated Unsplash images each
-- ✓ Implemented one-click "Add Image" buttons for each sample image with duplicate prevention
-- ✓ Enhanced professional search sites integration (Unsplash, Pixabay, Pexels, Freepik) with category-specific searches
-- ✓ Added automatic URL validation and image preview functionality for pasted URLs
-- ✓ Created clipboard paste button with error handling for manual URL input
-- ✓ Updated seller dashboard to use ManualImageInput component replacing previous API integrations
-- ✓ Provided clear instructions for finding custom images: search → right-click → open in new tab → copy URL → paste
-- ✓ Solved the "content blocked" issue by removing embedded iframe and providing direct external links instead
-- ✓ System now shows multiple related images (36 total sample images across 6 categories) for easy selection
-- → Manual image system provides both quick selection from samples and custom URL input functionality
+### July 7, 2025 - Enhanced Local Image Browser Implementation
+- ✓ Created embedded browser component with iframe for direct image searching within dashboard
+- ✓ Added Google Images as primary search engine for comprehensive local item coverage
+- ✓ Integrated Amazon India, Flipkart, and BigBasket for product-specific image searches
+- ✓ Added specific local item suggestions: "mashal tel mustard oil", "dhara mustard oil", "patanjali mustard oil"
+- ✓ Enhanced search categories with Indian/Nepali local products: mustard oil, masala powder, ghee, spices
+- ✓ Created 4-tab interface: Browser (iframe), Samples, Search, and Paste URL
+- ✓ Added browser controls: site selection, search bar, refresh, home, URL bar, and copy functionality
+- ✓ Implemented quick-click buttons for popular local brands and products
+- ✓ Added comprehensive search tips for finding local items like "mashal tel mustard oil"
+- ✓ Enhanced instructions with right-click "Copy image address" functionality
+- ✓ Created pro tips section for efficient URL extraction from images
+- ✓ Fixed seller dashboard console errors and Dialog warnings
+- → Users can now search and find images for any local product including region-specific items not available in sample collections
 
 ### July 7, 2025 - Search-Specific Image System Implementation (Previous)
 - ✓ Successfully migrated from Unsplash API to Google Custom Search API for product image functionality
