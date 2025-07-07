@@ -20,6 +20,16 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789:web:abcdef"
 };
 
+// Debug Firebase configuration
+console.log('Firebase config loaded:', {
+  apiKey: firebaseConfig.apiKey ? 'Present' : 'Missing',
+  authDomain: firebaseConfig.authDomain,
+  projectId: firebaseConfig.projectId,
+  storageBucket: firebaseConfig.storageBucket,
+  messagingSenderId: firebaseConfig.messagingSenderId,
+  appId: firebaseConfig.appId ? 'Present' : 'Missing'
+});
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
@@ -28,9 +38,23 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const facebookProvider = new FacebookAuthProvider();
 
+// Configure Google provider
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+googleProvider.setCustomParameters({
+  'prompt': 'select_account'
+});
+
 // Auth functions
-export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
-export const signInWithFacebook = () => signInWithPopup(auth, facebookProvider);
+export const signInWithGoogle = () => {
+  console.log('Attempting Google sign-in with popup...');
+  return signInWithPopup(auth, googleProvider);
+};
+
+export const signInWithFacebook = () => {
+  console.log('Attempting Facebook sign-in with popup...');
+  return signInWithPopup(auth, facebookProvider);
+};
 export const signOutUser = () => signOut(auth);
 
 // Email/password auth

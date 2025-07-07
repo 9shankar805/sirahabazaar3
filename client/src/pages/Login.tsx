@@ -60,8 +60,15 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
+      console.log('Starting Google login...');
       const result = await signInWithGoogle();
       const user = result.user;
+      
+      console.log('Google login successful, user:', {
+        email: user.email,
+        displayName: user.displayName,
+        uid: user.uid
+      });
       
       // Register user in our backend if they don't exist
       const response = await fetch('/api/auth/social-login', {
@@ -78,18 +85,40 @@ export default function Login() {
 
       if (response.ok) {
         const userData = await response.json();
-        // Update auth state with backend user data
-        // You'll need to update your auth hook to handle this
+        console.log('Backend registration successful:', userData);
+        
         toast({
           title: "Welcome!",
           description: "Successfully logged in with Google.",
         });
         setLocation("/");
+      } else {
+        const errorData = await response.json();
+        console.error('Backend registration failed:', errorData);
+        throw new Error(errorData.error || 'Backend registration failed');
       }
     } catch (error) {
+      console.error('Google login error:', error);
+      
+      let errorMessage = "Failed to login with Google";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Handle specific Firebase auth errors
+        if (error.message.includes('auth/popup-closed-by-user')) {
+          errorMessage = "Login was cancelled. Please try again.";
+        } else if (error.message.includes('auth/popup-blocked')) {
+          errorMessage = "Pop-up blocked. Please allow pop-ups and try again.";
+        } else if (error.message.includes('auth/network-request-failed')) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        } else if (error.message.includes('auth/unauthorized-domain')) {
+          errorMessage = "This domain is not authorized for Google login.";
+        }
+      }
+      
       toast({
         title: "Google login failed",
-        description: error instanceof Error ? error.message : "Failed to login with Google",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
