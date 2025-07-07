@@ -1805,7 +1805,7 @@ export default function ShopkeeperDashboard() {
                                   field.onChange([...currentImages, imageUrl]);
                                 }
                               }}
-                              category={form.watch('categoryId') ? categories?.find(c => c.id === form.watch('categoryId'))?.name : ''}
+                              selectedImages={field.value || []}
                               maxImages={6 - (field.value?.length || 0)}
                               buttonText="Add Images"
                             />
@@ -2875,7 +2875,7 @@ export default function ShopkeeperDashboard() {
                                   field.onChange([...currentImages, imageUrl]);
                                 }
                               }}
-                              category={form.watch('categoryId') ? categories?.find(c => c.id === form.watch('categoryId'))?.name : ''}
+                              selectedImages={field.value || []}
                               maxImages={6 - (field.value?.length || 0)}
                               buttonText="Add Images"
                             />
