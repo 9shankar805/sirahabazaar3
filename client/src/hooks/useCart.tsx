@@ -205,7 +205,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
 
         if (!response.ok) {
-          console.error(`Failed to remove item ${item.id} from cart`);
+          // Silently handle 404 errors (item already deleted)
+          if (response.status !== 404) {
+            console.error(`Failed to remove item ${item.id} from cart`);
+          }
         }
       } catch (error) {
         console.error(`Error removing item ${item.id}:`, error);

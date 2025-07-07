@@ -1185,8 +1185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Clear customer's cart
-      await storage.clearCart(normalizedOrder.customerId);
+      // Note: Cart clearing is now handled by frontend for selective item removal
 
       // Send notifications for all created orders
       for (const createdOrder of createdOrders) {
@@ -4519,8 +4518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Clear customer's cart
-      await storage.clearCart(orderData.customerId);
+      // Note: Cart clearing is now handled by frontend for selective item removal
 
       // Create order tracking
       await storage.createOrderTracking({
