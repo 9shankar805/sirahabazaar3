@@ -67,7 +67,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiPost, apiPut, apiDelete } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import ImageUpload from "@/components/ImageUpload";
-import { ManualImageInput } from "@/components/ManualImageInput";
+import { UnifiedImageUpload } from "@/components/UnifiedImageUpload";
 import { LocationPicker } from "@/components/LocationPicker";
 import type {
   Product,
@@ -1799,7 +1799,7 @@ export default function ShopkeeperDashboard() {
                               <span className="text-sm text-gray-500 px-2">or</span>
                               <div className="flex-1 border-t border-gray-200"></div>
                             </div>
-                            <ManualImageInput
+                            <UnifiedImageUpload
                               onImageSelect={(imageUrl) => {
                                 const currentImages = field.value || [];
                                 if (currentImages.length < 6) {
@@ -2872,7 +2872,7 @@ export default function ShopkeeperDashboard() {
                               <span className="text-sm text-gray-500 px-2">or</span>
                               <div className="flex-1 border-t border-gray-200"></div>
                             </div>
-                            <ManualImageInput
+                            <UnifiedImageUpload
                               onImageSelect={(imageUrl) => {
                                 const currentImages = field.value || [];
                                 if (currentImages.length < 6) {

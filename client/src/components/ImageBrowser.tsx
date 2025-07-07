@@ -88,7 +88,7 @@ export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: Image
                 key={key}
                 variant={selectedSite === key ? "default" : "outline"}
                 size="sm"
-                onClick={() => handleSiteChange(key)}
+                onClick={() => setSelectedSite(key)}
                 className="text-xs"
               >
                 <span className="mr-1">{site.icon}</span>
@@ -131,10 +131,7 @@ export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: Image
                     setSearchTerm(item);
                     const site = imageSites[selectedSite as keyof typeof imageSites];
                     const searchUrl = `${site.searchUrl}${encodeURIComponent(item)}`;
-                    setCurrentUrl(searchUrl);
-                    if (iframeRef.current) {
-                      iframeRef.current.src = searchUrl;
-                    }
+                    window.open(searchUrl, '_blank');
                   }}
                   className="text-xs text-left justify-start"
                 >
@@ -155,10 +152,7 @@ export function ImageBrowser({ onImageSelect, selectedImages, maxImages }: Image
                   setSearchTerm(category);
                   const site = imageSites[selectedSite as keyof typeof imageSites];
                   const searchUrl = `${site.searchUrl}${encodeURIComponent(category)}`;
-                  setCurrentUrl(searchUrl);
-                  if (iframeRef.current) {
-                    iframeRef.current.src = searchUrl;
-                  }
+                  window.open(searchUrl, '_blank');
                 }}
                 className="text-xs capitalize"
               >
