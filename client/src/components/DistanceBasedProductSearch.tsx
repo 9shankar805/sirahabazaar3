@@ -56,7 +56,8 @@ export default function DistanceBasedProductSearch({
       searchQuery, 
       category,
       searchQueryLength: searchQuery.length,
-      searchQueryTrimmed: searchQuery.trim()
+      searchQueryTrimmed: searchQuery.trim(),
+      isEmpty: !searchQuery || searchQuery.trim() === ''
     });
   }, [searchQuery, category]);
 
