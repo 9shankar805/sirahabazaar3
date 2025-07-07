@@ -37,7 +37,7 @@ export default function SearchWithSuggestions({
       setShowSuggestions(false);
     };
     setClearSearchCallback(clearSearch);
-  }, [setClearSearchCallback]);
+  }, []); // Remove setClearSearchCallback dependency to prevent infinite re-renders
 
   const { data: suggestions } = useQuery<SearchSuggestions>({
     queryKey: ['/api/search/suggestions', searchQuery],

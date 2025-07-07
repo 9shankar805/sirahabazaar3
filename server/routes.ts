@@ -34,6 +34,37 @@ import { eq, desc, and, gte } from "drizzle-orm";
 // Initialize real-time tracking service
 const realTimeTrackingService = new RealTimeTrackingService();
 
+// Helper function to check and update special offers for restaurant items
+async function checkAndUpdateSpecialOffer(productData: any): Promise<void> {
+  try {
+    // Check if this is a restaurant item (food) with original price and current price
+    if (productData.productType === 'food' && productData.originalPrice && productData.price) {
+      const originalPrice = parseFloat(productData.originalPrice);
+      const currentPrice = parseFloat(productData.price);
+      
+      // Calculate discount percentage
+      const discountPercentage = ((originalPrice - currentPrice) / originalPrice) * 100;
+      
+      // If discount is above 30%, automatically mark as special offer
+      if (discountPercentage > 30) {
+        productData.isOnOffer = true;
+        productData.offerPercentage = Math.round(discountPercentage);
+        
+        // Set offer end date if not already set (default to 7 days from now)
+        if (!productData.offerEndDate) {
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + 7);
+          productData.offerEndDate = endDate.toISOString().split('T')[0];
+        }
+        
+        console.log(`Auto-marked restaurant item "${productData.name}" as special offer (${Math.round(discountPercentage)}% discount)`);
+      }
+    }
+  } catch (error) {
+    console.error('Error checking special offer:', error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Global error handling middleware
   app.use((err: any, req: any, res: any, next: any) => {
@@ -500,6 +531,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .replace(/^-+|-+$/g, '') + '-' + Date.now();
       }
 
+      // Check if this is a restaurant item with above 30% discount
+      await checkAndUpdateSpecialOffer(productData);
+
       const product = await storage.createProduct(productData);
       res.json(product);
     } catch (error) {
@@ -515,6 +549,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
+      
+      // Check if this is a restaurant item with above 30% discount
+      await checkAndUpdateSpecialOffer(updates);
+
       const product = await storage.updateProduct(id, updates);
 
       if (!product) {
@@ -539,6 +577,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete product" });
+    }
+  });
+
+  // Special offers endpoint
+  app.get("/api/products/special-offers", async (req, res) => {
+    try {
+      const products = await storage.getAllProducts();
+      
+      // Filter products that are marked as special offers
+      const specialOffers = products.filter(product => product.isOnOffer);
+      
+      res.json(specialOffers);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch special offers" });
+    }
+  });
+
+  // Update restaurant items with above 30% discount as special offers
+  app.post("/api/products/update-restaurant-offers", async (req, res) => {
+    try {
+      const products = await storage.getAllProducts();
+      let updatedCount = 0;
+      
+      // Process restaurant items (food type) to check for special offers
+      for (const product of products) {
+        if (product.productType === 'food' && product.originalPrice && product.price) {
+          const originalPrice = parseFloat(product.originalPrice);
+          const currentPrice = parseFloat(product.price);
+          
+          // Calculate discount percentage
+          const discountPercentage = ((originalPrice - currentPrice) / originalPrice) * 100;
+          
+          // If discount is above 30% and not already marked as special offer
+          if (discountPercentage > 30 && !product.isOnOffer) {
+            const updateData = {
+              isOnOffer: true,
+              offerPercentage: Math.round(discountPercentage),
+              offerEndDate: product.offerEndDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            };
+            
+            await storage.updateProduct(product.id, updateData);
+            updatedCount++;
+            
+            console.log(`Updated restaurant item "${product.name}" as special offer (${Math.round(discountPercentage)}% discount)`);
+          }
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `Updated ${updatedCount} restaurant items as special offers`,
+        updatedCount 
+      });
+    } catch (error) {
+      console.error("Error updating restaurant offers:", error);
+      res.status(500).json({ error: "Failed to update restaurant offers" });
     }
   });
 

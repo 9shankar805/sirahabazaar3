@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 
 type AppMode = 'shopping' | 'food';
@@ -18,14 +18,14 @@ export function AppModeProvider({ children }: { children: ReactNode }) {
   const [clearSearchCallback, setClearSearchCallback] = useState<(() => void) | null>(null);
 
   // Function to clear search when mode changes
-  const clearSearchOnModeChange = () => {
+  const clearSearchOnModeChange = useCallback(() => {
     if (clearSearchCallback) {
       clearSearchCallback();
     }
-  };
+  }, [clearSearchCallback]);
 
   // Enhanced setMode function with automatic navigation and search clearing
-  const handleSetMode = (newMode: AppMode) => {
+  const handleSetMode = useCallback((newMode: AppMode) => {
     const currentMode = mode;
     setMode(newMode);
     
@@ -42,14 +42,18 @@ export function AppModeProvider({ children }: { children: ReactNode }) {
         setLocation('/');
       }
     }
-  };
+  }, [mode, clearSearchOnModeChange, setLocation]);
+
+  const handleSetClearSearchCallback = useCallback((callback: () => void) => {
+    setClearSearchCallback(() => callback);
+  }, []);
 
   return (
     <AppModeContext.Provider value={{ 
       mode, 
       setMode: handleSetMode,
       clearSearchOnModeChange,
-      setClearSearchCallback: (callback: () => void) => setClearSearchCallback(() => callback)
+      setClearSearchCallback: handleSetClearSearchCallback
     }}>
       {children}
     </AppModeContext.Provider>
