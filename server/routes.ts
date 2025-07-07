@@ -12,6 +12,7 @@ import { hereMapService } from "./hereMapService";
 import { RealTimeTrackingService } from "./services/realTimeTrackingService";
 import PushNotificationService from "./pushNotificationService";
 import { freeImageService } from "./freeImageService";
+import { googleImageService } from "./googleImageService";
 
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
@@ -6689,7 +6690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Free Image API endpoints for product images
+  // Google Image Search API endpoints for product images
   app.get("/api/unsplash/search", async (req, res) => {
     try {
       const { query, page = 1, per_page = 12 } = req.query;
@@ -6698,16 +6699,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
-      const result = await freeImageService.searchImages(query, Number(page), Number(per_page));
+      const result = await googleImageService.searchImages(query, Number(page), Number(per_page));
       
       if (!result) {
-        return res.status(500).json({ error: "Failed to fetch free images" });
+        return res.status(500).json({ error: "Failed to fetch images from Google" });
       }
 
-      res.json(result);
+      // Transform Google response to match Unsplash format for compatibility
+      const transformedResult = {
+        total: parseInt(result.searchInformation?.totalResults || '0'),
+        total_pages: Math.ceil(parseInt(result.searchInformation?.totalResults || '0') / Number(per_page)),
+        results: result.items?.map(item => ({
+          id: item.id || item.link,
+          urls: {
+            raw: item.link,
+            full: item.link,
+            regular: item.link,
+            small: item.image.thumbnailLink,
+            thumb: item.image.thumbnailLink
+          },
+          alt_description: item.title,
+          description: item.snippet,
+          user: {
+            name: item.displayLink,
+            username: item.displayLink
+          },
+          links: {
+            download: item.link,
+            html: item.image.contextLink
+          }
+        })) || []
+      };
+
+      res.json(transformedResult);
     } catch (error) {
-      console.error("Error searching free images:", error);
-      res.status(500).json({ error: "Failed to fetch free images" });
+      console.error("Error searching Google images:", error);
+      if (error.message.includes('quota exceeded')) {
+        res.status(403).json({ error: "Google API quota exceeded. Please try again later." });
+      } else {
+        res.status(500).json({ error: "Failed to fetch images from Google" });
+      }
     }
   });
 
@@ -6716,12 +6747,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { category } = req.params;
       const { count = 6 } = req.query;
       
-      const images = await freeImageService.getProductImages(category, Number(count));
+      const images = await googleImageService.getProductImages(category, Number(count));
+      
+      // Transform Google response to match Unsplash format
+      const transformedImages = images.map(item => ({
+        id: item.id || item.link,
+        urls: {
+          raw: item.link,
+          full: item.link,
+          regular: item.link,
+          small: item.image.thumbnailLink,
+          thumb: item.image.thumbnailLink
+        },
+        alt_description: item.title,
+        description: item.snippet,
+        user: {
+          name: item.displayLink,
+          username: item.displayLink
+        },
+        links: {
+          download: item.link,
+          html: item.image.contextLink
+        }
+      }));
       
       res.json({
-        images,
+        images: transformedImages,
         category,
-        total: images.length
+        total: transformedImages.length
       });
     } catch (error) {
       console.error("Error fetching category images:", error);
@@ -6733,12 +6786,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { query = 'product', count = 6 } = req.query;
       
-      const images = await freeImageService.getRandomImages(Number(count));
+      const images = await googleImageService.getRandomImages(String(query), Number(count));
+      
+      // Transform Google response to match Unsplash format
+      const transformedImages = images.map(item => ({
+        id: item.id || item.link,
+        urls: {
+          raw: item.link,
+          full: item.link,
+          regular: item.link,
+          small: item.image.thumbnailLink,
+          thumb: item.image.thumbnailLink
+        },
+        alt_description: item.title,
+        description: item.snippet,
+        user: {
+          name: item.displayLink,
+          username: item.displayLink
+        },
+        links: {
+          download: item.link,
+          html: item.image.contextLink
+        }
+      }));
       
       res.json({
-        images,
+        images: transformedImages,
         query,
-        total: images.length
+        total: transformedImages.length
       });
     } catch (error) {
       console.error("Error fetching random images:", error);
@@ -6751,12 +6826,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { cuisineType } = req.params;
       const { count = 6 } = req.query;
       
-      const images = await freeImageService.getRestaurantImages(Number(count));
+      const images = await googleImageService.getRestaurantImages(cuisineType, Number(count));
+      
+      // Transform Google response to match Unsplash format
+      const transformedImages = images.map(item => ({
+        id: item.id || item.link,
+        urls: {
+          raw: item.link,
+          full: item.link,
+          regular: item.link,
+          small: item.image.thumbnailLink,
+          thumb: item.image.thumbnailLink
+        },
+        alt_description: item.title,
+        description: item.snippet,
+        user: {
+          name: item.displayLink,
+          username: item.displayLink
+        },
+        links: {
+          download: item.link,
+          html: item.image.contextLink
+        }
+      }));
       
       res.json({
-        images,
+        images: transformedImages,
         cuisineType,
-        total: images.length
+        total: transformedImages.length
       });
     } catch (error) {
       console.error("Error fetching restaurant images:", error);
@@ -6772,9 +6869,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid image data" });
       }
 
-      await freeImageService.trackDownload(image);
+      // Google Images don't require download tracking like Unsplash
+      const success = await googleImageService.trackDownload(image);
       
-      res.json({ success: true });
+      res.json({ success });
     } catch (error) {
       console.error("Error tracking download:", error);
       res.status(500).json({ error: "Internal server error" });
