@@ -32,11 +32,19 @@ export interface PixabayImageSearchResponse {
 
 export class PixabayImageService {
   private baseUrl = 'https://pixabay.com/api/';
-  private apiKey: string;
+  private apiKey: string | null = null;
   
   constructor() {
-    this.apiKey = process.env.PIXABAY_API_KEY || '47458629-2ac0da0bb3d8055a970a60c54';
     console.log('✅ Pixabay Image Service initialized - API configured');
+  }
+  
+  private getApiKey(): string {
+    if (!this.apiKey) {
+      // Use the valid API key provided by the user
+      this.apiKey = process.env.PIXABAY_API_KEY || '51207486-82ff44348ebd4ae4c310fdf15';
+      console.log(`🔑 Using API Key: ${this.apiKey.substring(0, 8)}...`);
+    }
+    return this.apiKey;
   }
 
   isConfigured(): boolean {
@@ -70,7 +78,7 @@ export class PixabayImageService {
       console.log(`Pixabay query cleaned: "${query}" -> "${cleanQuery}"`);
       
       const searchParams = new URLSearchParams({
-        key: this.apiKey,
+        key: this.getApiKey(),
         q: cleanQuery,
         image_type: imageType,
         per_page: Math.min(count, 200).toString(),
