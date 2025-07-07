@@ -92,6 +92,7 @@ export default function SearchWithSuggestions({
           onChange={(e) => {
             setSearchQuery(e.target.value);
             setShowSuggestions(e.target.value.length >= 2);
+            console.log("Search input changed to:", e.target.value);
           }}
           onFocus={() => setShowSuggestions(searchQuery.length >= 2)}
           className="w-full pl-4 pr-12 py-2 bg-white text-gray-900 border-none focus:ring-2 focus:ring-white"
