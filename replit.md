@@ -120,21 +120,21 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### July 4, 2025 - Unsplash API Integration for Product Images
-- ✓ Added Unsplash API service for high-quality product images
-- ✓ Created comprehensive UnsplashService class with search, category, and random image functions
-- ✓ Implemented API endpoints for image searching and fetching
-- ✓ Built UnsplashImageSearch React component for product image selection
-- ✓ Added useUnsplash hooks for easy React integration
-- ✓ Integrated proper image attribution and download tracking
-- ✓ Added category-specific image search with intelligent fallbacks
-- ✓ Created restaurant-specific image fetching for food items
-- ✓ Added optimized image URL generation with custom dimensions
-- ✓ Implemented multiple image selection with maximum limits
-- ✓ Fixed Unsplash API rate limit handling with proper error messages and graceful fallbacks
-- ✓ Enhanced error handling to show users when rate limits are exceeded with helpful guidance
-- ✓ Added proper 403 error detection and user-friendly error messages in both frontend and backend
-- → Store owners can now add professional product images from Unsplash library with robust error handling
+### July 7, 2025 - Google Custom Search API Migration for Product Images
+- ✓ Successfully migrated from Unsplash API to Google Custom Search API for product image functionality
+- ✓ Created comprehensive GoogleImageService class with search, category, and restaurant image functions
+- ✓ Updated all API endpoints from `/api/unsplash/*` to `/api/google-images/*` routes
+- ✓ Built GoogleImageSearch React component to replace UnsplashImageSearch with same interface
+- ✓ Added useGoogleImages hooks for seamless React integration
+- ✓ Integrated proper image attribution and download tracking for Google Search results
+- ✓ Added category-specific image search with intelligent query generation
+- ✓ Created restaurant-specific image fetching for food items using Google's image database
+- ✓ Added optimized image URL generation with custom dimensions and fallback handling
+- ✓ Implemented multiple image selection with maximum limits and error handling
+- ✓ Updated SellerDashboard to use Google Custom Search instead of Unsplash
+- ✓ Added Google Search Engine ID configuration (d71099f98e3854900) to environment
+- ✓ Enhanced error handling for Google API rate limits and authentication issues
+- → Store owners can now add professional product images from Google's vast image database with robust search capabilities
 
 ### July 4, 2025 - Enhanced Location-Aware Delivery Notification System Implementation
 - ✓ Created comprehensive location-aware delivery notification endpoint `/api/delivery-notifications/send-with-location`
