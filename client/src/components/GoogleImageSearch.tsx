@@ -137,6 +137,16 @@ const GoogleImageSearch: React.FC<GoogleImageSearchProps> = ({
             </div>
           )}
 
+          {/* Fallback Notice */}
+          {searchResults && searchResults.results && searchResults.results.results && searchResults.results.results.length > 0 && 
+           searchResults.results.results[0]?.user?.username === 'freecollection' && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
+              <p className="font-medium">📷 Using Fallback Image Service</p>
+              <p className="text-sm">Google Images quota exceeded. Showing high-quality placeholder images instead of search-specific results.</p>
+              <p className="text-sm mt-1">These are professional placeholder images suitable for products.</p>
+            </div>
+          )}
+
           {/* Search Results */}
           {searchResults && searchResults.results && searchResults.results.results && searchResults.results.results.length > 0 && (
             <div className="max-h-96 overflow-y-auto">
