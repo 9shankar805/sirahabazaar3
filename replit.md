@@ -141,6 +141,17 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - ✓ Cart selection automatically selects all items by default and shows selection indicators
 - → Cart now works like Daraz with item selection, and Buy Now/Order Now buttons checkout individual items only
 
+### July 7, 2025 - Google Login Firebase Configuration Issue Investigation
+- ✓ Identified Google login failing with Firebase "auth/internal-error" and "auth/network-request-failed" 
+- ✓ Added missing `/api/auth/social-login` endpoint for processing social authentication
+- ✓ Enhanced Firebase authentication configuration with proper scopes and error handling
+- ✓ Added domain authorization checking and setup instructions in browser console
+- ✓ Configured Firebase environment variables: VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, etc.
+- ✓ Added redirect fallback method for popup authentication failures
+- ✓ Current Replit domain identified: 43edda12-1dc0-42b0-a9c8-12498ed82404-00-12jfe7tmxnzba.pike.replit.dev
+- → Issue persists: Firebase authentication requires proper Google OAuth client configuration beyond domain authorization
+- → Temporary solution: Google login shows helpful message directing users to email login while Firebase is being configured
+
 ### July 7, 2025 - Fixed Auto-Selection Issue and Confirmed Buy Now Functionality
 - ✓ Fixed cart auto-selection issue that was selecting all items when user clicked individual items
 - ✓ Updated auto-selection logic to only trigger on initial cart load, not when items are added

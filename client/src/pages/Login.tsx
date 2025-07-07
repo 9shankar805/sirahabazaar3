@@ -97,82 +97,12 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    try {
-      console.log('Starting Google login...');
-      const result = await signInWithGoogle();
-      
-      // Handle redirect case where result might be null
-      if (!result) {
-        console.log('Redirect initiated, waiting for return...');
-        setIsLoading(false);
-        return;
-      }
-      
-      const user = result.user;
-      
-      console.log('Google login successful, user:', {
-        email: user.email,
-        displayName: user.displayName,
-        uid: user.uid
-      });
-      
-      // Register user in our backend if they don't exist
-      const response = await fetch('/api/auth/social-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: user.email,
-          fullName: user.displayName,
-          provider: 'google',
-          providerId: user.uid,
-          photoUrl: user.photoURL
-        }),
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        console.log('Backend registration successful:', userData);
-        
-        toast({
-          title: "Welcome!",
-          description: "Successfully logged in with Google.",
-        });
-        setLocation("/");
-      } else {
-        const errorData = await response.json();
-        console.error('Backend registration failed:', errorData);
-        throw new Error(errorData.error || 'Backend registration failed');
-      }
-    } catch (error) {
-      console.error('Google login error:', error);
-      
-      let errorMessage = "Failed to login with Google";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-        
-        // Handle specific Firebase auth errors
-        if (error.message.includes('auth/popup-closed-by-user')) {
-          errorMessage = "Login was cancelled. Please try again.";
-        } else if (error.message.includes('auth/popup-blocked')) {
-          errorMessage = "Pop-up blocked. Please allow pop-ups and try again.";
-        } else if (error.message.includes('auth/network-request-failed')) {
-          errorMessage = "Network error. Please check your connection and try again.";
-        } else if (error.message.includes('auth/unauthorized-domain')) {
-          errorMessage = "This domain is not authorized for Google login.";
-        } else if (error.code === 'auth/internal-error') {
-          errorMessage = "Domain authorization required. Check browser console for setup instructions.";
-        }
-      }
-      
-      toast({
-        title: "Google login failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    // For now, suggest using regular email login while Firebase is being configured
+    toast({
+      title: "Google Login Temporarily Unavailable",
+      description: "Please use email login below while we configure Google authentication.",
+      variant: "destructive",
+    });
   };
 
   const handleFacebookLogin = async () => {
