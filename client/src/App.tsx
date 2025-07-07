@@ -67,6 +67,7 @@ import OrderTracking from "@/pages/OrderTracking";
 import DeliveryMap from "@/pages/DeliveryMap";
 import NotificationBanner from "@/components/NotificationBanner";
 import FlashSales from "@/pages/FlashSales";
+import SpecialOffers from "@/pages/SpecialOffers";
 
 function AppRouter() {
   const { mode } = useAppMode();
@@ -104,6 +105,8 @@ function AppRouter() {
         <Route path="/restaurant-maps" component={RestaurantMaps} />
         <Route path="/wishlist" component={Wishlist} />
         <Route path="/flash-sales" component={FlashSales} />
+        <Route path="/special-offers" component={SpecialOffers} />
+        <Route path="/food-offers" component={SpecialOffers} />
 
         {/* Seller Hub Routes */}
         <Route path="/seller/dashboard" component={SellerDashboard} />

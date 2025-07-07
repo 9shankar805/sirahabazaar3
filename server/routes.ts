@@ -45,8 +45,8 @@ async function checkAndUpdateSpecialOffer(productData: any): Promise<void> {
       // Calculate discount percentage
       const discountPercentage = ((originalPrice - currentPrice) / originalPrice) * 100;
       
-      // If discount is above 30%, automatically mark as special offer
-      if (discountPercentage > 30) {
+      // If discount is 30% or above, automatically mark as special offer
+      if (discountPercentage >= 30) {
         productData.isOnOffer = true;
         productData.offerPercentage = Math.round(discountPercentage);
         
@@ -504,6 +504,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Special offers endpoint (must come before /api/products/:id)
+  app.get("/api/products/special-offers", async (req, res) => {
+    try {
+      console.log("Fetching all products for special offers...");
+      const products = await storage.getAllProducts();
+      console.log(`Fetched ${products.length} total products`);
+      
+      // Filter products that are marked as special offers
+      const specialOffers = products.filter(product => {
+        try {
+          return product.isOnOffer === true;
+        } catch (filterError) {
+          console.error("Error filtering product:", product.id, filterError);
+          return false;
+        }
+      });
+      
+      console.log(`Found ${specialOffers.length} special offers`);
+      res.json(specialOffers);
+    } catch (error) {
+      console.error("Error fetching special offers:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch special offers",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   app.get("/api/products/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -580,20 +608,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Special offers endpoint
-  app.get("/api/products/special-offers", async (req, res) => {
-    try {
-      const products = await storage.getAllProducts();
-      
-      // Filter products that are marked as special offers
-      const specialOffers = products.filter(product => product.isOnOffer);
-      
-      res.json(specialOffers);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch special offers" });
-    }
-  });
-
   // Update restaurant items with above 30% discount as special offers
   app.post("/api/products/update-restaurant-offers", async (req, res) => {
     try {
@@ -609,8 +623,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Calculate discount percentage
           const discountPercentage = ((originalPrice - currentPrice) / originalPrice) * 100;
           
-          // If discount is above 30% and not already marked as special offer
-          if (discountPercentage > 30 && !product.isOnOffer) {
+          // If discount is 30% or above and not already marked as special offer
+          if (discountPercentage >= 30 && !product.isOnOffer) {
             const updateData = {
               isOnOffer: true,
               offerPercentage: Math.round(discountPercentage),
