@@ -240,8 +240,8 @@ export default function DistanceBasedProductSearch({
         }
       }
 
-      // Food-specific filters (only in food mode)
-      if (isFoodMode) {
+      // Food-specific filters (only in food mode, and only when not actively searching)
+      if (isFoodMode && !bypassModeFiltering) {
         // Spice level filter
         if (spiceLevelFilter !== "all" && product.spiceLevel !== spiceLevelFilter) {
           return false;
