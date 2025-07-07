@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useLocation } from "wouter";
+import { useAppMode } from "@/hooks/useAppMode";
 import type { Product, Store } from "@shared/schema";
 
 interface SearchSuggestionsProps {
@@ -27,6 +28,16 @@ export default function SearchWithSuggestions({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [, setLocation] = useLocation();
   const searchRef = useRef<HTMLDivElement>(null);
+  const { setClearSearchCallback } = useAppMode();
+
+  // Register search clear callback with the mode context
+  useEffect(() => {
+    const clearSearch = () => {
+      setSearchQuery("");
+      setShowSuggestions(false);
+    };
+    setClearSearchCallback(clearSearch);
+  }, [setClearSearchCallback]);
 
   const { data: suggestions } = useQuery<SearchSuggestions>({
     queryKey: ['/api/search/suggestions', searchQuery],

@@ -6,6 +6,8 @@ type AppMode = 'shopping' | 'food';
 interface AppModeContextType {
   mode: AppMode;
   setMode: (mode: AppMode) => void;
+  clearSearchOnModeChange: () => void;
+  setClearSearchCallback: (callback: () => void) => void;
 }
 
 const AppModeContext = createContext<AppModeContextType | undefined>(undefined);
@@ -13,14 +15,25 @@ const AppModeContext = createContext<AppModeContextType | undefined>(undefined);
 export function AppModeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<AppMode>('shopping');
   const [, setLocation] = useLocation();
+  const [clearSearchCallback, setClearSearchCallback] = useState<(() => void) | null>(null);
 
-  // Enhanced setMode function with automatic navigation
+  // Function to clear search when mode changes
+  const clearSearchOnModeChange = () => {
+    if (clearSearchCallback) {
+      clearSearchCallback();
+    }
+  };
+
+  // Enhanced setMode function with automatic navigation and search clearing
   const handleSetMode = (newMode: AppMode) => {
     const currentMode = mode;
     setMode(newMode);
     
-    // Auto-navigate to homepage when switching modes
+    // Auto-navigate to homepage and clear search when switching modes
     if (currentMode !== newMode) {
+      // Clear search input
+      clearSearchOnModeChange();
+      
       if (newMode === 'food') {
         // Always go to homepage when switching to food mode
         setLocation('/');
@@ -32,7 +45,12 @@ export function AppModeProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AppModeContext.Provider value={{ mode, setMode: handleSetMode }}>
+    <AppModeContext.Provider value={{ 
+      mode, 
+      setMode: handleSetMode,
+      clearSearchOnModeChange,
+      setClearSearchCallback: (callback: () => void) => setClearSearchCallback(() => callback)
+    }}>
       {children}
     </AppModeContext.Provider>
   );
