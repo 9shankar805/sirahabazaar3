@@ -120,7 +120,21 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### July 7, 2025 - Comprehensive Search Filtering System for Both Shopping and Food Modes
+### January 7, 2025 - Buy Now Button Fix and Special Offers Implementation
+- ✓ Fixed Buy Now button redirect issue - now goes directly to checkout instead of login page
+- ✓ Enhanced Buy Now functionality to add products to cart before checkout redirect
+- ✓ Updated checkout page to support both authenticated users and guest customers
+- ✓ Modified authentication checks to allow guest cart functionality throughout the platform
+- ✓ Added success notification when items are added to cart via Buy Now button
+- ✓ Fixed console errors and infinite re-render issues in SearchWithSuggestions component
+- ✓ Implemented automatic special offer marking for restaurant items with 30% or above discount
+- ✓ Created comprehensive SpecialOffers page with filtering, sorting, and dual mode support
+- ✓ Fixed API routing conflicts for special offers endpoint to work correctly
+- ✓ Added routes for both /special-offers and /food-offers with proper filtering
+- ✓ Successfully updated 3 restaurant items automatically as special offers (Pasta and Burger with 33% discount)
+- → Buy Now button now works seamlessly for all users, and special offers system automatically manages discounted restaurant items
+
+### July 7, 2025 - Comprehensive Search Filtering System for Both Shopping and Food Modes (Previous)
 - ✓ Enhanced DistanceBasedProductSearch component to support comprehensive filtering for both shopping and food modes
 - ✓ Added intelligent mode-specific filtering that automatically shows restaurant items in food mode and retail items in shopping mode
 - ✓ Implemented comprehensive food-specific filters including restaurant selection, spice level, dietary options, price ranges, and preparation time
