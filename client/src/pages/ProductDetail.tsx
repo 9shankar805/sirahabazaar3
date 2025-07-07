@@ -238,7 +238,10 @@ export default function ProductDetail() {
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Add to Cart
                 </Button>
-                <Button className="flex-1 btn-primary">
+                <Button className="flex-1 btn-primary" onClick={() => {
+                  // Navigate to checkout with current product
+                  window.location.href = `/checkout?direct=${product.id}&quantity=${quantity}`;
+                }}>
                   Buy Now
                 </Button>
                 <Button variant="outline" size="icon">

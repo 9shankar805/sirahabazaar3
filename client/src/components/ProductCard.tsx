@@ -27,6 +27,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
     
+    // Allow adding to cart even without login
     addToCart(product.id, 1);
     toast({
       title: "Added to cart",

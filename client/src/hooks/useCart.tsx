@@ -30,7 +30,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const refreshCart = async () => {
     if (!user) {
-      setCartItems([]);
+      // Load guest cart from localStorage
+      setIsLoading(true);
+      try {
+        const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+        if (guestCart.length > 0) {
+          // Fetch product details for each cart item
+          const itemsWithProducts = await Promise.all(
+            guestCart.map(async (item: any) => {
+              try {
+                const productResponse = await fetch(`/api/products/${item.productId}`);
+                if (productResponse.ok) {
+                  const product = await productResponse.json();
+                  return { ...item, product };
+                }
+                return item;
+              } catch (error) {
+                console.error(`Failed to fetch product ${item.productId}:`, error);
+                return item;
+              }
+            })
+          );
+          setCartItems(itemsWithProducts);
+        } else {
+          setCartItems([]);
+        }
+      } catch (error) {
+        console.error("Failed to load guest cart:", error);
+        setCartItems([]);
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -54,7 +84,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = async (productId: number, quantity: number) => {
     if (!user) {
-      throw new Error("Please login to add items to cart");
+      // For guest users, store in localStorage
+      const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+      const existingItem = guestCart.find((item: any) => item.productId === productId);
+      
+      if (existingItem) {
+        existingItem.quantity += quantity;
+      } else {
+        guestCart.push({ 
+          id: Date.now(),
+          productId, 
+          quantity, 
+          userId: null,
+          createdAt: new Date().toISOString()
+        });
+      }
+      
+      localStorage.setItem('guestCart', JSON.stringify(guestCart));
+      
+      // Fetch product details for guest cart
+      const productResponse = await fetch(`/api/products/${productId}`);
+      if (productResponse.ok) {
+        const product = await productResponse.json();
+        const updatedItems = guestCart.map((item: any) => ({
+          ...item,
+          product: item.productId === productId ? product : item.product
+        }));
+        setCartItems(updatedItems);
+      }
+      
+      return;
     }
 
     const response = await fetch("/api/cart", {

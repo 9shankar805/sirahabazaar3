@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, Store, User, Truck, Upload, FileText, CheckCircle, DollarSign, Clock } from "lucide-react";
+import { FaGoogle, FaFacebook } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -14,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "@/components/ImageUpload";
+import { signInWithGoogle, signInWithFacebook } from "@/lib/firebaseAuth";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -199,6 +201,82 @@ export default function Register() {
 
   const selectedRole = form.watch("role");
   const selectedVehicleType = form.watch("vehicleType");
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const result = await signInWithGoogle();
+      const user = result.user;
+      
+      // Register user in our backend if they don't exist
+      const response = await fetch('/api/auth/social-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          fullName: user.displayName,
+          provider: 'google',
+          providerId: user.uid,
+          photoUrl: user.photoURL,
+          role: 'customer'
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Welcome!",
+          description: "Successfully registered with Google.",
+        });
+        setLocation("/");
+      }
+    } catch (error) {
+      toast({
+        title: "Google registration failed",
+        description: error instanceof Error ? error.message : "Failed to register with Google",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    setIsLoading(true);
+    try {
+      const result = await signInWithFacebook();
+      const user = result.user;
+      
+      // Register user in our backend if they don't exist
+      const response = await fetch('/api/auth/social-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          fullName: user.displayName,
+          provider: 'facebook',
+          providerId: user.uid,
+          photoUrl: user.photoURL,
+          role: 'customer'
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Welcome!",
+          description: "Successfully registered with Facebook.",
+        });
+        setLocation("/");
+      }
+    } catch (error) {
+      toast({
+        title: "Facebook registration failed",
+        description: error instanceof Error ? error.message : "Failed to register with Facebook",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
@@ -1293,6 +1371,39 @@ export default function Register() {
                 </Button>
               </form>
             </Form>
+
+            {/* Social Login Options */}
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleGoogleLogin}
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  <FaGoogle className="h-4 w-4 mr-2 text-red-500" />
+                  Google
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleFacebookLogin}
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  <FaFacebook className="h-4 w-4 mr-2 text-blue-600" />
+                  Facebook
+                </Button>
+              </div>
+            </div>
 
             <div className="mt-6">
               <div className="text-center">
