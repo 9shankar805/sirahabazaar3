@@ -20,7 +20,7 @@ export default function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [storeDistance, setStoreDistance] = useState<number | null>(null);
-  const { addToCart } = useCart();
+  const { addToCart, selectSingleItem } = useCart();
   const { toast } = useToast();
   const { mode } = useAppMode();
 
@@ -241,19 +241,19 @@ export default function ProductDetail() {
                 </Button>
                 <Button className="flex-1 btn-primary" onClick={async () => {
                   try {
-                    // Add product to cart first
-                    await addToCart(product.id, quantity);
+                    // Select only this item for checkout
+                    await selectSingleItem(product.id);
                     // Show success message
                     toast({
-                      title: "Added to Cart",
-                      description: `${product.name} has been added to your cart`,
+                      title: "Ready for Checkout",
+                      description: `${product.name} selected for checkout`,
                     });
-                    // Then navigate to checkout using router
+                    // Navigate to checkout with only this item selected
                     setLocation("/checkout");
                   } catch (error) {
                     toast({
                       title: "Error",
-                      description: "Failed to add product to cart",
+                      description: "Failed to prepare item for checkout",
                       variant: "destructive",
                     });
                   }

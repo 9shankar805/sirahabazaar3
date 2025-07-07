@@ -22,6 +22,7 @@ interface CartContextType {
   setSelectedItems: (items: Set<number>) => void;
   getSelectedCartItems: () => CartItemWithProduct[];
   getSelectedTotals: () => { amount: number; items: number };
+  selectSingleItem: (productId: number) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -204,9 +205,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return { amount, items };
   };
 
+  // Function to select a single item for Buy Now functionality
+  const selectSingleItem = async (productId: number) => {
+    // First add the item to cart if it's not already there
+    const existingItem = cartItems.find(item => item.productId === productId);
+    
+    if (!existingItem) {
+      await addToCart(productId, 1);
+      // After adding, we need to refresh the cart to get the new item ID
+      await refreshCart();
+      // Find the newly added item
+      const newItem = cartItems.find(item => item.productId === productId);
+      if (newItem) {
+        setSelectedItems(new Set([newItem.id]));
+      }
+    } else {
+      // If item exists, just select it
+      setSelectedItems(new Set([existingItem.id]));
+    }
+  };
+
   // Auto-select all items when cart items change
   useEffect(() => {
-    if (cartItems.length > 0) {
+    if (cartItems.length > 0 && selectedItems.size === 0) {
       setSelectedItems(new Set(cartItems.map(item => item.id)));
     }
   }, [cartItems]);
@@ -228,6 +249,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setSelectedItems,
       getSelectedCartItems,
       getSelectedTotals,
+      selectSingleItem,
     }}>
       {children}
     </CartContext.Provider>

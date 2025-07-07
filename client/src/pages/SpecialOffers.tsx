@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "wouter";
 import { useAppMode } from "@/hooks/useAppMode";
+import { useCart } from "@/hooks/useCart";
+import { useToast } from "@/hooks/use-toast";
 import { 
   TrendingUp, 
   Search, 
@@ -29,6 +31,8 @@ interface ProductWithStore extends Product {
 export default function SpecialOffers() {
   const [, setLocation] = useLocation();
   const { mode } = useAppMode();
+  const { selectSingleItem } = useCart();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"discount" | "price" | "name">("discount");
 
@@ -299,7 +303,32 @@ export default function SpecialOffers() {
                   </CardContent>
 
                   <CardFooter className="pt-2">
-                    <Button className="w-full bg-red-500 hover:bg-red-600 text-white">
+                    <Button 
+                      className="w-full bg-red-500 hover:bg-red-600 text-white"
+                      onClick={async (e) => {
+                        e.stopPropagation(); // Prevent card click
+                        try {
+                          if (mode === 'food') {
+                            // Select only this item for checkout
+                            await selectSingleItem(product.id);
+                            toast({
+                              title: "Ready for Checkout",
+                              description: `${product.name} selected for checkout`,
+                            });
+                            setLocation("/checkout");
+                          } else {
+                            // For shopping items, go to product detail
+                            setLocation(`/products/${product.id}`);
+                          }
+                        } catch (error) {
+                          toast({
+                            title: "Error",
+                            description: "Failed to prepare item for checkout",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
                       {mode === 'food' ? 'Order Now' : 'View Deal'}
                     </Button>
                   </CardFooter>

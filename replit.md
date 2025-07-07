@@ -120,7 +120,7 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### January 7, 2025 - Buy Now Button Fix and Special Offers Implementation
+### January 7, 2025 - Daraz-Style Cart Selection and Individual Item Checkout Implementation
 - ✓ Fixed Buy Now button redirect issue - now goes directly to checkout instead of login page
 - ✓ Enhanced Buy Now functionality to add products to cart before checkout redirect
 - ✓ Updated checkout page to support both authenticated users and guest customers
@@ -132,7 +132,14 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - ✓ Fixed API routing conflicts for special offers endpoint to work correctly
 - ✓ Added routes for both /special-offers and /food-offers with proper filtering
 - ✓ Successfully updated 3 restaurant items automatically as special offers (Pasta and Burger with 33% discount)
-- → Buy Now button now works seamlessly for all users, and special offers system automatically manages discounted restaurant items
+- ✓ Added Daraz-style cart selection functionality with individual item checkboxes and "Select All" option
+- ✓ Implemented cart selection state management in useCart hook with persistent selection
+- ✓ Updated order summary to show only selected items totals and quantities
+- ✓ Enhanced Buy Now and Order Now buttons to checkout individual items only (like pasta individually)
+- ✓ Added selectSingleItem function for Buy Now buttons to select only the clicked product for checkout
+- ✓ Updated SpecialOffers page Order Now buttons to use individual item checkout functionality
+- ✓ Cart selection automatically selects all items by default and shows selection indicators
+- → Cart now works like Daraz with item selection, and Buy Now/Order Now buttons checkout individual items only
 
 ### July 7, 2025 - Comprehensive Search Filtering System for Both Shopping and Food Modes (Previous)
 - ✓ Enhanced DistanceBasedProductSearch component to support comprehensive filtering for both shopping and food modes
