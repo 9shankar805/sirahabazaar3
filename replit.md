@@ -141,7 +141,19 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - ✓ Cart selection automatically selects all items by default and shows selection indicators
 - → Cart now works like Daraz with item selection, and Buy Now/Order Now buttons checkout individual items only
 
-### July 7, 2025 - Fixed Selective Cart Clearing After Checkout
+### July 7, 2025 - Fixed Auto-Selection Issue and Confirmed Buy Now Functionality
+- ✓ Fixed cart auto-selection issue that was selecting all items when user clicked individual items
+- ✓ Updated auto-selection logic to only trigger on initial cart load, not when items are added
+- ✓ Added localStorage flag system to track user manual selections and prevent unwanted auto-selection
+- ✓ Enhanced toggleSelectItem and toggleSelectAll functions to mark manual selection state
+- ✓ Created resetSelectionState function for clearing selection flags during testing
+- ✓ Added temporary reset button in cart interface for testing selection behavior
+- ✓ Confirmed Buy Now functionality works correctly in ProductDetail page (selects single item + redirects to checkout)
+- ✓ Confirmed Order Now functionality works correctly in SpecialOffers page (food items go directly to checkout)
+- ✓ Both Buy Now and Order Now buttons use selectSingleItem function to select only the clicked product
+- → Individual item selection now works properly - clicking one item selects only that item, Buy Now buttons redirect to checkout with single item selected
+
+### July 7, 2025 - Fixed Selective Cart Clearing After Checkout (Previous)
 - ✓ Fixed checkout process to only remove selected items from cart instead of clearing everything
 - ✓ Updated checkout page to use selected cart items and totals throughout the process
 - ✓ Created clearSelectedItems function to remove only checked products after order placement
