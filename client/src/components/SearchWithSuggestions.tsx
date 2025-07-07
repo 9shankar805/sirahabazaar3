@@ -46,8 +46,8 @@ export default function SearchWithSuggestions({
       } else {
         setLocation(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
       }
-      setSearchQuery("");
       setShowSuggestions(false);
+      // Don't clear searchQuery here so user can see what they searched for
     }
   };
 

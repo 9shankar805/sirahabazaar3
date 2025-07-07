@@ -50,6 +50,11 @@ export default function DistanceBasedProductSearch({
     getUserLocation();
   }, []);
 
+  // Debug logging for search functionality
+  useEffect(() => {
+    console.log("DistanceBasedProductSearch received props:", { searchQuery, category });
+  }, [searchQuery, category]);
+
   // Fetch products
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products", { search: searchQuery, category }],
@@ -101,6 +106,30 @@ export default function DistanceBasedProductSearch({
   // Filter and sort products
   const filteredAndSortedProducts = enrichedProducts
     .filter((product) => {
+      // Filter by search query first
+      if (searchQuery && searchQuery.trim()) {
+        const searchLower = searchQuery.toLowerCase().trim();
+        const nameMatch = product.name.toLowerCase().includes(searchLower);
+        const descriptionMatch = product.description?.toLowerCase().includes(searchLower);
+        const categoryMatch = product.category?.toLowerCase().includes(searchLower);
+        
+        console.log(`Filtering product "${product.name}" with search "${searchQuery}":`, {
+          nameMatch, descriptionMatch, categoryMatch
+        });
+        
+        if (!nameMatch && !descriptionMatch && !categoryMatch) {
+          return false;
+        }
+      }
+      
+      // Filter by category if provided
+      if (category) {
+        const categoryLower = category.toLowerCase();
+        if (!product.category?.toLowerCase().includes(categoryLower)) {
+          return false;
+        }
+      }
+      
       // Filter by distance if location is available
       if (userLocation && product.storeDistance !== undefined) {
         return product.storeDistance <= maxDistance;
@@ -203,6 +232,7 @@ export default function DistanceBasedProductSearch({
               ? `Showing ${filteredAndSortedProducts.length} products sorted by distance`
               : `Showing ${filteredAndSortedProducts.length} products`
             }
+            {searchQuery && ` • Searching for: "${searchQuery}"`}
           </p>
         </div>
 
