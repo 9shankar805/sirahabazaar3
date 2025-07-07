@@ -6691,7 +6691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Google Image Search API endpoints for product images
-  app.get("/api/unsplash/search", async (req, res) => {
+  app.get("/api/google-images/search", async (req, res) => {
     try {
       const { query, page = 1, per_page = 12 } = req.query;
       
@@ -6742,7 +6742,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/unsplash/category/:category", async (req, res) => {
+  app.get("/api/google-images/category/:category", async (req, res) => {
     try {
       const { category } = req.params;
       const { count = 6 } = req.query;
@@ -6782,7 +6782,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/unsplash/random", async (req, res) => {
+  app.get("/api/google-images/random", async (req, res) => {
     try {
       const { query = 'product', count = 6 } = req.query;
       
@@ -6821,7 +6821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/unsplash/restaurant/:cuisineType", async (req, res) => {
+  app.get("/api/google-images/restaurant/:cuisineType", async (req, res) => {
     try {
       const { cuisineType } = req.params;
       const { count = 6 } = req.query;
@@ -6861,7 +6861,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/unsplash/track-download", async (req, res) => {
+  app.post("/api/google-images/track-download", async (req, res) => {
     try {
       const { image } = req.body;
       

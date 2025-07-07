@@ -54,11 +54,19 @@ export interface GoogleImageSearchResponse {
 }
 
 export class GoogleImageService {
-  private apiKey: string;
-  private searchEngineId: string;
+  private apiKey: string = '';
+  private searchEngineId: string = '';
   private baseUrl = 'https://www.googleapis.com/customsearch/v1';
   
+  private initialized = false;
+  
   constructor() {
+    // Initialize lazily when first used to ensure environment variables are loaded
+  }
+  
+  private initialize() {
+    if (this.initialized) return;
+    
     this.apiKey = process.env.GOOGLE_API_KEY || '';
     this.searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID || '';
     
@@ -68,9 +76,12 @@ export class GoogleImageService {
     if (!this.searchEngineId) {
       console.warn('Google Search Engine ID not configured. Image fetching will be limited.');
     }
+    
+    this.initialized = true;
   }
 
   isConfigured(): boolean {
+    this.initialize();
     return !!(this.apiKey && this.searchEngineId);
   }
 
