@@ -41,17 +41,21 @@ export default function SearchWithSuggestions({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("SearchWithSuggestions handleSearch called with:", searchQuery);
-    if (searchQuery.trim()) {
-      if (onSearch) {
-        onSearch(searchQuery.trim());
-      } else {
+    
+    if (onSearch) {
+      onSearch(searchQuery.trim());
+    } else {
+      if (searchQuery.trim()) {
         const searchUrl = `/products?search=${encodeURIComponent(searchQuery.trim())}`;
         console.log("Navigating to:", searchUrl);
         setLocation(searchUrl);
+      } else {
+        // If search query is empty, navigate to products page without search params
+        console.log("Clearing search - navigating to /products");
+        setLocation('/products');
       }
-      setShowSuggestions(false);
-      // Don't clear searchQuery here so user can see what they searched for
     }
+    setShowSuggestions(false);
   };
 
   const handleSuggestionClick = (type: 'product' | 'store', id: number) => {

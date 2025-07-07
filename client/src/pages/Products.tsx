@@ -26,6 +26,17 @@ export default function Products() {
     });
   }, [location]);
 
+  // Also listen for browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setSearchParams(params);
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   console.log("Products page rendering with:", { searchQuery, categoryQuery });
 
   return (
