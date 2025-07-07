@@ -30,6 +30,7 @@ import Checkout from "@/pages/Checkout";
 import OrderConfirmation from "@/pages/OrderConfirmation";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
 import Stores from "@/pages/Stores";
 import Account from "@/pages/Account";
 import DeleteAccount from "@/pages/DeleteAccount";
@@ -87,6 +88,7 @@ function AppRouter() {
         <Route path="/order-confirmation" component={OrderConfirmation} />
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
+        <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/stores" component={Stores} />
         <Route path="/restaurants" component={Stores} />
         <Route path="/stores/:id" component={StoreDetail} />

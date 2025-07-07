@@ -10,8 +10,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "@/lib/firebaseAuth";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -23,7 +21,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
+
   const [, setLocation] = useLocation();
   const { login } = useAuth();
   const { toast } = useToast();
@@ -58,59 +56,7 @@ export default function Login() {
     }
   };
 
-  const handleForgotPassword = async () => {
-    const email = form.getValues().email;
-    
-    if (!email) {
-      toast({
-        title: "Email Required",
-        description: "Please enter your email address first.",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    setIsResettingPassword(true);
-    try {
-      console.log('Attempting to send password reset email to:', email);
-      await sendPasswordResetEmail(auth, email);
-      console.log('Password reset email sent successfully');
-      toast({
-        title: "Password Reset Email Sent",
-        description: "Check your email for password reset instructions.",
-      });
-    } catch (error: any) {
-      console.error('Password reset error:', error);
-      
-      let errorMessage = "Failed to send password reset email.";
-      let description = "";
-      
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = "No account found with this email address.";
-        description = "Please check the email address or create a new account.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "Please enter a valid email address.";
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = "Too many requests. Please try again later.";
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = "Firebase Domain Authorization Required";
-        description = "This Replit domain needs to be added to Firebase Console. Check browser console for setup instructions.";
-      } else if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "Domain not authorized.";
-        description = "Firebase domain authorization is required. Please contact support.";
-      } else {
-        description = `Error code: ${error.code || 'unknown'}`;
-      }
-      
-      toast({
-        title: errorMessage,
-        description: description || "Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsResettingPassword(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-muted flex items-center justify-center py-12">
@@ -191,15 +137,15 @@ export default function Login() {
                       Remember me
                     </label>
                   </div>
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="text-sm text-primary hover:underline p-0 h-auto"
-                    onClick={handleForgotPassword}
-                    disabled={isResettingPassword}
-                  >
-                    {isResettingPassword ? "Sending..." : "Forgot password?"}
-                  </Button>
+                  <Link href="/forgot-password">
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="text-sm text-primary hover:underline p-0 h-auto"
+                    >
+                      Forgot password?
+                    </Button>
+                  </Link>
                 </div>
 
                 <Button type="submit" className="w-full btn-primary" disabled={isLoading}>

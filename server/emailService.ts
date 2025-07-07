@@ -3,7 +3,7 @@
  * Provides fallback email functionality when Firebase is not available
  */
 
-import { createTransporter } from './notificationService';
+import * as nodemailer from 'nodemailer';
 
 export interface PasswordResetEmail {
   to: string;
@@ -16,7 +16,16 @@ export class EmailService {
 
   static async initialize() {
     try {
-      this.transporter = await createTransporter();
+      // Use SendGrid SMTP settings
+      this.transporter = nodemailer.createTransporter({
+        host: 'smtp.sendgrid.net',
+        port: 587,
+        secure: false, // Use TLS
+        auth: {
+          user: 'apikey',
+          pass: process.env.SENDGRID_API_KEY || ''
+        }
+      });
       return true;
     } catch (error) {
       console.warn('Email service initialization failed:', error);
