@@ -58,7 +58,7 @@ const UnsplashImageSearch: React.FC<UnsplashImageSearchProps> = ({
     queryFn: async () => {
       if (!searchQuery.trim()) return null;
       
-      const response = await fetch(`/api/unsplash/search?query=${encodeURIComponent(searchQuery)}&per_page=20`);
+      const response = await fetch(`/api/google-images/search?query=${encodeURIComponent(searchQuery)}&per_page=20`);
       if (!response.ok) {
         if (response.status === 403) {
           throw new Error('Unsplash rate limit exceeded. Please try again later or use image upload instead.');
