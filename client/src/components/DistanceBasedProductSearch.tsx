@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Filter, SlidersHorizontal, Utensils, ShoppingBag } from "lucide-react";
+import { MapPin, Filter, SlidersHorizontal, Utensils, ShoppingBag, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,6 +68,50 @@ export default function DistanceBasedProductSearch({
     getUserLocation();
   }, []);
 
+  // Fetch products
+  const { data: products = [], isLoading, error: productsError } = useQuery<Product[]>({
+    queryKey: ["/api/products", { search: searchQuery, category }],
+    queryFn: async () => {
+      try {
+        const params = new URLSearchParams();
+        if (searchQuery?.trim()) params.append('search', searchQuery.trim());
+        if (category?.trim()) params.append('category', category.trim());
+        
+        const response = await fetch(`/api/products?${params}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch products: ${response.status} ${errorText}`);
+        }
+        return response.json();
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        throw error;
+      }
+    },
+    retry: 1,
+    retryDelay: 1000,
+  });
+
+  // Fetch stores for distance calculation
+  const { data: stores = [], error: storesError } = useQuery<Store[]>({
+    queryKey: ["/api/stores"],
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/stores');
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch stores: ${response.status} ${errorText}`);
+        }
+        return response.json();
+      } catch (error) {
+        console.error('Error fetching stores:', error);
+        throw error;
+      }
+    },
+    retry: 1,
+    retryDelay: 1000,
+  });
+
   // Debug logging for search functionality
   useEffect(() => {
     console.log("DistanceBasedProductSearch received props:", { 
@@ -94,25 +138,6 @@ export default function DistanceBasedProductSearch({
       }))
     });
   }, [products, stores]);
-
-  // Fetch products
-  const { data: products = [], isLoading } = useQuery<Product[]>({
-    queryKey: ["/api/products", { search: searchQuery, category }],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (searchQuery) params.append('search', searchQuery);
-      if (category) params.append('category', category);
-      
-      const response = await fetch(`/api/products?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch products');
-      return response.json();
-    },
-  });
-
-  // Fetch stores for distance calculation
-  const { data: stores = [] } = useQuery<Store[]>({
-    queryKey: ["/api/stores"],
-  });
 
   // Calculate distances and enrich products
   const enrichedProducts: ProductWithDistance[] = products.map((product) => {
@@ -297,26 +322,12 @@ export default function DistanceBasedProductSearch({
       }
     });
 
-  // Debug final filtered results
+  // Debug final filtered results (simplified)
   useEffect(() => {
-    console.log("Filtering results:", {
-      enrichedProductsCount: enrichedProducts.length,
-      modeFilteredCount: modeFilteredProducts.length,
-      finalFilteredCount: filteredAndSortedProducts.length,
-      searchQuery,
-      isFoodMode,
-      modeFilteredProducts: modeFilteredProducts.map(p => ({
-        name: p.name,
-        storeName: p.storeName,
-        category: p.category
-      })),
-      finalProducts: filteredAndSortedProducts.map(p => ({
-        name: p.name,
-        storeName: p.storeName,
-        category: p.category
-      }))
-    });
-  }, [enrichedProducts, modeFilteredProducts, filteredAndSortedProducts, searchQuery, isFoodMode]);
+    if (searchQuery) {
+      console.log(`Search "${searchQuery}": ${enrichedProducts.length} total → ${modeFilteredProducts.length} mode filtered → ${filteredAndSortedProducts.length} final results`);
+    }
+  }, [enrichedProducts, modeFilteredProducts, filteredAndSortedProducts, searchQuery]);
 
   // Get unique restaurants for food mode
   const availableRestaurants = modeFilteredProducts
@@ -491,6 +502,30 @@ export default function DistanceBasedProductSearch({
       </div>
     </div>
   );
+
+  // Display error state
+  if (productsError || storesError) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <div className="text-red-500 mb-4">
+            <AlertCircle className="h-12 w-12 mx-auto mb-2" />
+            <h3 className="text-lg font-medium mb-2">Error Loading Data</h3>
+            <p className="text-sm text-muted-foreground">
+              {productsError?.message || storesError?.message || "Failed to load products or stores"}
+            </p>
+          </div>
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline"
+            className="mt-4"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={className}>
