@@ -141,6 +141,18 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - ✓ Cart selection automatically selects all items by default and shows selection indicators
 - → Cart now works like Daraz with item selection, and Buy Now/Order Now buttons checkout individual items only
 
+### July 7, 2025 - Fixed Selective Cart Clearing After Checkout
+- ✓ Fixed checkout process to only remove selected items from cart instead of clearing everything
+- ✓ Updated checkout page to use selected cart items and totals throughout the process
+- ✓ Created clearSelectedItems function to remove only checked products after order placement
+- ✓ Enhanced order summary to display only selected products and their correct quantities
+- ✓ Fixed subtotal and total calculations to reflect selected items only
+- ✓ Updated delivery fee calculation to use selected items for store lookup
+- ✓ Added proper handling for both authenticated users and guest cart selective clearing
+- ✓ Fixed ID mismatch errors by using actual cart items instead of selectedItems IDs directly
+- ✓ Verified checkout process: users can select specific items and unselected items remain in cart
+- → Cart selection system now works correctly - only purchased items are removed from cart after checkout
+
 ### July 7, 2025 - Comprehensive Search Filtering System for Both Shopping and Food Modes (Previous)
 - ✓ Enhanced DistanceBasedProductSearch component to support comprehensive filtering for both shopping and food modes
 - ✓ Added intelligent mode-specific filtering that automatically shows restaurant items in food mode and retail items in shopping mode

@@ -194,18 +194,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Get selected cart items to ensure we have valid items to remove
+    const selectedCartItems = getSelectedCartItems();
+    
     // Remove each selected item for authenticated users
-    for (const itemId of selectedItems) {
+    for (const item of selectedCartItems) {
       try {
-        const response = await fetch(`/api/cart/${itemId}`, {
+        const response = await fetch(`/api/cart/${item.id}`, {
           method: "DELETE",
         });
 
         if (!response.ok) {
-          console.error(`Failed to remove item ${itemId} from cart`);
+          console.error(`Failed to remove item ${item.id} from cart`);
         }
       } catch (error) {
-        console.error(`Error removing item ${itemId}:`, error);
+        console.error(`Error removing item ${item.id}:`, error);
       }
     }
 
