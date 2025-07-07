@@ -64,9 +64,13 @@ export class PixabayImageService {
         safesearch = true
       } = options;
 
+      // Clean and optimize query for Pixabay
+      const cleanQuery = query.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
+      console.log(`Pixabay query cleaned: "${query}" -> "${cleanQuery}"`);
+      
       const searchParams = new URLSearchParams({
         key: this.apiKey,
-        q: encodeURIComponent(query),
+        q: cleanQuery,
         image_type: imageType,
         per_page: Math.min(count, 200).toString(),
         min_width: minWidth.toString(),
@@ -76,10 +80,13 @@ export class PixabayImageService {
         orientation: 'all'
       });
 
+      console.log(`Pixabay API URL: ${this.baseUrl}?${searchParams}`);
       const response = await fetch(`${this.baseUrl}?${searchParams}`);
       
       if (!response.ok) {
-        throw new Error(`Pixabay API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`Pixabay API error ${response.status}: ${errorText}`);
+        throw new Error(`Pixabay API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
