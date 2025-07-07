@@ -13,6 +13,7 @@ import { RealTimeTrackingService } from "./services/realTimeTrackingService";
 import PushNotificationService from "./pushNotificationService";
 import { freeImageService } from "./freeImageService";
 import { googleImageService } from "./googleImageService";
+import { pixabayImageService } from "./pixabayImageService";
 
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
@@ -6699,41 +6700,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
-      // Try Google API first
-      const result = await googleImageService.searchImages(query, Number(page), Number(per_page));
-      
-      if (result && result.items && result.items.length > 0) {
-        // Transform Google response to match Unsplash format for compatibility
-        const transformedResult = {
-          total: parseInt(result.searchInformation?.totalResults || '0'),
-          total_pages: Math.ceil(parseInt(result.searchInformation?.totalResults || '0') / Number(per_page)),
-          results: result.items.map(item => ({
-            id: item.id || item.link,
-            urls: {
-              raw: item.link,
-              full: item.link,
-              regular: item.link,
-              small: item.image.thumbnailLink,
-              thumb: item.image.thumbnailLink
-            },
-            alt_description: item.title,
-            description: item.snippet,
-            user: {
-              name: item.displayLink,
-              username: item.displayLink
-            },
-            links: {
-              download: item.link,
-              html: item.image.contextLink
-            }
-          }))
-        };
-
-        return res.json(transformedResult);
+      // Try Pixabay API first for search-specific images
+      try {
+        const pixabayResult = await pixabayImageService.searchImages(query, Number(per_page));
+        
+        if (pixabayResult && pixabayResult.results && pixabayResult.results.length > 0) {
+          console.log(`✅ Pixabay API: Found ${pixabayResult.results.length} search-specific images for "${query}"`);
+          const transformedResult = {
+            total: pixabayResult.total,
+            total_pages: pixabayResult.total_pages,
+            results: pixabayResult.results
+          };
+          return res.json(transformedResult);
+        }
+      } catch (pixabayError) {
+        console.log("Pixabay API failed, trying Google API...");
       }
 
-      // Fallback to free image service when Google API fails or returns no results
-      console.log("Google API failed or returned no results, using free image service as fallback");
+      // Try Google API as secondary option
+      try {
+        const result = await googleImageService.searchImages(query, Number(page), Number(per_page));
+        
+        if (result && result.items && result.items.length > 0) {
+          console.log(`✅ Google API: Found ${result.items.length} images for "${query}"`);
+          // Transform Google response to match Unsplash format for compatibility
+          const transformedResult = {
+            total: parseInt(result.searchInformation?.totalResults || '0'),
+            total_pages: Math.ceil(parseInt(result.searchInformation?.totalResults || '0') / Number(per_page)),
+            results: result.items.map(item => ({
+              id: item.id || item.link,
+              urls: {
+                raw: item.link,
+                full: item.link,
+                regular: item.link,
+                small: item.image.thumbnailLink,
+                thumb: item.image.thumbnailLink
+              },
+              alt_description: item.title,
+              description: item.snippet,
+              user: {
+                name: item.displayLink,
+                username: item.displayLink
+              },
+              links: {
+                download: item.link,
+                html: item.image.contextLink
+              }
+            }))
+          };
+          return res.json(transformedResult);
+        }
+      } catch (googleError) {
+        console.log("Google API failed, using placeholder fallback");
+      }
+
+      // Final fallback to placeholder images (for consistency)
+      console.log("Both Pixabay and Google APIs failed, using placeholder fallback");
       const freeImages = await freeImageService.searchImages(query, Number(per_page));
       
       const transformedResult = {

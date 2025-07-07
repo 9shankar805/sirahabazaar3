@@ -137,14 +137,28 @@ const GoogleImageSearch: React.FC<GoogleImageSearchProps> = ({
             </div>
           )}
 
-          {/* Fallback Notice */}
-          {searchResults && searchResults.results && searchResults.results.results && searchResults.results.results.length > 0 && 
-           searchResults.results.results[0]?.user?.username === 'freecollection' && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
-              <p className="font-medium">📷 Using Fallback Image Service</p>
-              <p className="text-sm">Google Images quota exceeded. Showing high-quality placeholder images instead of search-specific results.</p>
-              <p className="text-sm mt-1">These are professional placeholder images suitable for products.</p>
-            </div>
+          {/* Service Notice */}
+          {searchResults && searchResults.results && searchResults.results.results && searchResults.results.results.length > 0 && (
+            <>
+              {searchResults.results.results[0]?.id?.includes('pixabay') ? (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
+                  <p className="font-medium">✅ Search-Specific Images Found</p>
+                  <p className="text-sm">Using Pixabay to show actual "{searchQuery}" images that match your search.</p>
+                  <p className="text-sm mt-1">These are real product images relevant to your search term.</p>
+                </div>
+              ) : searchResults.results.results[0]?.user?.username === 'freecollection' ? (
+                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
+                  <p className="font-medium">📷 Using Fallback Image Service</p>
+                  <p className="text-sm">Image APIs unavailable. Showing high-quality placeholder images instead of search-specific results.</p>
+                  <p className="text-sm mt-1">These are professional placeholder images suitable for products.</p>
+                </div>
+              ) : (
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded mb-4">
+                  <p className="font-medium">🔍 Search Results</p>
+                  <p className="text-sm">Found images matching your search for "{searchQuery}".</p>
+                </div>
+              )}
+            </>
           )}
 
           {/* Search Results */}
