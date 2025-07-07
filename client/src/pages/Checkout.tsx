@@ -435,13 +435,13 @@ export default function Checkout() {
   };
 
   const onSubmit = async (data: CheckoutForm) => {
-    if (!user || cartItems.length === 0) return;
+    if (cartItems.length === 0) return;
 
     setIsLoading(true);
     try {
       const finalTotal = totalAmount + deliveryFee;
       const orderData = {
-        customerId: user.id,
+        customerId: user?.id || null,
         totalAmount: finalTotal.toString(),
         deliveryFee: deliveryFee.toString(),
         status: "pending",
@@ -486,7 +486,8 @@ export default function Checkout() {
     }
   };
 
-  if (!user) {
+  // Redirect to login only if no user and no guest cart items
+  if (!user && cartItems.length === 0) {
     setLocation("/login");
     return null;
   }

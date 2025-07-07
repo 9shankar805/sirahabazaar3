@@ -238,9 +238,24 @@ export default function ProductDetail() {
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Add to Cart
                 </Button>
-                <Button className="flex-1 btn-primary" onClick={() => {
-                  // Navigate to checkout with current product
-                  window.location.href = `/checkout?direct=${product.id}&quantity=${quantity}`;
+                <Button className="flex-1 btn-primary" onClick={async () => {
+                  try {
+                    // Add product to cart first
+                    await addToCart(product.id, quantity);
+                    // Show success message
+                    toast({
+                      title: "Added to Cart",
+                      description: `${product.name} has been added to your cart`,
+                    });
+                    // Then navigate to checkout
+                    window.location.href = `/checkout`;
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: "Failed to add product to cart",
+                      variant: "destructive",
+                    });
+                  }
                 }}>
                   Buy Now
                 </Button>
