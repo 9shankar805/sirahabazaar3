@@ -108,6 +108,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       
       localStorage.setItem('guestCart', JSON.stringify(guestCart));
+      // Mark that user has made manual selections to prevent auto-selecting all
+      localStorage.setItem('cartHasSelections', 'true');
       
       // Fetch product details for guest cart
       const productResponse = await fetch(`/api/products/${productId}`);
@@ -137,6 +139,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       throw new Error("Failed to add item to cart");
     }
 
+    // Mark that user has made manual selections to prevent auto-selecting all
+    localStorage.setItem('cartHasSelections', 'true');
     await refreshCart();
   };
 
@@ -266,10 +270,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Auto-select all items when cart items change
+  // Auto-select items only when cart is first loaded (not when items are added)
   useEffect(() => {
+    // Only auto-select if cart is empty or if it's the initial load
     if (cartItems.length > 0 && selectedItems.size === 0) {
-      setSelectedItems(new Set(cartItems.map(item => item.id)));
+      // Check if this is a fresh cart load (no previous selections)
+      const shouldAutoSelect = localStorage.getItem('cartHasSelections') !== 'true';
+      if (shouldAutoSelect) {
+        setSelectedItems(new Set(cartItems.map(item => item.id)));
+        localStorage.setItem('cartHasSelections', 'true');
+      }
+    } else if (cartItems.length === 0) {
+      // Reset selection state when cart is empty
+      localStorage.removeItem('cartHasSelections');
+      setSelectedItems(new Set());
     }
   }, [cartItems]);
 
