@@ -188,6 +188,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Social login endpoint
+  app.post("/api/auth/social-login", async (req, res) => {
+    try {
+      const { email, fullName, provider, providerId, photoUrl, role } = req.body;
+      
+      if (!email || !provider || !providerId) {
+        return res.status(400).json({ error: "Email, provider, and providerId are required" });
+      }
+
+      // Check if user already exists
+      let user = await storage.getUserByEmail(email);
+      
+      if (user) {
+        // User exists, update their info and log them in
+        const updatedUser = await storage.updateUser(user.id, {
+          fullName: fullName || user.fullName,
+          profilePicture: photoUrl || user.profilePicture,
+          // Keep existing role if user exists
+        });
+        
+        // Don't send password back
+        const { password: _, ...userWithoutPassword } = updatedUser;
+        return res.json({ user: userWithoutPassword });
+      } else {
+        // Create new user
+        const userData = {
+          email,
+          username: email.split('@')[0],
+          fullName: fullName || 'User',
+          password: Math.random().toString(36).slice(-8), // Generate random password
+          role: role || 'customer',
+          status: 'active',
+          profilePicture: photoUrl,
+          provider,
+          providerId
+        };
+
+        const validatedData = insertUserSchema.parse(userData);
+        const newUser = await storage.createUser(validatedData);
+        
+        // Don't send password back
+        const { password: _, ...userWithoutPassword } = newUser;
+        return res.json({ user: userWithoutPassword });
+      }
+    } catch (error) {
+      console.error("Social login error:", error);
+      res.status(500).json({ error: "Social login failed" });
+    }
+  });
+
   // Delete user account endpoint
   app.delete("/api/auth/delete-account", async (req, res) => {
     try {
