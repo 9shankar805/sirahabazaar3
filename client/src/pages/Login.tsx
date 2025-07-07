@@ -72,7 +72,9 @@ export default function Login() {
 
     setIsResettingPassword(true);
     try {
+      console.log('Attempting to send password reset email to:', email);
       await sendPasswordResetEmail(auth, email);
+      console.log('Password reset email sent successfully');
       toast({
         title: "Password Reset Email Sent",
         description: "Check your email for password reset instructions.",
@@ -81,17 +83,28 @@ export default function Login() {
       console.error('Password reset error:', error);
       
       let errorMessage = "Failed to send password reset email.";
+      let description = "";
+      
       if (error.code === 'auth/user-not-found') {
         errorMessage = "No account found with this email address.";
+        description = "Please check the email address or create a new account.";
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = "Please enter a valid email address.";
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = "Too many requests. Please try again later.";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = "Network error occurred.";
+        description = "Please check your internet connection and try again.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = "Domain not authorized.";
+        description = "Firebase domain authorization is required. Please contact support.";
+      } else {
+        description = `Error code: ${error.code || 'unknown'}`;
       }
       
       toast({
-        title: "Password Reset Failed",
-        description: errorMessage,
+        title: errorMessage,
+        description: description || "Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -206,9 +219,19 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Demo Credentials */}
+            {/* Password Reset Info */}
             <div className="mt-6 border-t pt-6">
               <div className="text-center mb-4">
+                <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800 mb-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
+                    <strong>Password Reset:</strong>
+                  </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    Enter your email address and click "Forgot password?" to receive reset instructions.
+                    Note: Firebase domain authorization may be required for email delivery.
+                  </p>
+                </div>
+                
                 <p className="text-sm text-muted-foreground mb-3">Demo Accounts:</p>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-center space-x-2 p-2 bg-muted rounded">
