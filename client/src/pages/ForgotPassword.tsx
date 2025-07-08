@@ -33,6 +33,8 @@ export default function ForgotPassword() {
   const onSubmit = async (data: ForgotPasswordForm) => {
     setIsLoading(true);
     try {
+      console.log("Attempting to send password reset email to:", data.email);
+      
       const response = await fetch("/api/auth/request-password-reset", {
         method: "POST",
         headers: {
@@ -41,7 +43,11 @@ export default function ForgotPassword() {
         body: JSON.stringify(data),
       });
 
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
+
       const result = await response.json();
+      console.log("Response data:", result);
 
       if (response.ok) {
         setEmailSent(true);
@@ -52,14 +58,15 @@ export default function ForgotPassword() {
       } else {
         toast({
           title: "Error",
-          description: result.error || "Failed to send reset email. Please try again.",
+          description: result.error || result.message || "Failed to send reset email. Please try again.",
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error("Password reset error:", error);
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: `Something went wrong: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
         variant: "destructive",
       });
     } finally {
