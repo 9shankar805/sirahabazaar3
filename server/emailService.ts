@@ -43,8 +43,44 @@ export class EmailService {
         console.log('✅ Email service initialized with Gmail');
         return true;
       }
+
+      // Try using a temporary Gmail configuration for testing
+      const tempGmailUser = process.env.TEMP_GMAIL_USER;
+      const tempGmailPass = process.env.TEMP_GMAIL_PASS;
+      if (tempGmailUser && tempGmailPass) {
+        this.transporter = nodemailer.createTransport({
+          host: 'smtp.gmail.com',
+          port: 587,
+          secure: false,
+          auth: {
+            user: tempGmailUser,
+            pass: tempGmailPass
+          }
+        });
+        console.log('✅ Email service initialized with temporary Gmail configuration');
+        return true;
+      }
       
-      // Development fallback - log emails instead of sending
+      // Test configuration using Ethereal Email for actual email testing
+      try {
+        const testAccount = await nodemailer.createTestAccount();
+        this.transporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          auth: {
+            user: testAccount.user,
+            pass: testAccount.pass
+          }
+        });
+        console.log('✅ Email service initialized with Ethereal Email for testing');
+        console.log('📧 Test emails will be visible at: https://ethereal.email');
+        return true;
+      } catch (etherealError) {
+        console.warn('Ethereal Email setup failed:', etherealError);
+      }
+
+      // Final fallback - log emails instead of sending
       this.transporter = nodemailer.createTransport({
         streamTransport: true,
         newline: 'unix',
@@ -146,8 +182,16 @@ export class EmailService {
         return true;
       } else {
         // Actually send the email
-        await this.transporter.sendMail(mailOptions);
+        const info = await this.transporter.sendMail(mailOptions);
         console.log('Password reset email sent successfully to:', emailData.to);
+        
+        // If using Ethereal email, provide preview URL
+        if (info.messageId && this.transporter.options && this.transporter.options.host === 'smtp.ethereal.email') {
+          const previewURL = nodemailer.getTestMessageUrl(info);
+          console.log('📧 Email preview URL:', previewURL);
+          console.log('📧 You can view the sent email at: https://ethereal.email');
+        }
+        
         return true;
       }
     } catch (error) {
