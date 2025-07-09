@@ -23,7 +23,7 @@ import {
   insertOrderTrackingSchema, insertReturnPolicySchema, insertReturnSchema, insertCategorySchema,
   insertPromotionSchema, insertAdvertisementSchema, insertProductReviewSchema, insertSettlementSchema,
   insertStoreAnalyticsSchema, insertInventoryLogSchema, insertCouponSchema, insertBannerSchema,
-  insertFlashSaleSchema,
+  insertFlashSaleSchema, insertStoreReviewSchema, insertStoreReviewLikeSchema,
   insertSupportTicketSchema, insertSiteSettingSchema, insertFraudAlertSchema, insertCommissionSchema,
   insertProductAttributeSchema, insertVendorVerificationSchema, insertAdminLogSchema,
   insertDeliveryPartnerSchema, insertDeliverySchema,
@@ -2102,14 +2102,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Store Reviews API Routes
   app.get("/api/stores/:storeId/reviews", async (req, res) => {
     try {
       const storeId = parseInt(req.params.storeId);
-      const reviews = await storage.getStoreReviews(storeId);
+      const { minRating, maxRating, limit = 10, offset = 0 } = req.query;
+
+      let reviews = await storage.getStoreReviewsByStoreId(storeId);
+
+      // Filter by rating if specified
+      if (minRating) {
+        reviews = reviews.filter(review => review.rating >= parseInt(minRating as string));
+      }
+      if (maxRating) {
+        reviews = reviews.filter(review => review.rating <= parseInt(maxRating as string));
+      }
+
+      // Apply pagination
+      const startIndex = parseInt(offset as string);
+      const endIndex = startIndex + parseInt(limit as string);
+      const paginatedReviews = reviews.slice(startIndex, endIndex);
 
       // Get user details for each review
       const reviewsWithUsers = await Promise.all(
-        reviews.map(async (review) => {
+        paginatedReviews.map(async (review) => {
           const user = await storage.getUser(review.customerId);
           return {
             ...review,
@@ -2126,6 +2142,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching store reviews:", error);
       res.status(500).json({ error: "Failed to fetch store reviews" });
+    }
+  });
+
+  app.post("/api/store-reviews", async (req, res) => {
+    try {
+      console.log("Received store review request body:", req.body);
+      
+      const reviewData = {
+        ...req.body,
+        isApproved: true, // Auto-approve store reviews for now
+        isVerifiedPurchase: false // TODO: Check if user actually purchased from the store
+      };
+
+      // Validate the review data
+      const validatedData = {
+        storeId: parseInt(reviewData.storeId),
+        customerId: parseInt(reviewData.customerId),
+        rating: parseInt(reviewData.rating),
+        title: reviewData.title || null,
+        comment: reviewData.comment || null,
+        isVerifiedPurchase: reviewData.isVerifiedPurchase || false,
+        isApproved: reviewData.isApproved || true
+      };
+
+      // Validate required fields
+      if (!validatedData.storeId || !validatedData.customerId || !validatedData.rating) {
+        return res.status(400).json({ 
+          error: "Missing required fields: storeId, customerId, and rating are required",
+          received: { storeId: validatedData.storeId, customerId: validatedData.customerId, rating: validatedData.rating }
+        });
+      }
+
+      console.log("Validated store review data to be saved:", validatedData);
+
+      // Check if user already reviewed this store
+      const existingReviews = await storage.getStoreReviewsByStoreId(validatedData.storeId);
+      const userAlreadyReviewed = existingReviews.some(review => review.customerId === validatedData.customerId);
+
+      if (userAlreadyReviewed) {
+        return res.status(400).json({ error: "You have already reviewed this store" });
+      }
+
+      const review = await storage.createStoreReview(validatedData);
+
+      // Get user details for response
+      const user = await storage.getUser(review.customerId);
+      const reviewWithUser = {
+        ...review,
+        customer: user ? {
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName
+        } : null
+      };
+
+      res.json(reviewWithUser);
+    } catch (error) {
+      console.error("Error creating store review:", error);
+      res.status(400).json({ error: "Failed to create store review" });
+    }
+  });
+
+  app.patch("/api/store-reviews/:reviewId", async (req, res) => {
+    try {
+      const reviewId = parseInt(req.params.reviewId);
+      const updates = req.body;
+
+      const updatedReview = await storage.updateStoreReview(reviewId, updates);
+
+      if (!updatedReview) {
+        return res.status(404).json({ error: "Store review not found" });
+      }
+
+      res.json(updatedReview);
+    } catch (error) {
+      console.error("Error updating store review:", error);
+      res.status(400).json({ error: "Failed to update store review" });
+    }
+  });
+
+  app.delete("/api/store-reviews/:reviewId", async (req, res) => {
+    try {
+      const reviewId = parseInt(req.params.reviewId);
+
+      // TODO: Add authorization check to ensure user can delete this review
+      const success = await storage.deleteStoreReview(reviewId);
+
+      if (!success) {
+        return res.status(404).json({ error: "Store review not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting store review:", error);
+      res.status(500).json({ error: "Failed to delete store review" });
+    }
+  });
+
+  // Store review likes
+  app.post("/api/store-reviews/:reviewId/helpful", async (req, res) => {
+    try {
+      const reviewId = parseInt(req.params.reviewId);
+      const userId = req.body?.userId || 9; // Default to user 9 for testing
+      
+      if (!reviewId) {
+        return res.status(400).json({ error: "Invalid review ID" });
+      }
+
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+
+      // Check if user has already liked this store review
+      const alreadyLiked = await storage.hasUserLikedStoreReview(reviewId, userId);
+      
+      if (alreadyLiked) {
+        return res.status(400).json({ 
+          error: "You have already marked this review as helpful"
+        });
+      }
+
+      // Create the like
+      await storage.createStoreReviewLike({
+        reviewId,
+        userId
+      });
+
+      res.json({ 
+        success: true,
+        message: "Review marked as helpful"
+      });
+    } catch (error) {
+      console.error("Error marking store review as helpful:", error);
+      res.status(500).json({ error: "Failed to mark review as helpful" });
+    }
+  });
+
+  app.delete("/api/store-reviews/:reviewId/helpful", async (req, res) => {
+    try {
+      const reviewId = parseInt(req.params.reviewId);
+      const userId = req.body?.userId || 9; // Default to user 9 for testing
+      
+      if (!reviewId) {
+        return res.status(400).json({ error: "Invalid review ID" });
+      }
+
+      if (!userId) {
+        return res.status(400).json({ error: "User ID required" });
+      }
+
+      const success = await storage.deleteStoreReviewLike(reviewId, userId);
+
+      if (!success) {
+        return res.status(404).json({ error: "Like not found" });
+      }
+
+      res.json({ 
+        success: true,
+        message: "Review like removed"
+      });
+    } catch (error) {
+      console.error("Error removing store review like:", error);
+      res.status(500).json({ error: "Failed to remove review like" });
     }
   });
 

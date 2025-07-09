@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ProductCard from "@/components/ProductCard";
+import StoreReviews from "@/components/StoreReviews";
 import type { Store, Product } from "@shared/schema";
 
 export default function StoreDetail() {
@@ -150,10 +151,7 @@ export default function StoreDetail() {
                   </Button>
                 )}
                 
-                <Button variant="outline">
-                  <Star className="h-4 w-4 mr-2" />
-                  Rate Store
-                </Button>
+
               </div>
             </div>
           </CardContent>
@@ -184,6 +182,11 @@ export default function StoreDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* Store Reviews */}
+        <div className="mt-8">
+          <StoreReviews storeId={parseInt(id!)} currentUserId={9} />
+        </div>
 
         {/* Store Features */}
         <Card className="mt-8">

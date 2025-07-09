@@ -1,7 +1,7 @@
 import { 
   users, adminUsers, stores, categories, products, orders, orderItems, cartItems, wishlistItems,
   admins, websiteVisits, notifications, orderTracking, returnPolicies, returns,
-  promotions, advertisements, productReviews, reviewLikes, settlements, storeAnalytics, inventoryLogs,
+  promotions, advertisements, productReviews, reviewLikes, storeReviews, storeReviewLikes, settlements, storeAnalytics, inventoryLogs,
   paymentTransactions, coupons, banners, supportTickets, siteSettings, deliveryPartners, deliveries,
   vendorVerifications, fraudAlerts, commissions, productAttributes, adminLogs, deliveryZones, flashSales,
   pushNotificationTokens, passwordResetTokens,
@@ -13,7 +13,9 @@ import {
   type Notification, type InsertNotification, type OrderTracking, type InsertOrderTracking,
   type ReturnPolicy, type InsertReturnPolicy, type Return, type InsertReturn,
   type Promotion, type InsertPromotion, type Advertisement, type InsertAdvertisement,
-  type ProductReview, type InsertProductReview, type ReviewLike, type InsertReviewLike, type Settlement, type InsertSettlement,
+  type ProductReview, type InsertProductReview, type ReviewLike, type InsertReviewLike, 
+  type StoreReview, type InsertStoreReview, type StoreReviewLike, type InsertStoreReviewLike,
+  type Settlement, type InsertSettlement,
   type StoreAnalytics, type InsertStoreAnalytics, type InventoryLog, type InsertInventoryLog,
   type DeliveryPartner, type InsertDeliveryPartner, type Delivery, type InsertDelivery, type DeliveryZone, type InsertDeliveryZone,
   type PaymentTransaction, type Coupon, type InsertCoupon, type Banner, type InsertBanner,
@@ -170,6 +172,19 @@ export interface IStorage {
   createProductReview(review: InsertProductReview): Promise<ProductReview>;
   updateProductReview(id: number, updates: Partial<InsertProductReview>): Promise<ProductReview | undefined>;
   deleteProductReview(id: number): Promise<boolean>;
+
+  // Store reviews
+  getStoreReviewsByStoreId(storeId: number): Promise<StoreReview[]>;
+  createStoreReview(review: InsertStoreReview): Promise<StoreReview>;
+  updateStoreReview(id: number, updates: Partial<InsertStoreReview>): Promise<StoreReview | undefined>;
+  deleteStoreReview(id: number): Promise<boolean>;
+  updateStoreRating(storeId: number): Promise<void>;
+
+  // Store review likes
+  getStoreReviewLikes(reviewId: number): Promise<StoreReviewLike[]>;
+  createStoreReviewLike(like: InsertStoreReviewLike): Promise<StoreReviewLike>;
+  deleteStoreReviewLike(reviewId: number, userId: number): Promise<boolean>;
+  hasUserLikedStoreReview(reviewId: number, userId: number): Promise<boolean>;
 
   // Settlements
   getStoreSettlements(storeId: number): Promise<Settlement[]>;
@@ -1398,6 +1413,149 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error marking review as helpful:", error);
       throw error;
+    }
+  }
+
+  // Store reviews
+  async getStoreReviewsByStoreId(storeId: number): Promise<StoreReview[]> {
+    try {
+      return await db.select().from(storeReviews)
+        .where(eq(storeReviews.storeId, storeId))
+        .orderBy(desc(storeReviews.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createStoreReview(review: InsertStoreReview): Promise<StoreReview> {
+    console.log("Storage layer - creating store review with data:", review);
+    const [newReview] = await db.insert(storeReviews).values(review).returning();
+    
+    // Update store rating after creating a review
+    await this.updateStoreRating(review.storeId);
+    
+    return newReview;
+  }
+
+  async updateStoreReview(id: number, updates: Partial<InsertStoreReview>): Promise<StoreReview | undefined> {
+    try {
+      const [updated] = await db.update(storeReviews).set(updates).where(eq(storeReviews.id, id)).returning();
+      
+      if (updated) {
+        // Update store rating after updating a review
+        await this.updateStoreRating(updated.storeId);
+      }
+      
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async deleteStoreReview(id: number): Promise<boolean> {
+    try {
+      // Get the store ID before deleting
+      const [reviewToDelete] = await db.select().from(storeReviews).where(eq(storeReviews.id, id));
+      
+      if (reviewToDelete) {
+        await db.delete(storeReviews).where(eq(storeReviews.id, id));
+        
+        // Update store rating after deleting a review
+        await this.updateStoreRating(reviewToDelete.storeId);
+        
+        return true;
+      }
+      
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  async updateStoreRating(storeId: number): Promise<void> {
+    try {
+      // Calculate average rating and total reviews for the store
+      const [ratingData] = await db
+        .select({
+          avgRating: sql<number>`COALESCE(AVG(${storeReviews.rating}), 0)`.as('avgRating'),
+          totalReviews: sql<number>`COUNT(${storeReviews.id})`.as('totalReviews')
+        })
+        .from(storeReviews)
+        .where(eq(storeReviews.storeId, storeId));
+
+      const avgRating = ratingData?.avgRating ? Number(ratingData.avgRating) : 0;
+      const totalReviews = ratingData?.totalReviews ? Number(ratingData.totalReviews) : 0;
+
+      // Update the store's rating and totalReviews
+      await db.update(stores)
+        .set({
+          rating: avgRating.toFixed(2),
+          totalReviews: totalReviews
+        })
+        .where(eq(stores.id, storeId));
+    } catch (error) {
+      console.error("Error updating store rating:", error);
+    }
+  }
+
+  // Store review likes
+  async getStoreReviewLikes(reviewId: number): Promise<StoreReviewLike[]> {
+    try {
+      return await db.select().from(storeReviewLikes)
+        .where(eq(storeReviewLikes.reviewId, reviewId))
+        .orderBy(desc(storeReviewLikes.createdAt));
+    } catch {
+      return [];
+    }
+  }
+
+  async createStoreReviewLike(like: InsertStoreReviewLike): Promise<StoreReviewLike> {
+    const [newLike] = await db.insert(storeReviewLikes).values(like).returning();
+    
+    // Increment helpful count on the store review
+    await db.update(storeReviews)
+      .set({ helpfulCount: sql`${storeReviews.helpfulCount} + 1` })
+      .where(eq(storeReviews.id, like.reviewId));
+    
+    return newLike;
+  }
+
+  async deleteStoreReviewLike(reviewId: number, userId: number): Promise<boolean> {
+    try {
+      const result = await db.delete(storeReviewLikes)
+        .where(and(
+          eq(storeReviewLikes.reviewId, reviewId),
+          eq(storeReviewLikes.userId, userId)
+        ))
+        .returning();
+      
+      if (result.length > 0) {
+        // Decrement helpful count on the store review
+        await db.update(storeReviews)
+          .set({ helpfulCount: sql`${storeReviews.helpfulCount} - 1` })
+          .where(eq(storeReviews.id, reviewId));
+        
+        return true;
+      }
+      
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  async hasUserLikedStoreReview(reviewId: number, userId: number): Promise<boolean> {
+    try {
+      const [like] = await db.select().from(storeReviewLikes)
+        .where(and(
+          eq(storeReviewLikes.reviewId, reviewId),
+          eq(storeReviewLikes.userId, userId)
+        ))
+        .limit(1);
+      
+      return !!like;
+    } catch {
+      return false;
     }
   }
 

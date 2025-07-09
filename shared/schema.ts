@@ -424,6 +424,33 @@ export const reviewLikes = pgTable("review_likes", {
   uniqueUserReview: unique().on(table.reviewId, table.userId),
 }));
 
+// Store reviews and ratings
+export const storeReviews = pgTable("store_reviews", {
+  id: serial("id").primaryKey(),
+  storeId: integer("store_id").references(() => stores.id).notNull(),
+  customerId: integer("customer_id").references(() => users.id).notNull(),
+  orderId: integer("order_id").references(() => orders.id),
+  rating: integer("rating").notNull(), // 1-5 stars
+  title: text("title"),
+  comment: text("comment"),
+  images: text("images").array().default([]),
+  isVerifiedPurchase: boolean("is_verified_purchase").default(false),
+  isApproved: boolean("is_approved").default(true),
+  helpfulCount: integer("helpful_count").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Track which users have liked which store reviews
+export const storeReviewLikes = pgTable("store_review_likes", {
+  id: serial("id").primaryKey(),
+  reviewId: integer("review_id").references(() => storeReviews.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  // Ensure one user can only like a store review once
+  uniqueUserStoreReview: unique().on(table.reviewId, table.userId),
+}));
+
 // Store settlements and payouts
 export const settlements = pgTable("settlements", {
   id: serial("id").primaryKey(),
@@ -968,6 +995,17 @@ export const insertProductReviewSchema = createInsertSchema(productReviews).omit
   helpfulCount: true,
 });
 
+export const insertStoreReviewSchema = createInsertSchema(storeReviews).omit({
+  id: true,
+  createdAt: true,
+  helpfulCount: true,
+});
+
+export const insertStoreReviewLikeSchema = createInsertSchema(storeReviewLikes).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertSettlementSchema = createInsertSchema(settlements).omit({
   id: true,
   createdAt: true,
@@ -1017,6 +1055,12 @@ export type Advertisement = typeof advertisements.$inferSelect;
 export type InsertAdvertisement = z.infer<typeof insertAdvertisementSchema>;
 export type ProductReview = typeof productReviews.$inferSelect;
 export type InsertProductReview = z.infer<typeof insertProductReviewSchema>;
+
+export type StoreReview = typeof storeReviews.$inferSelect;
+export type InsertStoreReview = z.infer<typeof insertStoreReviewSchema>;
+
+export type StoreReviewLike = typeof storeReviewLikes.$inferSelect;
+export type InsertStoreReviewLike = z.infer<typeof insertStoreReviewLikeSchema>;
 
 // Review likes schema and types
 export const insertReviewLikeSchema = createInsertSchema(reviewLikes).omit({
