@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // PostgreSQL database URL - using Neon database directly
-const DATABASE_URL = "postgresql://neondb_owner:npg_8S1tihPQpDuH@ep-lucky-meadow-a8x292uf-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
+const DATABASE_URL = "postgresql://neondb_owner:npg_x70rUbTWcLXC@ep-little-breeze-a8mjntni-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
 
 console.log(`🔌 Using Neon PostgreSQL database (direct connection)`);
 
