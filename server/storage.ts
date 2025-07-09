@@ -1474,29 +1474,37 @@ export class DatabaseStorage implements IStorage {
 
   async updateStoreRating(storeId: number): Promise<void> {
     try {
-      // Calculate average rating and total reviews for the store
-      const [ratingData] = await db
+      console.log(`🔄 Updating rating for store ${storeId}...`);
+      
+      // Calculate average rating and total reviews for the store using only approved reviews
+      const ratingResult = await db
         .select({
-          avgRating: sql<number>`COALESCE(AVG(${storeReviews.rating}), 0)`.as('avgRating'),
-          totalReviews: sql<number>`COUNT(${storeReviews.id})`.as('totalReviews')
+          avgRating: sql<string>`COALESCE(AVG(${storeReviews.rating})::NUMERIC(3,2), 0.00)`.as('avgRating'),
+          totalReviews: sql<string>`COUNT(${storeReviews.id})`.as('totalReviews')
         })
         .from(storeReviews)
-        .where(eq(storeReviews.storeId, storeId));
+        .where(and(
+          eq(storeReviews.storeId, storeId),
+          eq(storeReviews.isApproved, true)
+        ));
 
-      const avgRating = ratingData?.avgRating ? Number(ratingData.avgRating) : 0;
-      const totalReviews = ratingData?.totalReviews ? Number(ratingData.totalReviews) : 0;
+      const avgRating = ratingResult[0]?.avgRating ? parseFloat(ratingResult[0].avgRating) : 0;
+      const totalReviews = ratingResult[0]?.totalReviews ? parseInt(ratingResult[0].totalReviews) : 0;
 
-      // Update the store's rating and totalReviews
+      console.log(`📊 Store ${storeId} calculated stats: ${avgRating} stars, ${totalReviews} reviews`);
+
+      // Update the store's rating and totalReviews with proper decimal formatting
       await db.update(stores)
         .set({
-          rating: avgRating.toString(),
+          rating: avgRating.toFixed(1),
           totalReviews: totalReviews
         })
         .where(eq(stores.id, storeId));
         
-      console.log(`✅ Updated store ${storeId} rating to ${avgRating.toFixed(2)} with ${totalReviews} reviews`);
+      console.log(`✅ Updated store ${storeId} rating to ${avgRating.toFixed(1)} with ${totalReviews} reviews`);
     } catch (error) {
       console.error("Error updating store rating:", error);
+      throw error;
     }
   }
 

@@ -2185,6 +2185,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const review = await storage.createStoreReview(validatedData);
+      console.log(`✅ Created store review: Store ${validatedData.storeId}, Rating ${validatedData.rating}`);
+
+      // Force store rating update
+      await storage.updateStoreRating(validatedData.storeId);
+      console.log(`✅ Updated store ${validatedData.storeId} rating after review creation`);
 
       // Get user details for response
       const user = await storage.getUser(review.customerId);

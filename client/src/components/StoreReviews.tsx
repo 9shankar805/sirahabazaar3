@@ -90,28 +90,21 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
       form.reset();
       setSelectedRating(0);
       
-      // Comprehensive cache invalidation to ensure store rating updates
+      // Comprehensive cache invalidation to ensure store ratings update immediately
       queryClient.invalidateQueries({ queryKey: ['/api/stores', storeId, 'reviews'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stores'] });
       queryClient.invalidateQueries({ queryKey: [`/api/stores/${storeId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/stores', storeId] });
       
-      // Force immediate refetch of all store-related data
-      queryClient.refetchQueries({ queryKey: ['/api/stores'] });
-      queryClient.refetchQueries({ queryKey: [`/api/stores/${storeId}`] });
-      queryClient.refetchQueries({ queryKey: ['/api/stores', storeId] });
+      // Force immediate cache removal and refetch
+      queryClient.removeQueries({ queryKey: ['/api/stores'] });
+      queryClient.removeQueries({ queryKey: [`/api/stores/${storeId}`] });
       
-      // Remove stale data from cache completely and force fresh fetch
+      // Delay slightly then force fresh fetch to allow server update to complete
       setTimeout(() => {
-        queryClient.removeQueries({ queryKey: ['/api/stores'] });
-        queryClient.removeQueries({ queryKey: [`/api/stores/${storeId}`] });
-        queryClient.removeQueries({ queryKey: ['/api/stores', storeId] });
-        
-        // Force fresh fetch
         queryClient.refetchQueries({ queryKey: ['/api/stores'] });
         queryClient.refetchQueries({ queryKey: [`/api/stores/${storeId}`] });
-        queryClient.refetchQueries({ queryKey: ['/api/stores', storeId] });
-      }, 500);
+        queryClient.refetchQueries({ queryKey: ['/api/stores', storeId, 'reviews'] });
+      }, 1000);
     },
     onError: (error: any) => {
       const isAlreadyReviewed = error.message?.includes("already reviewed");
