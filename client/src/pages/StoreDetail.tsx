@@ -138,6 +138,23 @@ export default function StoreDetail() {
                   </Button>
                 )}
                 
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    const reviewsSection = document.getElementById('store-reviews');
+                    if (reviewsSection) {
+                      reviewsSection.scrollIntoView({ behavior: 'smooth' });
+                      const rateButton = reviewsSection.querySelector('button[data-rate-store]');
+                      if (rateButton) {
+                        setTimeout(() => rateButton.click(), 500);
+                      }
+                    }
+                  }}
+                >
+                  <Star className="h-4 w-4 mr-2" />
+                  Rate Store
+                </Button>
+                
                 {store.latitude && store.longitude && (
                   <Button 
                     variant="outline"
@@ -150,8 +167,6 @@ export default function StoreDetail() {
                     Get Directions
                   </Button>
                 )}
-                
-
               </div>
             </div>
           </CardContent>
@@ -184,7 +199,7 @@ export default function StoreDetail() {
         </Card>
 
         {/* Store Reviews */}
-        <div className="mt-8">
+        <div id="store-reviews" className="mt-8">
           <StoreReviews storeId={parseInt(id!)} currentUserId={9} />
         </div>
 

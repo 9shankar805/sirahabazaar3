@@ -73,14 +73,10 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
 
   // Create review mutation
   const createReviewMutation = useMutation({
-    mutationFn: (data: ReviewFormData) => 
+    mutationFn: (data: any) => 
       apiRequest('/api/store-reviews', {
         method: 'POST',
-        body: {
-          ...data,
-          storeId,
-          customerId: currentUserId || 9, // Default to user 9 for testing
-        },
+        body: data,
       }),
     onSuccess: () => {
       toast({
@@ -125,7 +121,17 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
   });
 
   const onSubmit = (data: ReviewFormData) => {
-    createReviewMutation.mutate(data);
+    console.log('Form data being submitted:', data);
+    
+    const reviewData = {
+      ...data,
+      rating: selectedRating || data.rating,
+      storeId,
+      customerId: currentUserId || 9,
+    };
+    
+    console.log('Review data with store info:', reviewData);
+    createReviewMutation.mutate(reviewData);
   };
 
   const handleRatingClick = (rating: number) => {
@@ -177,7 +183,7 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
             <span>Store Reviews</span>
             <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" data-rate-store>
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Rate Store
                 </Button>
