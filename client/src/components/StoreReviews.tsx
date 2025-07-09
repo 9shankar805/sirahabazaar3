@@ -90,12 +90,18 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
       form.reset();
       setSelectedRating(0);
       queryClient.invalidateQueries({ queryKey: ['/api/stores', storeId, 'reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stores'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stores', storeId] });
     },
     onError: (error: any) => {
+      const isAlreadyReviewed = error.message?.includes("already reviewed");
+      
       toast({
-        title: "Error submitting review",
-        description: error.message || "Failed to submit your review. Please try again.",
-        variant: "destructive",
+        title: isAlreadyReviewed ? "Review Already Submitted" : "Error submitting review",
+        description: isAlreadyReviewed 
+          ? "You have already reviewed this store. You can only submit one review per store."
+          : error.message || "Failed to submit your review. Please try again.",
+        variant: isAlreadyReviewed ? "default" : "destructive",
       });
     },
   });

@@ -1489,10 +1489,12 @@ export class DatabaseStorage implements IStorage {
       // Update the store's rating and totalReviews
       await db.update(stores)
         .set({
-          rating: avgRating.toFixed(2),
+          rating: avgRating.toString(),
           totalReviews: totalReviews
         })
         .where(eq(stores.id, storeId));
+        
+      console.log(`✅ Updated store ${storeId} rating to ${avgRating.toFixed(2)} with ${totalReviews} reviews`);
     } catch (error) {
       console.error("Error updating store rating:", error);
     }
