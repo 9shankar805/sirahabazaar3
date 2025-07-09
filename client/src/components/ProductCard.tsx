@@ -103,6 +103,16 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
           
+          {/* Rating display */}
+          {product.rating && parseFloat(product.rating) > 0 && (
+            <div className="flex items-center gap-1 mb-1">
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <span className="text-[10px] text-gray-600">
+                {parseFloat(product.rating).toFixed(1)}
+              </span>
+            </div>
+          )}
+          
           <div className="flex items-center space-x-1 mb-2">
             <span className="text-xs font-bold text-foreground">
               ₹{Number(product.price).toLocaleString()}

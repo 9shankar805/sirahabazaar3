@@ -595,26 +595,107 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProductsByStoreId(storeId: number): Promise<Product[]> {
-    return await db.select().from(products)
+    const productsWithRatings = await db
+      .select({
+        ...products,
+        avgRating: sql<number>`COALESCE(AVG(${productReviews.rating}), 0)`.as('avgRating'),
+        reviewCount: sql<number>`COUNT(${productReviews.id})`.as('reviewCount')
+      })
+      .from(products)
+      .leftJoin(productReviews, eq(products.id, productReviews.productId))
       .where(eq(products.storeId, storeId))
+      .groupBy(products.id)
       .orderBy(desc(products.createdAt));
+
+    return productsWithRatings.map(product => {
+      const avgRating = product.avgRating ? Number(product.avgRating) : 0;
+      const reviewCount = product.reviewCount ? Number(product.reviewCount) : 0;
+      
+      return {
+        ...product,
+        rating: avgRating > 0 ? avgRating.toFixed(1) : "0.0",
+        totalReviews: reviewCount
+      };
+    });
   }
 
   async getAllProducts(): Promise<Product[]> {
-    return await db.select().from(products);
+    // Get products with calculated average rating and review count
+    const productsWithRatings = await db
+      .select({
+        ...products,
+        avgRating: sql<number>`COALESCE(AVG(${productReviews.rating}), 0)`.as('avgRating'),
+        reviewCount: sql<number>`COUNT(${productReviews.id})`.as('reviewCount')
+      })
+      .from(products)
+      .leftJoin(productReviews, eq(products.id, productReviews.productId))
+      .groupBy(products.id)
+      .orderBy(desc(products.createdAt));
+
+    // Update the rating field with calculated average and return
+    return productsWithRatings.map(product => {
+      const avgRating = product.avgRating ? Number(product.avgRating) : 0;
+      const reviewCount = product.reviewCount ? Number(product.reviewCount) : 0;
+      
+      return {
+        ...product,
+        rating: avgRating > 0 ? avgRating.toFixed(1) : "0.0",
+        totalReviews: reviewCount
+      };
+    });
   }
 
   async getProductsByCategory(categoryId: number): Promise<Product[]> {
-    return await db.select().from(products).where(eq(products.categoryId, categoryId));
+    const productsWithRatings = await db
+      .select({
+        ...products,
+        avgRating: sql<number>`COALESCE(AVG(${productReviews.rating}), 0)`.as('avgRating'),
+        reviewCount: sql<number>`COUNT(${productReviews.id})`.as('reviewCount')
+      })
+      .from(products)
+      .leftJoin(productReviews, eq(products.id, productReviews.productId))
+      .where(eq(products.categoryId, categoryId))
+      .groupBy(products.id);
+
+    return productsWithRatings.map(product => {
+      const avgRating = product.avgRating ? Number(product.avgRating) : 0;
+      const reviewCount = product.reviewCount ? Number(product.reviewCount) : 0;
+      
+      return {
+        ...product,
+        rating: avgRating > 0 ? avgRating.toFixed(1) : "0.0",
+        totalReviews: reviewCount
+      };
+    });
   }
 
   async searchProducts(query: string): Promise<Product[]> {
-    return await db.select().from(products).where(
-      or(
-        ilike(products.name, `%${query}%`),
-        ilike(products.description, `%${query}%`)
+    const productsWithRatings = await db
+      .select({
+        ...products,
+        avgRating: sql<number>`COALESCE(AVG(${productReviews.rating}), 0)`.as('avgRating'),
+        reviewCount: sql<number>`COUNT(${productReviews.id})`.as('reviewCount')
+      })
+      .from(products)
+      .leftJoin(productReviews, eq(products.id, productReviews.productId))
+      .where(
+        or(
+          ilike(products.name, `%${query}%`),
+          ilike(products.description, `%${query}%`)
+        )
       )
-    );
+      .groupBy(products.id);
+
+    return productsWithRatings.map(product => {
+      const avgRating = product.avgRating ? Number(product.avgRating) : 0;
+      const reviewCount = product.reviewCount ? Number(product.reviewCount) : 0;
+      
+      return {
+        ...product,
+        rating: avgRating > 0 ? avgRating.toFixed(1) : "0.0",
+        totalReviews: reviewCount
+      };
+    });
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
