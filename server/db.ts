@@ -6,8 +6,8 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-// PostgreSQL database URL - using external PostgreSQL database
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://mydreamv50:123456@139.59.19.202:5432/mydreamv50";
+// PostgreSQL database URL - using Neon PostgreSQL database
+const DATABASE_URL = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_x70rUbTWcLXC@ep-little-breeze-a8mjntni-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
 
 if (!DATABASE_URL) {
   throw new Error(
@@ -15,27 +15,27 @@ if (!DATABASE_URL) {
   );
 }
 
-console.log(`🔌 Using external PostgreSQL database: ${DATABASE_URL?.split('@')[1]?.split('/')[0] || 'configured database'}`);
+console.log(`🔌 Using Neon PostgreSQL database: ${DATABASE_URL?.split('@')[1]?.split('/')[0] || 'configured database'}`);
 
-// Enhanced pool configuration for external PostgreSQL database
+// Enhanced pool configuration for Neon PostgreSQL database
 export const pool = new Pool({
   connectionString: DATABASE_URL,
-  // Connection limits optimized for external database
-  max: 8,                     // Reduced for external database
-  min: 1,                     // Minimum connections
-  idleTimeoutMillis: 20000,   // Shorter timeout for external database
-  connectionTimeoutMillis: 10000, // Allow time for external connection
+  // Connection limits optimized for Neon
+  max: 10,                    // Optimal for Neon pooler
+  min: 2,                     // Minimum connections
+  idleTimeoutMillis: 30000,   // Keep connections alive longer
+  connectionTimeoutMillis: 5000, // Allow more time for Neon connection
   
   // PostgreSQL-specific optimizations
-  application_name: 'siraha_bazaar_marketplace',
-  statement_timeout: 25000,   // 25 second query timeout
+  application_name: 'siraha_bazaar_neon',
+  statement_timeout: 30000,   // 30 second query timeout for complex operations
   
-  // SSL configuration for external database
-  ssl: false, // External database doesn't require SSL
+  // SSL configuration for Neon (required)
+  ssl: { rejectUnauthorized: false },
   
   // Performance tuning
   keepAlive: true,
-  keepAliveInitialDelayMillis: 5000,
+  keepAliveInitialDelayMillis: 10000,
 });
 
 // Enhanced error handling to prevent crashes
