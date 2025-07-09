@@ -120,7 +120,16 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### July 9, 2025 - Automatic Default Store Images and Cover Implementation
+### July 9, 2025 - Enhanced Image Upload System with 200KB Compression
+- ✓ Removed direct upload button from ImageUpload component as requested
+- ✓ Enhanced compression algorithm to target 200KB file size for fast loading
+- ✓ Updated compression logic with aggressive size reduction based on original file size
+- ✓ Modified image upload interface to only show Upload, Camera, and URL tabs
+- ✓ Updated form descriptions to reflect "200KB for fast loading" instead of "~200KB for optimal performance"
+- ✓ Implemented intelligent quality reduction loop to ensure 200KB target is met
+- → Image uploads now consistently produce 200KB files with simplified upload interface
+
+### July 9, 2025 - Automatic Default Store Images and Cover Implementation (Previous)
 - ✓ Added automatic default cover images for stores without uploaded images
 - ✓ Different default covers for restaurants vs retail stores (restaurant kitchen vs retail shop)
 - ✓ Added automatic default logos for stores without uploaded logos

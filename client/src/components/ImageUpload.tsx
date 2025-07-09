@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
-// Fast image compression utility
+// Fast image compression utility targeting 200KB
 const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
@@ -24,8 +24,19 @@ const compressImage = (file: File): Promise<string> => {
         
         let { width, height } = img;
         
-        // Simple resize logic - max 800px on longest side
-        const maxDimension = 800;
+        // Aggressive resize for 200KB target
+        const targetSizeKB = 200;
+        const targetSizeBytes = targetSizeKB * 1024;
+        
+        // Start with smaller dimensions for 200KB target
+        let maxDimension = 600;
+        if (file.size > targetSizeBytes * 2) {
+          maxDimension = 400;
+        }
+        if (file.size > targetSizeBytes * 5) {
+          maxDimension = 300;
+        }
+        
         if (width > maxDimension || height > maxDimension) {
           if (width > height) {
             height = (height * maxDimension) / width;
@@ -46,9 +57,15 @@ const compressImage = (file: File): Promise<string> => {
         
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Use fixed quality for speed
-        const quality = 0.7;
-        const compressedData = canvas.toDataURL('image/jpeg', quality);
+        // Aggressive compression for 200KB target
+        let quality = 0.6;
+        let compressedData = canvas.toDataURL('image/jpeg', quality);
+        
+        // Reduce quality if still too large
+        while (compressedData.length > targetSizeBytes * 1.37 && quality > 0.1) { // 1.37 accounts for base64 overhead
+          quality -= 0.1;
+          compressedData = canvas.toDataURL('image/jpeg', quality);
+        }
         
         resolve(compressedData);
       } catch (error) {
@@ -241,76 +258,7 @@ export default function ImageUpload({
   const triggerFileInput = () => fileInputRef.current?.click();
   const triggerCameraInput = () => cameraInputRef.current?.click();
   
-  const handleDirectUpload = async (files: FileList | null) => {
-    if (!files) return;
 
-    if (images.length + files.length > actualMaxImages) {
-      toast({
-        title: "Too many images",
-        description: `Maximum ${actualMaxImages} image${actualMaxImages > 1 ? 's' : ''} allowed`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsUploading(true);
-    const newImages: string[] = [];
-
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-          toast({
-            title: "Invalid file type",
-            description: "Please select only image files",
-            variant: "destructive"
-          });
-          continue;
-        }
-
-        // Validate file size (1MB limit for direct upload)
-        if (file.size > 1024 * 1024) {
-          toast({
-            title: "File too large",
-            description: "Direct upload limited to 1MB. Use Upload tab for larger files.",
-            variant: "destructive"
-          });
-          continue;
-        }
-
-        // Direct upload without compression
-        const reader = new FileReader();
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        newImages.push(dataUrl);
-      }
-
-      if (newImages.length > 0) {
-        const updatedImages = single ? newImages : [...images, ...newImages];
-        setImages(updatedImages);
-        onImagesChange(updatedImages);
-        
-        toast({
-          title: "Images uploaded successfully",
-          description: `${newImages.length} image${newImages.length > 1 ? 's' : ''} added (no compression)`
-        });
-      }
-    } catch (error) {
-      console.error('Direct upload error:', error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload images. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   return (
     <div className={className}>
@@ -324,7 +272,7 @@ export default function ImageUpload({
       </label>
 
       <Tabs defaultValue="upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="upload" className="flex items-center space-x-1">
             <Upload className="h-4 w-4" />
             <span>Upload</span>
@@ -332,10 +280,6 @@ export default function ImageUpload({
           <TabsTrigger value="camera" className="flex items-center space-x-1">
             <Camera className="h-4 w-4" />
             <span>Camera</span>
-          </TabsTrigger>
-          <TabsTrigger value="direct" className="flex items-center space-x-1">
-            <ImageIcon className="h-4 w-4" />
-            <span>Direct</span>
           </TabsTrigger>
           <TabsTrigger value="url" className="flex items-center space-x-1">
             <Link className="h-4 w-4" />
@@ -355,7 +299,7 @@ export default function ImageUpload({
                   Click to select images from your device
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Auto-compressed to ~200KB for optimal performance
+                  Auto-compressed to 200KB for fast loading
                 </p>
               </div>
               <input
@@ -398,31 +342,7 @@ export default function ImageUpload({
           </Card>
         </TabsContent>
 
-        <TabsContent value="direct" className="mt-4">
-          <Card>
-            <CardContent className="p-4">
-              <div
-                onClick={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'image/*';
-                  input.multiple = !single;
-                  input.onchange = (e) => handleDirectUpload((e.target as HTMLInputElement).files);
-                  input.click();
-                }}
-                className="border-2 border-dashed border-green-300 rounded-lg p-6 text-center hover:border-green-500 cursor-pointer transition-colors bg-green-50"
-              >
-                <ImageIcon className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                <p className="text-sm text-green-800 font-medium">
-                  Quick upload (no compression)
-                </p>
-                <p className="text-xs text-green-600 mt-1">
-                  For small images under 1MB - fastest option
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+
 
         <TabsContent value="url" className="mt-4">
           <Card>

@@ -842,7 +842,7 @@ export default function SellerStore() {
                               />
                             </FormControl>
                             <div className="text-sm text-muted-foreground">
-                              Auto-compressed to ~200KB for optimal performance
+                              Auto-compressed to 200KB for fast loading
                             </div>
                             <FormMessage />
                           </FormItem>
@@ -866,7 +866,7 @@ export default function SellerStore() {
                               />
                             </FormControl>
                             <div className="text-sm text-muted-foreground">
-                              Auto-compressed to ~200KB for optimal performance
+                              Auto-compressed to 200KB for fast loading
                             </div>
                             <FormMessage />
                           </FormItem>
