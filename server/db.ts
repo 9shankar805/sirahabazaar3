@@ -6,34 +6,28 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-// PostgreSQL database URL - using Replit PostgreSQL database (original)
-const DATABASE_URL = process.env.DATABASE_URL;
+// PostgreSQL database URL - using Neon database directly
+const DATABASE_URL = "postgresql://neondb_owner:npg_8S1tihPQpDuH@ep-lucky-meadow-a8x292uf-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
 
-if (!DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
-}
+console.log(`🔌 Using Neon PostgreSQL database (direct connection)`);
 
-console.log(`🔌 Using Replit PostgreSQL database (original setup)`);
-
-// Enhanced pool configuration for Replit PostgreSQL database
+// Enhanced pool configuration for Neon PostgreSQL database
 export const pool = new Pool({
   connectionString: DATABASE_URL,
-  // Connection limits optimized for Replit database
-  max: 15,                    // Optimal for Replit environment
-  min: 3,                     // Minimum connections
+  // Connection limits optimized for Neon database
+  max: 10,                    // Optimal for Neon environment
+  min: 2,                     // Minimum connections
   idleTimeoutMillis: 30000,   // Keep connections alive
-  connectionTimeoutMillis: 5000, // Connection timeout
+  connectionTimeoutMillis: 10000, // Longer timeout for Neon
   
   // PostgreSQL-specific optimizations
-  application_name: 'siraha_bazaar_replit',
+  application_name: 'siraha_bazaar_neon',
   statement_timeout: 30000,   // 30 second query timeout
   
-  // SSL configuration for Replit (auto-configured)
-  ssl: DATABASE_URL.includes('sslmode=require') ? { rejectUnauthorized: false } : false,
+  // SSL configuration for Neon (required)
+  ssl: { rejectUnauthorized: false },
   
-  // Performance tuning
+  // Performance tuning for Neon
   keepAlive: true,
   keepAliveInitialDelayMillis: 10000,
 });
