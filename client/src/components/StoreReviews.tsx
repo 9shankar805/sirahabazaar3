@@ -297,29 +297,37 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
             </Dialog>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Average Rating */}
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <span className="text-3xl font-bold">{averageRating.toFixed(1)}</span>
-                <StarRating rating={averageRating} />
-                <span className="text-sm text-gray-500">({reviews.length} reviews)</span>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Average Rating - Compact */}
+            <div className="flex items-center space-x-3">
+              <div className="text-center">
+                <span className="text-2xl font-bold text-blue-600">{averageRating.toFixed(1)}</span>
+                <div className="flex items-center justify-center mt-1">
+                  <StarRating rating={averageRating} size="sm" />
+                </div>
+                <span className="text-xs text-gray-500">{reviews.length} reviews</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-700">Customer Reviews</p>
+                <p className="text-xs text-gray-500">
+                  Based on {reviews.length} verified reviews
+                </p>
               </div>
             </div>
 
-            {/* Rating Distribution */}
-            <div className="space-y-2">
+            {/* Rating Distribution - Compact */}
+            <div className="space-y-1">
               {ratingDistribution.map(({ rating, count, percentage }) => (
-                <div key={rating} className="flex items-center space-x-2 text-sm">
-                  <span className="w-8">{rating}★</span>
-                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                <div key={rating} className="flex items-center space-x-2 text-xs">
+                  <span className="w-6 text-right">{rating}★</span>
+                  <div className="flex-1 bg-gray-200 rounded-full h-1.5">
                     <div
-                      className="bg-yellow-400 h-2 rounded-full"
+                      className="bg-yellow-400 h-1.5 rounded-full"
                       style={{ width: `${percentage}%` }}
                     ></div>
                   </div>
-                  <span className="w-8 text-gray-500">{count}</span>
+                  <span className="w-6 text-gray-500">{count}</span>
                 </div>
               ))}
             </div>
@@ -327,70 +335,70 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
         </CardContent>
       </Card>
 
-      {/* Reviews List */}
-      <div className="space-y-4">
+      {/* Reviews List - Compact View */}
+      <div className="space-y-3">
         {!reviews || reviews.length === 0 ? (
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-8">
-              <MessageCircle className="w-12 h-12 text-gray-400 mb-4" />
-              <p className="text-gray-500 text-center">No reviews yet. Be the first to review this store!</p>
+            <CardContent className="flex flex-col items-center justify-center py-6">
+              <MessageCircle className="w-8 h-8 text-gray-400 mb-3" />
+              <p className="text-gray-500 text-center text-sm">No reviews yet. Be the first to review this store!</p>
             </CardContent>
           </Card>
         ) : (
           reviews.map((review: StoreReview) => (
-            <Card key={review.id}>
-              <CardContent className="pt-6">
-                <div className="flex items-start space-x-4">
-                  <Avatar>
-                    <AvatarImage src={`/api/placeholder/40/40`} />
-                    <AvatarFallback>
-                      <User className="w-4 h-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-semibold">
-                          {review.customer?.fullName || review.customer?.username || 'Anonymous'}
-                        </span>
-                        {review.isVerifiedPurchase && (
-                          <Badge variant="secondary" className="text-xs">
-                            <Shield className="w-3 h-3 mr-1" />
-                            Verified Purchase
-                          </Badge>
-                        )}
-                      </div>
-                      <span className="text-sm text-gray-500">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </span>
+            <Card key={review.id} className="border-l-4 border-l-blue-500">
+              <CardContent className="p-4">
+                {/* Header with name, rating, and date in one line */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-gray-600" />
                     </div>
-                    
                     <div className="flex items-center space-x-2">
-                      <StarRating rating={review.rating} />
-                      <span className="text-sm text-gray-500">({review.rating}/5)</span>
-                    </div>
-                    
-                    {review.title && (
-                      <h4 className="font-medium">{review.title}</h4>
-                    )}
-                    
-                    {review.comment && (
-                      <p className="text-gray-700">{review.comment}</p>
-                    )}
-                    
-                    <div className="flex items-center space-x-4 pt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleMarkHelpful(review.id)}
-                        disabled={markHelpfulMutation.isPending}
-                        className="text-gray-500 hover:text-gray-700"
-                      >
-                        <ThumbsUp className="w-4 h-4 mr-1" />
-                        Helpful ({review.helpfulCount})
-                      </Button>
+                      <span className="font-medium text-sm">
+                        {review.customer?.fullName || review.customer?.username || 'Anonymous'}
+                      </span>
+                      {review.isVerifiedPurchase && (
+                        <Badge variant="secondary" className="text-xs px-1 py-0">
+                          <Shield className="w-2 h-2 mr-1" />
+                          Verified
+                        </Badge>
+                      )}
                     </div>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <StarRating rating={review.rating} size="sm" />
+                    <span className="text-xs text-gray-500">
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Title and Comment in condensed format */}
+                <div className="space-y-1">
+                  {review.title && (
+                    <h4 className="font-medium text-sm text-gray-900 leading-tight">{review.title}</h4>
+                  )}
+                  {review.comment && (
+                    <p className="text-gray-700 text-sm leading-relaxed">{review.comment}</p>
+                  )}
+                </div>
+                
+                {/* Helpful button - compact */}
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleMarkHelpful(review.id)}
+                    disabled={markHelpfulMutation.isPending}
+                    className="text-gray-500 hover:text-gray-700 h-6 text-xs px-2"
+                  >
+                    <ThumbsUp className="w-3 h-3 mr-1" />
+                    Helpful ({review.helpfulCount})
+                  </Button>
+                  <span className="text-xs text-gray-400">
+                    {review.rating}/5 stars
+                  </span>
                 </div>
               </CardContent>
             </Card>
