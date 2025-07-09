@@ -6,52 +6,60 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
-// Image compression utility targeting ~200KB
+// Fast image compression utility
 const compressImage = (file: File): Promise<string> => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
     
+    // Set timeout to prevent hanging
+    const timeout = setTimeout(() => {
+      reject(new Error('Image compression timeout'));
+    }, 10000);
+    
     img.onload = () => {
-      // Calculate dimensions to keep file around 200KB
-      let { width, height } = img;
-      const targetSize = 200 * 1024; // 200KB in bytes
-      
-      // Estimate compression needed based on original size
-      const ratio = Math.sqrt(targetSize / file.size);
-      
-      // Set maximum dimensions based on compression ratio
-      const maxDimension = Math.min(800, Math.max(400, Math.floor(Math.max(width, height) * ratio)));
-      
-      if (width > height) {
-        if (width > maxDimension) {
-          height = (height * maxDimension) / width;
-          width = maxDimension;
+      try {
+        clearTimeout(timeout);
+        
+        let { width, height } = img;
+        
+        // Simple resize logic - max 800px on longest side
+        const maxDimension = 800;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = (height * maxDimension) / width;
+            width = maxDimension;
+          } else {
+            width = (width * maxDimension) / height;
+            height = maxDimension;
+          }
         }
-      } else {
-        if (height > maxDimension) {
-          width = (width * maxDimension) / height;
-          height = maxDimension;
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        if (!ctx) {
+          reject(new Error('Canvas context not available'));
+          return;
         }
+        
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Use fixed quality for speed
+        const quality = 0.7;
+        const compressedData = canvas.toDataURL('image/jpeg', quality);
+        
+        resolve(compressedData);
+      } catch (error) {
+        clearTimeout(timeout);
+        reject(error);
       }
-      
-      canvas.width = width;
-      canvas.height = height;
-      
-      ctx?.drawImage(img, 0, 0, width, height);
-      
-      // Start with quality based on file size
-      let quality = Math.min(0.8, Math.max(0.3, targetSize / file.size));
-      let compressedData = canvas.toDataURL('image/jpeg', quality);
-      
-      // Iteratively reduce quality if still too large
-      while (compressedData.length * 0.75 > targetSize && quality > 0.1) {
-        quality -= 0.1;
-        compressedData = canvas.toDataURL('image/jpeg', quality);
-      }
-      
-      resolve(compressedData);
+    };
+    
+    img.onerror = () => {
+      clearTimeout(timeout);
+      reject(new Error('Failed to load image'));
     };
     
     img.src = URL.createObjectURL(file);
@@ -115,32 +123,70 @@ export default function ImageUpload({
           continue;
         }
 
-        // Validate file size (10MB limit - will be compressed to ~200KB)
-        if (file.size > 10 * 1024 * 1024) {
+        // Validate file size (5MB limit for faster processing)
+        if (file.size > 5 * 1024 * 1024) {
           toast({
             title: "File too large",
-            description: "Please select images smaller than 10MB",
+            description: "Please select images smaller than 5MB",
             variant: "destructive"
           });
           continue;
         }
 
-        // Compress and convert to base64
-        const compressedImage = await compressImage(file);
-        newImages.push(compressedImage);
+        try {
+          // Try compression first
+          const compressedImage = await compressImage(file);
+          newImages.push(compressedImage);
+        } catch (compressionError) {
+          console.error('Compression failed for file:', file.name, compressionError);
+          
+          // Fallback: use original file as data URL if it's small enough (< 1MB)
+          if (file.size < 1024 * 1024) {
+            try {
+              const reader = new FileReader();
+              const dataUrl = await new Promise<string>((resolve, reject) => {
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+              });
+              newImages.push(dataUrl);
+              
+              toast({
+                title: "Image added",
+                description: `${file.name} added without compression`,
+                variant: "default"
+              });
+            } catch (readerError) {
+              console.error('FileReader failed:', readerError);
+              toast({
+                title: "Upload failed",
+                description: `Failed to process ${file.name}. Try a different image.`,
+                variant: "destructive"
+              });
+            }
+          } else {
+            toast({
+              title: "File too large",
+              description: `${file.name} is too large and compression failed. Try a smaller image.`,
+              variant: "destructive"
+            });
+          }
+          continue;
+        }
       }
 
-      const updatedImages = single ? newImages : [...images, ...newImages];
-      setImages(updatedImages);
-      onImagesChange(updatedImages);
-      
       if (newImages.length > 0) {
+        const updatedImages = single ? newImages : [...images, ...newImages];
+        setImages(updatedImages);
+        onImagesChange(updatedImages);
+        
         toast({
           title: "Images uploaded successfully",
           description: `${newImages.length} image${newImages.length > 1 ? 's' : ''} added`
         });
       }
     } catch (error) {
+      console.error('Upload error:', error);
       toast({
         title: "Upload failed",
         description: "Failed to upload images. Please try again.",
@@ -194,6 +240,77 @@ export default function ImageUpload({
 
   const triggerFileInput = () => fileInputRef.current?.click();
   const triggerCameraInput = () => cameraInputRef.current?.click();
+  
+  const handleDirectUpload = async (files: FileList | null) => {
+    if (!files) return;
+
+    if (images.length + files.length > actualMaxImages) {
+      toast({
+        title: "Too many images",
+        description: `Maximum ${actualMaxImages} image${actualMaxImages > 1 ? 's' : ''} allowed`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    const newImages: string[] = [];
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "Invalid file type",
+            description: "Please select only image files",
+            variant: "destructive"
+          });
+          continue;
+        }
+
+        // Validate file size (1MB limit for direct upload)
+        if (file.size > 1024 * 1024) {
+          toast({
+            title: "File too large",
+            description: "Direct upload limited to 1MB. Use Upload tab for larger files.",
+            variant: "destructive"
+          });
+          continue;
+        }
+
+        // Direct upload without compression
+        const reader = new FileReader();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        newImages.push(dataUrl);
+      }
+
+      if (newImages.length > 0) {
+        const updatedImages = single ? newImages : [...images, ...newImages];
+        setImages(updatedImages);
+        onImagesChange(updatedImages);
+        
+        toast({
+          title: "Images uploaded successfully",
+          description: `${newImages.length} image${newImages.length > 1 ? 's' : ''} added (no compression)`
+        });
+      }
+    } catch (error) {
+      console.error('Direct upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <div className={className}>
@@ -207,7 +324,7 @@ export default function ImageUpload({
       </label>
 
       <Tabs defaultValue="upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="upload" className="flex items-center space-x-1">
             <Upload className="h-4 w-4" />
             <span>Upload</span>
@@ -215,6 +332,10 @@ export default function ImageUpload({
           <TabsTrigger value="camera" className="flex items-center space-x-1">
             <Camera className="h-4 w-4" />
             <span>Camera</span>
+          </TabsTrigger>
+          <TabsTrigger value="direct" className="flex items-center space-x-1">
+            <ImageIcon className="h-4 w-4" />
+            <span>Direct</span>
           </TabsTrigger>
           <TabsTrigger value="url" className="flex items-center space-x-1">
             <Link className="h-4 w-4" />
@@ -277,6 +398,32 @@ export default function ImageUpload({
           </Card>
         </TabsContent>
 
+        <TabsContent value="direct" className="mt-4">
+          <Card>
+            <CardContent className="p-4">
+              <div
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.multiple = !single;
+                  input.onchange = (e) => handleDirectUpload((e.target as HTMLInputElement).files);
+                  input.click();
+                }}
+                className="border-2 border-dashed border-green-300 rounded-lg p-6 text-center hover:border-green-500 cursor-pointer transition-colors bg-green-50"
+              >
+                <ImageIcon className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <p className="text-sm text-green-800 font-medium">
+                  Quick upload (no compression)
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  For small images under 1MB - fastest option
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="url" className="mt-4">
           <Card>
             <CardContent className="p-4">
@@ -331,9 +478,14 @@ export default function ImageUpload({
       )}
 
       {isUploading && (
-        <div className="mt-4 flex items-center justify-center space-x-2 text-sm text-gray-600">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-          <span>Uploading images...</span>
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center space-x-3">
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+            <div>
+              <p className="text-sm font-medium text-blue-900">Processing images...</p>
+              <p className="text-xs text-blue-700">Compressing and optimizing for better performance</p>
+            </div>
+          </div>
         </div>
       )}
     </div>
