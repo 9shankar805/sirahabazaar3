@@ -91,18 +91,16 @@ export default function RestaurantDetail() {
         </div>
 
         {/* Restaurant Cover Image */}
-        {restaurant.coverImage && (
-          <div className="w-full h-48 md:h-64 bg-gray-200 rounded-lg mb-6 overflow-hidden">
-            <img
-              src={restaurant.coverImage}
-              alt={`${restaurant.name} cover`}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400";
-              }}
-            />
-          </div>
-        )}
+        <div className="w-full h-48 md:h-64 bg-gray-200 rounded-lg mb-6 overflow-hidden">
+          <img
+            src={restaurant.coverImage || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop&crop=center"}
+            alt={`${restaurant.name} cover`}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop&crop=center";
+            }}
+          />
+        </div>
 
         {/* Restaurant Header */}
         <Card className="mb-8">
@@ -111,11 +109,11 @@ export default function RestaurantDetail() {
               {/* Restaurant Logo */}
               <div className="w-32 h-32 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                 <img
-                  src={restaurant.logo || "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"}
+                  src={restaurant.logo || "https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=400&fit=crop&crop=center"}
                   alt={restaurant.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    e.currentTarget.src = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200";
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=400&fit=crop&crop=center";
                   }}
                 />
               </div>

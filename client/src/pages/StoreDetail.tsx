@@ -46,18 +46,20 @@ export default function StoreDetail() {
     <div className="min-h-screen bg-muted">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Store Cover Image */}
-        {store.coverImage && (
-          <div className="w-full h-48 md:h-64 bg-gray-200 rounded-lg mb-6 overflow-hidden">
-            <img
-              src={store.coverImage}
-              alt={`${store.name} cover`}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop&crop=center";
-              }}
-            />
-          </div>
-        )}
+        <div className="w-full h-48 md:h-64 bg-gray-200 rounded-lg mb-6 overflow-hidden">
+          <img
+            src={store.coverImage || (store.storeType === 'restaurant' 
+              ? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop&crop=center"
+              : "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop&crop=center")}
+            alt={`${store.name} cover`}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = store.storeType === 'restaurant' 
+                ? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop&crop=center"
+                : "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop&crop=center";
+            }}
+          />
+        </div>
 
         {/* Store Header */}
         <Card className="mb-8">
@@ -66,11 +68,11 @@ export default function StoreDetail() {
               {/* Store Logo */}
               <div className="w-32 h-32 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                 <img
-                  src={store.logo || "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"}
+                  src={store.logo || "https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=400&fit=crop&crop=center"}
                   alt={store.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    e.currentTarget.src = "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200";
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=400&fit=crop&crop=center";
                   }}
                 />
               </div>

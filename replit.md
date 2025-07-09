@@ -120,7 +120,16 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### July 9, 2025 - Original Replit PostgreSQL Database Restoration
+### July 9, 2025 - Automatic Default Store Images and Cover Implementation
+- ✓ Added automatic default cover images for stores without uploaded images
+- ✓ Different default covers for restaurants vs retail stores (restaurant kitchen vs retail shop)
+- ✓ Added automatic default logos for stores without uploaded logos
+- ✓ Updated StoreCard, StoreDetail, RestaurantCard, and RestaurantDetail components
+- ✓ All stores now display professional images even when shopkeepers don't upload custom ones
+- ✓ Default images: Restaurant cover (kitchen scene), Retail cover (store scene), Logo (business icon)
+- → Store displays are now always complete with appropriate default images when custom ones aren't available
+
+### July 9, 2025 - Original Replit PostgreSQL Database Restoration (Previous)
 - ✓ Confirmed original database was Replit's built-in PostgreSQL, not external Neon database
 - ✓ Restored database configuration to use Replit PostgreSQL (DATABASE_URL auto-provided)
 - ✓ Created all required database tables and relationships

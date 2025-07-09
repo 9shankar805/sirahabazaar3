@@ -90,24 +90,30 @@ export default function StoreCard({ store, showDistance = true }: StoreCardProps
                 )}
               </div>
             </div>
-          {store.logo && (
-            <img
-              src={store.logo}
-              alt={`${store.name} logo`}
-              className="w-8 h-8 rounded object-cover"
-            />
-          )}
+          <img
+            src={store.logo || "https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=400&fit=crop&crop=center"}
+            alt={`${store.name} logo`}
+            className="w-8 h-8 rounded object-cover"
+            onError={(e) => {
+              e.currentTarget.src = "https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=400&fit=crop&crop=center";
+            }}
+          />
         </div>
       </CardHeader>
 
       <CardContent className="space-y-2 p-3 pt-0">
-        {store.coverImage && (
-          <img
-            src={store.coverImage}
-            alt={`${store.name} cover`}
-            className="w-full h-20 rounded object-cover"
-          />
-        )}
+        <img
+          src={store.coverImage || (store.storeType === 'restaurant' 
+            ? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop&crop=center"
+            : "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop&crop=center")}
+          alt={`${store.name} cover`}
+          className="w-full h-20 rounded object-cover"
+          onError={(e) => {
+            e.currentTarget.src = store.storeType === 'restaurant' 
+              ? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop&crop=center"
+              : "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop&crop=center";
+          }}
+        />
 
         <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-2 flex-1 min-w-0">
