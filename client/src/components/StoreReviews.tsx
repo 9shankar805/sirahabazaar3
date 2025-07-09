@@ -198,212 +198,275 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
 
   return (
     <div className="space-y-6">
-      {/* Rating Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Store Reviews</span>
-            <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" data-rate-store>
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Rate Store
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Rate This Store</DialogTitle>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="rating"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Rating</FormLabel>
-                          <FormControl>
-                            <div className="flex items-center space-x-1">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                  key={star}
-                                  type="button"
-                                  onClick={() => handleRatingClick(star)}
-                                  className="focus:outline-none"
-                                >
-                                  <Star
-                                    className={`w-8 h-8 ${
-                                      star <= selectedRating
-                                        ? 'fill-yellow-400 text-yellow-400'
-                                        : 'text-gray-300'
-                                    }`}
-                                  />
-                                </button>
-                              ))}
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Title (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Brief summary of your experience" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="comment"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Review (Optional)</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Share your experience with this store..."
-                              className="min-h-[100px]"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex justify-end space-x-2">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => setIsReviewDialogOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        type="submit" 
-                        disabled={createReviewMutation.isPending || selectedRating === 0}
-                      >
-                        {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Average Rating - Compact */}
-            <div className="flex items-center space-x-3">
+      {/* Professional Rating Summary - Daraz/Flipkart Style */}
+      <div className="bg-white border border-gray-200 rounded-lg">
+        {/* Header with Rating Button */}
+        <div className="border-b border-gray-200 p-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Ratings & Reviews
+          </h2>
+          <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white px-6" data-rate-store>
+                Write a Review
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle className="text-xl">Rate This Store</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="rating"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">How would you rate this store?</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center space-x-2 py-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => handleRatingClick(star)}
+                                className="focus:outline-none transition-transform hover:scale-110"
+                              >
+                                <Star
+                                  className={`w-10 h-10 ${
+                                    star <= selectedRating
+                                      ? 'fill-orange-400 text-orange-400'
+                                      : 'text-gray-300 hover:text-orange-300'
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                            {selectedRating > 0 && (
+                              <span className="ml-3 text-sm text-gray-600 font-medium">
+                                {selectedRating === 5 ? 'Excellent!' : 
+                                 selectedRating === 4 ? 'Very Good' : 
+                                 selectedRating === 3 ? 'Good' : 
+                                 selectedRating === 2 ? 'Fair' : 'Poor'}
+                              </span>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">Review Title</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Summarize your experience in one line" 
+                            className="h-12"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="comment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">Your Review</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Tell others about your experience with this store..."
+                            className="min-h-[120px] resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="px-6"
+                      onClick={() => setIsReviewDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="bg-orange-500 hover:bg-orange-600 px-6"
+                      disabled={createReviewMutation.isPending || selectedRating === 0}
+                    >
+                      {createReviewMutation.isPending ? "Publishing..." : "Publish Review"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Rating Overview */}
+        <div className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left: Overall Rating */}
+            <div className="flex items-center space-x-6">
               <div className="text-center">
-                <span className="text-2xl font-bold text-blue-600">{averageRating.toFixed(1)}</span>
-                <div className="flex items-center justify-center mt-1">
-                  <StarRating rating={averageRating} size="sm" />
+                <div className="text-5xl font-bold text-green-600 mb-2">
+                  {averageRating.toFixed(1)}
                 </div>
-                <span className="text-xs text-gray-500">{reviews.length} reviews</span>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700">Customer Reviews</p>
-                <p className="text-xs text-gray-500">
-                  Based on {reviews.length} verified reviews
-                </p>
+                <div className="flex items-center justify-center mb-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star 
+                      key={star}
+                      className={`w-5 h-5 ${
+                        star <= Math.round(averageRating) 
+                          ? 'fill-green-500 text-green-500' 
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-gray-600 font-medium">{reviews.length} Reviews</p>
               </div>
             </div>
 
-            {/* Rating Distribution - Compact */}
-            <div className="space-y-1">
-              {ratingDistribution.map(({ rating, count, percentage }) => (
-                <div key={rating} className="flex items-center space-x-2 text-xs">
-                  <span className="w-6 text-right">{rating}★</span>
-                  <div className="flex-1 bg-gray-200 rounded-full h-1.5">
-                    <div
-                      className="bg-yellow-400 h-1.5 rounded-full"
-                      style={{ width: `${percentage}%` }}
-                    ></div>
-                  </div>
-                  <span className="w-6 text-gray-500">{count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Reviews List - Compact View */}
-      <div className="space-y-3">
-        {!reviews || reviews.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-6">
-              <MessageCircle className="w-8 h-8 text-gray-400 mb-3" />
-              <p className="text-gray-500 text-center text-sm">No reviews yet. Be the first to review this store!</p>
-            </CardContent>
-          </Card>
-        ) : (
-          reviews.map((review: StoreReview) => (
-            <Card key={review.id} className="border-l-4 border-l-blue-500">
-              <CardContent className="p-4">
-                {/* Header with name, rating, and date in one line */}
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                      <User className="w-4 h-4 text-gray-600" />
+            {/* Center: Rating Distribution */}
+            <div className="lg:col-span-2">
+              <div className="space-y-3">
+                {ratingDistribution.map(({ rating, count, percentage }) => (
+                  <div key={rating} className="flex items-center space-x-3">
+                    <span className="text-sm font-medium text-gray-700 w-8">
+                      {rating} ★
+                    </span>
+                    <div className="flex-1 bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-green-500 h-3 rounded-full transition-all duration-300"
+                        style={{ width: `${percentage}%` }}
+                      ></div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="font-medium text-sm">
-                        {review.customer?.fullName || review.customer?.username || 'Anonymous'}
-                      </span>
-                      {review.isVerifiedPurchase && (
-                        <Badge variant="secondary" className="text-xs px-1 py-0">
-                          <Shield className="w-2 h-2 mr-1" />
-                          Verified
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <StarRating rating={review.rating} size="sm" />
-                    <span className="text-xs text-gray-500">
-                      {new Date(review.createdAt).toLocaleDateString()}
+                    <span className="text-sm text-gray-600 w-8 text-right">
+                      {count}
+                    </span>
+                    <span className="text-sm text-gray-500 w-12 text-right">
+                      ({percentage.toFixed(0)}%)
                     </span>
                   </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Reviews List - Daraz/Flipkart Style */}
+      <div className="bg-white border border-gray-200 rounded-lg">
+        <div className="border-b border-gray-200 p-4">
+          <h3 className="text-lg font-semibold text-gray-900">Customer Reviews</h3>
+        </div>
+        
+        <div className="divide-y divide-gray-200">
+          {!reviews || reviews.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <MessageCircle className="w-16 h-16 text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-500 mb-2">No reviews yet</h3>
+              <p className="text-gray-400 text-center max-w-sm">
+                Be the first to share your experience with other customers
+              </p>
+            </div>
+          ) : (
+            reviews.map((review: StoreReview) => (
+              <div key={review.id} className="p-6 hover:bg-gray-50 transition-colors">
+                {/* Review Header */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <Avatar className="w-10 h-10">
+                      <AvatarFallback className="bg-orange-100 text-orange-600 font-medium">
+                        {review.customer?.fullName?.charAt(0)?.toUpperCase() || 
+                         review.customer?.username?.charAt(0)?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {review.customer?.fullName || review.customer?.username || 'Anonymous'}
+                      </p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <div className="flex items-center">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star 
+                              key={star}
+                              className={`w-4 h-4 ${
+                                star <= review.rating 
+                                  ? 'fill-orange-400 text-orange-400' 
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {new Date(review.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Verified Purchase Badge */}
+                  {review.isVerifiedPurchase && (
+                    <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+                      <Shield className="w-3 h-3 mr-1" />
+                      Verified Purchase
+                    </Badge>
+                  )}
                 </div>
-                
-                {/* Title and Comment in condensed format */}
-                <div className="space-y-1">
+
+                {/* Review Content */}
+                <div className="space-y-3">
                   {review.title && (
-                    <h4 className="font-medium text-sm text-gray-900 leading-tight">{review.title}</h4>
+                    <h4 className="font-medium text-gray-900 text-base">
+                      {review.title}
+                    </h4>
                   )}
                   {review.comment && (
-                    <p className="text-gray-700 text-sm leading-relaxed">{review.comment}</p>
+                    <p className="text-gray-700 text-sm leading-relaxed">
+                      {review.comment}
+                    </p>
                   )}
                 </div>
-                
-                {/* Helpful button - compact */}
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                  <Button
-                    variant="ghost"
-                    size="sm"
+
+                {/* Review Actions */}
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                  <button
                     onClick={() => handleMarkHelpful(review.id)}
                     disabled={markHelpfulMutation.isPending}
-                    className="text-gray-500 hover:text-gray-700 h-6 text-xs px-2"
+                    className="flex items-center space-x-2 text-sm text-gray-600 hover:text-orange-600 transition-colors disabled:opacity-50"
                   >
-                    <ThumbsUp className="w-3 h-3 mr-1" />
-                    Helpful ({review.helpfulCount})
-                  </Button>
-                  <span className="text-xs text-gray-400">
-                    {review.rating}/5 stars
-                  </span>
+                    <ThumbsUp className="w-4 h-4" />
+                    <span>Helpful</span>
+                    {review.helpfulCount > 0 && (
+                      <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+                        {review.helpfulCount}
+                      </span>
+                    )}
+                  </button>
+                  
+                  <div className="flex items-center space-x-4 text-xs text-gray-400">
+                    <span>Was this review helpful?</span>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
