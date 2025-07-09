@@ -50,6 +50,7 @@ interface StoreReviewsProps {
 export default function StoreReviews({ storeId, currentUserId }: StoreReviewsProps) {
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [selectedRating, setSelectedRating] = useState<number>(0);
+  const [showAllReviews, setShowAllReviews] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -74,14 +75,9 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
   // Ensure reviews is always an array
   const reviews = Array.isArray(reviewsData) ? reviewsData : [];
 
-  // Debug logging
-  console.log('StoreReviews Debug:', {
-    storeId,
-    reviewsData,
-    reviews,
-    reviewsLength: reviews?.length,
-    isLoading
-  });
+  // Sort reviews by creation date (newest first) and limit display
+  const sortedReviews = reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const displayedReviews = showAllReviews ? sortedReviews : sortedReviews.slice(0, 2);
 
   // Create review mutation
   const createReviewMutation = useMutation({
@@ -396,7 +392,8 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
               </p>
             </div>
           ) : (
-            reviews.map((review: StoreReview) => (
+            <>
+              {displayedReviews.map((review: StoreReview) => (
               <div key={review.id} className="p-6 hover:bg-gray-50 transition-colors">
                 {/* Review Header */}
                 <div className="flex items-start justify-between mb-3">
@@ -479,7 +476,27 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
                   </div>
                 </div>
               </div>
-            ))
+              ))}
+              
+              {/* View All Reviews Button */}
+              {reviews.length > 2 && (
+                <div className="p-6 bg-gray-50 border-t border-gray-200">
+                  <div className="text-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowAllReviews(!showAllReviews)}
+                      className="px-8 py-2 border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300"
+                    >
+                      {showAllReviews ? (
+                        <>Show Less Reviews</>
+                      ) : (
+                        <>View All {reviews.length} Reviews</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
