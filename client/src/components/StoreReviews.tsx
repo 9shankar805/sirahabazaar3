@@ -65,7 +65,10 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
   // Fetch store reviews
   const { data: reviewsData, isLoading } = useQuery({
     queryKey: ['/api/stores', storeId, 'reviews'],
-    queryFn: () => apiRequest(`/api/stores/${storeId}/reviews`),
+    queryFn: async () => {
+      const response = await apiRequest(`/api/stores/${storeId}/reviews`);
+      return await response.json();
+    },
   });
 
   // Ensure reviews is always an array
