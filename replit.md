@@ -120,7 +120,17 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### July 9, 2025 - Enhanced Image Upload System with 200KB Compression
+### July 9, 2025 - Simplified Store Page with Distance-Based Sorting
+- ✓ Removed "Discover Local Stores" header and description section as requested
+- ✓ Collapsed complex filters into a single collapsible "Filters" button
+- ✓ Removed total store count statistics cards for cleaner interface
+- ✓ Implemented automatic distance-based sorting (closest to farthest)
+- ✓ Simplified page to show only "Stores" header with search and filter button
+- ✓ Enhanced location status to show "stores sorted by distance" message
+- ✓ Streamlined UI for better user experience with focus on store listings
+- → Store page now has clean, minimal design with automatic distance sorting
+
+### July 9, 2025 - Enhanced Image Upload System with 200KB Compression (Previous)
 - ✓ Removed direct upload button from ImageUpload component as requested
 - ✓ Enhanced compression algorithm to target 200KB file size for fast loading
 - ✓ Updated compression logic with aggressive size reduction based on original file size

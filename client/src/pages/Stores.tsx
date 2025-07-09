@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Search, MapPin, Filter, Utensils, Store, RefreshCw, AlertCircle, Loader2 } from "lucide-react";
+import { Search, MapPin, Filter, Utensils, Store, RefreshCw, AlertCircle, Loader2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import StoreCard from "@/components/StoreCard";
 import StoreDistanceFilter from "@/components/StoreDistanceFilter";
 import { getCurrentUserLocation } from "@/lib/distance";
@@ -49,6 +50,7 @@ export default function Stores() {
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [distanceFilteredStores, setDistanceFilteredStores] = useState<StoreWithDistance[]>([]);
   const [showDistanceFilter, setShowDistanceFilter] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const { toast } = useToast();
 
   // Fetch all stores with comprehensive error handling
@@ -77,7 +79,7 @@ export default function Stores() {
         setLocationEnabled(true);
       })
       .catch(() => {
-        // User denied location access
+        // User denied location access - this is fine, stores will just show without distance sorting
       });
   }, []);
 
@@ -118,10 +120,31 @@ export default function Stores() {
     return matchesSearch && matchesType && matchesCuisine && matchesDelivery && matchesRating;
   });
 
-  // Use distance-filtered stores if distance filter is active, otherwise use base filtered stores
-  const filteredStores = showDistanceFilter && distanceFilteredStores.length > 0 
-    ? distanceFilteredStores.filter(store => baseFilteredStores.some(baseStore => baseStore.id === store.id))
-    : baseFilteredStores;
+  // Calculate distance for all stores if location is enabled
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  // Add distance to stores and sort by distance (closest first)
+  const filteredStores = baseFilteredStores.map(store => {
+    const distance = userLocation && store.latitude && store.longitude 
+      ? calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          parseFloat(store.latitude),
+          parseFloat(store.longitude)
+        )
+      : 0;
+    return { ...store, distance };
+  }).sort((a, b) => a.distance - b.distance);
 
   const handleGetLocation = async () => {
     try {
@@ -161,59 +184,95 @@ export default function Stores() {
   return (
     <div className="min-h-screen bg-muted">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2 flex items-center justify-center gap-3">
-            {isRestaurantPage ? (
-              <>
-                <Utensils className="h-10 w-10 text-red-600" />
-                Discover Local Restaurants
-              </>
-            ) : (
-              <>
-                <Store className="h-10 w-10 text-blue-600" />
-                Discover Local Stores
-              </>
-            )}
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            {isRestaurantPage 
-              ? "Find the best restaurants and food delivery options in your area"
-              : "Find the best stores and shopping destinations in your area"
-            }
-          </p>
-        </div>
 
         {/* Search and Filters */}
         <Card className="mb-8">
           <CardContent className="pt-6">
             <div className="space-y-4">
-              {/* Primary Search and Type Filter */}
+              {/* Primary Search and Filter Button */}
               <div className="flex flex-col md:flex-row gap-4">
                 {/* Search */}
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder={isRestaurantPage ? "Search restaurants, cuisines, or food items..." : "Search stores, products, or brands..."}
+                    placeholder={isRestaurantPage ? "Search restaurants..." : "Search stores..."}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
                   />
                 </div>
 
-                {/* Store Type Filter */}
-                {!isRestaurantPage && (
-                  <Select value={storeTypeFilter} onValueChange={setStoreTypeFilter}>
-                    <SelectTrigger className="w-full md:w-48">
+                {/* Filter Button */}
+                <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full md:w-auto">
                       <Filter className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Filter by type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Stores</SelectItem>
-                      <SelectItem value="retail">Retail Stores</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
+                      Filters
+                      {filtersOpen ? <X className="h-4 w-4 ml-2" /> : null}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Store Type Filter */}
+                      {!isRestaurantPage && (
+                        <Select value={storeTypeFilter} onValueChange={setStoreTypeFilter}>
+                          <SelectTrigger>
+                            <Store className="h-4 w-4 mr-2" />
+                            <SelectValue placeholder="All Stores" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Stores</SelectItem>
+                            <SelectItem value="retail">Retail Stores</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      {/* Cuisine Filter (for restaurants) */}
+                      {(isRestaurantPage || storeTypeFilter === "restaurant") && availableCuisines.length > 0 && (
+                        <Select value={cuisineFilter} onValueChange={setCuisineFilter}>
+                          <SelectTrigger>
+                            <Utensils className="h-4 w-4 mr-2" />
+                            <SelectValue placeholder="All Cuisines" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Cuisines</SelectItem>
+                            {availableCuisines.map((cuisine) => (
+                              <SelectItem key={cuisine} value={cuisine!}>
+                                {cuisine}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      {/* Delivery Filter */}
+                      <Select value={deliveryFilter} onValueChange={setDeliveryFilter}>
+                        <SelectTrigger>
+                          <MapPin className="h-4 w-4 mr-2" />
+                          <SelectValue placeholder="Delivery Options" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Options</SelectItem>
+                          <SelectItem value="delivery">Delivery Available</SelectItem>
+                          <SelectItem value="pickup">Pickup Only</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      {/* Rating Filter */}
+                      <Select value={ratingFilter} onValueChange={setRatingFilter}>
+                        <SelectTrigger>
+                          <Filter className="h-4 w-4 mr-2" />
+                          <SelectValue placeholder="Minimum Rating" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Ratings</SelectItem>
+                          <SelectItem value="4+">4.0+ Stars</SelectItem>
+                          <SelectItem value="3+">3.0+ Stars</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
 
                 {/* Location Button */}
                 {!locationEnabled && (
@@ -224,136 +283,12 @@ export default function Stores() {
                 )}
               </div>
 
-              {/* Advanced Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Cuisine Filter (for restaurants) */}
-                {(isRestaurantPage || storeTypeFilter === "restaurant") && availableCuisines.length > 0 && (
-                  <Select value={cuisineFilter} onValueChange={setCuisineFilter}>
-                    <SelectTrigger>
-                      <Utensils className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="All Cuisines" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Cuisines</SelectItem>
-                      {availableCuisines.map((cuisine) => (
-                        <SelectItem key={cuisine} value={cuisine!}>
-                          {cuisine}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-
-                {/* Delivery Filter */}
-                <Select value={deliveryFilter} onValueChange={setDeliveryFilter}>
-                  <SelectTrigger>
-                    <MapPin className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Delivery Options" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Options</SelectItem>
-                    <SelectItem value="delivery">Delivery Available</SelectItem>
-                    <SelectItem value="pickup">Pickup Only</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {/* Rating Filter */}
-                <Select value={ratingFilter} onValueChange={setRatingFilter}>
-                  <SelectTrigger>
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Minimum Rating" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Ratings</SelectItem>
-                    <SelectItem value="4+">4.0+ Stars</SelectItem>
-                    <SelectItem value="3+">3.0+ Stars</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Active Filters Display */}
-              {(searchQuery || storeTypeFilter !== (isRestaurantPage ? "restaurant" : "all") || 
-                cuisineFilter !== "all" || deliveryFilter !== "all" || ratingFilter !== "all") && (
-                <div className="flex flex-wrap gap-2">
-                  <span className="text-sm text-muted-foreground">Active filters:</span>
-                  {searchQuery && (
-                    <Badge variant="secondary">
-                      Search: {searchQuery}
-                      <button 
-                        onClick={() => setSearchQuery("")} 
-                        className="ml-1 hover:text-destructive"
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  )}
-                  {storeTypeFilter !== (isRestaurantPage ? "restaurant" : "all") && (
-                    <Badge variant="secondary">
-                      Type: {storeTypeFilter}
-                      <button 
-                        onClick={() => setStoreTypeFilter(isRestaurantPage ? "restaurant" : "all")} 
-                        className="ml-1 hover:text-destructive"
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  )}
-                  {cuisineFilter !== "all" && (
-                    <Badge variant="secondary">
-                      Cuisine: {cuisineFilter}
-                      <button 
-                        onClick={() => setCuisineFilter("all")} 
-                        className="ml-1 hover:text-destructive"
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  )}
-                  {deliveryFilter !== "all" && (
-                    <Badge variant="secondary">
-                      {deliveryFilter === "delivery" ? "Delivery Available" : "Pickup Only"}
-                      <button 
-                        onClick={() => setDeliveryFilter("all")} 
-                        className="ml-1 hover:text-destructive"
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  )}
-                  {ratingFilter !== "all" && (
-                    <Badge variant="secondary">
-                      Rating: {ratingFilter}
-                      <button 
-                        onClick={() => setRatingFilter("all")} 
-                        className="ml-1 hover:text-destructive"
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  )}
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => {
-                      setSearchQuery("");
-                      setStoreTypeFilter(isRestaurantPage ? "restaurant" : "all");
-                      setCuisineFilter("all");
-                      setDeliveryFilter("all");
-                      setRatingFilter("all");
-                    }}
-                    className="text-xs"
-                  >
-                    Clear All
-                  </Button>
-                </div>
-              )}
-
               {/* Location Status */}
               {locationEnabled && (
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-green-500" />
                   <span className="text-sm text-muted-foreground">
-                    Location enabled - showing distances
+                    Location enabled - stores sorted by distance
                   </span>
                 </div>
               )}
@@ -361,81 +296,10 @@ export default function Stores() {
           </CardContent>
         </Card>
 
-        {/* Distance Filter Component */}
-        {showDistanceFilter && (
-          <StoreDistanceFilter 
-            stores={baseFilteredStores}
-            onFilteredStores={handleDistanceFilterUpdate}
-            className="mb-6"
-          />
-        )}
-
-        {/* Store Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {isRestaurantPage ? "Total Restaurants" : "Total Stores"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isRestaurantPage 
-                  ? stores.filter(s => s.storeType === 'restaurant').length
-                  : stores.length
-                }
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {isRestaurantPage ? "Cuisines Available" : "Restaurants"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isRestaurantPage 
-                  ? new Set(stores.filter(s => s.storeType === 'restaurant' && s.cuisineType).map(s => s.cuisineType)).size
-                  : stores.filter(s => s.storeType === 'restaurant').length
-                }
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {isRestaurantPage ? "Delivery Available" : "Retail Stores"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isRestaurantPage 
-                  ? stores.filter(s => s.storeType === 'restaurant' && s.isDeliveryAvailable).length
-                  : stores.filter(s => s.storeType === 'retail').length
-                }
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Results Counter */}
-        <div className="flex justify-between items-center mb-6">
+        {/* Simple header showing just stores */}
+        <div className="mb-6">
           <h2 className="text-xl font-semibold">
-            {filteredStores.length > 0 ? (
-              <>
-                {filteredStores.length} {isRestaurantPage ? "restaurant" : "store"}{filteredStores.length !== 1 ? "s" : ""} found
-                {stores.length !== filteredStores.length && (
-                  <span className="text-muted-foreground ml-2">
-                    (filtered from {stores.length} total)
-                  </span>
-                )}
-              </>
-            ) : (
-              "No results found"
-            )}
+            {isRestaurantPage ? "Restaurants" : "Stores"}
           </h2>
         </div>
 
@@ -513,38 +377,7 @@ export default function Stores() {
           </Card>
         )}
 
-        {/* Feature Highlights */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MapPin className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Location-Based</h3>
-            <p className="text-muted-foreground">
-              Find stores near you with accurate distance calculations
-            </p>
-          </div>
 
-          <div className="text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Smart Search</h3>
-            <p className="text-muted-foreground">
-              Search by store name, type, or products to find exactly what you need
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Filter className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Easy Filtering</h3>
-            <p className="text-muted-foreground">
-              Filter by store type, ratings, and delivery options
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
