@@ -63,10 +63,13 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
   });
 
   // Fetch store reviews
-  const { data: reviews = [], isLoading } = useQuery({
+  const { data: reviewsData, isLoading } = useQuery({
     queryKey: ['/api/stores', storeId, 'reviews'],
     queryFn: () => apiRequest(`/api/stores/${storeId}/reviews`),
   });
+
+  // Ensure reviews is always an array
+  const reviews = Array.isArray(reviewsData) ? reviewsData : [];
 
   // Create review mutation
   const createReviewMutation = useMutation({
@@ -134,16 +137,21 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
     markHelpfulMutation.mutate(reviewId);
   };
 
-  const averageRating = reviews.length > 0 
-    ? reviews.reduce((sum: number, review: StoreReview) => sum + review.rating, 0) / reviews.length 
+  const averageRating = reviews && reviews.length > 0 
+    ? reviews.reduce((sum: number, review: StoreReview) => sum + (review.rating || 0), 0) / reviews.length 
     : 0;
 
-  const ratingDistribution = [5, 4, 3, 2, 1].map(rating => ({
-    rating,
-    count: reviews.filter((review: StoreReview) => review.rating === rating).length,
-    percentage: reviews.length > 0 ? 
-      (reviews.filter((review: StoreReview) => review.rating === rating).length / reviews.length) * 100 : 0
-  }));
+  const ratingDistribution = [5, 4, 3, 2, 1].map(rating => {
+    const matchingReviews = reviews ? reviews.filter((review: StoreReview) => review.rating === rating) : [];
+    const count = matchingReviews.length;
+    const percentage = reviews && reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+    
+    return {
+      rating,
+      count,
+      percentage
+    };
+  });
 
   if (isLoading) {
     return (
@@ -293,7 +301,7 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
 
       {/* Reviews List */}
       <div className="space-y-4">
-        {reviews.length === 0 ? (
+        {!reviews || reviews.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-8">
               <MessageCircle className="w-12 h-12 text-gray-400 mb-4" />
