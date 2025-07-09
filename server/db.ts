@@ -6,8 +6,8 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-// PostgreSQL database URL - using Neon PostgreSQL database
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_x70rUbTWcLXC@ep-little-breeze-a8mjntni-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require";
+// PostgreSQL database URL - using Replit PostgreSQL database (original)
+const DATABASE_URL = process.env.DATABASE_URL;
 
 if (!DATABASE_URL) {
   throw new Error(
@@ -15,23 +15,23 @@ if (!DATABASE_URL) {
   );
 }
 
-console.log(`🔌 Using Neon PostgreSQL database: ${DATABASE_URL?.split('@')[1]?.split('/')[0] || 'configured database'}`);
+console.log(`🔌 Using Replit PostgreSQL database (original setup)`);
 
-// Enhanced pool configuration for Neon PostgreSQL database
+// Enhanced pool configuration for Replit PostgreSQL database
 export const pool = new Pool({
   connectionString: DATABASE_URL,
-  // Connection limits optimized for Neon
-  max: 10,                    // Optimal for Neon pooler
-  min: 2,                     // Minimum connections
-  idleTimeoutMillis: 30000,   // Keep connections alive longer
-  connectionTimeoutMillis: 5000, // Allow more time for Neon connection
+  // Connection limits optimized for Replit database
+  max: 15,                    // Optimal for Replit environment
+  min: 3,                     // Minimum connections
+  idleTimeoutMillis: 30000,   // Keep connections alive
+  connectionTimeoutMillis: 5000, // Connection timeout
   
   // PostgreSQL-specific optimizations
-  application_name: 'siraha_bazaar_neon',
-  statement_timeout: 30000,   // 30 second query timeout for complex operations
+  application_name: 'siraha_bazaar_replit',
+  statement_timeout: 30000,   // 30 second query timeout
   
-  // SSL configuration for Neon (required)
-  ssl: { rejectUnauthorized: false },
+  // SSL configuration for Replit (auto-configured)
+  ssl: DATABASE_URL.includes('sslmode=require') ? { rejectUnauthorized: false } : false,
   
   // Performance tuning
   keepAlive: true,
