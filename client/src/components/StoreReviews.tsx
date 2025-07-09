@@ -71,6 +71,15 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
   // Ensure reviews is always an array
   const reviews = Array.isArray(reviewsData) ? reviewsData : [];
 
+  // Debug logging
+  console.log('StoreReviews Debug:', {
+    storeId,
+    reviewsData,
+    reviews,
+    reviewsLength: reviews?.length,
+    isLoading
+  });
+
   // Create review mutation
   const createReviewMutation = useMutation({
     mutationFn: (data: any) => 
