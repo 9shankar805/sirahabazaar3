@@ -590,8 +590,27 @@ export class DatabaseStorage implements IStorage {
 
   // Product operations
   async getProduct(id: number): Promise<Product | undefined> {
-    const [product] = await db.select().from(products).where(eq(products.id, id));
-    return product;
+    const [productWithRatings] = await db
+      .select({
+        ...products,
+        avgRating: sql<number>`COALESCE(AVG(${productReviews.rating}), 0)`.as('avgRating'),
+        reviewCount: sql<number>`COUNT(${productReviews.id})`.as('reviewCount')
+      })
+      .from(products)
+      .leftJoin(productReviews, eq(products.id, productReviews.productId))
+      .where(eq(products.id, id))
+      .groupBy(products.id);
+
+    if (!productWithRatings) return undefined;
+
+    const avgRating = productWithRatings.avgRating ? Number(productWithRatings.avgRating) : 0;
+    const reviewCount = productWithRatings.reviewCount ? Number(productWithRatings.reviewCount) : 0;
+    
+    return {
+      ...productWithRatings,
+      rating: avgRating > 0 ? avgRating.toFixed(1) : "0.0",
+      totalReviews: reviewCount
+    };
   }
 
   async getProductsByStoreId(storeId: number): Promise<Product[]> {
