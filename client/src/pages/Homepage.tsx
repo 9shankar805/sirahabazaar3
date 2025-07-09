@@ -242,7 +242,9 @@ export default function Homepage() {
   } = useQuery<Store[]>({
     queryKey: ["/api/stores"],
     retry: 3,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0, // Always fetch fresh data to ensure ratings update immediately
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchOnMount: true, // Always refetch on component mount
     enabled: !recommendations?.stores?.length, // Only fetch if no recommendations
   });
 

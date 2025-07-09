@@ -89,19 +89,29 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
       setIsReviewDialogOpen(false);
       form.reset();
       setSelectedRating(0);
+      
+      // Comprehensive cache invalidation to ensure store rating updates
       queryClient.invalidateQueries({ queryKey: ['/api/stores', storeId, 'reviews'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stores'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/stores/${storeId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/stores', storeId] });
       
-      // Force refresh stores data with delay to ensure database update is complete
+      // Force immediate refetch of all store-related data
+      queryClient.refetchQueries({ queryKey: ['/api/stores'] });
+      queryClient.refetchQueries({ queryKey: [`/api/stores/${storeId}`] });
+      queryClient.refetchQueries({ queryKey: ['/api/stores', storeId] });
+      
+      // Remove stale data from cache completely and force fresh fetch
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['/api/stores'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/stores', storeId] });
+        queryClient.removeQueries({ queryKey: ['/api/stores'] });
+        queryClient.removeQueries({ queryKey: [`/api/stores/${storeId}`] });
+        queryClient.removeQueries({ queryKey: ['/api/stores', storeId] });
+        
+        // Force fresh fetch
         queryClient.refetchQueries({ queryKey: ['/api/stores'] });
+        queryClient.refetchQueries({ queryKey: [`/api/stores/${storeId}`] });
         queryClient.refetchQueries({ queryKey: ['/api/stores', storeId] });
-        // Also clear stale data and force fresh fetch
-        queryClient.resetQueries({ queryKey: ['/api/stores'] });
-      }, 1000);
+      }, 500);
     },
     onError: (error: any) => {
       const isAlreadyReviewed = error.message?.includes("already reviewed");
