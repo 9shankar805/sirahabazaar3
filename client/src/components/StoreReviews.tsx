@@ -208,18 +208,18 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
   }
 
   return (
-    <div className="space-y-6">
-      {/* Professional Rating Summary - Daraz/Flipkart Style */}
+    <div className="space-y-3">
+      {/* Compact Rating Summary */}
       <div className="bg-white border border-gray-200 rounded-lg">
         {/* Header with Rating Button */}
-        <div className="border-b border-gray-200 p-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">
+        <div className="border-b border-gray-200 p-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">
             Ratings & Reviews
           </h2>
           <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white px-6" data-rate-store>
-                Write a Review
+              <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white px-4" data-rate-store>
+                Write Review
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
@@ -323,49 +323,47 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
           </Dialog>
         </div>
 
-        {/* Rating Overview */}
-        <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Compact Rating Overview */}
+        <div className="p-4">
+          <div className="flex items-center space-x-6">
             {/* Left: Overall Rating */}
-            <div className="flex items-center space-x-6">
-              <div className="text-center">
-                <div className="text-5xl font-bold text-green-600 mb-2">
-                  {averageRating.toFixed(1)}
-                </div>
-                <div className="flex items-center justify-center mb-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star 
-                      key={star}
-                      className={`w-5 h-5 ${
-                        star <= Math.round(averageRating) 
-                          ? 'fill-green-500 text-green-500' 
-                          : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p className="text-gray-600 font-medium">{reviews.length} Reviews</p>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600 mb-1">
+                {averageRating.toFixed(1)}
               </div>
+              <div className="flex items-center justify-center mb-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star 
+                    key={star}
+                    className={`w-4 h-4 ${
+                      star <= Math.round(averageRating) 
+                        ? 'fill-green-500 text-green-500' 
+                        : 'text-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-sm text-gray-600 font-medium">{reviews.length} Reviews</p>
             </div>
 
-            {/* Center: Rating Distribution */}
-            <div className="lg:col-span-2">
-              <div className="space-y-3">
+            {/* Right: Rating Distribution */}
+            <div className="flex-1">
+              <div className="space-y-2">
                 {ratingDistribution.map(({ rating, count, percentage }) => (
-                  <div key={rating} className="flex items-center space-x-3">
-                    <span className="text-sm font-medium text-gray-700 w-8">
+                  <div key={rating} className="flex items-center space-x-2">
+                    <span className="text-xs font-medium text-gray-700 w-6">
                       {rating} ★
                     </span>
-                    <div className="flex-1 bg-gray-200 rounded-full h-3">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-green-500 h-3 rounded-full transition-all duration-300"
+                        className="bg-green-500 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${percentage}%` }}
                       ></div>
                     </div>
-                    <span className="text-sm text-gray-600 w-8 text-right">
+                    <span className="text-xs text-gray-600 w-6 text-right">
                       {count}
                     </span>
-                    <span className="text-sm text-gray-500 w-12 text-right">
+                    <span className="text-xs text-gray-500 w-10 text-right">
                       ({percentage.toFixed(0)}%)
                     </span>
                   </div>
@@ -376,44 +374,44 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
         </div>
       </div>
 
-      {/* Reviews List - Daraz/Flipkart Style */}
+      {/* Compact Reviews List */}
       <div className="bg-white border border-gray-200 rounded-lg">
-        <div className="border-b border-gray-200 p-4">
-          <h3 className="text-lg font-semibold text-gray-900">Customer Reviews</h3>
+        <div className="border-b border-gray-200 p-3">
+          <h3 className="text-base font-semibold text-gray-900">Customer Reviews</h3>
         </div>
         
         <div className="divide-y divide-gray-200">
           {!reviews || reviews.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <MessageCircle className="w-16 h-16 text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-500 mb-2">No reviews yet</h3>
-              <p className="text-gray-400 text-center max-w-sm">
-                Be the first to share your experience with other customers
+            <div className="flex flex-col items-center justify-center py-8">
+              <MessageCircle className="w-12 h-12 text-gray-300 mb-3" />
+              <h3 className="text-base font-medium text-gray-500 mb-1">No reviews yet</h3>
+              <p className="text-sm text-gray-400 text-center max-w-sm">
+                Be the first to share your experience
               </p>
             </div>
           ) : (
             <>
               {displayedReviews.map((review: StoreReview) => (
-              <div key={review.id} className="p-6 hover:bg-gray-50 transition-colors">
+              <div key={review.id} className="p-4 hover:bg-gray-50 transition-colors">
                 {/* Review Header */}
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center space-x-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarFallback className="bg-orange-100 text-orange-600 font-medium">
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className="bg-orange-100 text-orange-600 font-medium text-sm">
                         {review.customer?.fullName?.charAt(0)?.toUpperCase() || 
                          review.customer?.username?.charAt(0)?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900">
                         {review.customer?.fullName || review.customer?.username || 'Anonymous'}
                       </p>
-                      <div className="flex items-center space-x-2 mt-1">
+                      <div className="flex items-center space-x-2 mt-0.5">
                         <div className="flex items-center">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star 
                               key={star}
-                              className={`w-4 h-4 ${
+                              className={`w-3 h-3 ${
                                 star <= review.rating 
                                   ? 'fill-orange-400 text-orange-400' 
                                   : 'text-gray-300'
@@ -421,7 +419,7 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
                             />
                           ))}
                         </div>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-xs text-gray-500">
                           {new Date(review.createdAt).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'short',
@@ -434,17 +432,17 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
                   
                   {/* Verified Purchase Badge */}
                   {review.isVerifiedPurchase && (
-                    <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+                    <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 text-xs">
                       <Shield className="w-3 h-3 mr-1" />
-                      Verified Purchase
+                      Verified
                     </Badge>
                   )}
                 </div>
 
                 {/* Review Content */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {review.title && (
-                    <h4 className="font-medium text-gray-900 text-base">
+                    <h4 className="font-medium text-gray-900 text-sm">
                       {review.title}
                     </h4>
                   )}
@@ -456,23 +454,23 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
                 </div>
 
                 {/* Review Actions */}
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
                   <button
                     onClick={() => handleMarkHelpful(review.id)}
                     disabled={markHelpfulMutation.isPending}
-                    className="flex items-center space-x-2 text-sm text-gray-600 hover:text-orange-600 transition-colors disabled:opacity-50"
+                    className="flex items-center space-x-1 text-xs text-gray-600 hover:text-orange-600 transition-colors disabled:opacity-50"
                   >
-                    <ThumbsUp className="w-4 h-4" />
+                    <ThumbsUp className="w-3 h-3" />
                     <span>Helpful</span>
                     {review.helpfulCount > 0 && (
-                      <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+                      <span className="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded-full text-xs">
                         {review.helpfulCount}
                       </span>
                     )}
                   </button>
                   
-                  <div className="flex items-center space-x-4 text-xs text-gray-400">
-                    <span>Was this review helpful?</span>
+                  <div className="text-xs text-gray-400">
+                    <span>Was this helpful?</span>
                   </div>
                 </div>
               </div>
@@ -480,15 +478,16 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
               
               {/* View All Reviews Button */}
               {reviews.length > 2 && (
-                <div className="p-6 bg-gray-50 border-t border-gray-200">
+                <div className="p-3 bg-gray-50 border-t border-gray-200">
                   <div className="text-center">
                     <Button
                       variant="outline"
+                      size="sm"
                       onClick={() => setShowAllReviews(!showAllReviews)}
-                      className="px-8 py-2 border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300"
+                      className="px-4 py-1 border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300 text-sm"
                     >
                       {showAllReviews ? (
-                        <>Show Less Reviews</>
+                        <>Show Less</>
                       ) : (
                         <>View All {reviews.length} Reviews</>
                       )}
