@@ -76,7 +76,10 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
     mutationFn: (data: any) => 
       apiRequest('/api/store-reviews', {
         method: 'POST',
-        body: data,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       }),
     onSuccess: () => {
       toast({
@@ -102,7 +105,10 @@ export default function StoreReviews({ storeId, currentUserId }: StoreReviewsPro
     mutationFn: (reviewId: number) => 
       apiRequest(`/api/store-reviews/${reviewId}/helpful`, {
         method: 'POST',
-        body: { userId: currentUserId || 9 },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: currentUserId || 9 }),
       }),
     onSuccess: () => {
       toast({
