@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 import {
   MapPin,
   Navigation,
@@ -15,7 +16,10 @@ import {
   Star,
   Clock,
   DollarSign,
-  Utensils
+  Utensils,
+  Search,
+  Map,
+  X
 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -28,26 +32,67 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Custom icons for restaurants and user location
-const restaurantIcon = new L.Icon({
-  iconUrl: "data:image/svg+xml;base64," + btoa(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#dc2626" width="32" height="32">
-      <path d="M8.1 13.34l2.83-2.83L3.91 3.5a4.008 4.008 0 0 0 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41-5.51-5.51z"/>
-    </svg>
-  `),
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32],
-});
+// Custom restaurant marker with logo support
+const createRestaurantIcon = (restaurant: any) => {
+  const logoUrl = restaurant.logo || '/default-restaurant-logo.png';
+  return new L.DivIcon({
+    html: `
+      <div style="
+        width: 40px; 
+        height: 40px; 
+        background: white; 
+        border: 3px solid #dc2626; 
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        position: relative;
+      ">
+        <img src="${logoUrl}" 
+             style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" 
+             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgiIGhlaWdodD0iMjgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMTNMMTEgMTZMMTYgMTFNMjEgMTJDMjEgMTYuOTcwNiAxNi45NzA2IDIxIDEyIDIxQzcuMDI5NDQgMjEgMyAxNi45NzA2IDMgMTJDMyA3LjAyOTQ0IDcuMDI5NDQgMyAxMiAzQzE2Ljk3MDYgMyAyMSA3LjAyOTQ0IDIxIDEyWiIgc3Ryb2tlPSIjZGMyNjI2IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K'" />
+        <div style="
+          position: absolute; 
+          bottom: -2px; 
+          right: -2px; 
+          width: 12px; 
+          height: 12px; 
+          background: #10b981; 
+          border: 2px solid white; 
+          border-radius: 50%;
+        "></div>
+      </div>
+    `,
+    className: 'custom-restaurant-marker',
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -40],
+  });
+};
 
-const userIcon = new L.Icon({
-  iconUrl: "data:image/svg+xml;base64," + btoa(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2563eb" width="32" height="32">
-      <circle cx="12" cy="12" r="10" fill="#2563eb"/>
-      <circle cx="12" cy="12" r="6" fill="white"/>
-      <circle cx="12" cy="12" r="2" fill="#2563eb"/>
-    </svg>
-  `),
+const userIcon = new L.DivIcon({
+  html: `
+    <div style="
+      width: 32px; 
+      height: 32px; 
+      background: #2563eb; 
+      border: 3px solid white; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    ">
+      <div style="
+        width: 16px; 
+        height: 16px; 
+        background: white; 
+        border-radius: 50%;
+      "></div>
+    </div>
+  `,
+  className: 'custom-user-marker',
   iconSize: [32, 32],
   iconAnchor: [16, 16],
   popupAnchor: [0, -16],
@@ -91,6 +136,14 @@ export default function RestaurantMap({ cuisineFilter }: RestaurantMapProps) {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showNearbyRestaurants, setShowNearbyRestaurants] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchedLocation, setSearchedLocation] = useState<string | null>(null);
+  const [showFloatingCard, setShowFloatingCard] = useState(false);
+  const mapRef = useRef<any>(null);
+  const { toast } = useToast();
 
   // Get user's current location
   const getUserLocation = () => {
@@ -176,6 +229,75 @@ export default function RestaurantMap({ cuisineFilter }: RestaurantMapProps) {
     return `https://www.google.com/maps/dir/${origin}/${destination}`;
   };
 
+  // Location search functionality
+  const searchLocation = async (query: string) => {
+    if (!query.trim()) {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/geocode/search?q=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchSuggestions(data.results || []);
+        setShowSuggestions(true);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleLocationSearch = (location: any) => {
+    if (location.position) {
+      setUserLocation({
+        latitude: location.position.lat,
+        longitude: location.position.lng
+      });
+      setSearchedLocation(location.title || location.address?.label || 'Selected Location');
+      setShowNearbyRestaurants(true);
+      setShowSuggestions(false);
+      setLocationError(null);
+    }
+  };
+
+  const clearLocationSearch = () => {
+    setSearchQuery("");
+    setSearchSuggestions([]);
+    setShowSuggestions(false);
+    setSearchedLocation(null);
+  };
+
+  const setManualLocationHandler = () => {
+    const lat = parseFloat(manualLocation.lat);
+    const lon = parseFloat(manualLocation.lon);
+    
+    if (isNaN(lat) || isNaN(lon)) {
+      setLocationError("Please enter valid coordinates");
+      return;
+    }
+    
+    setUserLocation({ latitude: lat, longitude: lon });
+    setLocationError(null);
+    setShowNearbyRestaurants(true);
+    setSearchedLocation(null);
+  };
+
+  // Debounced search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery) {
+        searchLocation(searchQuery);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
   // Center coordinates for the map (Siraha, Nepal)
   const defaultCenter: [number, number] = [26.6586, 86.2003];
 
@@ -194,36 +316,121 @@ export default function RestaurantMap({ cuisineFilter }: RestaurantMapProps) {
           Find nearby restaurants and get directions for pickup or delivery
         </p>
 
-        {/* Location Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button
-            onClick={findNearbyRestaurants}
-            disabled={isGettingLocation}
-            className="bg-red-600 hover:bg-red-700"
-          >
-            {isGettingLocation ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Target className="h-4 w-4 mr-2" />
+        {/* Enhanced Location Search */}
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="relative">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search for places like 'Siraha', 'Kathmandu', 'Pokhara'..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {searchQuery && (
+                <button
+                  onClick={clearLocationSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Search suggestions dropdown */}
+            {showSuggestions && searchSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                {searchSuggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleLocationSearch(suggestion)}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                  >
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-red-500 flex-shrink-0" />
+                      <div>
+                        <div className="font-medium text-sm">{suggestion.title}</div>
+                        <div className="text-xs text-gray-500">{suggestion.address?.label}</div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
             )}
-            Find Nearby Restaurants
-          </Button>
-          
-          <div className="flex gap-2">
-            <Input
-              placeholder="Latitude"
-              value={manualLocation.lat}
-              onChange={(e) => setManualLocation({ ...manualLocation, lat: e.target.value })}
-              className="w-24"
-            />
-            <Input
-              placeholder="Longitude"
-              value={manualLocation.lon}
-              onChange={(e) => setManualLocation({ ...manualLocation, lon: e.target.value })}
-              className="w-24"
-            />
-            <Button onClick={setManualUserLocation} variant="outline">
-              Set Location
+
+            {isSearching && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 p-4">
+                <div className="flex items-center justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span className="text-sm text-gray-600">Searching...</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Location Status */}
+          {searchedLocation && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">
+                    📍 {searchedLocation}
+                  </span>
+                </div>
+                <Button
+                  onClick={() => {
+                    getUserLocation();
+                    setSearchedLocation(null);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  <Target className="h-3 w-3 mr-1" />
+                  Use GPS
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Manual Location Input */}
+          <div className="flex flex-col sm:flex-row gap-2 justify-center items-center">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Latitude"
+                value={manualLocation.lat}
+                onChange={(e) => setManualLocation({ ...manualLocation, lat: e.target.value })}
+                className="w-24"
+              />
+              <Input
+                placeholder="Longitude"
+                value={manualLocation.lon}
+                onChange={(e) => setManualLocation({ ...manualLocation, lon: e.target.value })}
+                className="w-24"
+              />
+              <Button
+                onClick={setManualLocationHandler}
+                variant="outline"
+                size="sm"
+              >
+                <MapPin className="h-4 w-4 mr-1" />
+                Set
+              </Button>
+            </div>
+
+            <Button
+              onClick={findNearbyRestaurants}
+              disabled={isGettingLocation}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isGettingLocation ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Target className="h-4 w-4 mr-2" />
+              )}
+              Find Nearby Restaurants
             </Button>
           </div>
         </div>
@@ -372,101 +579,200 @@ export default function RestaurantMap({ cuisineFilter }: RestaurantMapProps) {
             </CardContent>
           </Card>
 
-          {/* Map */}
+          {/* Enhanced Map with Floating Restaurant Details */}
           <Card>
             <CardHeader>
-              <CardTitle>Restaurant Map</CardTitle>
-              <CardDescription>Interactive map showing restaurant locations</CardDescription>
+              <CardTitle className="flex items-center justify-between">
+                <span>Restaurant Map</span>
+                <Badge variant="secondary" className="text-xs">
+                  Enhanced Controls
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                Interactive map with zoom controls and Google Maps navigation
+              </CardDescription>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="h-96 w-full">
-                {selectedRestaurant?.latitude && selectedRestaurant?.longitude ? (
-                  <MapContainer
-                    center={[parseFloat(selectedRestaurant.latitude), parseFloat(selectedRestaurant.longitude)]}
-                    zoom={14}
-                    className="h-full w-full rounded-b-lg"
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    {nearbyRestaurants?.map((restaurant) => (
-                      restaurant.latitude && restaurant.longitude && (
-                        <Marker
-                          key={restaurant.id}
-                          position={[parseFloat(restaurant.latitude), parseFloat(restaurant.longitude)]}
-                          icon={restaurantIcon}
-                        >
-                          <Popup>
-                            <div className="text-center">
-                              <h3 className="font-bold">{restaurant.name}</h3>
-                              <p className="text-sm">{restaurant.address}</p>
-                              <p className="text-sm">Rating: {restaurant.rating} ⭐</p>
-                              {restaurant.cuisineType && (
-                                <p className="text-sm">Cuisine: {restaurant.cuisineType}</p>
-                              )}
-                              {restaurant.deliveryTime && (
-                                <p className="text-sm">Delivery: {restaurant.deliveryTime}</p>
-                              )}
-                            </div>
-                          </Popup>
-                        </Marker>
-                      )
-                    ))}
-                    {userLocation && (
+            <CardContent className="p-0 relative">
+              <div className="h-[600px] w-full relative overflow-hidden rounded-b-lg">
+                <MapContainer
+                  ref={mapRef}
+                  center={
+                    selectedRestaurant?.latitude && selectedRestaurant?.longitude
+                      ? [parseFloat(selectedRestaurant.latitude), parseFloat(selectedRestaurant.longitude)]
+                      : userLocation
+                      ? [userLocation.latitude, userLocation.longitude]
+                      : defaultCenter
+                  }
+                  zoom={selectedRestaurant ? 15 : userLocation ? 13 : 12}
+                  className="h-full w-full"
+                  scrollWheelZoom={true}
+                  doubleClickZoom={true}
+                  touchZoom={true}
+                  zoomControl={false}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  
+                  {/* Restaurant markers */}
+                  {nearbyRestaurants?.map((restaurant) => (
+                    restaurant.latitude && restaurant.longitude && (
                       <Marker
-                        position={[userLocation.latitude, userLocation.longitude]}
-                        icon={userIcon}
-                      >
-                        <Popup>Your Location</Popup>
-                      </Marker>
-                    )}
-                  </MapContainer>
-                ) : userLocation ? (
-                  <MapContainer
-                    center={[userLocation.latitude, userLocation.longitude]}
-                    zoom={13}
-                    className="h-full w-full rounded-b-lg"
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    {nearbyRestaurants?.map((restaurant) => (
-                      restaurant.latitude && restaurant.longitude && (
-                        <Marker
-                          key={restaurant.id}
-                          position={[parseFloat(restaurant.latitude), parseFloat(restaurant.longitude)]}
-                          icon={restaurantIcon}
-                        >
-                          <Popup>
-                            <div className="text-center">
-                              <h3 className="font-bold">{restaurant.name}</h3>
-                              <p className="text-sm">{restaurant.address}</p>
-                              <p className="text-sm">Rating: {restaurant.rating} ⭐</p>
-                            </div>
-                          </Popup>
-                        </Marker>
-                      )
-                    ))}
+                        key={restaurant.id}
+                        position={[parseFloat(restaurant.latitude), parseFloat(restaurant.longitude)]}
+                        icon={createRestaurantIcon(restaurant)}
+                        eventHandlers={{
+                          click: () => {
+                            setSelectedRestaurant(restaurant);
+                            setShowFloatingCard(true);
+                          }
+                        }}
+                      />
+                    )
+                  ))}
+                  
+                  {/* User location marker */}
+                  {userLocation && (
                     <Marker
                       position={[userLocation.latitude, userLocation.longitude]}
                       icon={userIcon}
-                    >
-                      <Popup>Your Location</Popup>
-                    </Marker>
-                  </MapContainer>
-                ) : (
-                  <MapContainer
-                    center={defaultCenter}
-                    zoom={10}
-                    className="h-full w-full rounded-b-lg"
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                  </MapContainer>
+                  )}
+                </MapContainer>
+
+                {/* Enhanced Zoom Controls */}
+                <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+                  <button
+                    onClick={() => {
+                      const map = mapRef.current;
+                      if (map) {
+                        map.setZoom(map.getZoom() + 1);
+                      }
+                    }}
+                    className="w-10 h-10 bg-white border border-gray-300 rounded-lg shadow-lg hover:bg-gray-50 flex items-center justify-center text-lg font-bold text-gray-700 hover:text-gray-900 transition-colors"
+                    title="Zoom In"
+                  >
+                    +
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      const map = mapRef.current;
+                      if (map) {
+                        map.setZoom(map.getZoom() - 1);
+                      }
+                    }}
+                    className="w-10 h-10 bg-white border border-gray-300 rounded-lg shadow-lg hover:bg-gray-50 flex items-center justify-center text-lg font-bold text-gray-700 hover:text-gray-900 transition-colors"
+                    title="Zoom Out"
+                  >
+                    −
+                  </button>
+
+                  {/* Center on My Location Button */}
+                  <button
+                    onClick={() => {
+                      if (userLocation && mapRef.current) {
+                        mapRef.current.setView([userLocation.latitude, userLocation.longitude], 15);
+                      } else {
+                        getUserLocation();
+                      }
+                    }}
+                    className="w-10 h-10 bg-white border border-gray-300 rounded-lg shadow-lg hover:bg-gray-50 flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors"
+                    title="Center on My Location"
+                  >
+                    <Target className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Floating Restaurant Details Card */}
+                {selectedRestaurant && showFloatingCard && (
+                  <div className="absolute bottom-4 left-4 right-4 z-[1000] bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md mx-auto">
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg text-gray-900">{selectedRestaurant.name}</h3>
+                          <p className="text-sm text-gray-600 mt-1">{selectedRestaurant.address}</p>
+                        </div>
+                        <button
+                          onClick={() => setShowFloatingCard(false)}
+                          className="ml-2 p-1 hover:bg-gray-100 rounded-full"
+                        >
+                          <X className="h-4 w-4 text-gray-500" />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-4 mb-3 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span>{selectedRestaurant.rating}</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {selectedRestaurant.distance.toFixed(1)} km away
+                        </Badge>
+                        {selectedRestaurant.cuisineType && (
+                          <Badge variant="secondary" className="text-xs">
+                            {selectedRestaurant.cuisineType}
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const url = `https://www.google.com/maps/search/?api=1&query=${selectedRestaurant.latitude},${selectedRestaurant.longitude}`;
+                            window.open(url, '_blank');
+                          }}
+                          variant="outline"
+                          className="flex items-center gap-1"
+                        >
+                          <Map className="h-4 w-4" />
+                          Open in Google Maps
+                        </Button>
+                        
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            if (userLocation) {
+                              const url = `https://www.google.com/maps/dir/${userLocation.latitude},${userLocation.longitude}/${selectedRestaurant.latitude},${selectedRestaurant.longitude}`;
+                              window.open(url, '_blank');
+                            }
+                          }}
+                          variant="outline"
+                          className="flex items-center gap-1"
+                        >
+                          <Navigation className="h-4 w-4" />
+                          Navigate
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const shareData = {
+                              title: selectedRestaurant.name,
+                              text: `Check out ${selectedRestaurant.name} at ${selectedRestaurant.address}`,
+                              url: `https://www.google.com/maps/search/?api=1&query=${selectedRestaurant.latitude},${selectedRestaurant.longitude}`
+                            };
+                            
+                            if (navigator.share) {
+                              navigator.share(shareData);
+                            } else {
+                              navigator.clipboard.writeText(shareData.url);
+                              toast({
+                                title: "Link copied!",
+                                description: "Restaurant location copied to clipboard",
+                              });
+                            }
+                          }}
+                          className="bg-red-600 hover:bg-red-700 flex items-center gap-1"
+                        >
+                          <Utensils className="h-4 w-4" />
+                          Share
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             </CardContent>
