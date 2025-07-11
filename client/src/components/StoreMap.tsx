@@ -135,32 +135,23 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
     try {
       setIsSearching(true);
       
-      // Using OpenStreetMap Nominatim for location search (completely free)
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=np&accept-language=en`
-      );
+      // Using server proxy endpoint to avoid CORS issues
+      const response = await fetch(`/api/geocode/search?q=${encodeURIComponent(query)}`);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch location suggestions');
+        console.error('Geocoding API error:', response.status, response.statusText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
-      const suggestions = data.map((item: any) => ({
-        title: item.display_name.split(',')[0], // Get main place name
-        address: {
-          label: item.display_name
-        },
-        position: {
-          lat: parseFloat(item.lat),
-          lng: parseFloat(item.lon)
-        },
-        resultType: item.type || 'place',
-        importance: item.importance || 0
-      }));
+      const suggestions = await response.json();
+      console.log('Geocoding search results:', suggestions);
       
-      // Sort by importance (higher is better)
-      suggestions.sort((a: any, b: any) => b.importance - a.importance);
-      
+      if (!Array.isArray(suggestions) || suggestions.length === 0) {
+        setSearchSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
       setSearchSuggestions(suggestions);
       setShowSuggestions(suggestions.length > 0);
     } catch (error) {
@@ -170,7 +161,7 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
       
       toast({
         title: "Search Error",
-        description: "Unable to search for locations. Please check your connection.",
+        description: "Unable to search for locations. Please try again.",
         variant: "destructive",
       });
     } finally {

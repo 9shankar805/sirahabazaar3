@@ -2978,6 +2978,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Location search proxy endpoint to avoid CORS issues
+  app.get("/api/geocode/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      
+      if (!query || query.length < 2) {
+        return res.json([]);
+      }
+      
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=np&accept-language=en`,
+        {
+          headers: {
+            'User-Agent': 'SirahaBazaar/1.0 (contact@sirahabazaar.com)',
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Nominatim API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      const suggestions = data.map((item: any) => ({
+        title: item.display_name.split(',')[0],
+        address: {
+          label: item.display_name
+        },
+        position: {
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon)
+        },
+        resultType: item.type || 'place',
+        importance: item.importance || 0
+      }));
+      
+      suggestions.sort((a: any, b: any) => b.importance - a.importance);
+      
+      res.json(suggestions);
+    } catch (error) {
+      console.error('Geocoding proxy error:', error);
+      
+      // Fallback to common Nepal locations
+      const query = (req.query.q as string || '').toLowerCase();
+      const fallbackData = [
+        { title: 'Siraha', address: { label: 'Siraha, Nepal' }, position: { lat: 26.6586, lng: 86.2003 }, resultType: 'city' },
+        { title: 'Kathmandu', address: { label: 'Kathmandu, Nepal' }, position: { lat: 27.7172, lng: 85.3240 }, resultType: 'city' },
+        { title: 'Pokhara', address: { label: 'Pokhara, Nepal' }, position: { lat: 28.2096, lng: 83.9856 }, resultType: 'city' },
+        { title: 'Chitwan', address: { label: 'Chitwan, Nepal' }, position: { lat: 27.5291, lng: 84.3542 }, resultType: 'city' },
+        { title: 'Birgunj', address: { label: 'Birgunj, Nepal' }, position: { lat: 27.0120, lng: 84.8759 }, resultType: 'city' }
+      ].filter(city => city.title.toLowerCase().includes(query));
+      
+      res.json(fallbackData);
+    }
+  });
+
   // Enhanced delivery partner statistics endpoint for comprehensive dashboard
   app.get("/api/delivery-partners/:id/enhanced-stats", async (req, res) => {
     try {
