@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
@@ -24,7 +24,7 @@ import {
   CheckCircle, XCircle, Clock, Ban, Settings, Bell, Shield, CreditCard,
   BarChart3, FileText, MessageSquare, Tag, Image, Globe, Zap, UserCheck,
   LogOut, RefreshCw, Calendar, Mail, Phone, MapPin, Truck, Star, Activity,
-  PieChart, LineChart, Target, Award, Briefcase, Building, Home, Loader2, X
+  PieChart, LineChart, Target, Award, Briefcase, Building, Home, Loader2, X, Car, User
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -1969,113 +1969,283 @@ export default function ImprovedAdminDashboard() {
                 <>
                   <Separator />
                   <div>
-                    <h4 className="text-lg font-semibold mb-3 text-orange-600">Delivery Partner Details</h4>
+                    <h4 className="text-lg font-semibold mb-4 text-orange-600 flex items-center">
+                      <Truck className="h-5 w-5 mr-2" />
+                      Comprehensive Delivery Partner Information
+                    </h4>
                     {(() => {
                       const partnerDetails = deliveryPartners.find((partner: any) => partner.userId === selectedUser.id);
                       return partnerDetails ? (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Partner ID</Label>
-                              <p className="mt-1">{partnerDetails.id}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Approval Status</Label>
-                              <p className="mt-1">
-                                <StatusBadge status={partnerDetails.status} />
-                              </p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Vehicle Type</Label>
-                              <p className="mt-1">
-                                <Badge variant="outline">{partnerDetails.vehicleType}</Badge>
-                              </p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Vehicle Number</Label>
-                              <p className="mt-1">{partnerDetails.vehicleNumber}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Driving License</Label>
-                              <p className="mt-1">{partnerDetails.drivingLicense}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">ID Proof Type</Label>
-                              <p className="mt-1">{partnerDetails.idProofType}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">ID Proof Number</Label>
-                              <p className="mt-1">{partnerDetails.idProofNumber}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Emergency Contact</Label>
-                              <p className="mt-1">{partnerDetails.emergencyContact}</p>
+                        <div className="space-y-6">
+                          {/* Status & Basic Info */}
+                          <div className="bg-orange-50 p-4 rounded-lg">
+                            <div className="grid grid-cols-3 gap-4">
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Partner ID</Label>
+                                <p className="mt-1 font-semibold">{partnerDetails.id}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Approval Status</Label>
+                                <p className="mt-1">
+                                  <StatusBadge status={partnerDetails.status} />
+                                </p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Registration Date</Label>
+                                <p className="mt-1 text-sm">
+                                  {partnerDetails.createdAt ? new Date(partnerDetails.createdAt).toLocaleDateString() : "N/A"}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                          
+
+                          {/* Vehicle Information */}
                           <div>
-                            <Label className="text-sm font-medium text-gray-600">Delivery Areas</Label>
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {partnerDetails.deliveryAreas?.length > 0 ? (
-                                partnerDetails.deliveryAreas.map((area: string, index: number) => (
-                                  <Badge key={index} variant="secondary" className="text-xs">
-                                    {area}
-                                  </Badge>
-                                ))
-                              ) : (
-                                <span className="text-gray-500 text-sm">No areas specified</span>
+                            <h5 className="text-md font-medium text-gray-800 mb-3 flex items-center">
+                              <Car className="h-4 w-4 mr-2" />
+                              Vehicle Details
+                            </h5>
+                            <div className="grid grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Type</Label>
+                                <p className="mt-1">
+                                  <Badge variant="outline">{partnerDetails.vehicleType}</Badge>
+                                </p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Number</Label>
+                                <p className="mt-1 font-mono">{partnerDetails.vehicleNumber}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Brand</Label>
+                                <p className="mt-1">{partnerDetails.vehicleBrand || "Not specified"}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Model</Label>
+                                <p className="mt-1">{partnerDetails.vehicleModel || "Not specified"}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Year</Label>
+                                <p className="mt-1">{partnerDetails.vehicleYear || "Not specified"}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Color</Label>
+                                <p className="mt-1">{partnerDetails.vehicleColor || "Not specified"}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* License & Documents */}
+                          <div>
+                            <h5 className="text-md font-medium text-gray-800 mb-3 flex items-center">
+                              <FileText className="h-4 w-4 mr-2" />
+                              License & Documents
+                            </h5>
+                            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Driving License</Label>
+                                <p className="mt-1 font-mono">{partnerDetails.drivingLicense || "Not provided"}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">License Expiry</Label>
+                                <p className="mt-1">{partnerDetails.licenseExpiryDate || "Not specified"}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">ID Proof Type</Label>
+                                <p className="mt-1">
+                                  <Badge variant="secondary">{partnerDetails.idProofType}</Badge>
+                                </p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">ID Proof Number</Label>
+                                <p className="mt-1 font-mono">{partnerDetails.idProofNumber}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Banking Information */}
+                          <div>
+                            <h5 className="text-md font-medium text-gray-800 mb-3 flex items-center">
+                              <CreditCard className="h-4 w-4 mr-2" />
+                              Banking Information
+                            </h5>
+                            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Account Number</Label>
+                                <p className="mt-1 font-mono">{partnerDetails.bankAccountNumber}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">IFSC Code</Label>
+                                <p className="mt-1 font-mono">{partnerDetails.ifscCode}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Bank Name</Label>
+                                <p className="mt-1">{partnerDetails.bankName || "Not specified"}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Account Holder</Label>
+                                <p className="mt-1">{partnerDetails.accountHolderName || "Not specified"}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Emergency Contact */}
+                          <div>
+                            <h5 className="text-md font-medium text-gray-800 mb-3 flex items-center">
+                              <Phone className="h-4 w-4 mr-2" />
+                              Emergency Contact
+                            </h5>
+                            <div className="grid grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Contact Number</Label>
+                                <p className="mt-1 font-mono">{partnerDetails.emergencyContact}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Contact Name</Label>
+                                <p className="mt-1">{partnerDetails.emergencyContactName || "Not specified"}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Relationship</Label>
+                                <p className="mt-1">{partnerDetails.emergencyContactRelation || "Not specified"}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Working Preferences & Experience */}
+                          <div>
+                            <h5 className="text-md font-medium text-gray-800 mb-3 flex items-center">
+                              <Clock className="h-4 w-4 mr-2" />
+                              Working Preferences & Experience
+                            </h5>
+                            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Delivery Areas</Label>
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {partnerDetails.deliveryAreas?.length > 0 ? (
+                                    partnerDetails.deliveryAreas.map((area: string, index: number) => (
+                                      <Badge key={index} variant="secondary" className="text-xs">
+                                        {area}
+                                      </Badge>
+                                    ))
+                                  ) : (
+                                    <span className="text-gray-500">No areas specified</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label className="text-sm font-medium text-gray-600">Working Hours</Label>
+                                  <p className="mt-1">{partnerDetails.workingHours || "Not specified"}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-medium text-gray-600">Experience</Label>
+                                  <p className="mt-1">{partnerDetails.experience || "Not specified"}</p>
+                                </div>
+                              </div>
+                              {partnerDetails.previousEmployment && (
+                                <div>
+                                  <Label className="text-sm font-medium text-gray-600">Previous Employment</Label>
+                                  <p className="mt-1 text-sm">{partnerDetails.previousEmployment}</p>
+                                </div>
+                              )}
+                              {partnerDetails.references && (
+                                <div>
+                                  <Label className="text-sm font-medium text-gray-600">References</Label>
+                                  <p className="mt-1 text-sm">{partnerDetails.references}</p>
+                                </div>
                               )}
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-4">
+                          {/* Document URLs */}
+                          {(partnerDetails.idProofUrl || partnerDetails.drivingLicenseUrl || partnerDetails.vehicleRegistrationUrl || partnerDetails.insuranceUrl || partnerDetails.photoUrl) && (
                             <div>
-                              <Label className="text-sm font-medium text-gray-600">Bank Account Number</Label>
-                              <p className="mt-1">{partnerDetails.bankAccountNumber}</p>
+                              <h5 className="text-md font-medium text-gray-800 mb-3 flex items-center">
+                                <FileText className="h-4 w-4 mr-2" />
+                                Uploaded Documents
+                              </h5>
+                              <div className="bg-gray-50 p-4 rounded-lg">
+                                <div className="flex flex-wrap gap-2">
+                                  {partnerDetails.idProofUrl && (
+                                    <Button size="sm" variant="outline" onClick={() => window.open(partnerDetails.idProofUrl, '_blank')}>
+                                      <FileText className="h-3 w-3 mr-1" />
+                                      ID Proof
+                                    </Button>
+                                  )}
+                                  {partnerDetails.drivingLicenseUrl && (
+                                    <Button size="sm" variant="outline" onClick={() => window.open(partnerDetails.drivingLicenseUrl, '_blank')}>
+                                      <FileText className="h-3 w-3 mr-1" />
+                                      Driving License
+                                    </Button>
+                                  )}
+                                  {partnerDetails.vehicleRegistrationUrl && (
+                                    <Button size="sm" variant="outline" onClick={() => window.open(partnerDetails.vehicleRegistrationUrl, '_blank')}>
+                                      <FileText className="h-3 w-3 mr-1" />
+                                      Vehicle Registration
+                                    </Button>
+                                  )}
+                                  {partnerDetails.insuranceUrl && (
+                                    <Button size="sm" variant="outline" onClick={() => window.open(partnerDetails.insuranceUrl, '_blank')}>
+                                      <FileText className="h-3 w-3 mr-1" />
+                                      Insurance
+                                    </Button>
+                                  )}
+                                  {partnerDetails.photoUrl && (
+                                    <Button size="sm" variant="outline" onClick={() => window.open(partnerDetails.photoUrl, '_blank')}>
+                                      <User className="h-3 w-3 mr-1" />
+                                      Photo
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">IFSC Code</Label>
-                              <p className="mt-1">{partnerDetails.ifscCode}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Current Availability</Label>
-                              <p className="mt-1">
-                                <Badge variant={partnerDetails.isAvailable ? "default" : "secondary"}>
-                                  {partnerDetails.isAvailable ? "Available" : "Offline"}
-                                </Badge>
-                              </p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Total Deliveries</Label>
-                              <p className="mt-1">{partnerDetails.totalDeliveries || 0}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Rating</Label>
-                              <p className="mt-1">
-                                {partnerDetails.rating ? `${parseFloat(partnerDetails.rating).toFixed(1)}★` : "No ratings yet"}
-                              </p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Total Earnings</Label>
-                              <p className="mt-1">₹{parseFloat(partnerDetails.totalEarnings || "0").toFixed(2)}</p>
+                          )}
+
+                          {/* Current Status & Performance */}
+                          <div>
+                            <h5 className="text-md font-medium text-gray-800 mb-3 flex items-center">
+                              <TrendingUp className="h-4 w-4 mr-2" />
+                              Current Status & Performance
+                            </h5>
+                            <div className="grid grid-cols-3 gap-4 bg-blue-50 p-4 rounded-lg">
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Current Availability</Label>
+                                <p className="mt-1">
+                                  <Badge variant={partnerDetails.isAvailable ? "default" : "secondary"}>
+                                    {partnerDetails.isAvailable ? "Available" : "Offline"}
+                                  </Badge>
+                                </p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Total Deliveries</Label>
+                                <p className="mt-1 text-lg font-bold text-blue-700">{partnerDetails.totalDeliveries || 0}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Rating</Label>
+                                <p className="mt-1 text-lg font-bold text-blue-700">
+                                  {partnerDetails.rating ? `${parseFloat(partnerDetails.rating).toFixed(1)}★` : "No ratings yet"}
+                                </p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Total Earnings</Label>
+                                <p className="mt-1 text-lg font-bold text-blue-700">₹{parseFloat(partnerDetails.totalEarnings || "0").toFixed(2)}</p>
+                              </div>
+                              {partnerDetails.approvalDate && (
+                                <div>
+                                  <Label className="text-sm font-medium text-gray-600">Approved On</Label>
+                                  <p className="mt-1 text-sm">
+                                    {new Date(partnerDetails.approvalDate).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              )}
+                              {partnerDetails.rejectionReason && (
+                                <div>
+                                  <Label className="text-sm font-medium text-red-600">Rejection Reason</Label>
+                                  <p className="mt-1 text-red-600 text-sm">{partnerDetails.rejectionReason}</p>
+                                </div>
+                              )}
                             </div>
                           </div>
-
-                          {partnerDetails.approvalDate && (
-                            <div>
-                              <Label className="text-sm font-medium text-gray-600">Approved On</Label>
-                              <p className="mt-1">
-                                {new Date(partnerDetails.approvalDate).toLocaleDateString()}
-                              </p>
-                            </div>
-                          )}
-
-                          {partnerDetails.rejectionReason && (
-                            <div>
-                              <Label className="text-sm font-medium text-red-600">Rejection Reason</Label>
-                              <p className="mt-1 text-red-600">{partnerDetails.rejectionReason}</p>
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <p className="text-gray-500 italic">No delivery partner information found for this user.</p>

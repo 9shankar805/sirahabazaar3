@@ -2795,18 +2795,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Clean up data for delivery partner schema
+      // Prepare comprehensive delivery partner data
       const partnerData = {
         userId: deliveryPartnerData.userId,
+        
+        // Vehicle Information
         vehicleType: deliveryPartnerData.vehicleType,
         vehicleNumber: deliveryPartnerData.vehicleNumber,
-        drivingLicense: deliveryPartnerData.drivingLicense || deliveryPartnerData.drivingLicenseUrl || 'N/A',
+        vehicleBrand: deliveryPartnerData.vehicleBrand,
+        vehicleModel: deliveryPartnerData.vehicleModel,
+        vehicleYear: deliveryPartnerData.vehicleYear,
+        vehicleColor: deliveryPartnerData.vehicleColor,
+        
+        // License & Documents
+        drivingLicense: deliveryPartnerData.drivingLicense,
+        licenseExpiryDate: deliveryPartnerData.licenseExpiryDate,
         idProofType: deliveryPartnerData.idProofType || 'aadhar',
-        idProofNumber: deliveryPartnerData.idProofNumber || deliveryPartnerData.idProofUrl || 'TEMP123',
-        deliveryAreas: Array.isArray(deliveryPartnerData.deliveryAreas) ? deliveryPartnerData.deliveryAreas : [deliveryPartnerData.deliveryArea || 'City Center'],
-        emergencyContact: deliveryPartnerData.emergencyContact || deliveryPartnerData.phone || '9999999999',
+        idProofNumber: deliveryPartnerData.idProofNumber || 'TEMP123',
+        
+        // Banking Information
         bankAccountNumber: deliveryPartnerData.bankAccountNumber || '1234567890123456',
-        ifscCode: deliveryPartnerData.ifscCode || 'SBIN0000123'
+        ifscCode: deliveryPartnerData.ifscCode || 'SBIN0000123',
+        bankName: deliveryPartnerData.bankName,
+        accountHolderName: deliveryPartnerData.accountHolderName,
+        
+        // Emergency Contact
+        emergencyContact: deliveryPartnerData.emergencyContact || deliveryPartnerData.phone || '9999999999',
+        emergencyContactName: deliveryPartnerData.emergencyContactName,
+        emergencyContactPhone: deliveryPartnerData.emergencyContactPhone,
+        emergencyContactRelation: deliveryPartnerData.emergencyContactRelation,
+        
+        // Working Preferences
+        deliveryAreas: Array.isArray(deliveryPartnerData.deliveryAreas) ? deliveryPartnerData.deliveryAreas : [deliveryPartnerData.deliveryArea || 'City Center'],
+        workingHours: deliveryPartnerData.workingHours,
+        experience: deliveryPartnerData.experience,
+        previousEmployment: deliveryPartnerData.previousEmployment,
+        references: deliveryPartnerData.references,
+        
+        // Documents & Certifications
+        medicalCertificate: deliveryPartnerData.medicalCertificate,
+        policeClearance: deliveryPartnerData.policeClearance,
+        idProofUrl: deliveryPartnerData.idProofUrl,
+        drivingLicenseUrl: deliveryPartnerData.drivingLicenseUrl,
+        vehicleRegistrationUrl: deliveryPartnerData.vehicleRegistrationUrl,
+        insuranceUrl: deliveryPartnerData.insuranceUrl,
+        photoUrl: deliveryPartnerData.photoUrl
       };
 
       console.log("Final partner data for validation:", JSON.stringify(partnerData, null, 2));

@@ -176,19 +176,56 @@ export const admins = pgTable("admins", {
 export const deliveryPartners = pgTable("delivery_partners", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  vehicleType: text("vehicle_type").notNull(), // bike, scooter, car, bicycle
+  
+  // Vehicle Information
+  vehicleType: text("vehicle_type").notNull(), // motorcycle, bicycle, scooter, car, van
   vehicleNumber: text("vehicle_number").notNull(),
-  drivingLicense: text("driving_license").notNull(),
+  vehicleBrand: text("vehicle_brand"),
+  vehicleModel: text("vehicle_model"),
+  vehicleYear: text("vehicle_year"),
+  vehicleColor: text("vehicle_color"),
+  
+  // License & Documents
+  drivingLicense: text("driving_license"),
+  licenseExpiryDate: text("license_expiry_date"),
   idProofType: text("id_proof_type").notNull(),
   idProofNumber: text("id_proof_number").notNull(),
-  deliveryAreas: text("delivery_areas").array().default([]),
-  emergencyContact: text("emergency_contact").notNull(),
+  
+  // Banking Information
   bankAccountNumber: text("bank_account_number").notNull(),
   ifscCode: text("ifsc_code").notNull(),
+  bankName: text("bank_name"),
+  accountHolderName: text("account_holder_name"),
+  
+  // Emergency Contact
+  emergencyContact: text("emergency_contact").notNull(),
+  emergencyContactName: text("emergency_contact_name"),
+  emergencyContactPhone: text("emergency_contact_phone"),
+  emergencyContactRelation: text("emergency_contact_relation"),
+  
+  // Working Preferences
+  deliveryAreas: text("delivery_areas").array().default([]),
+  workingHours: text("working_hours"),
+  experience: text("experience"),
+  previousEmployment: text("previous_employment"),
+  references: text("references"),
+  
+  // Documents & Certifications
+  medicalCertificate: text("medical_certificate"),
+  policeClearance: text("police_clearance"),
+  idProofUrl: text("id_proof_url"),
+  drivingLicenseUrl: text("driving_license_url"),
+  vehicleRegistrationUrl: text("vehicle_registration_url"),
+  insuranceUrl: text("insurance_url"),
+  photoUrl: text("photo_url"),
+  
+  // Status & Approval
   status: text("status").notNull().default("pending"), // pending, approved, rejected
   approvedBy: integer("approved_by").references(() => adminUsers.id),
-  approvalDate: timestamp("approval_date"),
+  approvedAt: timestamp("approved_at"),
   rejectionReason: text("rejection_reason"),
+  
+  // Operational Data
   isAvailable: boolean("is_available").default(true),
   currentLocation: text("current_location"), // JSON string for lat/lng
   totalDeliveries: integer("total_deliveries").default(0),
