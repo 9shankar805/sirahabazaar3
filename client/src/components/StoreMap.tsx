@@ -115,6 +115,7 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [searchedLocation, setSearchedLocation] = useState<string | null>(null);
   const [showFloatingCard, setShowFloatingCard] = useState(false);
+  const mapRef = useRef<any>(null);
   const { toast } = useToast();
 
   // Get user's current location
@@ -582,27 +583,27 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
                         <span className="text-xs text-gray-500">({store.totalReviews})</span>
                       </div>
                       
-                      <div className="flex gap-2">
+                      <div className="space-y-2">
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(getDirectionsUrl(store), "_blank");
+                          }}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          <Navigation className="h-4 w-4 mr-1" />
+                          Navigate with Google Maps
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            window.open(getDirectionsUrl(store), "_blank");
-                          }}
-                          className="flex-1"
-                        >
-                          <Navigation className="h-4 w-4 mr-1" />
-                          Directions
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
                             setSelectedStore(store);
                             setShowFloatingCard(true);
                           }}
-                          className="flex-1"
+                          className="w-full"
                         >
                           View on Map
                         </Button>
@@ -619,13 +620,18 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
           </Card>
 
           {/* Full Width Interactive Map */}
-          <div className="relative w-full h-[500px] rounded-xl overflow-hidden shadow-lg">
+          <div className="relative w-full h-[600px] rounded-xl overflow-hidden shadow-lg">
             {userLocation ? (
               <MapContainer
                 center={selectedStore ? [parseFloat(selectedStore.latitude), parseFloat(selectedStore.longitude)] : [userLocation.latitude, userLocation.longitude]}
-                zoom={selectedStore ? 15 : 13}
+                zoom={selectedStore ? 16 : 14}
                 style={{ height: '100%', width: '100%' }}
                 className="z-0"
+                scrollWheelZoom={true}
+                doubleClickZoom={true}
+                touchZoom={true}
+                zoomControl={false}
+                ref={mapRef}
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -688,6 +694,83 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
               </div>
             )}
 
+            {/* Map Controls */}
+            <div className="absolute top-4 right-4 z-[999] flex flex-col gap-2">
+              {/* Zoom Controls */}
+              <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (mapRef.current) {
+                      mapRef.current.zoomIn();
+                    }
+                  }}
+                  className="w-10 h-10 p-0 rounded-none border-b border-gray-200 hover:bg-blue-50"
+                  title="Zoom In"
+                >
+                  <span className="text-lg font-bold text-blue-600">+</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (mapRef.current) {
+                      mapRef.current.zoomOut();
+                    }
+                  }}
+                  className="w-10 h-10 p-0 rounded-none hover:bg-blue-50"
+                  title="Zoom Out"
+                >
+                  <span className="text-lg font-bold text-blue-600">−</span>
+                </Button>
+              </div>
+
+              {/* Quick Navigation Button */}
+              {selectedStore && (
+                <Button
+                  onClick={() => window.open(getDirectionsUrl(selectedStore), "_blank")}
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg whitespace-nowrap"
+                  size="sm"
+                  title="Navigate with Google Maps"
+                >
+                  <Navigation className="h-4 w-4 mr-1" />
+                  Navigate
+                </Button>
+              )}
+
+              {/* Center on User Location */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (userLocation && mapRef.current) {
+                    mapRef.current.setView([userLocation.latitude, userLocation.longitude], 15);
+                  }
+                }}
+                className="bg-white shadow-lg hover:bg-blue-50"
+                title="Center on My Location"
+              >
+                <Target className="h-4 w-4 text-blue-600" />
+              </Button>
+
+              {/* Full Screen Google Maps */}
+              {selectedStore && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const fullScreenUrl = `https://www.google.com/maps/dir/${userLocation?.latitude},${userLocation?.longitude}/${selectedStore.latitude},${selectedStore.longitude}`;
+                    window.open(fullScreenUrl, "_blank");
+                  }}
+                  className="bg-white shadow-lg hover:bg-green-50"
+                  title="Open Full Screen Directions"
+                >
+                  <Map className="h-4 w-4 text-green-600" />
+                </Button>
+              )}
+            </div>
+
             {/* Floating Store Details Card */}
             {showFloatingCard && selectedStore && (
               <div className="absolute top-4 left-4 z-[1000] max-w-sm">
@@ -739,23 +822,47 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
 
                     <p className="text-sm text-gray-600 line-clamp-3">{selectedStore.description}</p>
 
-                    <div className="flex gap-2 pt-2">
+                    <div className="space-y-2 pt-2">
                       <Button
                         size="sm"
-                        variant="outline"
                         onClick={() => window.open(getDirectionsUrl(selectedStore), "_blank")}
-                        className="flex-1"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                       >
                         <Navigation className="h-4 w-4 mr-1" />
-                        Directions
+                        Open in Google Maps
                       </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => window.open(`/stores/${selectedStore.slug}`, "_blank")}
-                        className="flex-1"
-                      >
-                        View Store
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (navigator.share) {
+                              navigator.share({
+                                title: selectedStore.name,
+                                text: `Check out ${selectedStore.name} at ${selectedStore.address}`,
+                                url: getDirectionsUrl(selectedStore)
+                              });
+                            } else {
+                              navigator.clipboard.writeText(getDirectionsUrl(selectedStore));
+                              toast({
+                                title: "Location Copied",
+                                description: "Google Maps link copied to clipboard"
+                              });
+                            }
+                          }}
+                          className="flex-1"
+                        >
+                          Share
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`/stores/${selectedStore.slug}`, "_blank")}
+                          className="flex-1"
+                        >
+                          Visit Store
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
