@@ -104,14 +104,17 @@ export default function DeliveryPartnerQuickReg() {
 
       const userResult = await userResponse.json();
 
-      // Create delivery partner profile
+      // Create delivery partner profile with all document data
       const deliveryPartnerData = {
         userId: userResult.user.id,
         vehicleType: data.vehicleType,
         vehicleNumber: data.vehicleNumber,
         deliveryArea: data.deliveryArea,
         idProofUrl: data.idProofUrl,
-        drivingLicenseUrl: data.drivingLicenseUrl || '',
+        drivingLicenseUrl: data.drivingLicenseUrl,
+        vehicleRegistrationUrl: data.vehicleRegistrationUrl,
+        insuranceUrl: data.insuranceUrl,
+        photoUrl: data.photoUrl,
       };
 
       const partnerResponse = await fetch('/api/delivery-partners/signup', {
