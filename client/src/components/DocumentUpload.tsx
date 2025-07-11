@@ -99,7 +99,7 @@ interface DocumentUploadProps {
   className?: string;
 }
 
-export default function DocumentUpload({
+function DocumentUpload({
   onDocumentChange,
   initialDocuments = {},
   label = "Upload Documents",
@@ -383,3 +383,5 @@ export default function DocumentUpload({
     </div>
   );
 }
+
+export default DocumentUpload;
