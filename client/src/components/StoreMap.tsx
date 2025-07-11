@@ -20,22 +20,71 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Custom icons for different marker types
-const storeIcon = new L.Icon({
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
+// Custom store marker with logo support
+const createStoreIcon = (store: any) => {
+  const logoUrl = store.logo || '/default-store-logo.png';
+  return new L.DivIcon({
+    html: `
+      <div style="
+        width: 40px; 
+        height: 40px; 
+        background: white; 
+        border: 3px solid #3b82f6; 
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        position: relative;
+      ">
+        <img src="${logoUrl}" 
+             style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" 
+             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgiIGhlaWdodD0iMjgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjMzk4NGZmIi8+Cjwvc3ZnPg=='" />
+        <div style="
+          position: absolute; 
+          bottom: -2px; 
+          right: -2px; 
+          width: 12px; 
+          height: 12px; 
+          background: #10b981; 
+          border: 2px solid white; 
+          border-radius: 50%;
+        "></div>
+      </div>
+    `,
+    className: 'custom-store-marker',
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -40]
+  });
+};
 
-const userIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOCIgZmlsbD0iIzM5ODRmZiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+',
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
-  popupAnchor: [0, -8]
+const userIcon = new L.DivIcon({
+  html: `
+    <div style="
+      width: 32px; 
+      height: 32px; 
+      background: #3b82f6; 
+      border: 4px solid white; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      animation: pulse 2s infinite;
+    ">
+      <div style="
+        width: 16px; 
+        height: 16px; 
+        background: white; 
+        border-radius: 50%;
+      "></div>
+    </div>
+  `,
+  className: 'custom-user-marker',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16]
 });
 
 interface StoreWithDistance extends Store {
@@ -65,6 +114,7 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchedLocation, setSearchedLocation] = useState<string | null>(null);
+  const [showFloatingCard, setShowFloatingCard] = useState(false);
   const { toast } = useToast();
 
   // Get user's current location
@@ -463,7 +513,8 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
       </Card>
 
       {userLocation && showNearbyStores && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          {/* Store List */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -486,7 +537,7 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
                   <p className="mt-2 text-gray-600">Finding nearby stores...</p>
                 </div>
               ) : nearbyStores && nearbyStores.length > 0 ? (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {nearbyStores.map((store, index) => (
                     <div
                       key={store.id}
@@ -495,84 +546,66 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
                           ? "border-blue-500 bg-blue-50 shadow-md"
                           : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                       }`}
-                      onClick={() => setSelectedStore(store)}
+                      onClick={() => {
+                        setSelectedStore(store);
+                        setShowFloatingCard(true);
+                      }}
                     >
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={index < 3 ? "default" : "secondary"} 
-                            className={`text-xs px-2 py-1 ${
-                              index === 0 ? "bg-green-600" : 
-                              index === 1 ? "bg-blue-600" : 
-                              index === 2 ? "bg-orange-600" : ""
-                            }`}
-                          >
-                            #{index + 1}
-                          </Badge>
-                          <h3 className="font-semibold text-lg">{store.name}</h3>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <Badge 
-                            variant={store.distance < 1 ? "destructive" : store.distance < 5 ? "default" : "secondary"} 
-                            className={`self-start ${
-                              store.distance < 1 ? "bg-green-600" : 
-                              store.distance < 5 ? "bg-blue-600" : ""
-                            }`}
-                          >
-                            {store.distance.toFixed(1)} km away
-                          </Badge>
-                          {store.distance < 1 && (
-                            <span className="text-xs text-green-600 font-medium">Very Close!</span>
-                          )}
-                        </div>
+                      <div className="flex items-start justify-between mb-2">
+                        <Badge 
+                          variant={index < 3 ? "default" : "secondary"} 
+                          className={`text-xs px-2 py-1 ${
+                            index === 0 ? "bg-green-600" : 
+                            index === 1 ? "bg-blue-600" : 
+                            index === 2 ? "bg-orange-600" : ""
+                          }`}
+                        >
+                          #{index + 1}
+                        </Badge>
+                        <Badge 
+                          variant={store.distance < 1 ? "destructive" : store.distance < 5 ? "default" : "secondary"} 
+                          className={`${
+                            store.distance < 1 ? "bg-green-600" : 
+                            store.distance < 5 ? "bg-blue-600" : ""
+                          }`}
+                        >
+                          {store.distance.toFixed(1)}km
+                        </Badge>
                       </div>
                       
-                      <p className="text-gray-600 text-sm mb-2">{store.description}</p>
+                      <h3 className="font-semibold text-lg mb-1">{store.name}</h3>
+                      <p className="text-gray-600 text-sm mb-2 line-clamp-2">{store.description}</p>
                       
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500 mb-3">
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate">{store.address}</span>
-                        </div>
-                        {store.phone && (
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-4 w-4 flex-shrink-0" />
-                            <span>{store.phone}</span>
-                          </div>
-                        )}
+                      <div className="flex items-center gap-1 mb-2">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm">{store.rating}</span>
+                        <span className="text-xs text-gray-500">({store.totalReviews})</span>
                       </div>
                       
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm">
-                            {store.rating} ({store.totalReviews} reviews)
-                          </span>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(getDirectionsUrl(store), "_blank");
-                            }}
-                            className="w-8 h-8 p-0"
-                          >
-                            <Navigation className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedStore(store);
-                            }}
-                            className="flex-1 sm:flex-none"
-                          >
-                            View Details
-                          </Button>
-                        </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(getDirectionsUrl(store), "_blank");
+                          }}
+                          className="flex-1"
+                        >
+                          <Navigation className="h-4 w-4 mr-1" />
+                          Directions
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedStore(store);
+                            setShowFloatingCard(true);
+                          }}
+                          className="flex-1"
+                        >
+                          View on Map
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -585,98 +618,150 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
             </CardContent>
           </Card>
 
-          {selectedStore && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{selectedStore.name}</CardTitle>
-                <CardDescription>Store details and interactive map</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="h-64 md:h-80 lg:h-96 bg-gray-100 rounded-lg overflow-hidden">
-                  {selectedStore.latitude && selectedStore.longitude ? (
-                    <MapContainer
-                      center={[parseFloat(selectedStore.latitude), parseFloat(selectedStore.longitude)]}
-                      zoom={15}
-                      style={{ height: '100%', width: '100%' }}
-                      className="z-0"
+          {/* Full Width Interactive Map */}
+          <div className="relative w-full h-[500px] rounded-xl overflow-hidden shadow-lg">
+            {userLocation ? (
+              <MapContainer
+                center={selectedStore ? [parseFloat(selectedStore.latitude), parseFloat(selectedStore.longitude)] : [userLocation.latitude, userLocation.longitude]}
+                zoom={selectedStore ? 15 : 13}
+                style={{ height: '100%', width: '100%' }}
+                className="z-0"
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                
+                {/* User Location Marker */}
+                <Marker
+                  position={[userLocation.latitude, userLocation.longitude]}
+                  icon={userIcon}
+                >
+                  <Popup>
+                    <div className="text-center">
+                      <h3 className="font-semibold">Your Location</h3>
+                      <p className="text-sm text-gray-600">
+                        {searchedLocation || 'Current GPS Position'}
+                      </p>
+                    </div>
+                  </Popup>
+                </Marker>
+
+                {/* Store Markers */}
+                {nearbyStores && nearbyStores.map((store) => (
+                  store.latitude && store.longitude && (
+                    <Marker
+                      key={store.id}
+                      position={[parseFloat(store.latitude), parseFloat(store.longitude)]}
+                      icon={createStoreIcon(store)}
+                      eventHandlers={{
+                        click: () => {
+                          setSelectedStore(store);
+                          setShowFloatingCard(true);
+                        }
+                      }}
                     >
-                      <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      <Marker
-                        position={[parseFloat(selectedStore.latitude), parseFloat(selectedStore.longitude)]}
-                        icon={storeIcon}
-                      >
-                        <Popup>
-                          <div className="text-center">
-                            <h3 className="font-semibold">{selectedStore.name}</h3>
-                            <p className="text-sm text-gray-600">{selectedStore.address}</p>
-                            <p className="text-sm">Rating: {selectedStore.rating} ⭐</p>
+                      <Popup>
+                        <div className="text-center max-w-xs">
+                          <h3 className="font-semibold">{store.name}</h3>
+                          <p className="text-sm text-gray-600 mb-1">{store.address}</p>
+                          <div className="flex items-center justify-center gap-1 mb-2">
+                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                            <span className="text-sm">{store.rating}</span>
                           </div>
-                        </Popup>
-                      </Marker>
-                      {userLocation && (
-                        <Marker
-                          position={[userLocation.latitude, userLocation.longitude]}
-                          icon={userIcon}
-                        >
-                          <Popup>Your Location</Popup>
-                        </Marker>
-                      )}
-                    </MapContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-center text-gray-500">
-                      <div>
-                        <MapPin className="h-12 w-12 mx-auto mb-2" />
-                        <p>Location coordinates not available</p>
-                      </div>
-                    </div>
-                  )}
+                          <Badge variant="outline" className="text-xs">
+                            {store.distance.toFixed(1)}km away
+                          </Badge>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )
+                ))}
+              </MapContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full bg-gray-100 text-gray-500">
+                <div className="text-center">
+                  <MapPin className="h-12 w-12 mx-auto mb-3" />
+                  <p className="text-lg font-medium">Enable location to view the map</p>
+                  <p className="text-sm">Click "Get Current Location" above to start</p>
                 </div>
+              </div>
+            )}
 
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="font-semibold mb-1">Address</h4>
-                    <p className="text-gray-600">{selectedStore.address}</p>
-                  </div>
-
-                  {selectedStore.phone && (
-                    <div>
-                      <h4 className="font-semibold mb-1">Phone</h4>
-                      <p className="text-gray-600">{selectedStore.phone}</p>
-                    </div>
-                  )}
-
-                  <div>
-                    <h4 className="font-semibold mb-1">Distance</h4>
-                    <p className="text-gray-600">{selectedStore.distance.toFixed(1)} km from your location</p>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-1">Rating</h4>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
+            {/* Floating Store Details Card */}
+            {showFloatingCard && selectedStore && (
+              <div className="absolute top-4 left-4 z-[1000] max-w-sm">
+                <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-4 transform transition-all duration-300 animate-in slide-in-from-left-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg text-gray-900">{selectedStore.name}</h3>
+                      <div className="flex items-center gap-1 mt-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span>{selectedStore.rating}</span>
+                        <span className="text-sm font-medium">{selectedStore.rating}</span>
+                        <span className="text-xs text-gray-500">({selectedStore.totalReviews} reviews)</span>
                       </div>
-                      <span className="text-gray-500">({selectedStore.totalReviews} reviews)</span>
                     </div>
-                  </div>
-
-                  <div className="pt-4 border-t">
                     <Button
-                      className="w-full"
-                      onClick={() => window.open(getDirectionsUrl(selectedStore), "_blank")}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowFloatingCard(false)}
+                      className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600"
                     >
-                      <Navigation className="h-4 w-4 mr-2" />
-                      Get Directions in Google Maps
+                      <X className="h-4 w-4" />
                     </Button>
                   </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <MapPin className="h-4 w-4" />
+                        <span className="line-clamp-2">{selectedStore.address}</span>
+                      </div>
+                    </div>
+
+                    {selectedStore.phone && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Phone className="h-4 w-4" />
+                        <span>{selectedStore.phone}</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {selectedStore.distance.toFixed(1)} km away
+                      </Badge>
+                      {selectedStore.distance < 1 && (
+                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                          Very Close!
+                        </Badge>
+                      )}
+                    </div>
+
+                    <p className="text-sm text-gray-600 line-clamp-3">{selectedStore.description}</p>
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.open(getDirectionsUrl(selectedStore), "_blank")}
+                        className="flex-1"
+                      >
+                        <Navigation className="h-4 w-4 mr-1" />
+                        Directions
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => window.open(`/stores/${selectedStore.slug}`, "_blank")}
+                        className="flex-1"
+                      >
+                        View Store
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

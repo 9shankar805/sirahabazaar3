@@ -68,6 +68,64 @@ body::-webkit-scrollbar {
   --radius: 0.75rem;
 }
 
+/* Custom marker animations and styles */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.custom-user-marker {
+  animation: pulse 2s infinite;
+}
+
+.custom-store-marker {
+  transition: transform 0.2s ease;
+}
+
+.custom-store-marker:hover {
+  transform: scale(1.1);
+}
+
+/* Text clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Floating card animations */
+@keyframes slide-in-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-in {
+  animation-duration: 300ms;
+  animation-fill-mode: both;
+}
+
+.slide-in-from-left-5 {
+  animation-name: slide-in-from-left;
+}
+
 /* Swiper.js Custom Styles */
 .swiper {
   width: 100%;
