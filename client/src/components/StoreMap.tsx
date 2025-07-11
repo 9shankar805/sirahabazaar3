@@ -124,7 +124,7 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
     }
   };
 
-  // Fetch location suggestions using HERE Maps API
+  // Fetch location suggestions using OpenStreetMap Nominatim (free service)
   const fetchLocationSuggestions = async (query: string) => {
     if (!query.trim() || query.length < 2) {
       setSearchSuggestions([]);
@@ -133,17 +133,11 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
     }
 
     try {
-      const apiKey = import.meta.env.VITE_HERE_API_KEY;
-      if (!apiKey) {
-        console.warn('HERE Maps API key not configured');
-        setSearchSuggestions([]);
-        setShowSuggestions(false);
-        return;
-      }
-
       setIsSearching(true);
+      
+      // Using OpenStreetMap Nominatim for location search (completely free)
       const response = await fetch(
-        `https://autosuggest.search.hereapi.com/v1/autosuggest?q=${encodeURIComponent(query)}&apikey=${apiKey}&lang=en&limit=5&resultTypes=place,address&bias=countryCode:NP&in=countryCode:NP`
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=np&accept-language=en`
       );
 
       if (!response.ok) {
@@ -151,7 +145,21 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
       }
 
       const data = await response.json();
-      const suggestions = data.items || [];
+      const suggestions = data.map((item: any) => ({
+        title: item.display_name.split(',')[0], // Get main place name
+        address: {
+          label: item.display_name
+        },
+        position: {
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon)
+        },
+        resultType: item.type || 'place',
+        importance: item.importance || 0
+      }));
+      
+      // Sort by importance (higher is better)
+      suggestions.sort((a: any, b: any) => b.importance - a.importance);
       
       setSearchSuggestions(suggestions);
       setShowSuggestions(suggestions.length > 0);
@@ -159,6 +167,12 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
       console.error('Location search error:', error);
       setSearchSuggestions([]);
       setShowSuggestions(false);
+      
+      toast({
+        title: "Search Error",
+        description: "Unable to search for locations. Please check your connection.",
+        variant: "destructive",
+      });
     } finally {
       setIsSearching(false);
     }
@@ -341,6 +355,9 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-10"
                 />
+                <p className="text-xs text-green-600 mt-1">
+                  Powered by OpenStreetMap - Free and accurate location search
+                </p>
                 {searchQuery && (
                   <Button
                     variant="ghost"

@@ -120,8 +120,8 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### July 11, 2025 - Advanced Location Search System for Store Maps
-- ✓ Added intelligent location search functionality to map section using HERE Maps API
+### July 11, 2025 - Advanced Location Search System with OpenStreetMap Integration
+- ✓ Added intelligent location search functionality using OpenStreetMap Nominatim (completely free)
 - ✓ Users can now search for places like "Siraha", "Kathmandu" and get automatic coordinates
 - ✓ Enhanced location search with real-time suggestions dropdown showing place names and addresses
 - ✓ Integrated debounced search input with loading states and clear button functionality
@@ -130,6 +130,8 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 - ✓ Added quick switch button to toggle between searched location and current GPS location
 - ✓ Search prioritizes Nepal locations with country bias for better local results
 - ✓ Comprehensive error handling for invalid selections and network issues
+- ✓ Results sorted by importance for most relevant locations first
+- ✓ No API keys required - uses OpenStreetMap's free geocoding service
 - → Users can now easily find stores in any city by simply typing the location name
 
 ### July 9, 2025 - Simplified Store Page with Distance-Based Sorting (Previous)
