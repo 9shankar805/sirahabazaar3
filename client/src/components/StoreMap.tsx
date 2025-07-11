@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Navigation, Phone, Star, Loader2, Target, Map } from "lucide-react";
+import { MapPin, Navigation, Phone, Star, Loader2, Target, Map, Search, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import type { Store } from "@shared/schema";
 import "leaflet/dist/leaflet.css";
 
@@ -57,6 +58,14 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showNearbyStores, setShowNearbyStores] = useState(false);
+  
+  // Location search functionality
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchedLocation, setSearchedLocation] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Get user's current location
   const getUserLocation = () => {
@@ -113,6 +122,89 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
     } else {
       setLocationError("Please enter valid latitude and longitude values");
     }
+  };
+
+  // Fetch location suggestions using HERE Maps API
+  const fetchLocationSuggestions = async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const apiKey = import.meta.env.VITE_HERE_API_KEY;
+      if (!apiKey) {
+        console.warn('HERE Maps API key not configured');
+        setSearchSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      setIsSearching(true);
+      const response = await fetch(
+        `https://autosuggest.search.hereapi.com/v1/autosuggest?q=${encodeURIComponent(query)}&apikey=${apiKey}&lang=en&limit=5&resultTypes=place,address&bias=countryCode:NP&in=countryCode:NP`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch location suggestions');
+      }
+
+      const data = await response.json();
+      const suggestions = data.items || [];
+      
+      setSearchSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+    } catch (error) {
+      console.error('Location search error:', error);
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Handle location search selection
+  const handleLocationSearch = async (selectedItem: any) => {
+    try {
+      if (!selectedItem.position) {
+        toast({
+          title: "Location Error",
+          description: "Selected location doesn't have coordinates",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { lat, lng } = selectedItem.position;
+      
+      setUserLocation({ latitude: lat, longitude: lng });
+      setSearchedLocation(selectedItem.title || selectedItem.address?.label || "Selected Location");
+      setShowNearbyStores(true);
+      setLocationError(null);
+      setSearchQuery(selectedItem.title || selectedItem.address?.label || "");
+      setShowSuggestions(false);
+
+      toast({
+        title: "Location Found",
+        description: `Searching stores near ${selectedItem.title || selectedItem.address?.label}`,
+      });
+    } catch (error) {
+      console.error('Error setting location:', error);
+      toast({
+        title: "Location Error",
+        description: "Failed to set the selected location",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Clear location search
+  const clearLocationSearch = () => {
+    setSearchQuery("");
+    setSearchSuggestions([]);
+    setShowSuggestions(false);
+    setSearchedLocation(null);
   };
 
   // Find nearby stores manually
@@ -179,6 +271,17 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
     getUserLocation();
   }, []);
 
+  // Debounce location search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim().length >= 2) {
+        fetchLocationSuggestions(searchQuery);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
       <Card>
@@ -226,6 +329,67 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
             </Alert>
           )}
 
+          {/* Location Search */}
+          <div className="border-t pt-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Search for a location:</h3>
+            <div className="relative">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search for a city, place, or address (e.g., Siraha, Kathmandu)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-10"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearLocationSearch}
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+                {isSearching && (
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+                )}
+              </div>
+
+              {/* Search Suggestions Dropdown */}
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {searchSuggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                      onClick={() => handleLocationSearch(suggestion)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <MapPin className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 truncate">
+                            {suggestion.title || suggestion.address?.label || 'Unknown Location'}
+                          </p>
+                          {suggestion.address?.label && suggestion.title !== suggestion.address.label && (
+                            <p className="text-sm text-gray-600 truncate">
+                              {suggestion.address.label}
+                            </p>
+                          )}
+                          {suggestion.resultType && (
+                            <Badge variant="outline" className="text-xs mt-1">
+                              {suggestion.resultType}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Manual Location Input */}
           <div className="border-t pt-4">
             <h3 className="text-sm font-medium text-gray-700 mb-3">Or enter coordinates manually:</h3>
@@ -254,9 +418,36 @@ export default function StoreMap({ storeType = 'retail' }: StoreMapProps) {
             <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-green-600" />
-                <p className="text-sm text-green-700 font-medium">
-                  Location Found: {userLocation.latitude.toFixed(4)}, {userLocation.longitude.toFixed(4)}
-                </p>
+                <div className="flex-1">
+                  {searchedLocation ? (
+                    <div>
+                      <p className="text-sm text-green-700 font-medium">
+                        📍 {searchedLocation}
+                      </p>
+                      <p className="text-xs text-green-600">
+                        {userLocation.latitude.toFixed(4)}, {userLocation.longitude.toFixed(4)}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-green-700 font-medium">
+                      Current Location: {userLocation.latitude.toFixed(4)}, {userLocation.longitude.toFixed(4)}
+                    </p>
+                  )}
+                </div>
+                {searchedLocation && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchedLocation(null);
+                      setSearchQuery("");
+                      getUserLocation();
+                    }}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Target className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
           )}
