@@ -81,6 +81,11 @@ export default function ImprovedAdminDashboard() {
     enabled: !!adminUser,
   }) as { data: any[] };
 
+  const { data: deliveryPartners = [] } = useQuery({
+    queryKey: ["/api/delivery-partners"],
+    enabled: !!adminUser,
+  }) as { data: any[] };
+
   const { data: allStores = [] } = useQuery({
     queryKey: ["/api/admin/stores"],
     enabled: !!adminUser,
@@ -1655,14 +1660,15 @@ export default function ImprovedAdminDashboard() {
         </main>
       </div>
 
-      {/* User Detail Dialog */}
+      {/* Enhanced User Detail Dialog */}
       <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>User Details</DialogTitle>
+            <DialogTitle>Complete User Registration Details</DialogTitle>
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-6">
+              {/* User Header */}
               <div className="flex items-center space-x-4">
                 <Avatar className="h-16 w-16">
                   <AvatarFallback className="text-lg">
@@ -1681,26 +1687,256 @@ export default function ImprovedAdminDashboard() {
 
               <Separator />
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">User ID</Label>
-                  <p className="mt-1">{selectedUser.id}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Phone</Label>
-                  <p className="mt-1">{selectedUser.phone || "Not provided"}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Address</Label>
-                  <p className="mt-1">{selectedUser.address || "Not provided"}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Joined Date</Label>
-                  <p className="mt-1">
-                    {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : "N/A"}
-                  </p>
+              {/* Basic Information */}
+              <div>
+                <h4 className="text-lg font-semibold mb-3 text-blue-600">Basic Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">User ID</Label>
+                    <p className="mt-1">{selectedUser.id}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Phone</Label>
+                    <p className="mt-1">{selectedUser.phone || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Email</Label>
+                    <p className="mt-1">{selectedUser.email}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Firebase UID</Label>
+                    <p className="mt-1 text-xs text-gray-500">{selectedUser.firebaseUid || "Not linked"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Address</Label>
+                    <p className="mt-1">{selectedUser.address || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Joined Date</Label>
+                    <p className="mt-1">
+                      {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : "N/A"}
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {/* Role-Specific Information */}
+              {selectedUser.role === 'shopkeeper' && (
+                <>
+                  <Separator />
+                  <div>
+                    <h4 className="text-lg font-semibold mb-3 text-green-600">Shopkeeper Details</h4>
+                    {(() => {
+                      const userStore = allStores.find((store: any) => store.ownerId === selectedUser.id);
+                      return userStore ? (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">Store Name</Label>
+                            <p className="mt-1">{userStore.name}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">Store Type</Label>
+                            <p className="mt-1">
+                              <Badge variant="outline">{userStore.type}</Badge>
+                            </p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">Store Address</Label>
+                            <p className="mt-1">{userStore.address || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">Store Description</Label>
+                            <p className="mt-1">{userStore.description || "No description"}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">Store Phone</Label>
+                            <p className="mt-1">{userStore.phone || "Not provided"}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">Store Approval Status</Label>
+                            <p className="mt-1">
+                              <StatusBadge status={userStore.status || "active"} />
+                            </p>
+                          </div>
+                          {userStore.type === 'restaurant' && (
+                            <>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Delivery Fee</Label>
+                                <p className="mt-1">₹{userStore.deliveryFee || "Not set"}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Minimum Order</Label>
+                                <p className="mt-1">₹{userStore.minimumOrder || "Not set"}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Cuisine Type</Label>
+                                <p className="mt-1">{userStore.cuisineType || "Not specified"}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-gray-600">Opening Hours</Label>
+                                <p className="mt-1">{userStore.openingHours || "Not specified"}</p>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 italic">No store information found for this shopkeeper.</p>
+                      );
+                    })()}
+                  </div>
+                </>
+              )}
+
+              {selectedUser.role === 'delivery_partner' && (
+                <>
+                  <Separator />
+                  <div>
+                    <h4 className="text-lg font-semibold mb-3 text-orange-600">Delivery Partner Details</h4>
+                    {(() => {
+                      const partnerDetails = deliveryPartners.find((partner: any) => partner.userId === selectedUser.id);
+                      return partnerDetails ? (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Partner ID</Label>
+                              <p className="mt-1">{partnerDetails.id}</p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Approval Status</Label>
+                              <p className="mt-1">
+                                <StatusBadge status={partnerDetails.status} />
+                              </p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Vehicle Type</Label>
+                              <p className="mt-1">
+                                <Badge variant="outline">{partnerDetails.vehicleType}</Badge>
+                              </p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Vehicle Number</Label>
+                              <p className="mt-1">{partnerDetails.vehicleNumber}</p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Driving License</Label>
+                              <p className="mt-1">{partnerDetails.drivingLicense}</p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">ID Proof Type</Label>
+                              <p className="mt-1">{partnerDetails.idProofType}</p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">ID Proof Number</Label>
+                              <p className="mt-1">{partnerDetails.idProofNumber}</p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Emergency Contact</Label>
+                              <p className="mt-1">{partnerDetails.emergencyContact}</p>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <Label className="text-sm font-medium text-gray-600">Delivery Areas</Label>
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {partnerDetails.deliveryAreas?.length > 0 ? (
+                                partnerDetails.deliveryAreas.map((area: string, index: number) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {area}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <span className="text-gray-500 text-sm">No areas specified</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Bank Account Number</Label>
+                              <p className="mt-1">{partnerDetails.bankAccountNumber}</p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">IFSC Code</Label>
+                              <p className="mt-1">{partnerDetails.ifscCode}</p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Current Availability</Label>
+                              <p className="mt-1">
+                                <Badge variant={partnerDetails.isAvailable ? "default" : "secondary"}>
+                                  {partnerDetails.isAvailable ? "Available" : "Offline"}
+                                </Badge>
+                              </p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Total Deliveries</Label>
+                              <p className="mt-1">{partnerDetails.totalDeliveries || 0}</p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Rating</Label>
+                              <p className="mt-1">
+                                {partnerDetails.rating ? `${parseFloat(partnerDetails.rating).toFixed(1)}★` : "No ratings yet"}
+                              </p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Total Earnings</Label>
+                              <p className="mt-1">₹{parseFloat(partnerDetails.totalEarnings || "0").toFixed(2)}</p>
+                            </div>
+                          </div>
+
+                          {partnerDetails.approvalDate && (
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Approved On</Label>
+                              <p className="mt-1">
+                                {new Date(partnerDetails.approvalDate).toLocaleDateString()}
+                              </p>
+                            </div>
+                          )}
+
+                          {partnerDetails.rejectionReason && (
+                            <div>
+                              <Label className="text-sm font-medium text-red-600">Rejection Reason</Label>
+                              <p className="mt-1 text-red-600">{partnerDetails.rejectionReason}</p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 italic">No delivery partner information found for this user.</p>
+                      );
+                    })()}
+                  </div>
+                </>
+              )}
+
+              {selectedUser.role === 'customer' && (
+                <>
+                  <Separator />
+                  <div>
+                    <h4 className="text-lg font-semibold mb-3 text-purple-600">Customer Activity</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Total Orders</Label>
+                        <p className="mt-1">{allOrders.filter((order: any) => order.userId === selectedUser.id).length}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Account Status</Label>
+                        <p className="mt-1">
+                          <StatusBadge status={selectedUser.status} />
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Location</Label>
+                        <p className="mt-1">{selectedUser.address || "Not provided"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Last Active</Label>
+                        <p className="mt-1">
+                          {selectedUser.updatedAt ? new Date(selectedUser.updatedAt).toLocaleDateString() : "Unknown"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </DialogContent>
