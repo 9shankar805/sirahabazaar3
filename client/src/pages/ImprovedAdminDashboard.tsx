@@ -24,7 +24,7 @@ import {
   CheckCircle, XCircle, Clock, Ban, Settings, Bell, Shield, CreditCard,
   BarChart3, FileText, MessageSquare, Tag, Image, Globe, Zap, UserCheck,
   LogOut, RefreshCw, Calendar, Mail, Phone, MapPin, Truck, Star, Activity,
-  PieChart, LineChart, Target, Award, Briefcase, Building, Home
+  PieChart, LineChart, Target, Award, Briefcase, Building, Home, Loader2, X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -158,6 +158,55 @@ export default function ImprovedAdminDashboard() {
       toast({ 
         title: "Error", 
         description: error.message || "Failed to reject user",
+        variant: "destructive"
+      });
+    },
+  });
+
+  // Delivery partner approval mutations
+  const approvePartnerMutation = useMutation({
+    mutationFn: async (partnerId: number) => {
+      const response = await apiRequest(`/api/delivery-partners/${partnerId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser.id }),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-partners"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/pending"] });
+      toast({ title: "Success", description: "Delivery partner approved successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to approve delivery partner",
+        variant: "destructive"
+      });
+    },
+  });
+
+  const rejectPartnerMutation = useMutation({
+    mutationFn: async ({ partnerId, reason }: { partnerId: number; reason: string }) => {
+      const response = await apiRequest(`/api/delivery-partners/${partnerId}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: adminUser.id, reason }),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-partners"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/pending"] });
+      toast({ title: "Success", description: "Delivery partner rejected successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to reject delivery partner",
         variant: "destructive"
       });
     },
@@ -933,6 +982,135 @@ export default function ImprovedAdminDashboard() {
                           ))}
                         </div>
                       )}
+                    </CardContent>
+                  </Card>
+                  
+                  {/* Delivery Partner Approvals Section */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Pending Delivery Partner Approvals</CardTitle>
+                      <CardDescription>
+                        Delivery partners waiting for admin approval to start working
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {(() => {
+                        const pendingPartners = deliveryPartners.filter((partner: any) => partner.status === 'pending');
+                        return pendingPartners.length === 0 ? (
+                          <div className="text-center py-8">
+                            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                              All caught up!
+                            </h3>
+                            <p className="text-gray-500">
+                              No pending delivery partner approvals at the moment.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {pendingPartners.map((partner: any) => {
+                              const partnerUser = allUsers.find((user: any) => user.id === partner.userId);
+                              return (
+                                <Card key={partner.id} className="border-l-4 border-l-orange-400">
+                                  <CardContent className="p-6">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-4">
+                                        <Avatar className="h-12 w-12">
+                                          <AvatarFallback className="bg-orange-100 text-orange-600">
+                                            <Truck className="h-6 w-6" />
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                          <h3 className="font-medium text-gray-900">{partnerUser?.fullName || "Unknown User"}</h3>
+                                          <p className="text-sm text-gray-500">{partnerUser?.email}</p>
+                                          <div className="flex items-center mt-2 space-x-4">
+                                            <Badge variant="outline" className="text-orange-600 border-orange-300">
+                                              {partner.vehicleType} • {partner.vehicleNumber}
+                                            </Badge>
+                                            <span className="text-xs text-gray-500">
+                                              Applied: {partner.createdAt ? new Date(partner.createdAt).toLocaleDateString() : "N/A"}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center mt-1 space-x-2">
+                                            <span className="text-xs text-gray-500">Areas:</span>
+                                            {partner.deliveryAreas?.map((area: string, index: number) => (
+                                              <Badge key={index} variant="secondary" className="text-xs px-1 py-0">
+                                                {area}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex space-x-3">
+                                        <Button
+                                          onClick={() => approvePartnerMutation.mutate(partner.id)}
+                                          disabled={approvePartnerMutation.isPending || rejectPartnerMutation.isPending}
+                                          className="bg-green-600 hover:bg-green-700 disabled:opacity-50 transition-all duration-200"
+                                        >
+                                          {approvePartnerMutation.isPending ? (
+                                            <>
+                                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                              Approving...
+                                            </>
+                                          ) : (
+                                            <>
+                                              <CheckCircle className="h-4 w-4 mr-2" />
+                                              Approve
+                                            </>
+                                          )}
+                                        </Button>
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button 
+                                              variant="destructive" 
+                                              disabled={approvePartnerMutation.isPending || rejectPartnerMutation.isPending}
+                                            >
+                                              <X className="h-4 w-4 mr-2" />
+                                              Reject
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Reject Delivery Partner</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                Are you sure you want to reject {partnerUser?.fullName}? Please provide a reason for rejection.
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <Textarea
+                                              placeholder="Reason for rejection..."
+                                              id={`reject-reason-${partner.id}`}
+                                              className="mt-2"
+                                            />
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                              <AlertDialogAction
+                                                onClick={() => {
+                                                  const reason = (document.getElementById(`reject-reason-${partner.id}`) as HTMLTextAreaElement)?.value || "Application does not meet requirements";
+                                                  rejectPartnerMutation.mutate({ partnerId: partner.id, reason });
+                                                }}
+                                                className="bg-red-600 hover:bg-red-700"
+                                              >
+                                                {rejectPartnerMutation.isPending ? (
+                                                  <>
+                                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                    Rejecting...
+                                                  </>
+                                                ) : (
+                                                  "Reject Partner"
+                                                )}
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
                     </CardContent>
                   </Card>
                 </div>

@@ -120,7 +120,21 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### July 11, 2025 - Advanced Location Search System with OpenStreetMap Integration
+### July 11, 2025 - Fixed Delivery Partner Approval Workflow and Enhanced Admin Dashboard
+- ✓ Fixed critical delivery partner approval workflow where approved partners couldn't login
+- ✓ Identified issue: Backend only updated delivery partner status, not user account status
+- ✓ Enhanced approveDeliveryPartner method to update both delivery partner and user status to 'approved'
+- ✓ Enhanced rejectDeliveryPartner method for consistency in dual-status updates
+- ✓ Added comprehensive delivery partner approval section to admin dashboard Pending tab
+- ✓ Added delivery partner approval mutations with proper error handling and cache invalidation
+- ✓ Created professional delivery partner approval interface with vehicle and area details
+- ✓ Added orange-themed delivery partner cards with truck icons and status badges
+- ✓ Implemented detailed rejection workflow with reason collection and confirmation dialogs
+- ✓ Enhanced admin dashboard with comprehensive user detail dialogs for all user types
+- ✓ Added role-specific information display for customers, shopkeepers, and delivery partners
+- → Admin dashboard now provides complete user management with working delivery partner approval workflow
+
+### July 11, 2025 - Advanced Location Search System with OpenStreetMap Integration (Previous)
 - ✓ Added intelligent location search functionality using OpenStreetMap Nominatim (completely free)
 - ✓ Users can now search for places like "Siraha", "Kathmandu" and get automatic coordinates
 - ✓ Enhanced location search with real-time suggestions dropdown showing place names and addresses

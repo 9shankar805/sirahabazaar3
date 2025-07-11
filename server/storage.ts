@@ -2262,6 +2262,16 @@ export class DatabaseStorage implements IStorage {
 
   async approveDeliveryPartner(id: number, adminId: number): Promise<DeliveryPartner | undefined> {
     try {
+      // First, get the delivery partner to find the associated user
+      const partner = await db.select().from(deliveryPartners).where(eq(deliveryPartners.id, id)).limit(1);
+      
+      if (!partner || partner.length === 0) {
+        return undefined;
+      }
+
+      const userId = partner[0].userId;
+
+      // Update delivery partner status
       const [updated] = await db.update(deliveryPartners)
         .set({ 
           status: 'approved',
@@ -2270,14 +2280,34 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(deliveryPartners.id, id))
         .returning();
+
+      // Also update the user's status to 'active' so they can login properly
+      await db.update(users)
+        .set({ 
+          status: 'active',
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId));
+
       return updated;
-    } catch {
+    } catch (error) {
+      console.error('Error approving delivery partner:', error);
       return undefined;
     }
   }
 
   async rejectDeliveryPartner(id: number, adminId: number, reason: string): Promise<DeliveryPartner | undefined> {
     try {
+      // First, get the delivery partner to find the associated user
+      const partner = await db.select().from(deliveryPartners).where(eq(deliveryPartners.id, id)).limit(1);
+      
+      if (!partner || partner.length === 0) {
+        return undefined;
+      }
+
+      const userId = partner[0].userId;
+
+      // Update delivery partner status
       const [updated] = await db.update(deliveryPartners)
         .set({ 
           status: 'rejected',
@@ -2287,8 +2317,18 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(deliveryPartners.id, id))
         .returning();
+
+      // Also update the user's status to 'rejected' for consistency
+      await db.update(users)
+        .set({ 
+          status: 'rejected',
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId));
+
       return updated;
-    } catch {
+    } catch (error) {
+      console.error('Error rejecting delivery partner:', error);
       return undefined;
     }
   }
