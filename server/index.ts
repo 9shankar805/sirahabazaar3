@@ -120,13 +120,12 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   }).on('error', (err: any) => {
     if (err.code === 'EADDRINUSE') {
-      console.log(`Port ${port} is in use, trying to kill existing process...`);
-      // Force exit to allow restart
-      setTimeout(() => {
-        process.exit(1);
-      }, 1000);
+      console.log(`Port ${port} is in use, shutting down gracefully...`);
+      // Graceful shutdown
+      process.exit(0);
     } else {
-      throw err;
+      console.error('Server error:', err);
+      process.exit(1);
     }
   });
 })();

@@ -52,9 +52,28 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes
       retry: 1,
+      onError: (error) => {
+        console.error('Query error caught:', error);
+      },
     },
     mutations: {
       retry: false,
+      onError: (error) => {
+        console.error('Mutation error caught:', error);
+      },
     },
+  },
+});
+
+// Handle QueryClient errors globally
+queryClient.setMutationDefaults(['*'], {
+  onError: (error) => {
+    console.error('Global mutation error:', error);
+  },
+});
+
+queryClient.setQueryDefaults(['*'], {
+  onError: (error) => {
+    console.error('Global query error:', error);
   },
 });

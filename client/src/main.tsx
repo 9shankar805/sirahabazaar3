@@ -3,6 +3,18 @@ import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./index.css";
 
+// Handle unhandled promise rejections at the global level
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
+  // Prevent the default error display
+  event.preventDefault();
+});
+
+// Handle uncaught errors
+window.addEventListener('error', (event) => {
+  console.error('Uncaught error:', event.error);
+});
+
 try {
   const rootElement = document.getElementById("root");
   if (!rootElement) {
