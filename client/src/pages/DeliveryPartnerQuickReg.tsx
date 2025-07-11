@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Truck, CheckCircle, Upload, FileText } from "lucide-react";
+import DocumentUpload from "@/components/DocumentUpload";
 
 const deliveryPartnerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -24,7 +25,10 @@ const deliveryPartnerSchema = z.object({
   vehicleNumber: z.string().min(1, "Vehicle number is required"),
   deliveryArea: z.string().min(1, "Delivery area is required"),
   idProofUrl: z.string().min(1, "ID proof is required"),
-  drivingLicenseUrl: z.string().optional(),
+  drivingLicenseUrl: z.string().min(1, "Driving license is required"),
+  vehicleRegistrationUrl: z.string().optional(),
+  insuranceUrl: z.string().optional(),
+  photoUrl: z.string().min(1, "Profile photo is required"),
   termsAccepted: z.boolean().refine(val => val === true, {
     message: "You must accept the terms and conditions"
   }),
@@ -39,6 +43,12 @@ export default function DeliveryPartnerQuickReg() {
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [documents, setDocuments] = useState<Record<string, string>>({});
+
+  const handleDocumentChange = (field: string, value: string) => {
+    setDocuments(prev => ({ ...prev, [field]: value }));
+    form.setValue(field as keyof DeliveryPartnerForm, value);
+  };
 
   const form = useForm<DeliveryPartnerForm>({
     resolver: zodResolver(deliveryPartnerSchema),
@@ -54,6 +64,9 @@ export default function DeliveryPartnerQuickReg() {
       deliveryArea: "",
       idProofUrl: "",
       drivingLicenseUrl: "",
+      vehicleRegistrationUrl: "",
+      insuranceUrl: "",
+      photoUrl: "",
       termsAccepted: false,
     },
   });
@@ -317,96 +330,10 @@ export default function DeliveryPartnerQuickReg() {
 
               {/* Document Upload */}
               <div className="space-y-4 border-t pt-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Required Documents
-                </h3>
-
-                <FormField
-                  control={form.control}
-                  name="idProofUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ID Proof (Citizenship/License) *</FormLabel>
-                      <FormControl>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                          <div className="text-center">
-                            <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                            <div className="mt-2">
-                              <Input
-                                type="file"
-                                accept="image/*,.pdf"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    field.onChange(`/uploads/id_${Date.now()}.${file.name.split('.').pop()}`);
-                                  }
-                                }}
-                                className="hidden"
-                                id="idProof"
-                              />
-                              <label
-                                htmlFor="idProof"
-                                className="cursor-pointer text-sm font-medium text-primary hover:text-primary/80"
-                              >
-                                Upload ID Document
-                              </label>
-                            </div>
-                          </div>
-                          {field.value && (
-                            <div className="mt-2 flex items-center justify-center text-sm text-green-600">
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Document uploaded
-                            </div>
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="drivingLicenseUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Driving License (Optional)</FormLabel>
-                      <FormControl>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                          <div className="text-center">
-                            <FileText className="mx-auto h-8 w-8 text-gray-400" />
-                            <div className="mt-2">
-                              <Input
-                                type="file"
-                                accept="image/*,.pdf"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    field.onChange(`/uploads/license_${Date.now()}.${file.name.split('.').pop()}`);
-                                  }
-                                }}
-                                className="hidden"
-                                id="drivingLicense"
-                              />
-                              <label
-                                htmlFor="drivingLicense"
-                                className="cursor-pointer text-sm font-medium text-primary hover:text-primary/80"
-                              >
-                                Upload License
-                              </label>
-                            </div>
-                          </div>
-                          {field.value && (
-                            <div className="mt-2 flex items-center justify-center text-sm text-green-600">
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              License uploaded
-                            </div>
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                <DocumentUpload 
+                  onDocumentChange={handleDocumentChange}
+                  initialDocuments={documents}
+                  label="Required Documents"
                 />
               </div>
 

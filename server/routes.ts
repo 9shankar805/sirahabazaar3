@@ -2912,6 +2912,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update delivery partner documents
+  app.post("/api/delivery-partners/:id/document", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const documentData = req.body;
+
+      const updatedPartner = await storage.updateDeliveryPartnerDocuments(id, documentData);
+      
+      if (!updatedPartner) {
+        return res.status(404).json({ error: "Delivery partner not found" });
+      }
+
+      res.json(updatedPartner);
+    } catch (error) {
+      console.error("Error updating delivery partner documents:", error);
+      res.status(500).json({ error: "Failed to update documents" });
+    }
+  });
+
   app.post("/api/delivery-partners/:id/reject", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

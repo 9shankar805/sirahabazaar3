@@ -2260,6 +2260,24 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async updateDeliveryPartnerDocuments(id: number, documentData: any): Promise<DeliveryPartner | undefined> {
+    try {
+      const [updated] = await db.update(deliveryPartners)
+        .set({
+          idProofUrl: documentData.idProofUrl,
+          drivingLicenseUrl: documentData.drivingLicenseUrl,
+          vehicleRegistrationUrl: documentData.vehicleRegistrationUrl,
+          insuranceUrl: documentData.insuranceUrl,
+          photoUrl: documentData.photoUrl
+        })
+        .where(eq(deliveryPartners.id, id))
+        .returning();
+      return updated;
+    } catch {
+      return undefined;
+    }
+  }
+
   async approveDeliveryPartner(id: number, adminId: number): Promise<DeliveryPartner | undefined> {
     try {
       // First, get the delivery partner to find the associated user
