@@ -301,6 +301,8 @@ export interface IStorage {
   getDeviceTokensByUserId(userId: number): Promise<string[]>;
   getDeviceTokensByUserIds(userIds: number[]): Promise<string[]>;
   getDeviceTokensByRole(role: string): Promise<string[]>;
+  getDeviceTokensByUser(userId: number, deviceType?: string): Promise<any[]>;
+  createDeviceToken(tokenData: any): Promise<any>;
   
   // Admin profile management methods
   getAdminProfile(adminId: number): Promise<any>;
@@ -2750,6 +2752,45 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting device tokens by user IDs:', error);
       return [];
+    }
+  }
+
+  async getDeviceTokensByUser(userId: number, deviceType?: string): Promise<any[]> {
+    try {
+      let whereConditions = [
+        eq(pushNotificationTokens.userId, userId),
+        eq(pushNotificationTokens.isActive, true)
+      ];
+
+      if (deviceType) {
+        whereConditions.push(eq(pushNotificationTokens.deviceType, deviceType));
+      }
+
+      const tokens = await db.select()
+        .from(pushNotificationTokens)
+        .where(and(...whereConditions));
+      
+      return tokens;
+    } catch (error) {
+      console.error('Error getting device tokens by user and type:', error);
+      return [];
+    }
+  }
+
+  async createDeviceToken(tokenData: any): Promise<any> {
+    try {
+      const [deviceToken] = await db.insert(pushNotificationTokens)
+        .values({
+          ...tokenData,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      return deviceToken;
+    } catch (error) {
+      console.error('Error creating device token:', error);
+      throw error;
     }
   }
 

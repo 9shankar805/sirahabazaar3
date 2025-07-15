@@ -7707,6 +7707,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Production notification endpoints for sirahabazaar.com
+  const { ProductionNotificationService } = await import('./productionNotificationService');
+
+  // Enhanced notification status endpoint for debugging
+  app.get("/api/production/notification-status/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const status = await ProductionNotificationService.getNotificationStatus(userId);
+      
+      res.json({
+        success: true,
+        userId,
+        status,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error getting notification status:', error);
+      res.status(500).json({ error: 'Failed to get notification status' });
+    }
+  });
+
+  // Production test notification endpoint
+  app.post("/api/production/test-notification", async (req, res) => {
+    try {
+      const { userId, testType = 'basic' } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+      }
+
+      const success = await ProductionNotificationService.sendTestNotification(
+        parseInt(userId),
+        testType
+      );
+
+      res.json({
+        success,
+        message: success ? 'Production test notification sent successfully' : 'Failed to send production test notification',
+        testType,
+        userId: parseInt(userId)
+      });
+    } catch (error) {
+      console.error('Error sending production test notification:', error);
+      res.status(500).json({ error: 'Failed to send production test notification' });
+    }
+  });
+
+  // Production order notification endpoint
+  app.post("/api/production/order-notification", async (req, res) => {
+    try {
+      const { customerId, orderId, storeName, totalAmount, status } = req.body;
+
+      if (!customerId || !orderId || !storeName || !totalAmount || !status) {
+        return res.status(400).json({ 
+          error: 'customerId, orderId, storeName, totalAmount, and status are required' 
+        });
+      }
+
+      const success = await ProductionNotificationService.sendOrderNotification(
+        parseInt(customerId),
+        parseInt(orderId),
+        storeName,
+        parseFloat(totalAmount),
+        status
+      );
+
+      res.json({
+        success,
+        message: success ? 'Order notification sent successfully' : 'Failed to send order notification',
+        orderId: parseInt(orderId),
+        customerId: parseInt(customerId),
+        status
+      });
+    } catch (error) {
+      console.error('Error sending production order notification:', error);
+      res.status(500).json({ error: 'Failed to send production order notification' });
+    }
+  });
+
+  // Production delivery assignment notification endpoint
+  app.post("/api/production/delivery-notification", async (req, res) => {
+    try {
+      const { deliveryPartnerId, orderId, pickupAddress, deliveryAddress, deliveryFee, distance } = req.body;
+
+      if (!deliveryPartnerId || !orderId || !pickupAddress || !deliveryAddress || !deliveryFee) {
+        return res.status(400).json({ 
+          error: 'deliveryPartnerId, orderId, pickupAddress, deliveryAddress, and deliveryFee are required' 
+        });
+      }
+
+      const success = await ProductionNotificationService.sendDeliveryAssignmentNotification(
+        parseInt(deliveryPartnerId),
+        parseInt(orderId),
+        pickupAddress,
+        deliveryAddress,
+        parseFloat(deliveryFee),
+        distance
+      );
+
+      res.json({
+        success,
+        message: success ? 'Delivery assignment notification sent successfully' : 'Failed to send delivery assignment notification',
+        orderId: parseInt(orderId),
+        deliveryPartnerId: parseInt(deliveryPartnerId)
+      });
+    } catch (error) {
+      console.error('Error sending production delivery notification:', error);
+      res.status(500).json({ error: 'Failed to send production delivery notification' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Initialize WebSocket service for real-time tracking

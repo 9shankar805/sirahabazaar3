@@ -32,6 +32,23 @@ process.on('SIGINT', () => {
 });
 
 const app = express();
+
+// Add CORS configuration for production domain
+import cors from 'cors';
+app.use(cors({
+  origin: [
+    'https://sirahabazaar.com',
+    'https://www.sirahabazaar.com', 
+    'http://localhost:5173',
+    'http://localhost:5000',
+    /\.replit\.dev$/,
+    /\.replit\.app$/
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
+}));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
