@@ -1,4 +1,4 @@
-package com.siraha.myweb;
+package com.sirahabazaar.app;
 
 import android.content.Context;
 import android.webkit.JavascriptInterface;
@@ -53,8 +53,7 @@ public class AndroidBridge {
         new Thread(() -> {
             try {
                 // Example HTTP request to register the token
-                // You'll need to replace this with your actual server URL
-                String serverUrl = "https://your-replit-url.replit.app/api/device-token";
+                String serverUrl = "https://sirahabazaar.com/api/device-token";
                 
                 // Create HTTP request with token
                 // Implementation depends on your preferred HTTP library

@@ -1,4 +1,4 @@
-package com.siraha.myweb;
+package com.sirahabazaar.app;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -131,8 +131,7 @@ public class MainActivity extends AppCompatActivity {
         webView.addJavascriptInterface(new AndroidBridge(this), "AndroidBridge");
         
         // Load your web application
-        // Replace with your actual Replit URL
-        webView.loadUrl("https://your-replit-url.replit.app");
+        webView.loadUrl("https://sirahabazaar.com");
     }
 
     @Override

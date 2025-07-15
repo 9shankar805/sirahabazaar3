@@ -22,7 +22,7 @@ const firebaseConfig = {
 ### 1. Create New Android Project
 1. Open Android Studio
 2. Create new project: "Empty Activity"
-3. Package name: `com.siraha.myweb`
+3. Package name: `com.sirahabazaar.app`
 4. Language: Java
 5. API level: 21 or higher
 
@@ -30,7 +30,7 @@ const firebaseConfig = {
 1. Go to Firebase Console: https://console.firebase.google.com/
 2. Select your project: "myweb-1c1f37b3"
 3. Click "Add app" → Android
-4. Package name: `com.siraha.myweb`
+4. Package name: `com.sirahabazaar.app`
 5. Download `google-services.json` file (or use the configuration below)
 6. Place it in `app/` folder of your Android project
 
@@ -47,7 +47,7 @@ const firebaseConfig = {
       "client_info": {
         "mobilesdk_app_id": "1:774950702828:android:19c9900fc2ece3774a9fc9",
         "android_client_info": {
-          "package_name": "com.siraha.myweb"
+          "package_name": "com.sirahabazaar.app"
         }
       },
       "oauth_client": [],
@@ -114,18 +114,19 @@ buildscript {
 ### 4. Copy Android Files
 Copy these files to your Android project:
 
-**MainActivity.java** → `app/src/main/java/com/siraha/myweb/MainActivity.java`
-**MyFirebaseMessagingService.java** → `app/src/main/java/com/siraha/myweb/MyFirebaseMessagingService.java`
-**AndroidBridge.java** → `app/src/main/java/com/siraha/myweb/AndroidBridge.java`
+**MainActivity.java** → `app/src/main/java/com/sirahabazaar/app/MainActivity.java`
+**MyFirebaseMessagingService.java** → `app/src/main/java/com/sirahabazaar/app/MyFirebaseMessagingService.java`
+**AndroidBridge.java** → `app/src/main/java/com/sirahabazaar/app/AndroidBridge.java`
 **activity_main.xml** → `app/src/main/res/layout/activity_main.xml`
 **AndroidManifest.xml** → `app/src/main/AndroidManifest.xml`
 
-### 5. Update MainActivity.java
-Replace the URL in MainActivity.java with your Replit URL:
+### 5. Website URL Configuration
+The Android app is already configured to load:
 ```java
-// Replace this line in setupWebView()
-webView.loadUrl("https://your-replit-project-url.replit.app");
+webView.loadUrl("https://sirahabazaar.com");
 ```
+
+If you need to test with a different URL (like your Replit development URL), update this line in MainActivity.java.
 
 ### 6. Add Icons and Resources
 Create these drawable resources in `app/src/main/res/drawable/`:
