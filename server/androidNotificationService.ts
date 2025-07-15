@@ -24,11 +24,32 @@ export class AndroidNotificationService {
     if (this.initialized) return;
 
     try {
-      // Initialize Firebase Admin SDK for Android notifications
+      // Initialize Firebase Admin SDK for Android notifications with proper credentials
       if (!admin.apps.length) {
-        admin.initializeApp({
-          projectId: 'myweb-1c1f37b3',
-        });
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const serviceAccountPath = path.join(process.cwd(), 'firebase-service-account.json');
+          
+          if (fs.existsSync(serviceAccountPath)) {
+            const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+            admin.initializeApp({
+              credential: admin.credential.cert(serviceAccount),
+              projectId: serviceAccount.project_id || 'myweb-1c1f37b3',
+            });
+            console.log('✅ Android notification service initialized with service account');
+          } else {
+            admin.initializeApp({
+              projectId: 'myweb-1c1f37b3',
+            });
+            console.log('✅ Android notification service initialized with minimal config');
+          }
+        } catch (credentialError) {
+          console.error('Failed to load service account, using minimal config:', credentialError);
+          admin.initializeApp({
+            projectId: 'myweb-1c1f37b3',
+          });
+        }
       }
       
       this.initialized = true;
@@ -77,7 +98,7 @@ export class AndroidNotificationService {
             defaultVibrateTimings: true,
             vibrateTimingsMillis: options.vibrate || [100, 200, 300, 400, 500, 400, 300, 200, 400],
             icon: '@drawable/ic_notification',
-            color: '@color/colorPrimary',
+            color: '#FF6B35',
           },
         },
       };
@@ -130,7 +151,7 @@ export class AndroidNotificationService {
             defaultVibrateTimings: true,
             vibrateTimingsMillis: options.vibrate || [100, 200, 300, 400, 500, 400, 300, 200, 400],
             icon: '@drawable/ic_notification',
-            color: '@color/colorPrimary',
+            color: '#FF6B35',
           },
         },
       };

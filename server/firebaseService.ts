@@ -23,24 +23,34 @@ export class FirebaseService {
     if (this.initialized) return;
 
     try {
-      // Try to load service account from environment variable first
-      let serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+      // Check if Firebase is already initialized
+      if (admin.apps.length > 0) {
+        console.log('✅ Firebase already initialized');
+        this.initialized = true;
+        return;
+      }
+
+      // Try to load service account from local file first (more reliable)
+      let serviceAccount = null;
       
-      if (!serviceAccount) {
-        // Fallback to local file for development
-        try {
-          const fs = require('fs');
-          const path = require('path');
-          const serviceAccountPath = path.join(process.cwd(), 'firebase-service-account.json');
-          if (fs.existsSync(serviceAccountPath)) {
-            serviceAccount = fs.readFileSync(serviceAccountPath, 'utf8');
-          }
-        } catch (fileError) {
-          console.log('No local service account file found');
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const serviceAccountPath = path.join(process.cwd(), 'firebase-service-account.json');
+        if (fs.existsSync(serviceAccountPath)) {
+          serviceAccount = fs.readFileSync(serviceAccountPath, 'utf8');
+          console.log('✅ Found local Firebase service account file');
         }
+      } catch (fileError) {
+        console.log('No local service account file found');
       }
       
+      // Fallback to environment variable if local file not found
       if (!serviceAccount) {
+        serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+      }
+      
+      if (!serviceAccount || serviceAccount.trim() === '') {
         console.log('Firebase service account not configured. Using minimal configuration.');
         // Initialize with minimal config for development
         admin.initializeApp({
@@ -50,10 +60,22 @@ export class FirebaseService {
         return;
       }
 
-      // Parse service account
-      const serviceAccountObj = typeof serviceAccount === 'string' 
-        ? JSON.parse(serviceAccount) 
-        : serviceAccount;
+      // Clean and parse service account
+      const cleanServiceAccount = serviceAccount.trim();
+      let serviceAccountObj;
+      
+      try {
+        serviceAccountObj = JSON.parse(cleanServiceAccount);
+        console.log('✅ Successfully parsed service account JSON');
+      } catch (parseError) {
+        console.error('Failed to parse Firebase service account JSON:', parseError);
+        console.log('Using minimal configuration instead');
+        admin.initializeApp({
+          projectId: 'myweb-1c1f37b3',
+        });
+        this.initialized = true;
+        return;
+      }
 
       // Initialize Firebase Admin SDK with your Android project configuration
       admin.initializeApp({
@@ -64,14 +86,16 @@ export class FirebaseService {
       });
 
       this.initialized = true;
-      console.log('✅ Firebase service initialized successfully');
+      console.log('✅ Firebase service initialized successfully with full credentials');
     } catch (error) {
       console.error('Failed to initialize Firebase service:', error);
       // Initialize with minimal config as fallback
       try {
-        admin.initializeApp({
-          projectId: 'myweb-1c1f37b3',
-        });
+        if (admin.apps.length === 0) {
+          admin.initializeApp({
+            projectId: 'myweb-1c1f37b3',
+          });
+        }
         this.initialized = true;
         console.log('✅ Firebase initialized with minimal configuration');
       } catch (fallbackError) {
