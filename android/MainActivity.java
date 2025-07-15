@@ -1,4 +1,4 @@
-package com.sirahabazaar.app;
+package com.siraha.myweb;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -130,8 +130,9 @@ public class MainActivity extends AppCompatActivity {
         // Add JavaScript interface for Firebase communication
         webView.addJavascriptInterface(new AndroidBridge(this), "AndroidBridge");
         
-        // Load your web application
-        webView.loadUrl("https://sirahabazaar.com");
+        // Load your web application - Use current Replit URL for testing
+        // For production, change this to https://sirahabazaar.com
+        webView.loadUrl("https://43edda12-1dc0-42b0-a9c8-12498ed82404-00-12jfe7tmxnzba.pike.replit.dev");
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.sirahabazaar.app;
+package com.siraha.myweb;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
