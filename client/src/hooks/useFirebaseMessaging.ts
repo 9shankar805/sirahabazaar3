@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { testNotificationSetup, supportsNotifications } from '@/lib/firebaseNotifications';
+import { initializeApp } from 'firebase/app';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 // Firebase configuration 
 const firebaseConfig = {

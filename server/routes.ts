@@ -7584,6 +7584,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test notification endpoint for Firebase testing
+  app.post("/api/test-notification", async (req, res) => {
+    try {
+      const { userId, title, message, type = 'test' } = req.body;
+
+      if (!userId || !title || !message) {
+        return res.status(400).json({ error: 'userId, title, and message are required' });
+      }
+
+      // Create notification in database
+      const notification = await storage.createNotification({
+        userId: parseInt(userId),
+        title,
+        message,
+        type
+      });
+
+      // Try to send push notification (if Firebase is configured)
+      try {
+        await NotificationService.sendToUser(parseInt(userId), {
+          title,
+          message,
+          type,
+          data: { notificationId: notification.id.toString() }
+        });
+      } catch (pushError) {
+        console.log('Push notification failed (Firebase not configured):', pushError);
+      }
+
+      res.json({ 
+        success: true, 
+        notification,
+        message: 'Test notification sent successfully' 
+      });
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      res.status(500).json({ error: 'Failed to send test notification' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Initialize WebSocket service for real-time tracking
