@@ -135,6 +135,22 @@ export const setupForegroundMessageListener = (callback?: (payload: any) => void
 
 export const testNotificationSetup = async (userId: number) => {
   try {
+    // Check if running in Android app
+    const { AndroidBridge } = await import('@/lib/androidBridge');
+    
+    if (AndroidBridge.isAndroidApp()) {
+      // Android app handles FCM automatically
+      AndroidBridge.logMessage('Setting up notifications for Android app');
+      
+      // Register for Android notifications
+      const success = await AndroidBridge.registerForNotifications(userId);
+      if (success) {
+        AndroidBridge.showToast('Push notifications enabled!');
+      }
+      return success;
+    }
+    
+    // Web browser setup
     // 1. Request permission
     const hasPermission = await requestNotificationPermission();
     if (!hasPermission) {
@@ -150,8 +166,9 @@ export const testNotificationSetup = async (userId: number) => {
       throw new Error('Failed to get Firebase token');
     }
     
-    // 4. Save token to server
+    // 4. Save token to server (and send to Android if applicable)
     await saveDeviceToken(userId, token);
+    AndroidBridge.setFirebaseToken(token);
     
     // 5. Setup message listener
     setupForegroundMessageListener((payload) => {

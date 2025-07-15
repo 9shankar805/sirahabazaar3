@@ -31,8 +31,41 @@ const firebaseConfig = {
 2. Select your project: "myweb-1c1f37b3"
 3. Click "Add app" → Android
 4. Package name: `com.siraha.myweb`
-5. Download `google-services.json` file
+5. Download `google-services.json` file (or use the configuration below)
 6. Place it in `app/` folder of your Android project
+
+**Your Google Services Configuration:**
+```json
+{
+  "project_info": {
+    "project_number": "774950702828",
+    "project_id": "myweb-1c1f37b3",
+    "storage_bucket": "myweb-1c1f37b3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:774950702828:android:19c9900fc2ece3774a9fc9",
+        "android_client_info": {
+          "package_name": "com.siraha.myweb"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5hGbS275cEKJpo5_HlnbpYhyjEhR4N0U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+```
 
 ### 3. Add Dependencies
 In `app/build.gradle`:
@@ -81,8 +114,9 @@ buildscript {
 ### 4. Copy Android Files
 Copy these files to your Android project:
 
-**MainActivity.java** → `app/src/main/java/com/sirahabazaar/app/MainActivity.java`
-**MyFirebaseMessagingService.java** → `app/src/main/java/com/sirahabazaar/app/MyFirebaseMessagingService.java`
+**MainActivity.java** → `app/src/main/java/com/siraha/myweb/MainActivity.java`
+**MyFirebaseMessagingService.java** → `app/src/main/java/com/siraha/myweb/MyFirebaseMessagingService.java`
+**AndroidBridge.java** → `app/src/main/java/com/siraha/myweb/AndroidBridge.java`
 **activity_main.xml** → `app/src/main/res/layout/activity_main.xml`
 **AndroidManifest.xml** → `app/src/main/AndroidManifest.xml`
 
