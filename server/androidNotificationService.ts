@@ -61,7 +61,8 @@ export class AndroidNotificationService {
         data: {
           ...payload.data,
           type: payload.type || 'general',
-          click_action: 'FLUTTER_NOTIFICATION_CLICK',
+          click_action: 'android.intent.action.VIEW',
+          package_name: 'com.siraha.myweb',
         },
         android: {
           priority: options.priority || 'high',
@@ -69,12 +70,14 @@ export class AndroidNotificationService {
           collapseKey: options.collapseKey,
           notification: {
             sound: options.sound || 'default',
-            clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+            clickAction: 'android.intent.action.VIEW',
             channelId: 'siraha_bazaar',
             priority: 'high',
             defaultSound: true,
             defaultVibrateTimings: true,
             vibrateTimingsMillis: options.vibrate || [100, 200, 300, 400, 500, 400, 300, 200, 400],
+            icon: '@drawable/ic_notification',
+            color: '@color/colorPrimary',
           },
         },
       };
@@ -111,7 +114,8 @@ export class AndroidNotificationService {
         data: {
           ...payload.data,
           type: payload.type || 'general',
-          click_action: 'FLUTTER_NOTIFICATION_CLICK',
+          click_action: 'android.intent.action.VIEW',
+          package_name: 'com.siraha.myweb',
         },
         android: {
           priority: options.priority || 'high',
@@ -119,12 +123,14 @@ export class AndroidNotificationService {
           collapseKey: options.collapseKey,
           notification: {
             sound: options.sound || 'default',
-            clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+            clickAction: 'android.intent.action.VIEW',
             channelId: 'siraha_bazaar',
             priority: 'high',
             defaultSound: true,
             defaultVibrateTimings: true,
             vibrateTimingsMillis: options.vibrate || [100, 200, 300, 400, 500, 400, 300, 200, 400],
+            icon: '@drawable/ic_notification',
+            color: '@color/colorPrimary',
           },
         },
       };

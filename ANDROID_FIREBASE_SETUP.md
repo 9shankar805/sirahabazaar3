@@ -97,9 +97,13 @@ await AndroidNotificationService.sendDeliveryAssignmentNotification(
 
 ### Your Firebase Project Details:
 - **Project ID**: `myweb-1c1f37b3`
-- **App ID**: `1:774950702828:web:09c2dfc1198d45244a9fc9`
+- **App ID (Web)**: `1:774950702828:web:09c2dfc1198d45244a9fc9`
+- **App ID (Android)**: `1:774950702828:android:19c9900fc2ece3774a9fc9`
+- **Package Name**: `com.siraha.myweb`
+- **Project Number**: `774950702828`
 - **Sender ID**: `774950702828`
 - **Channel ID**: `siraha_bazaar`
+- **Storage Bucket**: `myweb-1c1f37b3.firebasestorage.app`
 
 ### Required Files in Android Project:
 - **google-services.json** - Firebase configuration (already included)

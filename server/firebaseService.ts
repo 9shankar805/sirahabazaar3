@@ -55,10 +55,12 @@ export class FirebaseService {
         ? JSON.parse(serviceAccount) 
         : serviceAccount;
 
-      // Initialize Firebase Admin SDK
+      // Initialize Firebase Admin SDK with your Android project configuration
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccountObj),
         projectId: serviceAccountObj.project_id || 'myweb-1c1f37b3',
+        databaseURL: `https://myweb-1c1f37b3-default-rtdb.firebaseio.com/`,
+        storageBucket: 'myweb-1c1f37b3.firebasestorage.app'
       });
 
       this.initialized = true;
