@@ -22,7 +22,7 @@ const firebaseConfig = {
 ### 1. Create New Android Project
 1. Open Android Studio
 2. Create new project: "Empty Activity"
-3. Package name: `com.sirahabazaar.app`
+3. Package name: `com.siraha.myweb`
 4. Language: Java
 5. API level: 21 or higher
 
@@ -30,7 +30,7 @@ const firebaseConfig = {
 1. Go to Firebase Console: https://console.firebase.google.com/
 2. Select your project: "myweb-1c1f37b3"
 3. Click "Add app" → Android
-4. Package name: `com.sirahabazaar.app`
+4. Package name: `com.siraha.myweb`
 5. Download `google-services.json` file
 6. Place it in `app/` folder of your Android project
 
