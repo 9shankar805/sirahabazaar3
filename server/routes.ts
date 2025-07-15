@@ -7665,7 +7665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deviceToken = await storage.createDeviceToken({
         userId: parseInt(userId),
         token,
-        deviceType,
+        platform: deviceType, // Use 'platform' field as per schema
         isActive: true
       });
 
@@ -7704,6 +7704,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error sending Android notification:', error);
       res.status(500).json({ error: 'Failed to send Android notification' });
+    }
+  });
+
+  // Simple test endpoint to send notification to specific user by ID
+  app.post('/api/test-user-notification/:userId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { title = 'Test Notification', body = 'This is a test notification from Siraha Bazaar' } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: 'Invalid userId' });
+      }
+
+      // Get user's Android tokens
+      const androidTokens = await storage.getDeviceTokensByUser(userId, 'android');
+      
+      if (androidTokens.length === 0) {
+        return res.status(404).json({ error: 'No Android FCM tokens found for this user' });
+      }
+
+      let notificationSent = false;
+      const results = [];
+
+      // Send to all Android tokens for this user
+      for (const tokenData of androidTokens) {
+        try {
+          const result = await AndroidNotificationService.sendToAndroidDevice(
+            tokenData.token,
+            {
+              title,
+              body,
+              data: {
+                type: 'test',
+                userId: userId.toString(),
+                timestamp: new Date().toISOString()
+              }
+            }
+          );
+          results.push({ token: tokenData.token.substring(0, 20) + '...', result });
+          if (result.success) notificationSent = true;
+        } catch (error) {
+          results.push({ token: tokenData.token.substring(0, 20) + '...', error: error.message });
+        }
+      }
+
+      console.log(`✅ Test notification attempt for user ${userId}: ${notificationSent ? 'SUCCESS' : 'FAILED'}`);
+      
+      res.json({
+        success: notificationSent,
+        message: notificationSent ? 'Test notification sent to Android device' : 'Failed to send notifications',
+        tokensFound: androidTokens.length,
+        results
+      });
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      res.status(500).json({ error: 'Failed to send test notification' });
     }
   });
 

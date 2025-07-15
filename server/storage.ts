@@ -2763,7 +2763,7 @@ export class DatabaseStorage implements IStorage {
       ];
 
       if (deviceType) {
-        whereConditions.push(eq(pushNotificationTokens.deviceType, deviceType));
+        whereConditions.push(eq(pushNotificationTokens.platform, deviceType));
       }
 
       const tokens = await db.select()
