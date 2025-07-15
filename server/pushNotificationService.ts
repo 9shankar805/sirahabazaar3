@@ -45,9 +45,13 @@ export class PushNotificationService {
     const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
     const contact = process.env.VAPID_CONTACT || 'mailto:admin@sirahaBazaar.com';
 
-    if (publicVapidKey && privateVapidKey) {
-      webpush.setVapidDetails(contact, publicVapidKey, privateVapidKey);
-      console.log('Push notification service initialized');
+    if (publicVapidKey && privateVapidKey && privateVapidKey !== '<set by replit>') {
+      try {
+        webpush.setVapidDetails(contact, publicVapidKey, privateVapidKey);
+        console.log('Push notification service initialized');
+      } catch (error) {
+        console.warn('VAPID keys configuration failed:', error);
+      }
     } else {
       console.warn('VAPID keys not configured. Push notifications will not work.');
     }

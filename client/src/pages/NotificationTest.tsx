@@ -13,7 +13,7 @@ import {
   supportsNotifications,
   isMobileDevice 
 } from '@/lib/firebaseNotifications';
-import { Bell, CheckCircle, AlertCircle, Smartphone, Monitor } from 'lucide-react';
+import { Bell, CheckCircle, AlertCircle, Smartphone, Monitor, Zap } from 'lucide-react';
 
 export default function NotificationTest() {
   const [testUserId, setTestUserId] = useState(1);
@@ -21,6 +21,8 @@ export default function NotificationTest() {
   const [testMessage, setTestMessage] = useState('This is a test notification from Siraha Bazaar!');
   const [isTestingFirebase, setIsTestingFirebase] = useState(false);
   const [isTestingBrowser, setIsTestingBrowser] = useState(false);
+  const [isTestingAndroid, setIsTestingAndroid] = useState(false);
+  const [androidToken, setAndroidToken] = useState('');
   
   const { toast } = useToast();
   const { 
@@ -49,6 +51,51 @@ export default function NotificationTest() {
       });
     } finally {
       setIsTestingFirebase(false);
+    }
+  };
+
+  const handleTestAndroidNotification = async () => {
+    setIsTestingAndroid(true);
+    try {
+      if (!androidToken) {
+        throw new Error('Android FCM token is required');
+      }
+
+      const response = await fetch('/api/android-notification-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token: androidToken,
+          title: testTitle,
+          message: testMessage,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send Android notification');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Android Test Successful",
+          description: "Check your Android device for the test notification!",
+          duration: 5000,
+        });
+      } else {
+        throw new Error(result.message || 'Unknown error occurred');
+      }
+    } catch (error) {
+      toast({
+        title: "Android Test Failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingAndroid(false);
     }
   };
 
@@ -257,11 +304,22 @@ export default function NotificationTest() {
                 rows={3}
               />
             </div>
+            
+            <div>
+              <Label htmlFor="androidToken">Android FCM Token (Optional)</Label>
+              <Textarea
+                id="androidToken"
+                value={androidToken}
+                onChange={(e) => setAndroidToken(e.target.value)}
+                placeholder="Paste your Android FCM token here for direct testing"
+                rows={2}
+              />
+            </div>
           </CardContent>
         </Card>
 
         {/* Test Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -304,6 +362,27 @@ export default function NotificationTest() {
               </Button>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-orange-600" />
+                Android FCM Test
+              </CardTitle>
+              <CardDescription>
+                Test direct Android notifications (requires FCM token)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={handleTestAndroidNotification}
+                disabled={isTestingAndroid || !androidToken}
+                className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
+              >
+                {isTestingAndroid ? 'Testing...' : 'Test Android Notification'}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Instructions */}
@@ -334,9 +413,16 @@ export default function NotificationTest() {
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-semibold">4. Mobile Testing</h4>
+              <h4 className="font-semibold">4. Android App Testing</h4>
               <p className="text-sm text-gray-600">
-                On mobile devices, notifications will appear in your device's notification center.
+                For Android app testing, paste your FCM token (from your Android app) in the FCM Token field above, then click "Test Android Notification".
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold">5. How to Get Android FCM Token</h4>
+              <p className="text-sm text-gray-600">
+                Your Android app automatically gets an FCM token when it starts. Check your app's console logs for "FCMToken: Token from MainActivity: [token]" to find it.
               </p>
             </div>
           </CardContent>

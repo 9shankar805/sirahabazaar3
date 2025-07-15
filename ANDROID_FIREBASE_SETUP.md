@@ -1,213 +1,153 @@
-# Firebase Notification Setup for Siraha Bazaar Android App
+# Android Firebase Setup Guide for Siraha Bazaar
 
 ## Overview
-Your website already has Firebase Cloud Messaging (FCM) implemented. This guide shows you how to wrap it in an Android app and enable push notifications to the device's notification center.
+Your Android app is properly configured to receive Firebase Cloud Messaging (FCM) push notifications. This guide explains how to test and implement the complete notification system.
 
-## Your Current Firebase Configuration
+## Android App Configuration Analysis
+
+### ✅ MyFirebaseMessagingService.java is correctly configured:
+- **onMessageReceived()**: Handles incoming Firebase notifications
+- **onNewToken()**: Manages FCM token updates
+- **Notification Channels**: Properly configured for Android 8.0+ (API 26+)
+- **Action Buttons**: Supports order and delivery notification actions
+- **Vibration Pattern**: Custom vibration for notifications
+- **Channel ID**: "siraha_bazaar" - matches server configuration
+
+### ✅ MainActivity.java is correctly configured:
+- **Firebase Initialization**: FirebaseApp.initializeApp() called in onCreate()
+- **FCM Token Management**: Retrieves and sends tokens to web interface
+- **Notification Permissions**: Requests POST_NOTIFICATIONS for Android 13+
+- **WebView Integration**: Bridges Android app with web interface
+- **Token Callback**: sendTokenToWeb() function passes FCM tokens to JavaScript
+
+## Testing Your Android App Notifications
+
+### Step 1: Get Your FCM Token
+1. **Run your Android app** (either in emulator or physical device)
+2. **Check Android logs** for this message:
+   ```
+   FCMToken: Token from MainActivity: [YOUR_FCM_TOKEN]
+   ```
+3. **Copy the FCM token** (long string starting with letters/numbers)
+
+### Step 2: Test Notifications Using Our Web Interface
+1. **Open**: `https://your-app-domain.com/notification-test`
+2. **Paste your FCM token** in the "Android FCM Token" field
+3. **Customize notification** title and message
+4. **Click "Test Android Notification"**
+5. **Check your Android device** - you should see the notification appear
+
+### Step 3: Verify Notification Features
+Your Android app supports these notification features:
+- **Custom titles and messages**
+- **Vibration patterns** (100, 200, 300, 400, 500, 400, 300, 200, 400 ms)
+- **Sound notifications** (default notification sound)
+- **Action buttons** for order updates and delivery assignments
+- **Data payload** for custom actions
+- **High priority** notifications
+
+## Server Configuration
+
+### API Endpoints Available:
+- `POST /api/android-notification-test` - Test individual Android notifications
+- `POST /api/device-token` - Register FCM tokens from Android app
+- `POST /api/test-notification` - Test notifications with database integration
+
+### Notification Types Supported:
+1. **Order Updates** (`order_update`)
+   - Shows "View Order" action button
+   - Includes order ID and customer information
+   
+2. **Delivery Assignments** (`delivery_assignment`)
+   - Shows "Accept" action button
+   - Includes pickup and delivery addresses
+   
+3. **Test Notifications** (`test`)
+   - Basic notification testing
+   - Custom title and message
+
+## Integration with Your Business Logic
+
+### For Order Notifications:
 ```javascript
-// Already configured in your project
-const firebaseConfig = {
-  apiKey: "AIzaSyBbHSV2EJZ9BPE1C1ZC4_ZNYwFYJIR9VSo",
-  authDomain: "myweb-1c1f37b3.firebaseapp.com",
-  projectId: "myweb-1c1f37b3",
-  storageBucket: "myweb-1c1f37b3.firebasestorage.app",
-  messagingSenderId: "774950702828",
-  appId: "1:774950702828:web:09c2dfc1198d45244a9fc9",
-  measurementId: "G-XH9SP47FYT"
-};
+// Example: Send order notification to Android app
+await AndroidNotificationService.sendOrderNotification(
+  fcmToken,
+  orderId,
+  customerName,
+  amount,
+  storeId
+);
 ```
 
-## Android Studio Setup Steps
-
-### 1. Create New Android Project
-1. Open Android Studio
-2. Create new project: "Empty Activity"
-3. Package name: `com.sirahabazaar.app`
-4. Language: Java
-5. API level: 21 or higher
-
-### 2. Add Firebase to Your Android Project
-1. Go to Firebase Console: https://console.firebase.google.com/
-2. Select your project: "myweb-1c1f37b3"
-3. Click "Add app" → Android
-4. Package name: `com.sirahabazaar.app`
-5. Download `google-services.json` file (or use the configuration below)
-6. Place it in `app/` folder of your Android project
-
-**Your Google Services Configuration:**
-```json
-{
-  "project_info": {
-    "project_number": "774950702828",
-    "project_id": "myweb-1c1f37b3",
-    "storage_bucket": "myweb-1c1f37b3.firebasestorage.app"
-  },
-  "client": [
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:774950702828:android:19c9900fc2ece3774a9fc9",
-        "android_client_info": {
-          "package_name": "com.sirahabazaar.app"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyD5hGbS275cEKJpo5_HlnbpYhyjEhR4N0U"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    }
-  ],
-  "configuration_version": "1"
-}
+### For Delivery Notifications:
+```javascript
+// Example: Send delivery assignment to Android app
+await AndroidNotificationService.sendDeliveryAssignmentNotification(
+  fcmToken,
+  orderId,
+  pickupAddress,
+  deliveryAddress,
+  amount,
+  distance
+);
 ```
 
-### 3. Add Dependencies
-In `app/build.gradle`:
-```gradle
-apply plugin: 'com.android.application'
-apply plugin: 'com.google.gms.google-services'
+## Firebase Project Configuration
 
-android {
-    compileSdkVersion 34
-    buildToolsVersion "30.0.3"
+### Your Firebase Project Details:
+- **Project ID**: `myweb-1c1f37b3`
+- **App ID**: `1:774950702828:web:09c2dfc1198d45244a9fc9`
+- **Sender ID**: `774950702828`
+- **Channel ID**: `siraha_bazaar`
 
-    defaultConfig {
-        applicationId "com.sirahabazaar.app"
-        minSdkVersion 21
-        targetSdkVersion 34
-        versionCode 1
-        versionName "1.0"
-    }
-}
+### Required Files in Android Project:
+- **google-services.json** - Firebase configuration (already included)
+- **MyFirebaseMessagingService.java** - FCM message handling (configured)
+- **MainActivity.java** - Token management and app integration (configured)
 
-dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    
-    // Firebase dependencies
-    implementation platform('com.google.firebase:firebase-bom:32.7.0')
-    implementation 'com.google.firebase:firebase-messaging'
-    implementation 'com.google.firebase:firebase-analytics'
-    
-    // WebView support
-    implementation 'androidx.webkit:webkit:1.8.0'
-    implementation 'androidx.core:core:1.12.0'
-}
-```
+## Testing Checklist
 
-In `build.gradle` (Project level):
-```gradle
-buildscript {
-    dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.4'
-        classpath 'com.google.gms:google-services:4.4.0'
-    }
-}
-```
+### ✅ Before Testing:
+1. Android app is installed and running
+2. Internet connection is available
+3. Firebase project is properly configured
+4. FCM token is retrieved from Android logs
 
-### 4. Copy Android Files
-Copy these files to your Android project:
+### ✅ During Testing:
+1. FCM token is pasted in web interface
+2. Notification title/message is customized
+3. "Test Android Notification" button is clicked
+4. Server response shows success
 
-**MainActivity.java** → `app/src/main/java/com/sirahabazaar/app/MainActivity.java`
-**MyFirebaseMessagingService.java** → `app/src/main/java/com/sirahabazaar/app/MyFirebaseMessagingService.java`
-**AndroidBridge.java** → `app/src/main/java/com/sirahabazaar/app/AndroidBridge.java`
-**activity_main.xml** → `app/src/main/res/layout/activity_main.xml`
-**AndroidManifest.xml** → `app/src/main/AndroidManifest.xml`
-
-### 5. Website URL Configuration
-The Android app is already configured to load:
-```java
-webView.loadUrl("https://sirahabazaar.com");
-```
-
-If you need to test with a different URL (like your Replit development URL), update this line in MainActivity.java.
-
-### 6. Add Icons and Resources
-Create these drawable resources in `app/src/main/res/drawable/`:
-
-**ic_notification.xml**:
-```xml
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="?attr/colorOnPrimary">
-  <path
-      android:fillColor="@android:color/white"
-      android:pathData="M12,22c1.1,0 2,-0.9 2,-2h-4c0,1.1 0.9,2 2,2zM18,16v-5c0,-3.07 -1.64,-5.64 -4.5,-6.32V4c0,-0.83 -0.67,-1.5 -1.5,-1.5s-1.5,0.67 -1.5,1.5v0.68C7.63,5.36 6,7.92 6,11v5l-2,2v1h16v-1l-2,-2z"/>
-</vector>
-```
-
-### 7. Test Your Setup
-
-1. **Build and run** your Android app
-2. **Test notifications** by visiting your website in the app
-3. **Check logs** in Android Studio for FCM token registration
-4. **Send test notification** from Firebase Console
-
-## How It Works
-
-### Web to Android Communication
-1. Your website's JavaScript detects if it's running in the Android WebView
-2. Firebase generates an FCM token for the Android app
-3. Token is sent to your server via the `/api/firebase-token` endpoint
-4. Notifications sent from your server reach the Android notification center
-
-### Notification Flow
-```
-Website Order → Server API → Firebase Cloud Messaging → Android Notification Center
-```
-
-### Key Features Enabled
-- ✅ Order status notifications
-- ✅ Delivery partner assignments
-- ✅ Payment confirmations
-- ✅ Store approval updates
-- ✅ Real-time delivery tracking alerts
-- ✅ Promotional notifications
-
-## Testing Notifications
-
-### From Firebase Console
-1. Go to Firebase Console → Cloud Messaging
-2. Click "Send your first message"
-3. Target: Single device
-4. FCM registration token: (copy from Android Studio logs)
-
-### From Your Website
-Visit any page in the Android app and:
-1. Place an order
-2. Update order status
-3. Assign delivery partner
-4. Complete delivery
+### ✅ After Testing:
+1. Notification appears in Android notification panel
+2. Notification shows custom title and message
+3. Tapping notification opens the app
+4. Vibration pattern works correctly
 
 ## Troubleshooting
 
-### Common Issues
-1. **Notifications not appearing**: Check AndroidManifest.xml permissions
-2. **Token not generated**: Verify google-services.json is in correct location
-3. **WebView not loading**: Check internet permissions and URL
-4. **Build errors**: Ensure all dependencies are correctly added
+### If notifications don't appear:
+1. **Check FCM token** - ensure it's copied correctly
+2. **Verify internet** - both server and Android device need internet
+3. **Check Firebase config** - ensure google-services.json is correct
+4. **Test permissions** - ensure notification permissions are granted
+5. **Check server logs** - look for "Android notification sent successfully"
 
-### Debug Logs
-Check Android Studio Logcat for:
-- FCM token generation
-- Notification reception
-- WebView JavaScript errors
-- Network connectivity
+### Common Issues:
+- **Token expired**: Restart Android app to get new token
+- **Network issues**: Check internet connection on both ends
+- **Permission denied**: Grant notification permissions in Android settings
+- **Firebase misconfiguration**: Verify google-services.json matches project
 
-## Your Website Integration
-Your website already includes:
-- ✅ Firebase service worker for background notifications
-- ✅ Android bridge for token communication
-- ✅ API endpoint for token registration
-- ✅ Notification service for all user types
+## Success Indicators
 
-The Android app will automatically work with your existing notification system once properly configured.
+### ✅ Your Android app successfully receives notifications when:
+1. FCM token is properly retrieved in MainActivity
+2. MyFirebaseMessagingService handles incoming messages
+3. Notification channels are created correctly
+4. Server can send notifications to FCM token
+5. Notifications appear in Android notification panel
+
+Your Android app is fully configured and ready to receive push notifications from the Siraha Bazaar server!

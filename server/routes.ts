@@ -15,6 +15,7 @@ import { freeImageService } from "./freeImageService";
 import { googleImageService } from "./googleImageService";
 import { pixabayImageService } from "./pixabayImageService";
 import { EmailService } from "./emailService";
+import { AndroidNotificationService } from "./androidNotificationService";
 import crypto from 'crypto';
 
 import { 
@@ -7601,6 +7602,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type
       });
 
+      let pushNotificationSent = false;
+      let androidNotificationSent = false;
+
       // Try to send push notification (if Firebase is configured)
       try {
         await NotificationService.sendToUser(parseInt(userId), {
@@ -7609,18 +7613,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type,
           data: { notificationId: notification.id.toString() }
         });
+        pushNotificationSent = true;
       } catch (pushError) {
         console.log('Push notification failed (Firebase not configured):', pushError);
+      }
+
+      // Try to send Android notification using FCM token
+      try {
+        // Get user's FCM tokens from database
+        const userTokens = await storage.getDeviceTokensByUserId(parseInt(userId));
+        
+        if (userTokens && userTokens.length > 0) {
+          for (const tokenData of userTokens) {
+            const success = await AndroidNotificationService.sendTestNotification(
+              tokenData.token,
+              title,
+              message
+            );
+            if (success) {
+              androidNotificationSent = true;
+            }
+          }
+        }
+      } catch (androidError) {
+        console.log('Android notification failed:', androidError);
       }
 
       res.json({ 
         success: true, 
         notification,
+        pushNotificationSent,
+        androidNotificationSent,
         message: 'Test notification sent successfully' 
       });
     } catch (error) {
       console.error('Error sending test notification:', error);
       res.status(500).json({ error: 'Failed to send test notification' });
+    }
+  });
+
+  // Device token registration endpoint for Android app
+  app.post("/api/device-token", async (req, res) => {
+    try {
+      const { userId, token, deviceType = 'android' } = req.body;
+
+      if (!userId || !token) {
+        return res.status(400).json({ error: 'userId and token are required' });
+      }
+
+      // Store FCM token in database
+      const deviceToken = await storage.createDeviceToken({
+        userId: parseInt(userId),
+        token,
+        deviceType,
+        isActive: true
+      });
+
+      console.log(`✅ FCM token registered for user ${userId}: ${token.substring(0, 20)}...`);
+
+      res.json({ 
+        success: true, 
+        deviceToken,
+        message: 'Device token registered successfully' 
+      });
+    } catch (error) {
+      console.error('Error registering device token:', error);
+      res.status(500).json({ error: 'Failed to register device token' });
+    }
+  });
+
+  // Android notification test endpoint
+  app.post("/api/android-notification-test", async (req, res) => {
+    try {
+      const { token, title, message } = req.body;
+
+      if (!token || !title || !message) {
+        return res.status(400).json({ error: 'token, title, and message are required' });
+      }
+
+      const success = await AndroidNotificationService.sendTestNotification(
+        token,
+        title,
+        message
+      );
+
+      res.json({ 
+        success,
+        message: success ? 'Android notification sent successfully' : 'Failed to send Android notification'
+      });
+    } catch (error) {
+      console.error('Error sending Android notification:', error);
+      res.status(500).json({ error: 'Failed to send Android notification' });
     }
   });
 
