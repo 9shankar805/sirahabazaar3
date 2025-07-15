@@ -44,7 +44,7 @@ export class FirebaseService {
         console.log('Firebase service account not configured. Using minimal configuration.');
         // Initialize with minimal config for development
         admin.initializeApp({
-          projectId: 'sirahabazaar-bc62f',
+          projectId: 'myweb-1c1f37b3',
         });
         this.initialized = true;
         return;
@@ -58,7 +58,7 @@ export class FirebaseService {
       // Initialize Firebase Admin SDK
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccountObj),
-        projectId: serviceAccountObj.project_id || 'sirahabazaar-bc62f',
+        projectId: serviceAccountObj.project_id || 'myweb-1c1f37b3',
       });
 
       this.initialized = true;
@@ -68,7 +68,7 @@ export class FirebaseService {
       // Initialize with minimal config as fallback
       try {
         admin.initializeApp({
-          projectId: 'sirahabazaar-bc62f',
+          projectId: 'myweb-1c1f37b3',
         });
         this.initialized = true;
         console.log('✅ Firebase initialized with minimal configuration');

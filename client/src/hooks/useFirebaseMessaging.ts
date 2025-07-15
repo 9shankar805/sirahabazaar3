@@ -3,13 +3,13 @@ import { testNotificationSetup, supportsNotifications } from '@/lib/firebaseNoti
 
 // Firebase configuration 
 const firebaseConfig = {
-  apiKey: "AIzaSyCUDoNuJ5hUKzwnZJe8hp5Rbt_Ja1MCDpw",
-  authDomain: "sirahabazaar-bc62f.firebaseapp.com",
-  projectId: "sirahabazaar-bc62f",
-  storageBucket: "sirahabazaar-bc62f.firebasestorage.app",
-  messagingSenderId: "898667729116",
-  appId: "1:898667729116:web:bf417c13c2651c0bc26419",
-  measurementId: "G-SK3VBMNR5N"
+  apiKey: "AIzaSyBbHSV2EJZ9BPE1C1ZC4_ZNYwFYJIR9VSo",
+  authDomain: "myweb-1c1f37b3.firebaseapp.com",
+  projectId: "myweb-1c1f37b3",
+  storageBucket: "myweb-1c1f37b3.firebasestorage.app",
+  messagingSenderId: "774950702828",
+  appId: "1:774950702828:web:09c2dfc1198d45244a9fc9",
+  measurementId: "G-XH9SP47FYT"
 };
 
 export interface UseFirebaseMessagingResult {

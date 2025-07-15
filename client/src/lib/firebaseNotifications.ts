@@ -3,16 +3,18 @@ import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCUDoNuJ5hUKzwnZJe8hp5Rbt_Ja1MCDpw",
-  authDomain: "sirahabazaar-bc62f.firebaseapp.com",
-  projectId: "sirahabazaar-bc62f",
-  storageBucket: "sirahabazaar-bc62f.firebasestorage.app",
-  messagingSenderId: "898667729116",
-  appId: "1:898667729116:web:bf417c13c2651c0bc26419",
-  measurementId: "G-SK3VBMNR5N"
+  apiKey: "AIzaSyBbHSV2EJZ9BPE1C1ZC4_ZNYwFYJIR9VSo",
+  authDomain: "myweb-1c1f37b3.firebaseapp.com",
+  projectId: "myweb-1c1f37b3",
+  storageBucket: "myweb-1c1f37b3.firebasestorage.app",
+  messagingSenderId: "774950702828",
+  appId: "1:774950702828:web:09c2dfc1198d45244a9fc9",
+  measurementId: "G-XH9SP47FYT"
 };
 
-const vapidKey = "BIA9pygwkacYkvg7W5lJh1PjDXhb2ntG3N0YCg9hbnNKwPHKncZlUzpRlNUZ4mOs-qQ_BgaFrSqDxKShgyWg-14";
+// Note: You'll need to generate a new VAPID key for your Firebase project
+// Go to Firebase Console > Project Settings > Cloud Messaging > Web configuration
+const vapidKey = "BIA9pygwkacYkvg7W5lJh1PjDXhb2ntG3N0YCg9hbnNKwPHKncZlUzpRlNUZ4mOs-qQ_BgaFrSqDxKShgyWg-14"; // Replace with your new VAPID key
 
 let app: any = null;
 let messaging: any = null;

@@ -10,14 +10,15 @@ import {
   User
 } from 'firebase/auth';
 
-// Firebase configuration - these should be set as environment variables
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "demo-key",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "demo-project.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "demo-project",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "demo-project.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789:web:abcdef"
+  apiKey: "AIzaSyBbHSV2EJZ9BPE1C1ZC4_ZNYwFYJIR9VSo",
+  authDomain: "myweb-1c1f37b3.firebaseapp.com",
+  projectId: "myweb-1c1f37b3",
+  storageBucket: "myweb-1c1f37b3.firebasestorage.app",
+  messagingSenderId: "774950702828",
+  appId: "1:774950702828:web:09c2dfc1198d45244a9fc9",
+  measurementId: "G-XH9SP47FYT"
 };
 
 // Debug Firebase configuration
@@ -40,7 +41,7 @@ if (currentDomain.includes('replit.app') || currentDomain.includes('replit.dev')
   console.warn('⚠️ DOMAIN AUTHORIZATION REQUIRED:');
   console.warn('You need to add this domain to Firebase Console:');
   console.warn('1. Go to https://console.firebase.google.com/');
-  console.warn('2. Select your project: sirahabazaar-bc62f');
+  console.warn('2. Select your project: myweb-1c1f37b3');
   console.warn('3. Go to Authentication > Settings > Authorized domains');
   console.warn(`4. Add: ${window.location.hostname}`);
   console.warn(`5. Also add: *.replit.app and *.replit.dev`);
