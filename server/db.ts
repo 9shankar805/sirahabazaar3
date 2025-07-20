@@ -6,9 +6,9 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
-// PostgreSQL database URL - DigitalOcean database
+// PostgreSQL database URL - Neon database (ap-southeast-1)
 const DATABASE_URL = process.env.DATABASE_URL || 
-  "postgresql://doadmin:AVNS_3UkZ6PqedWGFkdV6amW@db-postgresql-blr1-34567-do-user-23211066-0.d.db.ondigitalocean.com:25060/defaultdb?sslmode=require";
+  "postgresql://neondb_owner:npg_B14cMjkFUhuw@ep-wispy-paper-a1eejnp5-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
 
 // Ensure proper SSL mode for production
 const finalDatabaseUrl = DATABASE_URL.includes('sslmode=') 
@@ -17,34 +17,32 @@ const finalDatabaseUrl = DATABASE_URL.includes('sslmode=')
 
 console.log(`🔌 Using PostgreSQL database: ${DATABASE_URL ? 'Connected' : 'No URL found'}`);
 
-// Enhanced pool configuration for DigitalOcean PostgreSQL
+// Enhanced pool configuration for Neon PostgreSQL
 export const pool = new Pool({
   connectionString: finalDatabaseUrl,
-  // Optimized for DigitalOcean managed database
-  max: 3, // Reduced for managed database limits
+  // Optimized for Neon database
+  max: 5, // Neon supports more connections
   min: 1,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-  acquireTimeoutMillis: 10000,
+  connectionTimeoutMillis: 15000,
 
   // Application name for monitoring
   application_name: "siraha_bazaar",
-  statement_timeout: 30000,
-  query_timeout: 25000,
+  statement_timeout: 45000,
+  query_timeout: 40000,
 
-  // SSL configuration - required for DigitalOcean
+  // SSL configuration - required for Neon
   ssl: {
-    rejectUnauthorized: false,
-    sslmode: 'require'
+    rejectUnauthorized: false
   },
 
-  // Optimized reconnection settings for managed database
+  // Optimized reconnection settings for Neon
   keepAlive: true,
-  keepAliveInitialDelayMillis: 2000,
+  keepAliveInitialDelayMillis: 3000,
   
   // Stability options for production
-  allowExitOnIdle: true,
-  maxUses: 1000, // Lower for managed database
+  allowExitOnIdle: false, // Keep connections alive for Neon
+  maxUses: 5000, // Higher for Neon
 });
 
 // Enhanced error handling with automatic recovery
