@@ -35,7 +35,7 @@ export default function DistanceBasedProductSearch({
   const { mode } = useAppMode();
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [sortBy, setSortBy] = useState<string>("distance");
-  const [maxDistance, setMaxDistance] = useState<number>(10);
+  const [maxDistance, setMaxDistance] = useState<number>(50);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   
   // Food-specific filters
@@ -297,7 +297,7 @@ export default function DistanceBasedProductSearch({
       }
       
       // Filter by distance if location is available (tertiary filter, but not during active search)
-      if (userLocation && product.storeDistance !== undefined && !bypassModeFiltering) {
+      if (userLocation && product.storeDistance !== undefined && !bypassModeFiltering && !searchQuery) {
         console.log(`Distance filter: ${product.name} at ${product.storeDistance}km vs max ${maxDistance}km`);
         return product.storeDistance <= maxDistance;
       }
