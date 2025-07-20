@@ -51,18 +51,34 @@ export class MemoryStorage implements IStorage {
       { city: "Golbazar", latitude: "26.7542", longitude: "86.5028" }
     ];
 
-    // Create 20 retail stores
+    // Create 20 retail stores with unique images
     const retailStores = [
-      "Siraha Electronics Hub", "Fashion Palace Lahan", "Mirchaiya Book Store", "Golbazar Pharmacy",
-      "Siraha Sports Center", "Lahan Mobile Shop", "Mirchaiya Grocery Store", "Golbazar Hardware Store",
-      "Siraha Beauty Parlor", "Lahan Textile House", "Mirchaiya Computer Center", "Golbazar Gift Shop",
-      "Siraha Furniture Mart", "Lahan Shoe Store", "Mirchaiya Stationary Hub", "Golbazar Auto Parts",
-      "Siraha Kitchenware Store", "Lahan Music Center", "Mirchaiya Toy Store", "Golbazar Watch Shop"
+      { name: "Siraha Electronics Hub", logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop" },
+      { name: "Fashion Palace Lahan", logo: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&h=400&fit=crop" },
+      { name: "Mirchaiya Book Store", logo: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=400&fit=crop" },
+      { name: "Golbazar Pharmacy", logo: "https://images.unsplash.com/photo-1576602976047-174e57a47881?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1586105251261-72a756497a11?w=800&h=400&fit=crop" },
+      { name: "Siraha Sports Center", logo: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=400&fit=crop" },
+      { name: "Lahan Mobile Shop", logo: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=800&h=400&fit=crop" },
+      { name: "Mirchaiya Grocery Store", logo: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&h=400&fit=crop" },
+      { name: "Golbazar Hardware Store", logo: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=400&fit=crop" },
+      { name: "Siraha Beauty Parlor", logo: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&h=400&fit=crop" },
+      { name: "Lahan Textile House", logo: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=800&h=400&fit=crop" },
+      { name: "Mirchaiya Computer Center", logo: "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1541746972996-4e0b0f93e586?w=800&h=400&fit=crop" },
+      { name: "Golbazar Gift Shop", logo: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=800&h=400&fit=crop" },
+      { name: "Siraha Furniture Mart", logo: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=400&fit=crop" },
+      { name: "Lahan Shoe Store", logo: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1441906363819-8094026a7c3d?w=800&h=400&fit=crop" },
+      { name: "Mirchaiya Stationary Hub", logo: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=400&fit=crop" },
+      { name: "Golbazar Auto Parts", logo: "https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1543335973-dbaba6d4fb57?w=800&h=400&fit=crop" },
+      { name: "Siraha Kitchenware Store", logo: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&h=400&fit=crop" },
+      { name: "Lahan Music Center", logo: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1471478331149-c72f17e33c73?w=800&h=400&fit=crop" },
+      { name: "Mirchaiya Toy Store", logo: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=800&h=400&fit=crop" },
+      { name: "Golbazar Watch Shop", logo: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1594534475808-b18fc33b045e?w=800&h=400&fit=crop" }
     ];
 
     for (let i = 0; i < 20; i++) {
       const location = locations[i % locations.length];
       const userId = this.nextId++;
+      const storeData = retailStores[i];
       
       // Create user
       this.users.push({
@@ -71,7 +87,7 @@ export class MemoryStorage implements IStorage {
         email: `retail${i + 1}@siraha.com`,
         password: 'hashed_password',
         firebaseUid: null,
-        fullName: `${retailStores[i]} Owner`,
+        fullName: `${storeData.name} Owner`,
         phone: `+977-98${String(i + 1).padStart(8, '0')}`,
         address: `${location.city} Main Market`,
         city: location.city,
@@ -88,8 +104,8 @@ export class MemoryStorage implements IStorage {
       // Create store
       this.stores.push({
         id: this.nextId++,
-        name: retailStores[i],
-        slug: retailStores[i].toLowerCase().replace(/\s+/g, '-'),
+        name: storeData.name,
+        slug: storeData.name.toLowerCase().replace(/\s+/g, '-'),
         description: `Quality products and services in ${location.city}`,
         ownerId: userId,
         address: `${location.city} Main Market, Ward ${i + 1}`,
@@ -100,9 +116,9 @@ export class MemoryStorage implements IStorage {
         latitude: location.latitude,
         longitude: location.longitude,
         phone: `+977-98${String(i + 1).padStart(8, '0')}`,
-        website: `https://${retailStores[i].toLowerCase().replace(/\s+/g, '')}.com`,
-        logo: "",
-        coverImage: "",
+        website: `https://${storeData.name.toLowerCase().replace(/\s+/g, '')}.com`,
+        logo: storeData.logo,
+        coverImage: storeData.cover,
         rating: "4.2",
         totalReviews: Math.floor(Math.random() * 100) + 10,
         featured: Math.random() > 0.7,
@@ -119,20 +135,34 @@ export class MemoryStorage implements IStorage {
       });
     }
 
-    // Create 20 restaurants
+    // Create 20 restaurants with unique images
     const restaurants = [
-      "Siraha Spice Kitchen", "Lahan Momo Palace", "Mirchaiya Biryani House", "Golbazar Chinese Corner",
-      "Siraha Pizza Hub", "Lahan Burger Joint", "Mirchaiya Thali House", "Golbazar BBQ Grill",
-      "Siraha Sweet House", "Lahan Coffee House", "Mirchaiya Seafood Palace", "Golbazar Vegan Delight",
-      "Siraha Chowmein Center", "Lahan Tiffin Service", "Mirchaiya Ice Cream Parlor", "Golbazar Sandwich Shop",
-      "Siraha Traditional Kitchen", "Lahan Juice Bar", "Mirchaiya Breakfast Corner", "Golbazar Night Diner"
+      { name: "Siraha Spice Kitchen", cuisine: "Nepali", logo: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop" },
+      { name: "Lahan Momo Palace", cuisine: "Nepali", logo: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&h=400&fit=crop" },
+      { name: "Mirchaiya Biryani House", cuisine: "Indian", logo: "https://images.unsplash.com/photo-1563379091339-03246963d96c?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=800&h=400&fit=crop" },
+      { name: "Golbazar Chinese Corner", cuisine: "Chinese", logo: "https://images.unsplash.com/photo-1596797038530-2c107229654b?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=400&fit=crop" },
+      { name: "Siraha Pizza Hub", cuisine: "Italian", logo: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&h=400&fit=crop" },
+      { name: "Lahan Burger Joint", cuisine: "Fast Food", logo: "https://images.unsplash.com/photo-1571091655789-405eb7a3a3a8?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1550317138-10000687a72b?w=800&h=400&fit=crop" },
+      { name: "Mirchaiya Thali House", cuisine: "Indian", logo: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=800&h=400&fit=crop" },
+      { name: "Golbazar BBQ Grill", cuisine: "Continental", logo: "https://images.unsplash.com/photo-1558030006-450675393462?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=400&fit=crop" },
+      { name: "Siraha Sweet House", cuisine: "Indian", logo: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=800&h=400&fit=crop" },
+      { name: "Lahan Coffee House", cuisine: "Continental", logo: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&h=400&fit=crop" },
+      { name: "Mirchaiya Seafood Palace", cuisine: "Continental", logo: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&h=400&fit=crop" },
+      { name: "Golbazar Vegan Delight", cuisine: "Continental", logo: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&h=400&fit=crop" },
+      { name: "Siraha Chowmein Center", cuisine: "Chinese", logo: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&h=400&fit=crop" },
+      { name: "Lahan Tiffin Service", cuisine: "Nepali", logo: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1606787366850-de6ba128da6c?w=800&h=400&fit=crop" },
+      { name: "Mirchaiya Ice Cream Parlor", cuisine: "Fast Food", logo: "https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=800&h=400&fit=crop" },
+      { name: "Golbazar Sandwich Shop", cuisine: "Fast Food", logo: "https://images.unsplash.com/photo-1571091655789-405eb7a3a3a8?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1539252554453-80ab65ce3586?w=800&h=400&fit=crop" },
+      { name: "Siraha Traditional Kitchen", cuisine: "Nepali", logo: "https://images.unsplash.com/photo-1504113888839-1c8eb50233d3?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=800&h=400&fit=crop" },
+      { name: "Lahan Juice Bar", cuisine: "Continental", logo: "https://images.unsplash.com/photo-1546173159-315724a31696?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1519708227418-c8947a927c40?w=800&h=400&fit=crop" },
+      { name: "Mirchaiya Breakfast Corner", cuisine: "Continental", logo: "https://images.unsplash.com/photo-1506084868230-bb9d95c24759?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800&h=400&fit=crop" },
+      { name: "Golbazar Night Diner", cuisine: "Fast Food", logo: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=200&h=200&fit=crop", cover: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop" }
     ];
-
-    const cuisineTypes = ['Nepali', 'Indian', 'Chinese', 'Italian', 'Fast Food', 'Continental'];
 
     for (let i = 0; i < 20; i++) {
       const location = locations[i % locations.length];
       const userId = this.nextId++;
+      const restaurantData = restaurants[i];
       
       // Create user
       this.users.push({
@@ -141,7 +171,7 @@ export class MemoryStorage implements IStorage {
         email: `restaurant${i + 1}@siraha.com`,
         password: 'hashed_password',
         firebaseUid: null,
-        fullName: `${restaurants[i]} Owner`,
+        fullName: `${restaurantData.name} Owner`,
         phone: `+977-97${String(i + 1).padStart(8, '0')}`,
         address: `${location.city} Food Street`,
         city: location.city,
@@ -158,8 +188,8 @@ export class MemoryStorage implements IStorage {
       // Create restaurant
       this.stores.push({
         id: this.nextId++,
-        name: restaurants[i],
-        slug: restaurants[i].toLowerCase().replace(/\s+/g, '-'),
+        name: restaurantData.name,
+        slug: restaurantData.name.toLowerCase().replace(/\s+/g, '-'),
         description: `Delicious food and dining experience in ${location.city}`,
         ownerId: userId,
         address: `${location.city} Food Street, Block ${i + 1}`,
@@ -170,15 +200,15 @@ export class MemoryStorage implements IStorage {
         latitude: location.latitude,
         longitude: location.longitude,
         phone: `+977-97${String(i + 1).padStart(8, '0')}`,
-        website: `https://${restaurants[i].toLowerCase().replace(/\s+/g, '')}.com`,
-        logo: "",
-        coverImage: "",
+        website: `https://${restaurantData.name.toLowerCase().replace(/\s+/g, '')}.com`,
+        logo: restaurantData.logo,
+        coverImage: restaurantData.cover,
         rating: (Math.random() * 2 + 3).toFixed(1),
         totalReviews: Math.floor(Math.random() * 200) + 20,
         featured: Math.random() > 0.6,
         isActive: true,
         storeType: "restaurant",
-        cuisineType: cuisineTypes[i % cuisineTypes.length],
+        cuisineType: restaurantData.cuisine,
         deliveryTime: `${20 + (i % 3) * 10}-${30 + (i % 3) * 10} mins`,
         minimumOrder: String(100 + (i % 5) * 50),
         deliveryFee: String(30 + (i % 4) * 20),
