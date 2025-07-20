@@ -314,24 +314,24 @@ export default function Homepage() {
   const isPersonalized = recommendations?.isPersonalized || false;
 
   const featuredProducts = recommendedProducts.length > 0 
-    ? recommendedProducts.slice(0, 6)
+    ? recommendedProducts.slice(0, 20)
     : products
         ?.filter((product) =>
           mode === "shopping"
             ? product.productType !== "food"
             : product.productType === "food",
         )
-        .slice(0, 6) || [];
+        .slice(0, 20) || [];
 
   const popularStores = recommendedStores.length > 0
-    ? recommendedStores.slice(0, 4)
+    ? recommendedStores.slice(0, 10)
     : stores
         ?.filter((store) =>
           mode === "shopping"
             ? store.storeType !== "restaurant"
             : store.storeType === "restaurant",
         )
-        .slice(0, 4) || [];
+        .slice(0, 10) || [];
 
   // Determine loading states
   const isProductsLoading = recommendationsLoading || (productsLoading && !recommendedProducts.length);
@@ -611,7 +611,7 @@ export default function Homepage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
               {featuredProducts.map((product: any) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -658,7 +658,7 @@ export default function Homepage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
               {popularStores.map((store: any) => (
                 <StoreCard key={store.id} store={store} />
               ))}

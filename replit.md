@@ -120,7 +120,21 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
-### July 15, 2025 - Complete Android App FCM Integration with Fixed Package Configuration
+### July 20, 2025 - Homepage Display Limit Fix and Admin Access Resolution
+- ✓ Fixed homepage product display limit from 6 to 20 products maximum as requested
+- ✓ Fixed homepage store display limit from 4 to 10 stores maximum as requested
+- ✓ Updated grid layouts for better display of increased product/store counts
+- ✓ Resolved admin login access issues with proper authentication system
+- ✓ Added missing createDefaultAdmin and authenticateAdmin methods to MemoryStorage
+- ✓ Fixed database configuration with SSL support for Replit PostgreSQL
+- ✓ Enhanced fallback to memory storage when database connection fails
+- ✓ Default admin credentials: admin@sirahbazaar.com / admin123
+- ✓ All APIs functioning correctly with smart recommendations system
+- ✓ Homepage now displays exactly 20 products and 10 stores with responsive grid layout
+- ✓ Individual product pages and user management working systematically without errors
+- → Homepage properly limits display to maximum 20 products and 10 stores as specified by user
+
+### July 15, 2025 - Complete Android App FCM Integration with Fixed Package Configuration (Previous)
 - ✓ Analyzed and confirmed Android app configuration (MyFirebaseMessagingService.java and MainActivity.java)
 - ✓ Created AndroidNotificationService.ts for direct FCM messaging to Android apps
 - ✓ Enhanced notification system with Android-specific configuration (package: com.siraha.myweb)
