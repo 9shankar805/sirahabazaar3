@@ -1,61 +1,74 @@
-/**
- * Create Default Categories Script
- * Adds essential categories for both restaurants and retail stores
- */
+#!/usr/bin/env node
 
-import { Pool } from 'pg';
+import fetch from 'node-fetch';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+const API_BASE = 'http://localhost:5000/api';
 
 async function createDefaultCategories() {
-  console.log('Creating default categories...');
+  console.log('📂 Creating default categories...');
   
   const categories = [
-    // Restaurant categories
-    { name: 'Appetizers', slug: 'appetizers', description: 'Starters and small dishes' },
-    { name: 'Main Courses', slug: 'main-courses', description: 'Primary dishes and entrees' },
-    { name: 'Beverages', slug: 'beverages', description: 'Drinks and refreshments' },
-    { name: 'Desserts', slug: 'desserts', description: 'Sweet dishes and treats' },
-    { name: 'Rice & Biryani', slug: 'rice-biryani', description: 'Rice dishes and biryani varieties' },
-    { name: 'Snacks', slug: 'snacks', description: 'Light snacks and finger foods' },
-    
-    // Retail categories
-    { name: 'Groceries', slug: 'groceries', description: 'Food and household essentials' },
-    { name: 'Electronics', slug: 'electronics', description: 'Electronic devices and accessories' },
-    { name: 'Clothing', slug: 'clothing', description: 'Apparel and fashion items' },
-    { name: 'Home & Kitchen', slug: 'home-kitchen', description: 'Household and kitchen items' },
-    { name: 'Health & Beauty', slug: 'health-beauty', description: 'Personal care and beauty products' },
-    { name: 'Sports & Outdoors', slug: 'sports-outdoors', description: 'Sports equipment and outdoor gear' }
+    {
+      name: 'Electronics',
+      description: 'Electronics products and gadgets',
+      icon: 'smartphone'
+    },
+    {
+      name: 'Fashion',
+      description: 'Fashion and clothing items',
+      icon: 'shirt'
+    },
+    {
+      name: 'Food & Beverages',
+      description: 'Food and beverage items',
+      icon: 'utensils'
+    },
+    {
+      name: 'Health & Beauty',
+      description: 'Health and beauty products',
+      icon: 'heart'
+    },
+    {
+      name: 'Sports & Fitness',
+      description: 'Sports and fitness equipment',
+      icon: 'dumbbell'
+    },
+    {
+      name: 'Books & Education',
+      description: 'Books and educational materials',
+      icon: 'book'
+    },
+    {
+      name: 'Home & Garden',
+      description: 'Home and garden items',
+      icon: 'home'
+    },
+    {
+      name: 'Grocery',
+      description: 'Grocery and daily essentials',
+      icon: 'shopping-cart'
+    }
   ];
 
-  try {
-    for (const category of categories) {
-      // Check if category already exists
-      const existingCategory = await pool.query(
-        'SELECT id FROM categories WHERE slug = $1',
-        [category.slug]
-      );
-
-      if (existingCategory.rows.length === 0) {
-        await pool.query(
-          `INSERT INTO categories (name, slug, description, "isActive", "createdAt", "updatedAt") 
-           VALUES ($1, $2, $3, true, NOW(), NOW())`,
-          [category.name, category.slug, category.description]
-        );
+  for (const category of categories) {
+    try {
+      const response = await fetch(`${API_BASE}/admin/categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(category)
+      });
+      
+      if (response.ok) {
         console.log(`✅ Created category: ${category.name}`);
       } else {
-        console.log(`⏭️  Category already exists: ${category.name}`);
+        console.log(`⚠️ Category ${category.name} might already exist`);
       }
+    } catch (error) {
+      console.log(`⚠️ Error creating category ${category.name}`);
     }
-
-    console.log('✅ Default categories setup completed');
-  } catch (error) {
-    console.error('❌ Error creating categories:', error);
-  } finally {
-    await pool.end();
   }
+
+  console.log('✅ Categories creation completed');
 }
 
 createDefaultCategories();
