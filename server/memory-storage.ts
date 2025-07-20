@@ -351,7 +351,7 @@ export class MemoryStorage implements IStorage {
             { name: "Soap", category: "Groceries", price: "35", description: "Bath soap bar", image: "https://images.unsplash.com/photo-1585435557343-3b092031a831?w=400&h=400&fit=crop&auto=format" },
             { name: "Toothpaste", category: "Groceries", price: "85", description: "Herbal toothpaste", image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=400&h=400&fit=crop&auto=format" }
           ];
-        } else if (store.name.toLowerCase().includes('electronic')) {
+        } else if (store.name.toLowerCase().includes('electronic') || store.name.toLowerCase().includes('mobile')) {
           // Use electronics for electronic stores
           productList = [
             { name: "Mobile Phone", category: "Electronics", price: "25000", description: "Latest smartphone model", image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop&auto=format" },
@@ -364,6 +364,48 @@ export class MemoryStorage implements IStorage {
             { name: "Power Bank", category: "Electronics", price: "2500", description: "Portable power bank", image: "https://images.unsplash.com/photo-1609592439674-37c0e2df3c8b?w=400&h=400&fit=crop&auto=format" },
             { name: "Screen Guard", category: "Electronics", price: "350", description: "Mobile screen protector", image: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=400&h=400&fit=crop&auto=format" },
             { name: "Bluetooth Speaker", category: "Electronics", price: "4500", description: "Portable bluetooth speaker", image: "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=400&h=400&fit=crop&auto=format" }
+          ];
+        } else if (store.name.toLowerCase().includes('pharmacy') || store.name.toLowerCase().includes('medical')) {
+          // Use pharmacy items for pharmacy stores
+          productList = [
+            { name: "Paracetamol", category: "Health", price: "45", description: "Pain relief tablets", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop&auto=format" },
+            { name: "Vitamin D3", category: "Health", price: "180", description: "Vitamin D3 supplements", image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop&auto=format" },
+            { name: "Cough Syrup", category: "Health", price: "95", description: "Herbal cough syrup", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop&auto=format" },
+            { name: "Antiseptic Liquid", category: "Health", price: "85", description: "Wound cleaning antiseptic", image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop&auto=format" },
+            { name: "Thermometer", category: "Health", price: "450", description: "Digital thermometer", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop&auto=format" },
+            { name: "Band-Aid", category: "Health", price: "35", description: "Adhesive bandages pack", image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop&auto=format" },
+            { name: "Face Mask", category: "Health", price: "25", description: "Surgical face masks", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop&auto=format" },
+            { name: "Hand Sanitizer", category: "Health", price: "65", description: "Alcohol-based sanitizer", image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop&auto=format" },
+            { name: "Calcium Tablets", category: "Health", price: "120", description: "Calcium supplement tablets", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop&auto=format" },
+            { name: "Multivitamin", category: "Health", price: "250", description: "Daily multivitamin capsules", image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop&auto=format" }
+          ];
+        } else if (store.name.toLowerCase().includes('sports') || store.name.toLowerCase().includes('fitness')) {
+          // Use sports items for sports stores
+          productList = [
+            { name: "Cricket Bat", category: "Sports", price: "2500", description: "Professional cricket bat", image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400&h=400&fit=crop&auto=format" },
+            { name: "Football", category: "Sports", price: "850", description: "Official size football", image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=400&fit=crop&auto=format" },
+            { name: "Tennis Racket", category: "Sports", price: "3200", description: "Professional tennis racket", image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=400&fit=crop&auto=format" },
+            { name: "Running Shoes", category: "Sports", price: "4500", description: "Sports running shoes", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop&auto=format" },
+            { name: "Gym Weights", category: "Sports", price: "1200", description: "Adjustable dumbbells", image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&auto=format" },
+            { name: "Yoga Mat", category: "Sports", price: "650", description: "Non-slip yoga mat", image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&auto=format" },
+            { name: "Sports T-Shirt", category: "Sports", price: "850", description: "Breathable sports t-shirt", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop&auto=format" },
+            { name: "Water Bottle", category: "Sports", price: "350", description: "Sports water bottle", image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&auto=format" },
+            { name: "Badminton Racket", category: "Sports", price: "1800", description: "Lightweight badminton racket", image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=400&fit=crop&auto=format" },
+            { name: "Sports Bag", category: "Sports", price: "1500", description: "Durable sports gym bag", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop&auto=format" }
+          ];
+        } else if (store.name.toLowerCase().includes('furniture') || store.name.toLowerCase().includes('home')) {
+          // Use furniture items for furniture stores  
+          productList = [
+            { name: "Sofa Set", category: "Home", price: "15000", description: "3-seater sofa set", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop&auto=format" },
+            { name: "Dining Table", category: "Home", price: "8500", description: "6-seater dining table", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop&auto=format" },
+            { name: "Bed Frame", category: "Home", price: "12000", description: "Queen size bed frame", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop&auto=format" },
+            { name: "Wardrobe", category: "Home", price: "18000", description: "3-door wooden wardrobe", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop&auto=format" },
+            { name: "Study Table", category: "Home", price: "4500", description: "Computer study table", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop&auto=format" },
+            { name: "Bookshelf", category: "Home", price: "6500", description: "5-tier wooden bookshelf", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop&auto=format" },
+            { name: "Office Chair", category: "Home", price: "3500", description: "Ergonomic office chair", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop&auto=format" },
+            { name: "Side Table", category: "Home", price: "2200", description: "Wooden side table", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop&auto=format" },
+            { name: "Mirror", category: "Home", price: "1800", description: "Large wall mirror", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop&auto=format" },
+            { name: "TV Stand", category: "Home", price: "5500", description: "Modern TV entertainment unit", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop&auto=format" }
           ];
         } else {
           // For other stores, use general mix
