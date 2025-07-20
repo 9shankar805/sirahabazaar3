@@ -279,7 +279,7 @@ export default function Homepage() {
       title: "Flash Sale! Limited Time Offer",
       description: "Hurry! These deals end in",
       buttonText: "Shop Now",
-      url: "/flash-sale",
+      url: "/flash-sales",
       image: slider3,
       overlay: "rgba(0, 0, 0, 0.5)",
       showTimer: true,
