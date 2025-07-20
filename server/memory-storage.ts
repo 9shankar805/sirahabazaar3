@@ -224,36 +224,83 @@ export class MemoryStorage implements IStorage {
   }
 
   private createSampleProducts() {
-    // Products for retail stores
-    const retailProducts = [
-      // Electronics products
-      { name: "Samsung Galaxy A54", category: "Electronics", price: "35000", description: "Latest smartphone with great camera", image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop&auto=format" },
-      { name: "Sony Headphones WH-1000XM4", category: "Electronics", price: "25000", description: "Noise cancelling wireless headphones", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop&auto=format" },
-      { name: "Dell Laptop Inspiron 15", category: "Electronics", price: "65000", description: "High performance laptop for work", image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop&auto=format" },
-      { name: "iPhone 13", category: "Electronics", price: "85000", description: "Apple iPhone with advanced features", image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=400&fit=crop&auto=format" },
-      { name: "Gaming Mouse Logitech", category: "Electronics", price: "3500", description: "Professional gaming mouse", image: "https://images.unsplash.com/photo-1527814050087-3793815479db?w=400&h=400&fit=crop&auto=format" },
-      { name: "Bluetooth Speaker JBL", category: "Electronics", price: "8000", description: "Portable wireless speaker", image: "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=400&h=400&fit=crop&auto=format" },
-      { name: "Smart Watch Apple", category: "Electronics", price: "45000", description: "Fitness tracking smartwatch", image: "https://images.unsplash.com/photo-1551816230-ef5deaed4a26?w=400&h=400&fit=crop&auto=format" },
-      { name: "USB-C Cable", category: "Electronics", price: "500", description: "Fast charging cable", image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=400&h=400&fit=crop&auto=format" },
-      { name: "Power Bank 20000mAh", category: "Electronics", price: "2500", description: "High capacity portable charger", image: "https://images.unsplash.com/photo-1609592439674-37c0e2df3c8b?w=400&h=400&fit=crop&auto=format" },
-      { name: "Wireless Charger", category: "Electronics", price: "1800", description: "Qi wireless charging pad", image: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=400&h=400&fit=crop&auto=format" },
+    // Define store-specific product catalogs based on store names
+    const storeProductCatalogs: { [storeName: string]: any[] } = {
+      // Electronics stores
+      "Siraha Electronics Hub": [
+        { name: "Samsung Galaxy A54", category: "Electronics", price: "35000", description: "Latest smartphone with great camera", image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop&auto=format" },
+        { name: "Sony Headphones WH-1000XM4", category: "Electronics", price: "25000", description: "Noise cancelling wireless headphones", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop&auto=format" },
+        { name: "Dell Laptop Inspiron 15", category: "Electronics", price: "65000", description: "High performance laptop for work", image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop&auto=format" },
+        { name: "iPhone 13", category: "Electronics", price: "85000", description: "Apple iPhone with advanced features", image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=400&fit=crop&auto=format" },
+        { name: "Gaming Mouse Logitech", category: "Electronics", price: "3500", description: "Professional gaming mouse", image: "https://images.unsplash.com/photo-1527814050087-3793815479db?w=400&h=400&fit=crop&auto=format" },
+        { name: "Bluetooth Speaker JBL", category: "Electronics", price: "8000", description: "Portable wireless speaker", image: "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=400&h=400&fit=crop&auto=format" },
+        { name: "Smart Watch Apple", category: "Electronics", price: "45000", description: "Fitness tracking smartwatch", image: "https://images.unsplash.com/photo-1551816230-ef5deaed4a26?w=400&h=400&fit=crop&auto=format" },
+        { name: "USB-C Cable", category: "Electronics", price: "500", description: "Fast charging cable", image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=400&h=400&fit=crop&auto=format" },
+        { name: "Power Bank 20000mAh", category: "Electronics", price: "2500", description: "High capacity portable charger", image: "https://images.unsplash.com/photo-1609592439674-37c0e2df3c8b?w=400&h=400&fit=crop&auto=format" },
+        { name: "Wireless Charger", category: "Electronics", price: "1800", description: "Qi wireless charging pad", image: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=400&h=400&fit=crop&auto=format" }
+      ],
+      
+      // Fashion stores
+      "Fashion Palace Lahan": [
+        { name: "Men's Cotton T-Shirt", category: "Fashion", price: "800", description: "Comfortable casual wear", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop&auto=format" },
+        { name: "Women's Kurta Set", category: "Fashion", price: "2500", description: "Traditional ethnic wear", image: "https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400&h=400&fit=crop&auto=format" },
+        { name: "Denim Jeans", category: "Fashion", price: "2200", description: "Classic blue jeans", image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop&auto=format" },
+        { name: "Formal Shirt", category: "Fashion", price: "1500", description: "Office wear shirt", image: "https://images.unsplash.com/photo-1603252109303-2751441dd157?w=400&h=400&fit=crop&auto=format" },
+        { name: "Winter Jacket", category: "Fashion", price: "4500", description: "Warm winter clothing", image: "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=400&fit=crop&auto=format" },
+        { name: "Silk Saree", category: "Fashion", price: "5500", description: "Traditional silk saree", image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=400&fit=crop&auto=format" },
+        { name: "Designer Lehenga", category: "Fashion", price: "8500", description: "Wedding wear lehenga", image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=400&fit=crop&auto=format" },
+        { name: "Party Dress", category: "Fashion", price: "3200", description: "Elegant party wear", image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=400&fit=crop&auto=format" },
+        { name: "Cotton Palazzo", category: "Fashion", price: "1200", description: "Comfortable palazzo pants", image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=400&fit=crop&auto=format" },
+        { name: "Ethnic Dupatta", category: "Fashion", price: "800", description: "Traditional dupatta", image: "https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400&h=400&fit=crop&auto=format" }
+      ],
 
-      // Fashion products
-      { name: "Men's Cotton T-Shirt", category: "Fashion", price: "800", description: "Comfortable casual wear", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop&auto=format" },
-      { name: "Women's Kurta Set", category: "Fashion", price: "2500", description: "Traditional ethnic wear", image: "https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400&h=400&fit=crop&auto=format" },
-      { name: "Denim Jeans", category: "Fashion", price: "2200", description: "Classic blue jeans", image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop&auto=format" },
-      { name: "Formal Shirt", category: "Fashion", price: "1500", description: "Office wear shirt", image: "https://images.unsplash.com/photo-1603252109303-2751441dd157?w=400&h=400&fit=crop&auto=format" },
-      { name: "Winter Jacket", category: "Fashion", price: "4500", description: "Warm winter clothing", image: "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=400&fit=crop&auto=format" },
-      { name: "Sports Shoes", category: "Fashion", price: "3500", description: "Running and casual shoes", image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop&auto=format" },
-      { name: "Leather Wallet", category: "Fashion", price: "1200", description: "Genuine leather wallet", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&auto=format" },
-      { name: "Wrist Watch", category: "Fashion", price: "5500", description: "Analog dress watch", image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=400&fit=crop&auto=format" },
-      { name: "Sunglasses", category: "Fashion", price: "2800", description: "UV protection eyewear", image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop&auto=format" },
-      { name: "Handbag", category: "Fashion", price: "3200", description: "Women's fashion handbag", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&auto=format" }
-    ];
+      // Furniture stores
+      "Siraha Furniture Mart": [
+        { name: "Wooden Dining Table", category: "Home", price: "15000", description: "Solid wood dining table for 6 people", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop&auto=format" },
+        { name: "Leather Sofa Set", category: "Home", price: "45000", description: "3+2+1 leather sofa set", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop&auto=format" },
+        { name: "Queen Size Bed", category: "Home", price: "25000", description: "Wooden queen size bed with storage", image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=400&h=400&fit=crop&auto=format" },
+        { name: "Study Table", category: "Home", price: "8000", description: "Computer study table with drawers", image: "https://images.unsplash.com/photo-1611269154421-4e27233ac5c7?w=400&h=400&fit=crop&auto=format" },
+        { name: "Wardrobe 3 Door", category: "Home", price: "35000", description: "Spacious 3-door wardrobe", image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop&auto=format" },
+        { name: "Coffee Table", category: "Home", price: "5500", description: "Glass top coffee table", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop&auto=format" },
+        { name: "Bookshelf", category: "Home", price: "12000", description: "5-tier wooden bookshelf", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&auto=format" },
+        { name: "Office Chair", category: "Home", price: "6500", description: "Ergonomic office chair", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop&auto=format" },
+        { name: "TV Stand", category: "Home", price: "8500", description: "Modern TV entertainment unit", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop&auto=format" },
+        { name: "Dining Chairs Set", category: "Home", price: "7200", description: "Set of 4 dining chairs", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop&auto=format" }
+      ],
+
+      // Textile stores
+      "Lahan Textile House": [
+        { name: "Cotton Fabric", category: "Fashion", price: "180", description: "Premium cotton fabric per meter", image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&h=400&fit=crop&auto=format" },
+        { name: "Silk Fabric", category: "Fashion", price: "450", description: "Pure silk fabric per meter", image: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=400&h=400&fit=crop&auto=format" },
+        { name: "Linen Fabric", category: "Fashion", price: "320", description: "Natural linen fabric per meter", image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&h=400&fit=crop&auto=format" },
+        { name: "Wool Fabric", category: "Fashion", price: "380", description: "Warm wool fabric per meter", image: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=400&h=400&fit=crop&auto=format" },
+        { name: "Embroidered Cloth", category: "Fashion", price: "650", description: "Traditional embroidered fabric", image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&h=400&fit=crop&auto=format" },
+        { name: "Printed Cotton", category: "Fashion", price: "220", description: "Colorful printed cotton fabric", image: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=400&h=400&fit=crop&auto=format" },
+        { name: "Curtain Fabric", category: "Home", price: "280", description: "Heavy curtain fabric per meter", image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&h=400&fit=crop&auto=format" },
+        { name: "Bedsheet Fabric", category: "Home", price: "200", description: "Soft bedsheet fabric per meter", image: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=400&h=400&fit=crop&auto=format" },
+        { name: "Suit Fabric", category: "Fashion", price: "520", description: "Formal suit fabric per meter", image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&h=400&fit=crop&auto=format" },
+        { name: "Dupatta Fabric", category: "Fashion", price: "350", description: "Light dupatta fabric per meter", image: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=400&h=400&fit=crop&auto=format" }
+      ]
+    };
+
+    // Default products for other store types
+    const defaultProducts = {
+      "book": [
+        { name: "Nepali Literature Book", category: "Education", price: "450", description: "Classic Nepali literature collection", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop&auto=format" },
+        { name: "English Grammar Book", category: "Education", price: "380", description: "Complete English grammar guide", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&auto=format" },
+        { name: "Mathematics Textbook", category: "Education", price: "520", description: "Higher secondary mathematics", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop&auto=format" },
+        { name: "Science Encyclopedia", category: "Education", price: "850", description: "Complete science reference book", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&auto=format" },
+        { name: "History of Nepal", category: "Education", price: "420", description: "Comprehensive Nepal history book", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop&auto=format" },
+        { name: "Children's Story Book", category: "Education", price: "280", description: "Illustrated children's stories", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&auto=format" },
+        { name: "Dictionary", category: "Education", price: "650", description: "English-Nepali dictionary", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop&auto=format" },
+        { name: "Computer Programming", category: "Education", price: "720", description: "Learn programming basics", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&auto=format" },
+        { name: "Art & Craft Book", category: "Education", price: "350", description: "Creative art and craft guide", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop&auto=format" },
+        { name: "Poetry Collection", category: "Education", price: "320", description: "Modern Nepali poetry collection", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&auto=format" }
+      ]
+    };
 
     // Food items for restaurants
     const restaurantFoodItems = [
-      // Nepali cuisine
       { name: "Dal Bhat Tarkari", category: "Food & Beverages", price: "250", description: "Traditional Nepali meal with lentils, rice, and vegetables", image: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&h=400&fit=crop&auto=format" },
       { name: "Chicken Momo", category: "Food & Beverages", price: "180", description: "Steamed dumplings with chicken filling", image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400&h=400&fit=crop&auto=format" },
       { name: "Buff Sekuwa", category: "Food & Beverages", price: "320", description: "Grilled buffalo meat with spices", image: "https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=400&fit=crop&auto=format" },
@@ -266,15 +313,38 @@ export class MemoryStorage implements IStorage {
       { name: "Lassi", category: "Food & Beverages", price: "100", description: "Refreshing yogurt-based drink", image: "https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=400&h=400&fit=crop&auto=format" }
     ];
 
-    // Add products to each store
+    // Add products to each store based on store type
     this.stores.forEach(store => {
       if (store.storeType === 'retail') {
-        // Add 10 random retail products to each retail store
+        let productList;
+        
+        // Get store-specific products or fall back to general categories
+        if (storeProductCatalogs[store.name]) {
+          productList = storeProductCatalogs[store.name];
+        } else if (store.name.toLowerCase().includes('book')) {
+          productList = defaultProducts.book;
+        } else {
+          // For other stores, use general electronics/fashion mix
+          productList = [
+            { name: "Mobile Phone", category: "Electronics", price: "25000", description: "Latest smartphone model", image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop&auto=format" },
+            { name: "Bluetooth Headset", category: "Electronics", price: "3500", description: "Wireless bluetooth headset", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop&auto=format" },
+            { name: "Digital Watch", category: "Fashion", price: "4500", description: "Smart digital watch", image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=400&fit=crop&auto=format" },
+            { name: "Casual Shirt", category: "Fashion", price: "1200", description: "Comfortable casual shirt", image: "https://images.unsplash.com/photo-1603252109303-2751441dd157?w=400&h=400&fit=crop&auto=format" },
+            { name: "Sports Cap", category: "Fashion", price: "800", description: "Stylish sports cap", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop&auto=format" },
+            { name: "Power Adapter", category: "Electronics", price: "1500", description: "Universal power adapter", image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=400&h=400&fit=crop&auto=format" },
+            { name: "Sunglasses", category: "Fashion", price: "2200", description: "UV protection sunglasses", image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop&auto=format" },
+            { name: "Memory Card", category: "Electronics", price: "800", description: "High-speed memory card", image: "https://images.unsplash.com/photo-1609592439674-37c0e2df3c8b?w=400&h=400&fit=crop&auto=format" },
+            { name: "Keychain", category: "Fashion", price: "150", description: "Decorative keychain", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&auto=format" },
+            { name: "Phone Case", category: "Electronics", price: "650", description: "Protective phone case", image: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=400&h=400&fit=crop&auto=format" }
+          ];
+        }
+        
+        // Add 10 products to each retail store
         for (let i = 0; i < 10; i++) {
-          const productTemplate = retailProducts[i % retailProducts.length];
+          const productTemplate = productList[i % productList.length];
           this.products.push({
             id: this.nextId++,
-            name: `${productTemplate.name} - ${store.name}`,
+            name: productTemplate.name,
             slug: `${productTemplate.name.toLowerCase().replace(/\s+/g, '-')}-${store.id}`,
             description: productTemplate.description,
             price: productTemplate.price,
@@ -309,14 +379,14 @@ export class MemoryStorage implements IStorage {
           const spiceLevels = ['mild', 'medium', 'hot'];
           this.products.push({
             id: this.nextId++,
-            name: `${foodTemplate.name} - ${store.name}`,
+            name: foodTemplate.name,
             slug: `${foodTemplate.name.toLowerCase().replace(/\s+/g, '-')}-${store.id}`,
             description: foodTemplate.description,
             price: foodTemplate.price,
             originalPrice: (parseInt(foodTemplate.price) * 1.15).toString(),
             categoryId: this.categories.find(c => c.name === 'Food & Beverages')?.id || 3,
             storeId: store.id,
-            stock: 999, // Food items typically don't have limited stock
+            stock: 999,
             imageUrl: foodTemplate.image,
             images: [foodTemplate.image],
             rating: (Math.random() * 2 + 3).toFixed(1),
@@ -345,7 +415,6 @@ export class MemoryStorage implements IStorage {
     console.log(`✅ Created ${this.products.length} products across all stores`);
   }
 
-  // User operations
   async getUser(id: number): Promise<User | undefined> {
     return this.users.find(u => u.id === id);
   }
