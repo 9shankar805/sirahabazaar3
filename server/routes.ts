@@ -7652,6 +7652,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Production notification testing endpoint
+  app.post("/api/notification/production-test", async (req, res) => {
+    try {
+      const { fcmToken, userId, notificationType } = req.body;
+      
+      // Validate FCM token format
+      if (!fcmToken || fcmToken.length < 100) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid FCM token format. Token should be 140+ characters." 
+        });
+      }
+
+      // Create test notification message
+      const testMessage = {
+        notification: {
+          title: "Siraha Bazaar - Production Test",
+          body: "Your notification system is working perfectly in production!"
+        },
+        data: {
+          type: notificationType || "production_test",
+          timestamp: new Date().toISOString(),
+          environment: "production",
+          testId: `test_${Date.now()}`
+        },
+        token: fcmToken,
+        android: {
+          notification: {
+            channelId: "siraha_bazaar",
+            priority: "high",
+            defaultSound: true,
+            defaultVibrateTimings: true,
+            color: "#FF6B35"
+          }
+        },
+        webpush: {
+          notification: {
+            icon: "/favicon.ico",
+            badge: "/favicon.ico",
+            requireInteraction: false
+          }
+        }
+      };
+
+      // Send notification using Firebase Admin SDK
+      const admin = require("firebase-admin");
+      let result;
+      
+      try {
+        result = await admin.messaging().send(testMessage);
+        console.log("✅ Production test notification sent successfully:", result);
+      } catch (firebaseError) {
+        console.error("❌ Firebase notification failed:", firebaseError);
+        return res.status(500).json({
+          success: false,
+          error: "Firebase notification failed",
+          details: firebaseError.message
+        });
+      }
+
+      // Log to database if userId provided
+      if (userId) {
+        try {
+          await storage.createNotification({
+            userId: parseInt(userId),
+            title: "Production Test Notification",
+            message: "Notification system test successful in production",
+            type: "system_test",
+            data: { 
+              testResult: result,
+              fcmToken: fcmToken.substring(0, 20) + "...",
+              environment: "production"
+            }
+          });
+        } catch (dbError) {
+          console.error("Failed to log test notification to database:", dbError);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: "Production test notification sent successfully",
+        messageId: result,
+        timestamp: new Date().toISOString(),
+        tokenValidated: true
+      });
+
+    } catch (error) {
+      console.error("Production notification test failed:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Production test failed",
+        details: error.message
+      });
+    }
+  });
+
+  // Notification system health check endpoint
+  app.get("/api/notification/health", async (req, res) => {
+    try {
+      const admin = require("firebase-admin");
+      const healthStatus = {
+        timestamp: new Date().toISOString(),
+        firebase: false,
+        database: false,
+        environment: process.env.NODE_ENV || "development"
+      };
+
+      // Check Firebase Admin SDK
+      try {
+        if (admin.apps.length > 0) {
+          healthStatus.firebase = true;
+        }
+      } catch (firebaseError) {
+        console.error("Firebase health check failed:", firebaseError);
+      }
+
+      // Check database connection
+      try {
+        await storage.getUsers(); // Simple query to test database
+        healthStatus.database = true;
+      } catch (dbError) {
+        console.error("Database health check failed:", dbError);
+      }
+
+      const overallHealth = healthStatus.firebase && healthStatus.database;
+      
+      res.status(overallHealth ? 200 : 503).json({
+        healthy: overallHealth,
+        status: healthStatus,
+        message: overallHealth ? "All notification systems operational" : "Some notification systems down"
+      });
+
+    } catch (error) {
+      console.error("Health check failed:", error);
+      res.status(500).json({ 
+        healthy: false, 
+        error: "Health check failed",
+        details: error.message
+      });
+    }
+  });
+
   // Device token registration endpoint for Android app
   app.post("/api/device-token", async (req, res) => {
     try {

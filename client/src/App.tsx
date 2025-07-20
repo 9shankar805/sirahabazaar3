@@ -71,8 +71,6 @@ import NotificationBanner from "@/components/NotificationBanner";
 import FlashSales from "@/pages/FlashSales";
 import SpecialOffers from "@/pages/SpecialOffers";
 import NotificationTest from "@/pages/NotificationTest";
-import ProductionNotificationTest from "@/pages/ProductionNotificationTest";
-import AndroidTestPage from "@/pages/AndroidTestPage";
 
 function AppRouter() {
   const { mode } = useAppMode();
@@ -114,8 +112,6 @@ function AppRouter() {
         <Route path="/special-offers" component={SpecialOffers} />
         <Route path="/food-offers" component={SpecialOffers} />
         <Route path="/notification-test" component={NotificationTest} />
-        <Route path="/production-notification-test" component={ProductionNotificationTest} />
-        <Route path="/android-test" component={AndroidTestPage} />
 
         {/* Seller Hub Routes */}
         <Route path="/seller/dashboard" component={SellerDashboard} />
