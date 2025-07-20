@@ -6,6 +6,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
 import { runSimpleMigrations } from "./simple-migrate";
+import { pool } from "./db";
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
