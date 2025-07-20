@@ -734,11 +734,53 @@ export class MemoryStorage implements IStorage {
   async updateOrder(): Promise<any> { return undefined; }
   async getOrderItems(): Promise<any[]> { return []; }
   async createOrderItem(): Promise<any> { return undefined; }
-  async getCartItems(): Promise<any[]> { return []; }
-  async addToCart(): Promise<any> { return undefined; }
-  async updateCartItem(): Promise<any> { return undefined; }
-  async removeFromCart(): Promise<boolean> { return false; }
-  async clearCart(): Promise<void> {}
+  async getCartItems(userId: number): Promise<CartItem[]> { 
+    return this.cartItems.filter(item => item.userId === userId);
+  }
+  
+  async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
+    // Check if item already exists in cart
+    const existingItemIndex = this.cartItems.findIndex(
+      item => item.userId === cartItem.userId && item.productId === cartItem.productId
+    );
+
+    if (existingItemIndex !== -1) {
+      // Update quantity of existing item
+      this.cartItems[existingItemIndex].quantity += cartItem.quantity;
+      return this.cartItems[existingItemIndex];
+    } else {
+      // Add new item to cart
+      const newCartItem: CartItem = {
+        id: this.nextId++,
+        userId: cartItem.userId,
+        productId: cartItem.productId,
+        quantity: cartItem.quantity,
+        createdAt: new Date()
+      };
+      this.cartItems.push(newCartItem);
+      return newCartItem;
+    }
+  }
+  
+  async updateCartItem(id: number, quantity: number): Promise<CartItem | undefined> {
+    const itemIndex = this.cartItems.findIndex(item => item.id === id);
+    if (itemIndex === -1) return undefined;
+    
+    this.cartItems[itemIndex].quantity = quantity;
+    return this.cartItems[itemIndex];
+  }
+  
+  async removeFromCart(id: number): Promise<boolean> {
+    const itemIndex = this.cartItems.findIndex(item => item.id === id);
+    if (itemIndex === -1) return false;
+    
+    this.cartItems.splice(itemIndex, 1);
+    return true;
+  }
+  
+  async clearCart(userId: number): Promise<void> {
+    this.cartItems = this.cartItems.filter(item => item.userId !== userId);
+  }
   async getWishlistItems(): Promise<any[]> { return []; }
   async addToWishlist(): Promise<any> { return undefined; }
   async removeFromWishlist(): Promise<boolean> { return false; }

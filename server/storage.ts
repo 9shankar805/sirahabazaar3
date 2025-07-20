@@ -2946,5 +2946,5 @@ async function createStorage(): Promise<IStorage> {
 // Export storage promise that resolves to the appropriate storage
 export const storagePromise = createStorage();
 
-// Temporary storage instance for immediate use
-export const storage = new MemoryStorage();
+// Use database storage directly
+export const storage = new DatabaseStorage();
