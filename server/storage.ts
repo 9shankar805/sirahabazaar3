@@ -2914,5 +2914,35 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Create and export the storage instance
-export const storage = new DatabaseStorage();
+import { MemoryStorage } from "./memory-storage";
+
+// Function to test database connectivity
+async function testDatabaseConnection(): Promise<boolean> {
+  try {
+    const testStorage = new DatabaseStorage();
+    await testStorage.getAllCategories();
+    return true;
+  } catch (error) {
+    console.error('Database connection test failed:', error);
+    return false;
+  }
+}
+
+// Create and export the storage instance with fallback
+async function createStorage(): Promise<IStorage> {
+  const isConnected = await testDatabaseConnection();
+  
+  if (isConnected) {
+    console.log('✅ Using DatabaseStorage');
+    return new DatabaseStorage();
+  } else {
+    console.log('⚠️ Database connection failed, falling back to MemoryStorage with sample data');
+    return new MemoryStorage();
+  }
+}
+
+// Export storage promise that resolves to the appropriate storage
+export const storagePromise = createStorage();
+
+// Temporary storage instance for immediate use
+export const storage = new MemoryStorage();

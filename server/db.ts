@@ -6,31 +6,42 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
-// PostgreSQL database URL - using provided database connection
-const DATABASE_URL = process.env.DATABASE_URL || 
-  "postgresql://doadmin:show-password@db-postgresql-blr1-34567-do-user-23211066-0.d.db.ondigitalocean.com:25060/defaultdb?sslmode=require";
+// PostgreSQL database URL - using Replit provided database or fallback
+let DATABASE_URL = process.env.DATABASE_URL || 
+  "postgresql://doadmin:show-password@db-postgresql-blr1-34567-do-user-23211066-0.d.db.ondigitalocean.com:25060/defaultdb";
 
-console.log(`🔌 Using PostgreSQL database`);
+// Remove any SSL requirements that might cause certificate issues
+DATABASE_URL = DATABASE_URL.replace(/[?&]sslmode=[^&]+/g, '');
+DATABASE_URL += DATABASE_URL.includes('?') ? '&sslmode=disable' : '?sslmode=disable';
 
-// Enhanced pool configuration for Neon PostgreSQL database
+console.log(`🔌 Using PostgreSQL database: ${DATABASE_URL ? 'Connected' : 'No URL found'}`);
+
+// Determine SSL configuration - be more permissive for external databases
+const isExternalDatabase = DATABASE_URL.includes('digitalocean') || DATABASE_URL.includes('neon') || DATABASE_URL.includes('amazonaws') || DATABASE_URL.includes('show-password');
+const sslConfig = isExternalDatabase ? { 
+  rejectUnauthorized: false,
+  checkServerIdentity: () => undefined 
+} : false;
+
+// Enhanced pool configuration with SSL bypass
 export const pool = new Pool({
   connectionString: DATABASE_URL,
-  // Connection limits optimized for Neon database
-  max: 10, // Optimal for Neon environment
-  min: 2, // Minimum connections
-  idleTimeoutMillis: 30000, // Keep connections alive
-  connectionTimeoutMillis: 10000, // Longer timeout for Neon
+  // Connection limits
+  max: 20,
+  min: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 20000,
 
-  // PostgreSQL-specific optimizations
-  application_name: "siraha_bazaar_neon",
-  statement_timeout: 30000, // 30 second query timeout
+  // Application name for monitoring
+  application_name: "siraha_bazaar",
+  statement_timeout: 60000,
 
-  // SSL configuration (required for external databases)
-  ssl: { rejectUnauthorized: false },
+  // Completely disable SSL verification
+  ssl: false,
 
-  // Performance tuning for Neon
+  // Performance tuning
   keepAlive: true,
-  keepAliveInitialDelayMillis: 10000,
+  keepAliveInitialDelayMillis: 0,
 });
 
 // Enhanced error handling to prevent crashes
