@@ -6,11 +6,11 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
-// PostgreSQL database URL - using Neon database directly
-const DATABASE_URL =
+// PostgreSQL database URL - using provided database connection
+const DATABASE_URL = process.env.DATABASE_URL || 
   "postgresql://doadmin:show-password@db-postgresql-blr1-34567-do-user-23211066-0.d.db.ondigitalocean.com:25060/defaultdb?sslmode=require";
 
-console.log(`🔌 Using Neon PostgreSQL database (direct connection)`);
+console.log(`🔌 Using PostgreSQL database`);
 
 // Enhanced pool configuration for Neon PostgreSQL database
 export const pool = new Pool({
@@ -25,7 +25,7 @@ export const pool = new Pool({
   application_name: "siraha_bazaar_neon",
   statement_timeout: 30000, // 30 second query timeout
 
-  // SSL configuration for Neon (required)
+  // SSL configuration (required for external databases)
   ssl: { rejectUnauthorized: false },
 
   // Performance tuning for Neon
