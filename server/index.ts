@@ -52,15 +52,38 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
-// Run simple migrations on startup
-(async () => {
-  try {
-    await runSimpleMigrations();
-    console.log('✅ Database migrations completed successfully');
-  } catch (error) {
-    console.error('❌ Migration error on startup:', error);
+// Database health check and migrations with retry logic
+async function initializeDatabase(retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`🔍 Database initialization attempt ${attempt}/${retries}`);
+      
+      // Test connection first
+      const testResult = await pool.query('SELECT NOW()');
+      console.log('✅ Database connection test successful');
+      
+      // Run migrations
+      await runSimpleMigrations();
+      console.log('✅ Database migrations completed successfully');
+      return true;
+    } catch (error) {
+      console.error(`❌ Database initialization attempt ${attempt} failed:`, error);
+      
+      if (attempt < retries) {
+        const delay = attempt * 2000; // Exponential backoff
+        console.log(`⏳ Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        console.error('❌ All database initialization attempts failed');
+        // Continue anyway to allow server to start
+      }
+    }
   }
-})();
+  return false;
+}
+
+// Initialize database
+initializeDatabase();
 
 app.use((req, res, next) => {
   const start = Date.now();
