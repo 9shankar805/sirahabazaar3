@@ -46,9 +46,12 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
 
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ["/api/products", productId, "reviews", { minRating: filterRating }],
-    queryFn: () => 
-      fetch(`/api/products/${productId}/reviews${filterRating ? `?minRating=${filterRating}` : ""}`)
-        .then(res => res.json())
+    queryFn: async () => {
+      const response = await fetch(`/api/products/${productId}/reviews${filterRating ? `?minRating=${filterRating}` : ""}`);
+      const data = await response.json();
+      // Ensure we always return an array
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   const createReviewMutation = useMutation({

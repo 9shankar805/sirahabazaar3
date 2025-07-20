@@ -280,6 +280,20 @@ export class MemoryStorage implements IStorage {
         { name: "Bedsheet Fabric", category: "Home", price: "200", description: "Soft bedsheet fabric per meter", image: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=400&h=400&fit=crop&auto=format" },
         { name: "Suit Fabric", category: "Fashion", price: "520", description: "Formal suit fabric per meter", image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&h=400&fit=crop&auto=format" },
         { name: "Dupatta Fabric", category: "Fashion", price: "350", description: "Light dupatta fabric per meter", image: "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=400&h=400&fit=crop&auto=format" }
+      ],
+
+      // Grocery stores
+      "Mirchaiya Grocery Store": [
+        { name: "Basmati Rice", category: "Groceries", price: "120", description: "Premium basmati rice per kg", image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=400&fit=crop&auto=format" },
+        { name: "Mustard Oil", category: "Groceries", price: "180", description: "Pure mustard oil 1 liter", image: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&h=400&fit=crop&auto=format" },
+        { name: "Lentils (Dal)", category: "Groceries", price: "85", description: "Mixed lentils per kg", image: "https://images.unsplash.com/photo-1599909392803-6c5b2b21cf6b?w=400&h=400&fit=crop&auto=format" },
+        { name: "Red Onions", category: "Groceries", price: "45", description: "Fresh red onions per kg", image: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&h=400&fit=crop&auto=format" },
+        { name: "Tomatoes", category: "Groceries", price: "60", description: "Fresh tomatoes per kg", image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&h=400&fit=crop&auto=format" },
+        { name: "Potatoes", category: "Groceries", price: "35", description: "Fresh potatoes per kg", image: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&h=400&fit=crop&auto=format" },
+        { name: "Turmeric Powder", category: "Groceries", price: "150", description: "Pure turmeric powder 200g", image: "https://images.unsplash.com/photo-1599050751795-e8c83c8455f8?w=400&h=400&fit=crop&auto=format" },
+        { name: "Cumin Seeds", category: "Groceries", price: "120", description: "Whole cumin seeds 100g", image: "https://images.unsplash.com/photo-1599050751795-e8c83c8455f8?w=400&h=400&fit=crop&auto=format" },
+        { name: "Green Tea", category: "Groceries", price: "95", description: "Premium green tea leaves", image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop&auto=format" },
+        { name: "Milk Powder", category: "Groceries", price: "280", description: "Full cream milk powder 500g", image: "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&h=400&fit=crop&auto=format" }
       ]
     };
 
@@ -323,19 +337,47 @@ export class MemoryStorage implements IStorage {
           productList = storeProductCatalogs[store.name];
         } else if (store.name.toLowerCase().includes('book')) {
           productList = defaultProducts.book;
-        } else {
-          // For other stores, use general electronics/fashion mix
+        } else if (store.name.toLowerCase().includes('grocery') || store.name.toLowerCase().includes('general')) {
+          // Use grocery items for grocery stores
+          productList = [
+            { name: "Rice", category: "Groceries", price: "100", description: "Premium rice per kg", image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=400&fit=crop&auto=format" },
+            { name: "Cooking Oil", category: "Groceries", price: "150", description: "Pure cooking oil 1 liter", image: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&h=400&fit=crop&auto=format" },
+            { name: "Wheat Flour", category: "Groceries", price: "60", description: "Fresh wheat flour per kg", image: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=400&fit=crop&auto=format" },
+            { name: "Sugar", category: "Groceries", price: "80", description: "Pure white sugar per kg", image: "https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=400&h=400&fit=crop&auto=format" },
+            { name: "Tea", category: "Groceries", price: "120", description: "Premium tea leaves", image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop&auto=format" },
+            { name: "Salt", category: "Groceries", price: "25", description: "Refined table salt per kg", image: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&h=400&fit=crop&auto=format" },
+            { name: "Spices Mix", category: "Groceries", price: "90", description: "Traditional spice mixture", image: "https://images.unsplash.com/photo-1599050751795-e8c83c8455f8?w=400&h=400&fit=crop&auto=format" },
+            { name: "Biscuits", category: "Groceries", price: "45", description: "Assorted biscuits pack", image: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400&fit=crop&auto=format" },
+            { name: "Soap", category: "Groceries", price: "35", description: "Bath soap bar", image: "https://images.unsplash.com/photo-1585435557343-3b092031a831?w=400&h=400&fit=crop&auto=format" },
+            { name: "Toothpaste", category: "Groceries", price: "85", description: "Herbal toothpaste", image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=400&h=400&fit=crop&auto=format" }
+          ];
+        } else if (store.name.toLowerCase().includes('electronic')) {
+          // Use electronics for electronic stores
           productList = [
             { name: "Mobile Phone", category: "Electronics", price: "25000", description: "Latest smartphone model", image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop&auto=format" },
             { name: "Bluetooth Headset", category: "Electronics", price: "3500", description: "Wireless bluetooth headset", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop&auto=format" },
+            { name: "Power Adapter", category: "Electronics", price: "1500", description: "Universal power adapter", image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=400&h=400&fit=crop&auto=format" },
+            { name: "Memory Card", category: "Electronics", price: "800", description: "High-speed memory card", image: "https://images.unsplash.com/photo-1609592439674-37c0e2df3c8b?w=400&h=400&fit=crop&auto=format" },
+            { name: "Phone Case", category: "Electronics", price: "650", description: "Protective phone case", image: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=400&h=400&fit=crop&auto=format" },
+            { name: "USB Cable", category: "Electronics", price: "250", description: "Fast charging USB cable", image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=400&h=400&fit=crop&auto=format" },
+            { name: "Earphones", category: "Electronics", price: "1200", description: "Wired earphones", image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop&auto=format" },
+            { name: "Power Bank", category: "Electronics", price: "2500", description: "Portable power bank", image: "https://images.unsplash.com/photo-1609592439674-37c0e2df3c8b?w=400&h=400&fit=crop&auto=format" },
+            { name: "Screen Guard", category: "Electronics", price: "350", description: "Mobile screen protector", image: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=400&h=400&fit=crop&auto=format" },
+            { name: "Bluetooth Speaker", category: "Electronics", price: "4500", description: "Portable bluetooth speaker", image: "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=400&h=400&fit=crop&auto=format" }
+          ];
+        } else {
+          // For other stores, use general mix
+          productList = [
             { name: "Digital Watch", category: "Fashion", price: "4500", description: "Smart digital watch", image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=400&fit=crop&auto=format" },
             { name: "Casual Shirt", category: "Fashion", price: "1200", description: "Comfortable casual shirt", image: "https://images.unsplash.com/photo-1603252109303-2751441dd157?w=400&h=400&fit=crop&auto=format" },
             { name: "Sports Cap", category: "Fashion", price: "800", description: "Stylish sports cap", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop&auto=format" },
-            { name: "Power Adapter", category: "Electronics", price: "1500", description: "Universal power adapter", image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=400&h=400&fit=crop&auto=format" },
             { name: "Sunglasses", category: "Fashion", price: "2200", description: "UV protection sunglasses", image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop&auto=format" },
-            { name: "Memory Card", category: "Electronics", price: "800", description: "High-speed memory card", image: "https://images.unsplash.com/photo-1609592439674-37c0e2df3c8b?w=400&h=400&fit=crop&auto=format" },
             { name: "Keychain", category: "Fashion", price: "150", description: "Decorative keychain", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&auto=format" },
-            { name: "Phone Case", category: "Electronics", price: "650", description: "Protective phone case", image: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=400&h=400&fit=crop&auto=format" }
+            { name: "Wallet", category: "Fashion", price: "850", description: "Leather wallet", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&auto=format" },
+            { name: "Belt", category: "Fashion", price: "650", description: "Leather belt", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&auto=format" },
+            { name: "Backpack", category: "Fashion", price: "1500", description: "Travel backpack", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&auto=format" },
+            { name: "Notebook", category: "Education", price: "120", description: "Spiral notebook", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop&auto=format" },
+            { name: "Pen Set", category: "Education", price: "180", description: "Ball pen set", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&auto=format" }
           ];
         }
         
@@ -728,6 +770,7 @@ export class MemoryStorage implements IStorage {
   async getStoresWithDistance(): Promise<any[]> { return []; }
   async getSellerAnalytics(): Promise<any> { return {}; }
   async getProductReviewsByProductId(): Promise<any[]> { return []; }
+  async getProductReviews(productId: number): Promise<any[]> { return []; }
   async createProductReview(): Promise<any> { return undefined; }
   async updateProductReview(): Promise<any> { return undefined; }
   async deleteProductReview(): Promise<boolean> { return false; }
