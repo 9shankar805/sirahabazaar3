@@ -188,6 +188,131 @@ export class MemoryStorage implements IStorage {
         updatedAt: new Date()
       });
     }
+
+    // Add products to each store
+    this.createSampleProducts();
+  }
+
+  private createSampleProducts() {
+    // Products for retail stores
+    const retailProducts = [
+      // Electronics products
+      { name: "Samsung Galaxy A54", category: "Electronics", price: "35000", description: "Latest smartphone with great camera", image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400" },
+      { name: "Sony Headphones WH-1000XM4", category: "Electronics", price: "25000", description: "Noise cancelling wireless headphones", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400" },
+      { name: "Dell Laptop Inspiron 15", category: "Electronics", price: "65000", description: "High performance laptop for work", image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400" },
+      { name: "iPhone 13", category: "Electronics", price: "85000", description: "Apple iPhone with advanced features", image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400" },
+      { name: "Gaming Mouse Logitech", category: "Electronics", price: "3500", description: "Professional gaming mouse", image: "https://images.unsplash.com/photo-1527814050087-3793815479db?w=400" },
+      { name: "Bluetooth Speaker JBL", category: "Electronics", price: "8000", description: "Portable wireless speaker", image: "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=400" },
+      { name: "Smart Watch Apple", category: "Electronics", price: "45000", description: "Fitness tracking smartwatch", image: "https://images.unsplash.com/photo-1551816230-ef5deaed4a26?w=400" },
+      { name: "USB-C Cable", category: "Electronics", price: "500", description: "Fast charging cable", image: "https://images.unsplash.com/photo-1588200618911-3ce37ce14b96?w=400" },
+      { name: "Power Bank 20000mAh", category: "Electronics", price: "2500", description: "High capacity portable charger", image: "https://images.unsplash.com/photo-1609592439674-37c0e2df3c8b?w=400" },
+      { name: "Wireless Charger", category: "Electronics", price: "1800", description: "Qi wireless charging pad", image: "https://images.unsplash.com/photo-1586953710143-9b770ca6a4b3?w=400" },
+
+      // Fashion products
+      { name: "Men's Cotton T-Shirt", category: "Fashion", price: "800", description: "Comfortable casual wear", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400" },
+      { name: "Women's Kurta Set", category: "Fashion", price: "2500", description: "Traditional ethnic wear", image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400" },
+      { name: "Denim Jeans", category: "Fashion", price: "2200", description: "Classic blue jeans", image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400" },
+      { name: "Formal Shirt", category: "Fashion", price: "1500", description: "Office wear shirt", image: "https://images.unsplash.com/photo-1603252109303-2751441dd157?w=400" },
+      { name: "Winter Jacket", category: "Fashion", price: "4500", description: "Warm winter clothing", image: "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400" },
+      { name: "Sports Shoes", category: "Fashion", price: "3500", description: "Running and casual shoes", image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400" },
+      { name: "Leather Wallet", category: "Fashion", price: "1200", description: "Genuine leather wallet", image: "https://images.unsplash.com/photo-1627123424574-724758594e93?w=400" },
+      { name: "Wrist Watch", category: "Fashion", price: "5500", description: "Analog dress watch", image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400" },
+      { name: "Sunglasses", category: "Fashion", price: "2800", description: "UV protection eyewear", image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400" },
+      { name: "Handbag", category: "Fashion", price: "3200", description: "Women's fashion handbag", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400" }
+    ];
+
+    // Food items for restaurants
+    const restaurantFoodItems = [
+      // Nepali cuisine
+      { name: "Dal Bhat Tarkari", category: "Food & Beverages", price: "250", description: "Traditional Nepali meal with lentils, rice, and vegetables", image: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400" },
+      { name: "Chicken Momo", category: "Food & Beverages", price: "180", description: "Steamed dumplings with chicken filling", image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400" },
+      { name: "Buff Sekuwa", category: "Food & Beverages", price: "320", description: "Grilled buffalo meat with spices", image: "https://images.unsplash.com/photo-1558030006-450675393462?w=400" },
+      { name: "Newari Khaja Set", category: "Food & Beverages", price: "400", description: "Traditional Newari snack platter", image: "https://images.unsplash.com/photo-1504113888839-1c8eb50233d3?w=400" },
+      { name: "Gundruk Soup", category: "Food & Beverages", price: "120", description: "Fermented leafy vegetable soup", image: "https://images.unsplash.com/photo-1547592180-85f173990554?w=400" },
+      { name: "Chicken Biryani", category: "Food & Beverages", price: "350", description: "Fragrant rice dish with spiced chicken", image: "https://images.unsplash.com/photo-1563379091339-03246963d96c?w=400" },
+      { name: "Mutton Curry", category: "Food & Beverages", price: "450", description: "Spicy goat meat curry", image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400" },
+      { name: "Vegetable Fried Rice", category: "Food & Beverages", price: "200", description: "Stir-fried rice with mixed vegetables", image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400" },
+      { name: "Sel Roti", category: "Food & Beverages", price: "80", description: "Traditional ring-shaped rice bread", image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400" },
+      { name: "Lassi", category: "Food & Beverages", price: "100", description: "Refreshing yogurt-based drink", image: "https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=400" }
+    ];
+
+    // Add products to each store
+    this.stores.forEach(store => {
+      if (store.storeType === 'retail') {
+        // Add 10 random retail products to each retail store
+        for (let i = 0; i < 10; i++) {
+          const productTemplate = retailProducts[i % retailProducts.length];
+          this.products.push({
+            id: this.nextId++,
+            name: `${productTemplate.name} - ${store.name}`,
+            slug: `${productTemplate.name.toLowerCase().replace(/\s+/g, '-')}-${store.id}`,
+            description: productTemplate.description,
+            price: productTemplate.price,
+            originalPrice: (parseInt(productTemplate.price) * 1.2).toString(),
+            categoryId: this.categories.find(c => c.name === productTemplate.category)?.id || 1,
+            storeId: store.id,
+            stock: Math.floor(Math.random() * 50) + 10,
+            imageUrl: productTemplate.image,
+            images: [productTemplate.image],
+            rating: (Math.random() * 2 + 3).toFixed(1),
+            totalReviews: Math.floor(Math.random() * 100) + 5,
+            isActive: true,
+            isFastSell: Math.random() > 0.8,
+            isOnOffer: Math.random() > 0.7,
+            offerPercentage: Math.random() > 0.7 ? Math.floor(Math.random() * 30) + 5 : 0,
+            offerEndDate: Math.random() > 0.7 ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null,
+            productType: "retail",
+            preparationTime: null,
+            ingredients: [],
+            allergens: [],
+            spiceLevel: null,
+            isVegetarian: Math.random() > 0.5,
+            isVegan: Math.random() > 0.7,
+            nutritionInfo: null,
+            createdAt: new Date()
+          });
+        }
+      } else if (store.storeType === 'restaurant') {
+        // Add 10 food items to each restaurant
+        for (let i = 0; i < 10; i++) {
+          const foodTemplate = restaurantFoodItems[i % restaurantFoodItems.length];
+          const spiceLevels = ['mild', 'medium', 'hot'];
+          this.products.push({
+            id: this.nextId++,
+            name: `${foodTemplate.name} - ${store.name}`,
+            slug: `${foodTemplate.name.toLowerCase().replace(/\s+/g, '-')}-${store.id}`,
+            description: foodTemplate.description,
+            price: foodTemplate.price,
+            originalPrice: (parseInt(foodTemplate.price) * 1.15).toString(),
+            categoryId: this.categories.find(c => c.name === 'Food & Beverages')?.id || 3,
+            storeId: store.id,
+            stock: 999, // Food items typically don't have limited stock
+            imageUrl: foodTemplate.image,
+            images: [foodTemplate.image],
+            rating: (Math.random() * 2 + 3).toFixed(1),
+            totalReviews: Math.floor(Math.random() * 150) + 10,
+            isActive: true,
+            isFastSell: Math.random() > 0.6,
+            isOnOffer: Math.random() > 0.8,
+            offerPercentage: Math.random() > 0.8 ? Math.floor(Math.random() * 25) + 5 : 0,
+            offerEndDate: Math.random() > 0.8 ? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString() : null,
+            productType: "food",
+            preparationTime: `${Math.floor(Math.random() * 20) + 10}-${Math.floor(Math.random() * 10) + 25} mins`,
+            ingredients: foodTemplate.name.includes('Chicken') ? ['chicken', 'spices', 'onion'] : 
+                        foodTemplate.name.includes('Vegetable') ? ['mixed vegetables', 'rice', 'spices'] :
+                        ['traditional ingredients', 'spices'],
+            allergens: foodTemplate.name.includes('dairy') ? ['dairy'] : [],
+            spiceLevel: spiceLevels[Math.floor(Math.random() * spiceLevels.length)],
+            isVegetarian: !foodTemplate.name.toLowerCase().includes('chicken') && !foodTemplate.name.toLowerCase().includes('mutton') && !foodTemplate.name.toLowerCase().includes('buff'),
+            isVegan: foodTemplate.name.includes('Dal') || foodTemplate.name.includes('Vegetable'),
+            nutritionInfo: `{"calories": ${Math.floor(Math.random() * 300) + 200}, "protein": "${Math.floor(Math.random() * 20) + 5}g"}`,
+            createdAt: new Date()
+          });
+        }
+      }
+    });
+
+    console.log(`✅ Created ${this.products.length} products across all stores`);
   }
 
   // User operations
