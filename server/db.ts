@@ -6,24 +6,12 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
-// PostgreSQL database URL - using Replit provided database or fallback
-let DATABASE_URL = process.env.DATABASE_URL || 
-  "postgresql://doadmin:show-password@db-postgresql-blr1-34567-do-user-23211066-0.d.db.ondigitalocean.com:25060/defaultdb";
-
-// Remove any SSL requirements that might cause certificate issues
-DATABASE_URL = DATABASE_URL.replace(/[?&]sslmode=[^&]+/g, '');
-DATABASE_URL += DATABASE_URL.includes('?') ? '&sslmode=disable' : '?sslmode=disable';
+// PostgreSQL database URL - using Replit provided database
+const DATABASE_URL = process.env.DATABASE_URL;
 
 console.log(`🔌 Using PostgreSQL database: ${DATABASE_URL ? 'Connected' : 'No URL found'}`);
 
-// Determine SSL configuration - be more permissive for external databases
-const isExternalDatabase = DATABASE_URL.includes('digitalocean') || DATABASE_URL.includes('neon') || DATABASE_URL.includes('amazonaws') || DATABASE_URL.includes('show-password');
-const sslConfig = isExternalDatabase ? { 
-  rejectUnauthorized: false,
-  checkServerIdentity: () => undefined 
-} : false;
-
-// Enhanced pool configuration with SSL bypass
+// Enhanced pool configuration for Replit database
 export const pool = new Pool({
   connectionString: DATABASE_URL,
   // Connection limits
@@ -36,8 +24,8 @@ export const pool = new Pool({
   application_name: "siraha_bazaar",
   statement_timeout: 60000,
 
-  // Completely disable SSL verification
-  ssl: false,
+  // Use SSL for Replit database
+  ssl: DATABASE_URL ? true : false,
 
   // Performance tuning
   keepAlive: true,

@@ -658,4 +658,190 @@ export class MemoryStorage implements IStorage {
   async getWishlistItems(): Promise<any[]> { return []; }
   async addToWishlist(): Promise<any> { return undefined; }
   async removeFromWishlist(): Promise<boolean> { return false; }
+  async isInWishlist(): Promise<boolean> { return false; }
+
+  // Admin methods
+  private adminUsers: any[] = [
+    {
+      id: 1,
+      email: 'admin@sirahbazaar.com',
+      password: 'admin123',
+      fullName: 'System Administrator',
+      role: 'super_admin',
+      isActive: true,
+      createdAt: new Date()
+    }
+  ];
+
+  async authenticateAdmin(email: string, password: string): Promise<any | null> {
+    const admin = this.adminUsers.find(a => a.email === email && a.password === password && a.isActive);
+    return admin || null;
+  }
+
+  async createDefaultAdmin(): Promise<any | null> {
+    const existing = this.adminUsers.find(a => a.email === 'admin@sirahbazaar.com');
+    if (existing) {
+      console.log('✅ Default admin account already exists');
+      return existing;
+    }
+    
+    const admin = {
+      id: this.nextId++,
+      email: 'admin@sirahbazaar.com',
+      password: 'admin123',
+      fullName: 'System Administrator',
+      role: 'super_admin',
+      isActive: true,
+      createdAt: new Date()
+    };
+    
+    this.adminUsers.push(admin);
+    console.log('✅ Default admin account created: admin@sirahbazaar.com / admin123');
+    return admin;
+  }
+
+  // Additional stub methods for missing interface methods
+  async getAdmin(): Promise<any> { return undefined; }
+  async getAdminByEmail(): Promise<any> { return undefined; }
+  async createAdmin(): Promise<any> { return undefined; }
+  async recordVisit(): Promise<any> { return undefined; }
+  async getVisitStats(): Promise<any> { return {}; }
+  async getPageViews(): Promise<any[]> { return []; }
+  async createNotification(): Promise<any> { return undefined; }
+  async getUserNotifications(): Promise<any[]> { return []; }
+  async getNotificationsByUserId(): Promise<any[]> { return []; }
+  async getNotificationsByType(): Promise<any[]> { return []; }
+  async markNotificationAsRead(): Promise<any> { return undefined; }
+  async markAllNotificationsAsRead(): Promise<boolean> { return false; }
+  async createOrderTracking(): Promise<any> { return undefined; }
+  async getOrderTracking(): Promise<any[]> { return []; }
+  async updateOrderTracking(): Promise<any> { return undefined; }
+  async createReturnPolicy(): Promise<any> { return undefined; }
+  async getReturnPolicy(): Promise<any> { return undefined; }
+  async updateReturnPolicy(): Promise<any> { return undefined; }
+  async createReturn(): Promise<any> { return undefined; }
+  async getReturn(): Promise<any> { return undefined; }
+  async getReturnsByCustomer(): Promise<any[]> { return []; }
+  async getReturnsByStore(): Promise<any[]> { return []; }
+  async updateReturnStatus(): Promise<any> { return undefined; }
+  async calculateDistance(): number { return 0; }
+  async getStoresWithDistance(): Promise<any[]> { return []; }
+  async getSellerAnalytics(): Promise<any> { return {}; }
+  async getProductReviewsByProductId(): Promise<any[]> { return []; }
+  async createProductReview(): Promise<any> { return undefined; }
+  async updateProductReview(): Promise<any> { return undefined; }
+  async deleteProductReview(): Promise<boolean> { return false; }
+  async updateProductRating(): Promise<void> {}
+  async getReviewLikes(): Promise<any[]> { return []; }
+  async createReviewLike(): Promise<any> { return undefined; }
+  async deleteReviewLike(): Promise<boolean> { return false; }
+  async hasUserLikedReview(): Promise<boolean> { return false; }
+  async getStoreReviewsByStoreId(): Promise<any[]> { return []; }
+  async createStoreReview(): Promise<any> { return undefined; }
+  async updateStoreReview(): Promise<any> { return undefined; }
+  async deleteStoreReview(): Promise<boolean> { return false; }
+  async updateStoreRating(): Promise<void> {}
+  async getStoreReviewLikes(): Promise<any[]> { return []; }
+  async createStoreReviewLike(): Promise<any> { return undefined; }
+  async deleteStoreReviewLike(): Promise<boolean> { return false; }
+  async hasUserLikedStoreReview(): Promise<boolean> { return false; }
+  async getStoreSettlements(): Promise<any[]> { return []; }
+  async createSettlement(): Promise<any> { return undefined; }
+  async updateSettlement(): Promise<any> { return undefined; }
+  async getInventoryLogs(): Promise<any[]> { return []; }
+  async createInventoryLog(): Promise<any> { return undefined; }
+  async updateProductStock(): Promise<boolean> { return false; }
+  async getAllFlashSales(): Promise<any[]> { return []; }
+  async getActiveFlashSales(): Promise<any[]> { return []; }
+  async getFlashSale(): Promise<any> { return undefined; }
+  async createFlashSale(): Promise<any> { return undefined; }
+  async updateFlashSale(): Promise<any> { return undefined; }
+  async deleteFlashSale(): Promise<boolean> { return false; }
+  async getFlashSaleProducts(): Promise<any[]> { return []; }
+  async getAllTransactions(): Promise<any[]> { return []; }
+  async getAllCoupons(): Promise<any[]> { return []; }
+  async createCoupon(): Promise<any> { return undefined; }
+  async updateCoupon(): Promise<any> { return undefined; }
+  async deleteCoupon(): Promise<boolean> { return false; }
+  async getAllBanners(): Promise<any[]> { return []; }
+  async createBanner(): Promise<any> { return undefined; }
+  async updateBanner(): Promise<any> { return undefined; }
+  async deleteBanner(): Promise<boolean> { return false; }
+  async getAllSupportTickets(): Promise<any[]> { return []; }
+  async createSupportTicket(): Promise<any> { return undefined; }
+  async updateSupportTicket(): Promise<any> { return undefined; }
+  async getAllSiteSettings(): Promise<any[]> { return []; }
+  async updateSiteSetting(): Promise<any> { return undefined; }
+  async getDashboardStats(): Promise<any> { return {}; }
+  async getAllVendorVerifications(): Promise<any[]> { return []; }
+  async updateVendorVerification(): Promise<any> { return undefined; }
+  async approveVendorVerification(): Promise<any> { return undefined; }
+  async rejectVendorVerification(): Promise<any> { return undefined; }
+  async getAllFraudAlerts(): Promise<any[]> { return []; }
+  async createFraudAlert(): Promise<any> { return undefined; }
+  async updateFraudAlert(): Promise<any> { return undefined; }
+  async updateFraudAlertStatus(): Promise<any> { return undefined; }
+  async getAllCommissions(): Promise<any[]> { return []; }
+  async createCommission(): Promise<any> { return undefined; }
+  async updateCommission(): Promise<any> { return undefined; }
+  async getCommissions(): Promise<any[]> { return []; }
+  async updateCommissionStatus(): Promise<any> { return undefined; }
+  async getTotalUsersCount(): Promise<number> { return this.users.length; }
+  async getTotalStoresCount(): Promise<number> { return this.stores.length; }
+  async getTotalOrdersCount(): Promise<number> { return this.orders.length; }
+  async getTotalRevenue(): Promise<number> { return 0; }
+  async getPendingOrdersCount(): Promise<number> { return 0; }
+  async getActiveUsersCount(): Promise<number> { return this.users.length; }
+  async getPendingVendorVerificationsCount(): Promise<number> { return 0; }
+  async getOpenFraudAlertsCount(): Promise<number> { return 0; }
+  async getProductAttributes(): Promise<any[]> { return []; }
+  async createProductAttribute(): Promise<any> { return undefined; }
+  async deleteProductAttribute(): Promise<boolean> { return false; }
+  async logAdminAction(): Promise<any> { return undefined; }
+  async getAdminLogs(): Promise<any[]> { return []; }
+  async bulkUpdateProductStatus(): Promise<boolean> { return false; }
+  async getOrdersWithDetails(): Promise<any[]> { return []; }
+  async getRevenueAnalytics(): Promise<any> { return {}; }
+  async getUsersAnalytics(): Promise<any> { return {}; }
+  async getInventoryAlerts(): Promise<any[]> { return []; }
+  async getDeliveryPartner(): Promise<any> { return undefined; }
+  async getDeliveryPartnerByUserId(): Promise<any> { return undefined; }
+  async getAllDeliveryPartners(): Promise<any[]> { return []; }
+  async getPendingDeliveryPartners(): Promise<any[]> { return []; }
+  async createDeliveryPartner(): Promise<any> { return undefined; }
+  async updateDeliveryPartner(): Promise<any> { return undefined; }
+  async approveDeliveryPartner(): Promise<any> { return undefined; }
+  async rejectDeliveryPartner(): Promise<any> { return undefined; }
+  async getDelivery(): Promise<any> { return undefined; }
+  async getDeliveriesByPartnerId(): Promise<any[]> { return []; }
+  async getDeliveriesByOrderId(): Promise<any[]> { return []; }
+  async getPendingDeliveries(): Promise<any[]> { return []; }
+  async getActiveDeliveries(): Promise<any[]> { return []; }
+  async createDelivery(): Promise<any> { return undefined; }
+  async updateDeliveryStatus(): Promise<any> { return undefined; }
+  async assignDeliveryToPartner(): Promise<any> { return undefined; }
+  async getActiveDeliveriesForStore(): Promise<any[]> { return []; }
+  async getDeliveryTrackingData(): Promise<any> { return {}; }
+  async updateDeliveryLocation(): Promise<void> {}
+  async createDeliveryZone(): Promise<any> { return undefined; }
+  async getDeliveryZones(): Promise<any[]> { return []; }
+  async getAllDeliveryZones(): Promise<any[]> { return []; }
+  async updateDeliveryZone(): Promise<any> { return undefined; }
+  async deleteDeliveryZone(): Promise<void> {}
+  async calculateDeliveryFee(): Promise<any> { return { fee: 0, zone: null }; }
+  async saveDeviceToken(): Promise<boolean> { return false; }
+  async removeDeviceToken(): Promise<boolean> { return false; }
+  async getDeviceTokensByUserId(): Promise<string[]> { return []; }
+  async getDeviceTokensByUserIds(): Promise<string[]> { return []; }
+  async getDeviceTokensByRole(): Promise<string[]> { return []; }
+  async getDeviceTokensByUser(): Promise<any[]> { return []; }
+  async createDeviceToken(): Promise<any> { return undefined; }
+  async getAdminProfile(): Promise<any> { return undefined; }
+  async updateAdminProfile(): Promise<any> { return undefined; }
+  async verifyAdminPassword(): Promise<boolean> { return false; }
+  async changeAdminPassword(): Promise<boolean> { return false; }
+  async updateOrderStatus(): Promise<any> { return undefined; }
+  async clearCart(): Promise<boolean> { return false; }
+  async searchProducts(): Promise<Product[]> { return this.products; }
+  async getProductsByCategory(): Promise<Product[]> { return this.products; }
 }

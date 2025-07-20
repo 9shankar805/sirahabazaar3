@@ -294,6 +294,7 @@ export interface IStorage {
 
   // Admin authentication methods
   authenticateAdmin(email: string, password: string): Promise<AdminUser | null>;
+  createDefaultAdmin(): Promise<AdminUser | null>;
   
   // Device token management for Firebase FCM
   saveDeviceToken(userId: number, token: string, deviceType: string): Promise<boolean>;
@@ -2627,7 +2628,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createDefaultAdmin(): Promise<void> {
+  async createDefaultAdmin(): Promise<AdminUser | null> {
     try {
       // Check if default admin already exists in adminUsers table
       const existingAdmin = await db.select()
@@ -2637,18 +2638,18 @@ export class DatabaseStorage implements IStorage {
 
       if (existingAdmin.length === 0) {
         // Create default admin in adminUsers table
-        await db.insert(adminUsers).values({
+        const [newAdmin] = await db.insert(adminUsers).values({
           email: 'admin@sirahbazaar.com',
           password: 'admin123', // In production, this should be hashed
           fullName: 'System Administrator',
           role: 'super_admin',
-          isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
+          isActive: true
+        }).returning();
         console.log('✅ Default admin account created: admin@sirahbazaar.com / admin123');
+        return newAdmin;
       } else {
         console.log('✅ Default admin account already exists');
+        return existingAdmin[0];
       }
 
       // Also ensure the old admins table has the admin if it exists
@@ -2674,6 +2675,7 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (error) {
       console.error('Error creating default admin:', error);
+      return null;
     }
   }
 
