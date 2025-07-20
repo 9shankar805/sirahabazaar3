@@ -66,9 +66,13 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className="product-card overflow-hidden">
         <div className="relative">
           <img
-            src={product.images?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300"}
+            src={product.imageUrl || product.images?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300"}
             alt={product.name}
             className="w-full h-24 sm:h-32 md:h-40 object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300";
+            }}
           />
           {discount > 0 && (
             <Badge className="absolute top-2 left-2 bg-red-500 text-white">

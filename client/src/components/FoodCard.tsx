@@ -47,7 +47,7 @@ export default function FoodCard({ food }: FoodCardProps) {
       <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group">
         <div className="relative h-48">
           <img
-            src={(food.images && food.images[0]) || "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300"}
+            src={food.imageUrl || (food.images && food.images[0]) || "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300"}
             alt={food.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
