@@ -73,6 +73,9 @@ import SpecialOffers from "@/pages/SpecialOffers";
 import NotificationTest from "@/pages/NotificationTest";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import PWATest from "@/pages/PWATest";
+import FileHandler from "@/pages/FileHandler";
+import ProtocolHandler from "@/pages/ProtocolHandler";
+import ShareTarget from "@/pages/ShareTarget";
 
 function AppRouter() {
   const { mode } = useAppMode();
@@ -114,6 +117,11 @@ function AppRouter() {
         <Route path="/special-offers" component={SpecialOffers} />
         <Route path="/food-offers" component={SpecialOffers} />
         <Route path="/notification-test" component={NotificationTest} />
+
+        {/* PWA Advanced Features */}
+        <Route path="/file-handler" component={FileHandler} />
+        <Route path="/protocol-handler" component={ProtocolHandler} />
+        <Route path="/share-target" component={ShareTarget} />
 
         {/* Seller Hub Routes */}
         <Route path="/seller/dashboard" component={SellerDashboard} />
