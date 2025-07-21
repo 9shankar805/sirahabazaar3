@@ -323,19 +323,15 @@ export default function PWAFeaturesShowcase() {
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                 <span className="font-medium">Total PWA Features</span>
-                <Badge className="bg-green-100 text-green-800">8 Active</Badge>
+                <Badge className="bg-green-600">{features.length}</Badge>
               </div>
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <span className="font-medium">Manifest Configuration</span>
-                <Badge className="bg-blue-100 text-blue-800">Complete</Badge>
+                <span className="font-medium">Active Features</span>
+                <Badge className="bg-blue-600">{features.filter(f => f.status === 'active').length}</Badge>
               </div>
               <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                <span className="font-medium">Service Worker</span>
-                <Badge className="bg-purple-100 text-purple-800">Active</Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                <span className="font-medium">Advanced Features</span>
-                <Badge className="bg-orange-100 text-orange-800">All Implemented</Badge>
+                <span className="font-medium">Android PWA Ready</span>
+                <Badge className="bg-purple-600">✓ Yes</Badge>
               </div>
             </div>
           </CardContent>

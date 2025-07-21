@@ -64,14 +64,16 @@
     {
       "src": "/screenshot-wide.png",
       "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide"
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "Siraha Bazaar Desktop View"
     },
     {
       "src": "/screenshot-narrow.png",
       "sizes": "640x1136",
-      "type": "image/png",
-      "form_factor": "narrow"
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "Siraha Bazaar Mobile View"
     }
   ],
   "shortcuts": [
@@ -160,8 +162,9 @@
       "type": "application/json",
       "screenshots": [
         {
-          "src": "/widget-screenshot.png",
+          "src": "/widget-screenshot.svg",
           "sizes": "256x256",
+          "type": "image/svg+xml",
           "label": "Quick Orders Widget"
         }
       ],

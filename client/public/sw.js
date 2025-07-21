@@ -1,11 +1,15 @@
 const CACHE_NAME = 'siraha-bazaar-v1.0.0';
 const urlsToCache = [
   '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
+  '/manifest.json',
   '/icon-192x192.png',
   '/icon-512x512.png',
-  '/manifest.json'
+  '/assets/icon1.png',
+  '/assets/icon2.png',
+  '/screenshot-wide.png',
+  '/screenshot-narrow.png',
+  '/widget-screenshot.svg',
+  '/adaptive-card.json'
 ];
 
 // Install event - cache resources
@@ -153,5 +157,63 @@ self.addEventListener('sync', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+});
+
+// File handling event
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'FILE_HANDLER') {
+    const files = event.data.files;
+    console.log('Files received via File Handler API:', files);
+    
+    // Notify main thread about received files
+    event.ports[0].postMessage({
+      type: 'FILES_RECEIVED',
+      files: files.map(file => ({
+        name: file.name,
+        type: file.type,
+        size: file.size
+      }))
+    });
+  }
+});
+
+// Share target handling
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SHARE_TARGET') {
+    const shareData = event.data.shareData;
+    console.log('Share data received:', shareData);
+    
+    // Process share data and redirect to appropriate page
+    clients.openWindow(`/share-target?title=${encodeURIComponent(shareData.title || '')}&text=${encodeURIComponent(shareData.text || '')}&url=${encodeURIComponent(shareData.url || '')}`);
+  }
+});
+
+// Widget update event
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'UPDATE_WIDGET') {
+    const widgetData = event.data.widgetData;
+    console.log('Widget update received:', widgetData);
+    
+    // Update widget data cache
+    caches.open('widget-cache').then(cache => {
+      cache.put('/api/widget-data/orders', new Response(JSON.stringify(widgetData)));
+    });
+  }
+});
+
+// Protocol handling
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'PROTOCOL_HANDLER') {
+    const protocol = event.data.protocol;
+    const url = event.data.url;
+    console.log('Protocol handled:', protocol, url);
+    
+    // Route to appropriate handler page
+    if (protocol === 'web+siraha') {
+      clients.openWindow(`/protocol-handler?url=${encodeURIComponent(url)}`);
+    } else if (protocol === 'mailto') {
+      clients.openWindow(`/contact?email=${encodeURIComponent(url.replace('mailto:', ''))}`);
+    }
   }
 });
