@@ -82,35 +82,35 @@ class SoundManager {
 
   private preloadSounds() {
     const soundFiles = {
-      // Cart actions - cart-add.mp3 exists, others use fallback
+      // Cart actions - all using MP3 files now
       'cart-add': this.createAudioElement('/sounds/cart-add.mp3', () => this.createBeepSound(800, 100)),
-      'cart-remove': this.createBeepSound(400, 150), // Direct fallback since no MP3
-      'cart-clear': this.createBeepSound(300, 200), // Direct fallback since no MP3
+      'cart-remove': this.createAudioElement('/sounds/cart-remove.mp3', () => this.createBeepSound(400, 150)),
+      'cart-clear': this.createAudioElement('/sounds/cart-clear.mp3', () => this.createBeepSound(300, 200)),
       
-      // Order actions - using direct fallback sounds for now
-      'order-placed': this.createSuccessSound(),
+      // Order actions - using MP3 files with fallbacks
+      'order-placed': this.createAudioElement('/sounds/order-placed.mp3', () => this.createSuccessSound()),
       'order-confirmed': this.createBeepSound(600, 100, 2),
-      'order-ready': this.createNotificationSound(),
+      'order-ready': this.createAudioElement('/sounds/notification.mp3', () => this.createNotificationSound()),
       
-      // Notifications - using direct fallback sounds
-      'notification': this.createNotificationSound(),
+      // Notifications - using MP3 files with fallbacks
+      'notification': this.createAudioElement('/sounds/notification.mp3', () => this.createNotificationSound()),
       'message': this.createBeepSound(700, 80),
       'alert': this.createAlertSound(),
-      'success': this.createSuccessSound(),
-      'error': this.createErrorSound(),
+      'success': this.createAudioElement('/sounds/success.mp3', () => this.createSuccessSound()),
+      'error': this.createAudioElement('/sounds/error.mp3', () => this.createErrorSound()),
       
-      // UI interactions - using direct fallback sounds
-      'button-click': this.createBeepSound(500, 50),
+      // UI interactions - using MP3 files with fallbacks
+      'button-click': this.createAudioElement('/sounds/button-click.mp3', () => this.createBeepSound(500, 50)),
       'toggle': this.createBeepSound(600, 40),
       'tab-switch': this.createBeepSound(450, 60),
       'modal-open': this.createBeepSound(650, 80),
       'modal-close': this.createBeepSound(350, 80),
       
-      // E-commerce specific - using direct fallback sounds
-      'product-like': this.createBeepSound(750, 70),
-      'review-submit': this.createSuccessSound(),
+      // E-commerce specific - using MP3 files with fallbacks
+      'product-like': this.createAudioElement('/sounds/product-like.mp3', () => this.createBeepSound(750, 70)),
+      'review-submit': this.createAudioElement('/sounds/success.mp3', () => this.createSuccessSound()),
       'payment-success': this.createPaymentSuccessSound(),
-      'delivery-update': this.createNotificationSound(),
+      'delivery-update': this.createAudioElement('/sounds/notification.mp3', () => this.createNotificationSound()),
     };
 
     this.sounds = soundFiles;
@@ -157,9 +157,10 @@ class SoundManager {
   private createBeepSound(frequency: number, duration: number, count: number = 1): HTMLAudioElement {
     const audio = new Audio();
     
-    // Create a simple beep using Web Audio API data URL
+    // Create a simple beep using Web Audio API data URL - keep it short for compatibility
     const sampleRate = 8000;
-    const samples = Math.floor(sampleRate * duration / 1000);
+    const maxDuration = Math.min(duration, 200); // Limit duration to 200ms max
+    const samples = Math.floor(sampleRate * maxDuration / 1000);
     const buffer = new ArrayBuffer(44 + samples * 2);
     const view = new DataView(buffer);
     
@@ -184,9 +185,12 @@ class SoundManager {
     writeString(36, 'data');
     view.setUint32(40, samples * 2, true);
     
-    // Generate beep samples
+    // Generate beep samples with fade to avoid clicks
     for (let i = 0; i < samples; i++) {
-      const sample = Math.sin(2 * Math.PI * frequency * i / sampleRate) * 0.3;
+      const fadeIn = Math.min(1, i / (samples * 0.1));
+      const fadeOut = Math.min(1, (samples - i) / (samples * 0.1));
+      const envelope = fadeIn * fadeOut;
+      const sample = Math.sin(2 * Math.PI * frequency * i / sampleRate) * 0.3 * envelope;
       view.setInt16(44 + i * 2, sample * 32767, true);
     }
     
