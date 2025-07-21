@@ -71,6 +71,7 @@ import NotificationBanner from "@/components/NotificationBanner";
 import FlashSales from "@/pages/FlashSales";
 import SpecialOffers from "@/pages/SpecialOffers";
 import NotificationTest from "@/pages/NotificationTest";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 function AppRouter() {
   const { mode } = useAppMode();
@@ -186,6 +187,7 @@ function App() {
                       </ErrorBoundary>
                     </div>
                     <Toaster />
+                    <PWAInstallPrompt />
                   </ErrorBoundary>
                 </TooltipProvider>
               </AppModeProvider>

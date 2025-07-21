@@ -3,6 +3,7 @@ import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./index.css";
 import "./utils/androidFCMHandler";
+import { PWAService } from "./utils/pwa";
 
 // Handle unhandled promise rejections at the global level
 window.addEventListener('unhandledrejection', (event) => {
@@ -33,6 +34,13 @@ try {
   );
   
   console.log("React app mounted successfully");
+  
+  // Initialize PWA features
+  PWAService.initialize().then(() => {
+    console.log("PWA features initialized");
+  }).catch((error) => {
+    console.error("PWA initialization failed:", error);
+  });
 } catch (error: any) {
   console.error("Failed to mount React app:", error);
   const errorMessage = error?.message || String(error);
