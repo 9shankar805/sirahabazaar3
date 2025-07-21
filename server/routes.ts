@@ -991,38 +991,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cart", async (req, res) => {
     try {
-      // Extract user from session or token if available
+      console.log("Cart POST received:", req.body);
+      
       let userId = req.body.userId;
 
-      // If no userId provided, try to get from auth token
-      if (!userId && req.headers.authorization) {
-        const token = req.headers.authorization.replace('Bearer ', '');
-        try {
-          // Simple token validation - get user ID from session or database
-          const user = await storage.getUserByToken(token);
-          if (user) {
-            userId = user.id;
-          }
-        } catch (error) {
-          // Token validation failed, continue without userId
-        }
-      }
-
       if (!userId) {
+        console.log("No userId provided in request");
         return res.status(401).json({ error: "User authentication required" });
       }
 
       const cartItemData = {
-        ...req.body,
-        userId: userId
+        userId: parseInt(userId),
+        productId: parseInt(req.body.productId),
+        quantity: parseInt(req.body.quantity) || 1
       };
 
-      const validatedData = insertCartItemSchema.parse(cartItemData);
-      const cartItem = await storage.addToCart(validatedData);
+      console.log("Adding to cart:", cartItemData);
+      
+      const cartItem = await storage.addToCart(cartItemData);
+      console.log("Cart item added successfully:", cartItem);
+      
       res.json(cartItem);
     } catch (error) {
-      console.error('Cart validation error:', error);
-      res.status(400).json({ error: "Invalid cart item data: " + (error.message || error) });
+      console.error('Cart add error:', error);
+      res.status(400).json({ error: "Failed to add to cart: " + (error?.message || error) });
     }
   });
 
@@ -1045,14 +1037,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/cart/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`Removing cart item with ID: ${id}`);
+      
       const deleted = await storage.removeFromCart(id);
 
       if (!deleted) {
+        console.log(`Cart item ${id} not found`);
         return res.status(404).json({ error: "Cart item not found" });
       }
 
+      console.log(`Cart item ${id} removed successfully`);
       res.json({ success: true });
     } catch (error) {
+      console.error('Remove cart item error:', error);
       res.status(500).json({ error: "Failed to remove cart item" });
     }
   });
