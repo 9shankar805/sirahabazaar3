@@ -169,6 +169,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeFromCart = async (cartItemId: number) => {
     try {
+      // Check if item exists in current cart before attempting removal
+      const existingItem = cartItems.find(item => item.id === cartItemId);
+      if (!existingItem) {
+        console.log(`Cart item ${cartItemId} not found in current cart, skipping removal`);
+        await refreshCart();
+        return;
+      }
+
       console.log(`Attempting to remove cart item ID: ${cartItemId}`);
       
       const response = await fetch(`/api/cart/${cartItemId}`, {
@@ -177,15 +185,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error(`Failed to remove cart item ${cartItemId}:`, errorData);
         
         if (response.status === 404) {
-          // Item already removed, just refresh cart
+          // Item already removed, just refresh cart silently
           console.log("Item already removed, refreshing cart");
           await refreshCart();
           return;
         }
         
+        console.error(`Failed to remove cart item ${cartItemId}:`, errorData);
         throw new Error(errorData.error || "Failed to remove item from cart");
       }
 
@@ -196,10 +204,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       
       await refreshCart();
     } catch (error) {
-      console.error("Remove from cart error:", error);
+      // Only log if it's not a 404 (already handled above)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (!errorMessage.includes("already removed")) {
+        console.error("Remove from cart error:", error);
+      }
       // Still refresh cart to sync state
       await refreshCart();
-      throw error;
+      // Don't throw error for 404s to prevent UI error states
+      if (!errorMessage.includes("Cart item not found")) {
+        throw error;
+      }
     }
   };
 
