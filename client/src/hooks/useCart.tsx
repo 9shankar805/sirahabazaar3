@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { useAuth } from "./useAuth";
+import { playSound } from "@/lib/soundEffects";
 import type { CartItem, Product } from "@shared/schema";
 
 interface CartItemWithProduct extends CartItem {
@@ -112,6 +113,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // Mark that user has made manual selections to prevent auto-selecting all
       localStorage.setItem('cartHasSelections', 'true');
       
+      // Play sound effect for adding to cart
+      playSound.cartAdd();
+      
       // Fetch product details for guest cart
       const productResponse = await fetch(`/api/products/${productId}`);
       if (productResponse.ok) {
@@ -142,6 +146,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     // Mark that user has made manual selections to prevent auto-selecting all
     localStorage.setItem('cartHasSelections', 'true');
+    
+    // Play sound effect for adding to cart
+    playSound.cartAdd();
+    
     await refreshCart();
   };
 
@@ -168,6 +176,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       throw new Error("Failed to remove item from cart");
     }
 
+    // Play sound effect for removing from cart
+    playSound.cartRemove();
+    
     await refreshCart();
   };
 
@@ -182,6 +193,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       throw new Error("Failed to clear cart");
     }
 
+    // Play sound effect for clearing cart
+    playSound.cartClear();
+    
     await refreshCart();
   };
 
@@ -192,6 +206,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const selectedItemIds = Array.from(selectedItems);
       const filteredCart = guestCart.filter((item: any) => !selectedItemIds.includes(item.id));
       localStorage.setItem('guestCart', JSON.stringify(filteredCart));
+      
+      // Play sound effect for clearing selected items
+      playSound.cartClear();
       
       // Clear selection and refresh cart
       setSelectedItems(new Set());

@@ -73,6 +73,7 @@ import SpecialOffers from "@/pages/SpecialOffers";
 import NotificationTest from "@/pages/NotificationTest";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import PWATest from "@/pages/PWATest";
+import SoundSettingsPage from "@/pages/SoundSettingsPage";
 import FileHandler from "@/pages/FileHandler";
 import ProtocolHandler from "@/pages/ProtocolHandler";
 import ShareTarget from "@/pages/ShareTarget";

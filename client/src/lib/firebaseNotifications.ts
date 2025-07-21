@@ -102,6 +102,14 @@ export const setupForegroundMessageListener = (callback?: (payload: any) => void
   onMessage(messaging, (payload) => {
     console.log('Foreground message received:', payload);
     
+    // Play notification sound effect
+    try {
+      const { playSound } = require('../lib/soundEffects');
+      playSound.notification();
+    } catch (error) {
+      console.log('Sound effect not available:', error);
+    }
+    
     // Show notification manually for foreground messages
     if (Notification.permission === 'granted') {
       const notification = new Notification(
@@ -110,7 +118,6 @@ export const setupForegroundMessageListener = (callback?: (payload: any) => void
           body: payload.notification?.body,
           icon: '/favicon.ico',
           badge: '/favicon.ico',
-          image: payload.notification?.image,
           data: payload.data,
           tag: payload.data?.type || 'general',
           requireInteraction: false,
