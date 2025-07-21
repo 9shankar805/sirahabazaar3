@@ -89,28 +89,28 @@ class SoundManager {
       
       // Order actions - using MP3 files with fallbacks
       'order-placed': this.createAudioElement('/sounds/order-placed.mp3', () => this.createSuccessSound()),
-      'order-confirmed': this.createBeepSound(600, 100, 2),
+      'order-confirmed': this.createAudioElement('/sounds/order-confirmed.mp3', () => this.createBeepSound(600, 100, 2)),
       'order-ready': this.createAudioElement('/sounds/notification.mp3', () => this.createNotificationSound()),
       
       // Notifications - using MP3 files with fallbacks
       'notification': this.createAudioElement('/sounds/notification.mp3', () => this.createNotificationSound()),
-      'message': this.createBeepSound(700, 80),
-      'alert': this.createAlertSound(),
+      'message': this.createAudioElement('/sounds/message.mp3', () => this.createBeepSound(700, 80)),
+      'alert': this.createAudioElement('/sounds/alert.mp3', () => this.createAlertSound()),
       'success': this.createAudioElement('/sounds/success.mp3', () => this.createSuccessSound()),
       'error': this.createAudioElement('/sounds/error.mp3', () => this.createErrorSound()),
       
       // UI interactions - using MP3 files with fallbacks
       'button-click': this.createAudioElement('/sounds/button-click.mp3', () => this.createBeepSound(500, 50)),
-      'toggle': this.createBeepSound(600, 40),
-      'tab-switch': this.createBeepSound(450, 60),
-      'modal-open': this.createBeepSound(650, 80),
-      'modal-close': this.createBeepSound(350, 80),
+      'toggle': this.createAudioElement('/sounds/toggle.mp3', () => this.createBeepSound(600, 40)),
+      'tab-switch': this.createAudioElement('/sounds/tab-switch.mp3', () => this.createBeepSound(450, 60)),
+      'modal-open': this.createAudioElement('/sounds/modal-open.mp3', () => this.createBeepSound(650, 80)),
+      'modal-close': this.createAudioElement('/sounds/modal-close.mp3', () => this.createBeepSound(350, 80)),
       
       // E-commerce specific - using MP3 files with fallbacks
       'product-like': this.createAudioElement('/sounds/product-like.mp3', () => this.createBeepSound(750, 70)),
-      'review-submit': this.createAudioElement('/sounds/success.mp3', () => this.createSuccessSound()),
-      'payment-success': this.createPaymentSuccessSound(),
-      'delivery-update': this.createAudioElement('/sounds/notification.mp3', () => this.createNotificationSound()),
+      'review-submit': this.createAudioElement('/sounds/review-submit.mp3', () => this.createSuccessSound()),
+      'payment-success': this.createAudioElement('/sounds/payment-success.mp3', () => this.createPaymentSuccessSound()),
+      'delivery-update': this.createAudioElement('/sounds/delivery-update.mp3', () => this.createNotificationSound()),
     };
 
     this.sounds = soundFiles;
