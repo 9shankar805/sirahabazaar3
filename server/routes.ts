@@ -82,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.setHeader('Content-Type', 'application/json');
         return originalEnd.call(this, JSON.stringify({ 
           error: 'API route served HTML instead of JSON' 
-        }));
+        }), 'utf-8');
       }
       return originalEnd.call(this, chunk, encoding);
     };
@@ -1075,7 +1075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(cartItem);
     } catch (error) {
       console.error('Cart add error:', error);
-      res.status(400).json({ error: "Failed to add to cart: " + (error?.message || error) });
+      res.status(400).json({ error: "Failed to add to cart: " + (error instanceof Error ? error.message : 'Unknown error') });
     }
   });
 
@@ -1172,14 +1172,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/wishlist/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`Attempting to remove wishlist item with ID: ${id}`);
+      
       const deleted = await storage.removeFromWishlist(id);
+      console.log(`Delete result: ${deleted}`);
 
       if (!deleted) {
+        console.log(`Wishlist item ${id} not found in database`);
         return res.status(404).json({ error: "Wishlist item not found" });
       }
 
+      console.log(`Successfully removed wishlist item ${id}`);
       res.json({ success: true });
     } catch (error) {
+      console.error('Wishlist delete error:', error);
       res.status(500).json({ error: "Failed to remove wishlist item" });
     }
   });

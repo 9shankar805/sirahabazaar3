@@ -70,10 +70,13 @@ self.addEventListener('fetch', (event) => {
           // Clone the response because it's a stream
           const responseToCache = response.clone();
           
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
+          // Only cache GET requests, not POST/PUT/DELETE
+          if (event.request.method === 'GET') {
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+          }
           
           return response;
         });
