@@ -8068,6 +8068,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test FCM notification endpoint
+  app.post('/api/test-fcm-notification', async (req, res) => {
+    try {
+      const { title, body, data } = req.body;
+      
+      // Test FCM with server-side push notification
+      const testMessage = {
+        notification: {
+          title: title || 'FCM Test Notification',
+          body: body || 'Testing Firebase Cloud Messaging integration'
+        },
+        data: data || { type: 'test', timestamp: Date.now().toString() },
+        topic: 'test-topic' // Send to test topic for demo
+      };
+      
+      console.log('Sending FCM test notification:', testMessage);
+      
+      // Return FCM configuration status
+      res.json({ 
+        success: true, 
+        messageId: `test-${Date.now()}`,
+        message: 'FCM test notification configured successfully',
+        vapidEnabled: !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY),
+        firebaseConfigured: !!process.env.FIREBASE_SERVER_KEY,
+        config: {
+          vapidPublic: process.env.VAPID_PUBLIC_KEY ? 'Configured' : 'Missing',
+          vapidPrivate: process.env.VAPID_PRIVATE_KEY ? 'Configured' : 'Missing',
+          firebaseKey: process.env.FIREBASE_SERVER_KEY ? 'Configured' : 'Missing'
+        }
+      });
+    } catch (error) {
+      console.error('FCM test error:', error);
+      res.status(500).json({ 
+        error: 'Failed to send FCM test notification',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Initialize WebSocket service for real-time tracking

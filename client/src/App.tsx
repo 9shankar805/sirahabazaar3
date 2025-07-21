@@ -77,6 +77,7 @@ import FileHandler from "@/pages/FileHandler";
 import ProtocolHandler from "@/pages/ProtocolHandler";
 import ShareTarget from "@/pages/ShareTarget";
 import PWAFeaturesShowcase from "@/pages/PWAFeaturesShowcase";
+import FCMTest from "@/pages/FCMTest";
 
 function AppRouter() {
   const { mode } = useAppMode();
@@ -121,6 +122,7 @@ function AppRouter() {
 
         {/* PWA Advanced Features */}
         <Route path="/pwa-features" component={PWAFeaturesShowcase} />
+        <Route path="/fcm-test" component={FCMTest} />
         <Route path="/file-handler" component={FileHandler} />
         <Route path="/protocol-handler" component={ProtocolHandler} />
         <Route path="/share-target" component={ShareTarget} />
