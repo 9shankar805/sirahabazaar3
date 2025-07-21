@@ -72,6 +72,7 @@ import FlashSales from "@/pages/FlashSales";
 import SpecialOffers from "@/pages/SpecialOffers";
 import NotificationTest from "@/pages/NotificationTest";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import PWATest from "@/pages/PWATest";
 
 function AppRouter() {
   const { mode } = useAppMode();
@@ -141,6 +142,9 @@ function AppRouter() {
 
         {/* Real-time Tracking Demo */}
         <Route path="/tracking-demo" component={TrackingDemo} />
+
+        {/* PWA Testing Page */}
+        <Route path="/pwa-test" component={PWATest} />
 
         <Route component={NotFound} />
       </Switch>

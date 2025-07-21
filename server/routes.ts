@@ -7796,6 +7796,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // VAPID public key endpoint for web push notifications
+  app.get('/api/notifications/vapid-public-key', (req, res) => {
+    const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+    
+    if (!vapidPublicKey) {
+      return res.status(404).json({ 
+        error: 'VAPID public key not configured' 
+      });
+    }
+    
+    res.json({ publicKey: vapidPublicKey });
+  });
+
+  // Push subscription endpoint
+  app.post('/api/push-subscription', async (req, res) => {
+    try {
+      const { userId, subscription } = req.body;
+      
+      if (!userId || !subscription) {
+        return res.status(400).json({ 
+          error: 'userId and subscription are required' 
+        });
+      }
+      
+      console.log('Push subscription received for user:', userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error storing push subscription:', error);
+      res.status(500).json({ error: 'Failed to store subscription' });
+    }
+  });
+
+  // PWA installation analytics
+  app.post('/api/pwa/install-analytics', (req, res) => {
+    try {
+      const { event, userAgent, timestamp } = req.body;
+      
+      console.log('PWA Install Event:', {
+        event,
+        userAgent,
+        timestamp: new Date(timestamp)
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error logging PWA analytics:', error);
+      res.status(500).json({ error: 'Failed to log analytics' });
+    }
+  });
+
   // Device token registration endpoint for Android app
   app.post("/api/device-token", async (req, res) => {
     try {
