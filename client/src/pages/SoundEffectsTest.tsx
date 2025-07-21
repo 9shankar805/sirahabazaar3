@@ -113,14 +113,23 @@ export default function SoundEffectsTest() {
   // Test cart-add.mp3 specifically
   const testCartAddMp3 = () => {
     console.log('🎵 Testing cart-add.mp3 directly');
+    console.log('🔊 Current volume:', soundEffects.volume);
+    console.log('📱 Sound enabled:', soundEffects.isEnabled);
+    
     const audio = new Audio('/sounds/cart-add.mp3');
-    audio.volume = soundEffects.volume;
+    audio.volume = Math.max(0.1, soundEffects.volume); // Ensure minimum audible volume
+    
+    // Add event listeners for debugging
+    audio.addEventListener('loadstart', () => console.log('🔄 Loading cart-add.mp3...'));
+    audio.addEventListener('canplay', () => console.log('✅ cart-add.mp3 can play'));
+    audio.addEventListener('error', (e) => console.log('❌ cart-add.mp3 error:', e));
+    
     audio.play()
       .then(() => {
-        console.log('✅ cart-add.mp3 played successfully');
+        console.log('✅ cart-add.mp3 played successfully at volume:', audio.volume);
         toast({
-          title: 'Direct MP3 Test',
-          description: 'cart-add.mp3 played directly',
+          title: 'Direct MP3 Test Success',
+          description: `cart-add.mp3 played at ${Math.round(audio.volume * 100)}% volume`,
           duration: 2000,
         });
       })
@@ -133,6 +142,42 @@ export default function SoundEffectsTest() {
           duration: 3000,
         });
       });
+  };
+
+  // Test fallback beep sound
+  const testFallbackBeep = () => {
+    console.log('🎵 Testing fallback beep sound');
+    try {
+      // Create a simple beep sound manually
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800; // 800Hz beep
+      gainNode.gain.value = soundEffects.volume * 0.3;
+      
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.1); // 100ms beep
+      
+      console.log('✅ Fallback beep created successfully');
+      toast({
+        title: 'Fallback Beep Test',
+        description: 'Web Audio API beep played',
+        duration: 2000,
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.log('❌ Fallback beep failed:', error);
+      toast({
+        title: 'Fallback Beep Failed',
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 3000,
+      });
+    }
   };
 
   return (
@@ -205,12 +250,20 @@ export default function SoundEffectsTest() {
           <div className="pt-4 border-t space-y-3">
             <Button
               onClick={testCartAddMp3}
-              disabled={!soundEffects.isEnabled}
               className="w-full bg-green-600 hover:bg-green-700"
               size="lg"
             >
               <Play className="h-5 w-5 mr-2" />
               Test cart-add.mp3 Directly
+            </Button>
+
+            <Button
+              onClick={testFallbackBeep}
+              className="w-full bg-orange-600 hover:bg-orange-700"
+              size="lg"
+            >
+              <Play className="h-5 w-5 mr-2" />
+              Test Web Audio Beep
             </Button>
             
             <Button
