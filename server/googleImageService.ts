@@ -123,10 +123,10 @@ export class GoogleImageService {
 
       const data = await response.json() as GoogleImageSearchResponse;
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching images from Google:', error);
       // Return null for quota exceeded to trigger fallback
-      if (error.message && error.message.includes('quota exceeded')) {
+      if (error?.message && error.message.includes('quota exceeded')) {
         return null;
       }
       // Return null for other errors too to trigger fallback

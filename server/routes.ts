@@ -7313,9 +7313,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const freeImages = await freeImageService.searchImages(query, Number(per_page));
       
       const transformedResult = {
-        total: freeImages.length,
+        total: freeImages.results.length,
         total_pages: 1,
-        results: freeImages
+        results: freeImages.results
       };
 
       res.json(transformedResult);
@@ -7352,28 +7352,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If Google API fails, fallback to free image service
       if (!images || images.length === 0) {
         console.log("Google API failed for category images, using free image service as fallback");
-        images = await freeImageService.getProductImages(category, Number(count));
+        const freeImages = await freeImageService.getProductImages(category, Number(count));
+        
+        // Transform free images to match response format
+        const transformedImages = freeImages.map(item => ({
+          id: item.id,
+          urls: item.urls,
+          alt_description: item.alt_description,
+          description: item.description,
+          user: item.user,
+          links: item.links
+        }));
+        
+        return res.json({
+          images: transformedImages,
+          category,
+          total: transformedImages.length
+        });
       }
       
-      // Transform response to match Unsplash format (works for both services)
+      // Transform Google images to match Unsplash format
       const transformedImages = images.map(item => ({
         id: item.id || item.link,
         urls: {
-          raw: item.link || item.urls?.raw,
-          full: item.link || item.urls?.full,
-          regular: item.link || item.urls?.regular,
-          small: item.image?.thumbnailLink || item.urls?.small,
-          thumb: item.image?.thumbnailLink || item.urls?.thumb
+          raw: item.link,
+          full: item.link,
+          regular: item.link,
+          small: item.image?.thumbnailLink || item.link,
+          thumb: item.image?.thumbnailLink || item.link
         },
-        alt_description: item.title || item.alt_description,
-        description: item.snippet || item.description,
+        alt_description: item.title || '',
+        description: item.snippet || '',
         user: {
-          name: item.displayLink || item.user?.name,
-          username: item.displayLink || item.user?.username
+          name: item.displayLink || '',
+          username: item.displayLink || ''
         },
         links: {
-          download: item.link || item.links?.download,
-          html: item.image?.contextLink || item.links?.html
+          download: item.link,
+          html: item.image?.contextLink || item.link
         }
       }));
       
@@ -7388,6 +7404,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Always fallback to free images on any error
       try {
         console.log("Using free image service as fallback due to error");
+        const { category } = req.params;
+        const { count = 6 } = req.query;
         const freeImages = await freeImageService.getProductImages(String(category), Number(count));
         
         const transformedImages = freeImages.map(item => ({
@@ -7513,7 +7531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { query = '', page = 1, per_page = 20 } = req.query;
       
-      if (!query || query.trim() === '') {
+      if (!query || String(query).trim() === '') {
         return res.json({ total: 0, total_pages: 0, results: [] });
       }
 
@@ -7530,9 +7548,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const freeImages = await freeImageService.searchImages(String(query), Number(per_page));
         
         const transformedResult = {
-          total: freeImages.length,
+          total: freeImages.results.length,
           total_pages: 1,
-          results: freeImages
+          results: freeImages.results
         };
 
         return res.json(transformedResult);
