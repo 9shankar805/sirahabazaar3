@@ -964,13 +964,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get product details for each cart item
       const cartWithProducts = await Promise.all(
         cartItems.map(async (item) => {
-          const product = await storage.getProduct(item.productId);
-          return { ...item, product };
+          try {
+            const product = await storage.getProduct(item.productId);
+            if (!product) {
+              console.warn(`Product ${item.productId} not found for cart item ${item.id}`);
+              return null;
+            }
+            return { ...item, product };
+          } catch (error) {
+            console.error(`Failed to fetch product ${item.productId} for cart:`, error);
+            return null;
+          }
         })
       );
 
-      res.json(cartWithProducts);
+      // Filter out null entries (failed product fetches)
+      const validCartItems = cartWithProducts.filter(item => item !== null);
+      
+      console.log(`Cart API: Returning ${validCartItems.length} valid cart items for user ${userId}`);
+      res.json(validCartItems);
     } catch (error) {
+      console.error("Cart fetch error:", error);
       res.status(500).json({ error: "Failed to fetch cart" });
     }
   });
@@ -1063,8 +1077,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const wishlistItems = await storage.getWishlistItems(userId);
-      res.json(wishlistItems);
+      
+      // Enhanced response: if product data is missing, fetch it
+      const itemsWithProducts = await Promise.all(
+        wishlistItems.map(async (item: any) => {
+          if (!item.product && item.productId) {
+            try {
+              const product = await storage.getProduct(item.productId);
+              return { ...item, product };
+            } catch (error) {
+              console.error(`Failed to fetch product ${item.productId}:`, error);
+              return item;
+            }
+          }
+          return item;
+        })
+      );
+      
+      res.json(itemsWithProducts);
     } catch (error) {
+      console.error("Wishlist fetch error:", error);
       res.status(500).json({ error: "Failed to fetch wishlist items" });
     }
   });

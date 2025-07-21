@@ -889,9 +889,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Wishlist operations
-  async getWishlistItems(userId: number): Promise<WishlistItem[]> {
+  async getWishlistItems(userId: number): Promise<any[]> {
     try {
-      return await db.select().from(wishlistItems).where(eq(wishlistItems.userId, userId));
+      const result = await db
+        .select({
+          id: wishlistItems.id,
+          userId: wishlistItems.userId,
+          productId: wishlistItems.productId,
+          createdAt: wishlistItems.createdAt,
+          product: products
+        })
+        .from(wishlistItems)
+        .leftJoin(products, eq(wishlistItems.productId, products.id))
+        .where(eq(wishlistItems.userId, userId));
+      
+      return result;
     } catch (error) {
       console.error("Error fetching wishlist items:", error);
       return [];
