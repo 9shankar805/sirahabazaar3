@@ -76,6 +76,7 @@ import PWATest from "@/pages/PWATest";
 import FileHandler from "@/pages/FileHandler";
 import ProtocolHandler from "@/pages/ProtocolHandler";
 import ShareTarget from "@/pages/ShareTarget";
+import PWAFeaturesShowcase from "@/pages/PWAFeaturesShowcase";
 
 function AppRouter() {
   const { mode } = useAppMode();
@@ -119,6 +120,7 @@ function AppRouter() {
         <Route path="/notification-test" component={NotificationTest} />
 
         {/* PWA Advanced Features */}
+        <Route path="/pwa-features" component={PWAFeaturesShowcase} />
         <Route path="/file-handler" component={FileHandler} />
         <Route path="/protocol-handler" component={ProtocolHandler} />
         <Route path="/share-target" component={ShareTarget} />
