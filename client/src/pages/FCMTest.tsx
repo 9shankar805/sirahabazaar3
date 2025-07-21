@@ -34,13 +34,25 @@ export default function FCMTest() {
 
     if (status.serviceWorker && status.vapidSupport) {
       try {
-        const registration = await navigator.serviceWorker.getRegistration();
-        if (registration) {
-          // Get FCM token (this would require Firebase SDK initialization)
-          console.log('Service Worker registered, FCM ready');
+        // Import Firebase functions dynamically
+        const { initializeFirebaseNotifications, getFirebaseToken } = await import('../lib/firebaseNotifications');
+        
+        // Initialize Firebase
+        await initializeFirebaseNotifications();
+        console.log('Firebase initialized successfully');
+        
+        // Try to get FCM token if permission is granted
+        if (Notification.permission === 'granted') {
+          try {
+            const token = await getFirebaseToken();
+            status.token = token ? token.substring(0, 20) + '...' : null;
+            console.log('FCM token obtained successfully');
+          } catch (tokenError) {
+            console.log('FCM token not available yet:', tokenError);
+          }
         }
       } catch (error) {
-        console.error('Error checking service worker:', error);
+        console.error('Error initializing Firebase:', error);
       }
     }
 
@@ -62,10 +74,25 @@ export default function FCMTest() {
       setFcmStatus(prev => ({ ...prev, permission }));
       
       if (permission === 'granted') {
-        toast({
-          title: "Permission Granted",
-          description: "Push notifications are now enabled",
-        });
+        // Try to get FCM token now that permission is granted
+        try {
+          const { getFirebaseToken } = await import('../lib/firebaseNotifications');
+          const token = await getFirebaseToken();
+          
+          if (token) {
+            setFcmStatus(prev => ({ ...prev, token: token.substring(0, 20) + '...' }));
+            toast({
+              title: "FCM Ready",
+              description: "Push notifications enabled with VAPID token",
+            });
+          }
+        } catch (tokenError) {
+          console.error('Error getting FCM token:', tokenError);
+          toast({
+            title: "Permission Granted",
+            description: "Push notifications enabled (FCM token pending)",
+          });
+        }
       } else {
         toast({
           title: "Permission Denied",

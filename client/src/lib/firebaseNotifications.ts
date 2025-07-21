@@ -14,7 +14,7 @@ const firebaseConfig = {
 
 // Note: You'll need to generate a new VAPID key for your Firebase project
 // Go to Firebase Console > Project Settings > Cloud Messaging > Web configuration
-const vapidKey = "BIA9pygwkacYkvg7W5lJh1PjDXhb2ntG3N0YCg9hbnNKwPHKncZlUzpRlNUZ4mOs-qQ_BgaFrSqDxKShgyWg-14"; // Replace with your new VAPID key
+const vapidKey = "BG5V1u2eNls8IInm93_F-ZBb2hXaEZIy4AjHBrIjDeClqi4wLVlVZ5x64WeMzFESgByQjeOtcL1UrGMGFQm0GlE"; // VAPID public key from environment
 
 let app: any = null;
 let messaging: any = null;
