@@ -204,8 +204,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const clearCart = async () => {
-    if (!user) return;
+    if (!user) {
+      // Clear guest cart
+      localStorage.removeItem('guestCart');
+      localStorage.removeItem('cartHasSelections');
+      setCartItems([]);
+      setSelectedItems(new Set());
+      playSound.cartClear();
+      return;
+    }
 
+    console.log(`Clearing cart for user ${user.id}`);
+    
     const response = await fetch(`/api/cart/user/${user.id}`, {
       method: "DELETE",
     });
@@ -214,9 +224,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
       throw new Error("Failed to clear cart");
     }
 
+    console.log("Cart cleared successfully, refreshing frontend");
+    
+    // Force clear frontend state immediately
+    setCartItems([]);
+    setSelectedItems(new Set());
+    
     // Play sound effect for clearing cart
     playSound.cartClear();
     
+    // Also refresh to ensure sync with backend
     await refreshCart();
   };
 
