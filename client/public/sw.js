@@ -50,6 +50,12 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  // Don't cache API requests or non-GET requests
+  if (event.request.url.includes('/api/') || event.request.method !== 'GET') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -70,15 +76,24 @@ self.addEventListener('fetch', (event) => {
           // Clone the response because it's a stream
           const responseToCache = response.clone();
           
-          // Only cache GET requests, not POST/PUT/DELETE
-          if (event.request.method === 'GET') {
+          // Cache static assets only (CSS, JS, images, fonts)
+          if (event.request.method === 'GET' && 
+              (event.request.url.includes('/assets/') || 
+               event.request.url.includes('/sounds/') ||
+               event.request.url.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$/))) {
             caches.open(CACHE_NAME)
               .then((cache) => {
                 cache.put(event.request, responseToCache);
+              })
+              .catch((error) => {
+                console.log('Cache put error:', error);
               });
           }
           
           return response;
+        }).catch((error) => {
+          console.log('Fetch error:', error);
+          return new Response('Network error', { status: 408 });
         });
       })
   );

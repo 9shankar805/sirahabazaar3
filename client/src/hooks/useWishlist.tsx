@@ -70,8 +70,13 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     try {
       await apiDelete(`/api/wishlist/${wishlistItemId}`);
       await fetchWishlist();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to remove from wishlist:", error);
+      // If item not found, refresh the wishlist to sync with server state
+      if (error?.message?.includes('not found') || error?.message?.includes('404')) {
+        console.log("Item not found on server, refreshing wishlist...");
+        await fetchWishlist();
+      }
     }
   };
 
@@ -83,7 +88,13 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     const existingItem = wishlistItems.find(item => item.productId === productId);
     
     if (existingItem) {
-      await removeFromWishlist(existingItem.id);
+      try {
+        await removeFromWishlist(existingItem.id);
+      } catch (error) {
+        console.error("Error toggling wishlist item:", error);
+        // Refresh to get current state
+        await fetchWishlist();
+      }
     } else {
       await addToWishlist(productId);
     }
