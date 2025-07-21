@@ -7752,7 +7752,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Notification system health check endpoint
   app.get("/api/notification/health", async (req, res) => {
     try {
-      const admin = require("firebase-admin");
       const healthStatus = {
         timestamp: new Date().toISOString(),
         firebase: false,
@@ -7762,7 +7761,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check Firebase Admin SDK
       try {
-        if (admin.apps.length > 0) {
+        // Import firebase-admin with proper ES6 import
+        const admin = await import("firebase-admin");
+        if (admin.default && admin.default.apps && admin.default.apps.length > 0) {
           healthStatus.firebase = true;
         }
       } catch (firebaseError) {

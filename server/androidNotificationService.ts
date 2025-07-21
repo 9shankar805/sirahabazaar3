@@ -86,14 +86,14 @@ export class AndroidNotificationService {
           package_name: 'com.siraha.myweb',
         },
         android: {
-          priority: options.priority || 'high',
+          priority: options.priority === 'normal' ? 'normal' : 'high',
           ttl: options.timeToLive || 3600000, // 1 hour
           collapseKey: options.collapseKey,
           notification: {
             sound: options.sound || 'default',
             clickAction: 'android.intent.action.VIEW',
             channelId: 'siraha_bazaar',
-            priority: 'high',
+            priority: options.priority === 'normal' ? 'min' : 'high',
             defaultSound: true,
             defaultVibrateTimings: true,
             vibrateTimingsMillis: options.vibrate || [100, 200, 300, 400, 500, 400, 300, 200, 400],
@@ -139,14 +139,14 @@ export class AndroidNotificationService {
           package_name: 'com.siraha.myweb',
         },
         android: {
-          priority: options.priority || 'high',
+          priority: options.priority === 'normal' ? 'normal' : 'high',
           ttl: options.timeToLive || 3600000,
           collapseKey: options.collapseKey,
           notification: {
             sound: options.sound || 'default',
             clickAction: 'android.intent.action.VIEW',
             channelId: 'siraha_bazaar',
-            priority: 'high',
+            priority: options.priority === 'normal' ? 'min' : 'high',
             defaultSound: true,
             defaultVibrateTimings: true,
             vibrateTimingsMillis: options.vibrate || [100, 200, 300, 400, 500, 400, 300, 200, 400],
