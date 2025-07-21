@@ -168,18 +168,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const removeFromCart = async (cartItemId: number) => {
-    const response = await fetch(`/api/cart/${cartItemId}`, {
-      method: "DELETE",
-    });
+    try {
+      console.log(`Attempting to remove cart item ID: ${cartItemId}`);
+      
+      const response = await fetch(`/api/cart/${cartItemId}`, {
+        method: "DELETE",
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to remove item from cart");
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`Failed to remove cart item ${cartItemId}:`, errorData);
+        
+        if (response.status === 404) {
+          // Item already removed, just refresh cart
+          console.log("Item already removed, refreshing cart");
+          await refreshCart();
+          return;
+        }
+        
+        throw new Error(errorData.error || "Failed to remove item from cart");
+      }
+
+      console.log(`Successfully removed cart item ${cartItemId}`);
+      
+      // Play sound effect for removing from cart
+      playSound.cartRemove();
+      
+      await refreshCart();
+    } catch (error) {
+      console.error("Remove from cart error:", error);
+      // Still refresh cart to sync state
+      await refreshCart();
+      throw error;
     }
-
-    // Play sound effect for removing from cart
-    playSound.cartRemove();
-    
-    await refreshCart();
   };
 
   const clearCart = async () => {
