@@ -7772,7 +7772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check database connection
       try {
-        await storage.getUsers(); // Simple query to test database
+        await storage.getAllUsers(); // Simple query to test database
         healthStatus.database = true;
       } catch (dbError) {
         console.error("Database health check failed:", dbError);

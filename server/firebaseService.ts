@@ -257,7 +257,7 @@ export class FirebaseService {
         tokens,
       };
 
-      const response = await admin.messaging().sendMulticast(message);
+      const response = await admin.messaging().sendEachForMulticast(message);
       console.log(`Successfully sent ${response.successCount} messages`);
       console.log(`Failed to send ${response.failureCount} messages`);
 
@@ -315,7 +315,7 @@ export class FirebaseService {
 
     const payload: FirebaseNotificationPayload = {
       title: 'Order Update',
-      body: customMessage || statusMessages[status] || `Order status: ${status}`,
+      body: customMessage || statusMessages[status as keyof typeof statusMessages] || `Order status: ${status}`,
       data: {
         type: 'order_update',
         orderId: orderId.toString(),
