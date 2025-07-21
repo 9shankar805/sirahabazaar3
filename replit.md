@@ -120,6 +120,17 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### July 21, 2025 - Sound Effects System with MP3 File Support
+- ✓ **Updated sound system to use MP3 files**: Changed from Web Audio API to actual MP3 files in `client/public/sounds/`
+- ✓ **Hybrid approach**: Primary loads MP3 files (cart-add.mp3, etc.), fallback uses Web Audio API if files missing
+- ✓ **Cart-add.mp3 integrated**: Now uses the provided cart-add.mp3 file for add-to-cart actions
+- ✓ **Comprehensive sound mapping**: 20+ sound effects mapped to MP3 files with fallback generation
+- ✓ **Sound test page**: Interactive testing page at `/sound-test` with volume controls and settings
+- ✓ **Global sound management**: SoundProvider context wraps entire app for consistent sound access
+- ✓ **Settings persistence**: Sound preferences saved in localStorage with enable/disable toggle
+- ✓ **Mobile compatibility**: Sound effects work in both web and Android APK versions
+- → Sound system now supports both MP3 files and programmatic fallbacks for maximum compatibility
+
 ### July 21, 2025 - FCM Push Notifications Fully Operational
 - ✓ Successfully resolved FCM configuration and JSX syntax errors causing blank screen issues
 - ✓ Generated proper 32-byte VAPID keys using web-push library to meet FCM requirements

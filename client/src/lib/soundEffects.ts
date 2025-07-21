@@ -41,37 +41,57 @@ class SoundManager {
   private preloadSounds() {
     const soundFiles = {
       // Cart actions
-      'cart-add': this.createBeepSound(800, 100), // High beep for add to cart
-      'cart-remove': this.createBeepSound(400, 150), // Lower beep for remove
-      'cart-clear': this.createBeepSound(300, 200), // Deep beep for clear cart
+      'cart-add': this.createAudioElement('/sounds/cart-add.mp3'),
+      'cart-remove': this.createAudioElement('/sounds/cart-remove.mp3', () => this.createBeepSound(400, 150)),
+      'cart-clear': this.createAudioElement('/sounds/cart-clear.mp3', () => this.createBeepSound(300, 200)),
       
       // Order actions
-      'order-placed': this.createSuccessSound(), // Success melody
-      'order-confirmed': this.createBeepSound(600, 100, 2), // Double beep
-      'order-ready': this.createNotificationSound(), // Notification tone
+      'order-placed': this.createAudioElement('/sounds/order-placed.mp3', () => this.createSuccessSound()),
+      'order-confirmed': this.createAudioElement('/sounds/order-confirmed.mp3', () => this.createBeepSound(600, 100, 2)),
+      'order-ready': this.createAudioElement('/sounds/order-ready.mp3', () => this.createNotificationSound()),
       
       // Notifications
-      'notification': this.createNotificationSound(), // Default notification
-      'message': this.createBeepSound(700, 80), // Message received
-      'alert': this.createAlertSound(), // Alert/warning sound
-      'success': this.createSuccessSound(), // Success action
-      'error': this.createErrorSound(), // Error/failure sound
+      'notification': this.createAudioElement('/sounds/notification.mp3', () => this.createNotificationSound()),
+      'message': this.createAudioElement('/sounds/message.mp3', () => this.createBeepSound(700, 80)),
+      'alert': this.createAudioElement('/sounds/alert.mp3', () => this.createAlertSound()),
+      'success': this.createAudioElement('/sounds/success.mp3', () => this.createSuccessSound()),
+      'error': this.createAudioElement('/sounds/error.mp3', () => this.createErrorSound()),
       
       // UI interactions
-      'button-click': this.createBeepSound(500, 50), // Button press
-      'toggle': this.createBeepSound(600, 40), // Toggle switch
-      'tab-switch': this.createBeepSound(450, 60), // Tab navigation
-      'modal-open': this.createBeepSound(650, 80), // Modal/dialog open
-      'modal-close': this.createBeepSound(350, 80), // Modal/dialog close
+      'button-click': this.createAudioElement('/sounds/button-click.mp3', () => this.createBeepSound(500, 50)),
+      'toggle': this.createAudioElement('/sounds/toggle.mp3', () => this.createBeepSound(600, 40)),
+      'tab-switch': this.createAudioElement('/sounds/tab-switch.mp3', () => this.createBeepSound(450, 60)),
+      'modal-open': this.createAudioElement('/sounds/modal-open.mp3', () => this.createBeepSound(650, 80)),
+      'modal-close': this.createAudioElement('/sounds/modal-close.mp3', () => this.createBeepSound(350, 80)),
       
       // E-commerce specific
-      'product-like': this.createBeepSound(750, 70), // Product liked/favorited
-      'review-submit': this.createSuccessSound(), // Review submitted
-      'payment-success': this.createPaymentSuccessSound(), // Payment completed
-      'delivery-update': this.createNotificationSound(), // Delivery status update
+      'product-like': this.createAudioElement('/sounds/product-like.mp3', () => this.createBeepSound(750, 70)),
+      'review-submit': this.createAudioElement('/sounds/review-submit.mp3', () => this.createSuccessSound()),
+      'payment-success': this.createAudioElement('/sounds/payment-success.mp3', () => this.createPaymentSuccessSound()),
+      'delivery-update': this.createAudioElement('/sounds/delivery-update.mp3', () => this.createNotificationSound()),
     };
 
     this.sounds = soundFiles;
+  }
+
+  private createAudioElement(src: string, fallbackFn?: () => HTMLAudioElement): HTMLAudioElement {
+    const audio = new Audio();
+    
+    // Try to load the MP3 file first
+    audio.src = src;
+    audio.preload = 'auto';
+    
+    // If the MP3 fails to load, use fallback
+    audio.addEventListener('error', () => {
+      if (fallbackFn) {
+        const fallbackAudio = fallbackFn();
+        // Copy the fallback audio properties
+        audio.src = fallbackAudio.src;
+        audio.preload = fallbackAudio.preload;
+      }
+    });
+
+    return audio;
   }
 
   // Create different types of sounds programmatically
