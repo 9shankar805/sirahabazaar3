@@ -28,11 +28,37 @@ class SoundManager {
       document.removeEventListener('click', enableAudio);
       document.removeEventListener('touchstart', enableAudio);
       document.removeEventListener('keydown', enableAudio);
+      document.removeEventListener('scroll', enableAudio);
+      document.removeEventListener('mousemove', enableAudio);
     };
 
+    // Add more interaction events for better detection
     document.addEventListener('click', enableAudio);
     document.addEventListener('touchstart', enableAudio);
     document.addEventListener('keydown', enableAudio);
+    document.addEventListener('scroll', enableAudio);
+    document.addEventListener('mousemove', enableAudio);
+    
+    // Try to enable immediately if possible (some browsers allow this)
+    setTimeout(() => {
+      if (!this.userHasInteracted) {
+        try {
+          // Test if we can play audio without user interaction
+          const testAudio = new Audio();
+          testAudio.volume = 0;
+          testAudio.play()
+            .then(() => {
+              this.userHasInteracted = true;
+              console.log('✅ Audio context enabled automatically');
+            })
+            .catch(() => {
+              console.log('⚠️  Audio requires user interaction - click anywhere to enable sounds');
+            });
+        } catch (error) {
+          console.log('⚠️  Audio context setup pending user interaction');
+        }
+      }
+    }, 100);
   }
 
   private loadSettings() {
@@ -267,6 +293,7 @@ class SoundManager {
     
     if (!this.userHasInteracted) {
       console.log(`⚠️  Cannot play sound '${soundName}' - waiting for user interaction`);
+      console.log('🎯 TIP: Click anywhere on the page first, then try adding to cart');
       return;
     }
     
@@ -350,9 +377,18 @@ export const soundManager = new SoundManager();
 
 // Convenience functions for common actions
 export const playSound = {
-  cartAdd: () => soundManager.play('cart-add'),
-  cartRemove: () => soundManager.play('cart-remove'),
-  cartClear: () => soundManager.play('cart-clear'),
+  cartAdd: () => {
+    console.log('🛒 Cart Add sound requested');
+    soundManager.play('cart-add');
+  },
+  cartRemove: () => {
+    console.log('🗑️ Cart Remove sound requested');
+    soundManager.play('cart-remove');
+  },
+  cartClear: () => {
+    console.log('🧹 Cart Clear sound requested');
+    soundManager.play('cart-clear');
+  },
   orderPlaced: () => soundManager.play('order-placed'),
   orderConfirmed: () => soundManager.play('order-confirmed'),
   orderReady: () => soundManager.play('order-ready'),
