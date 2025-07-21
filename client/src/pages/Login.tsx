@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { playSound } from "@/lib/soundEffects";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -39,6 +40,9 @@ export default function Login() {
     try {
       await login(data.email, data.password);
       
+      // Play success sound for successful login
+      playSound.success();
+      
       toast({
         title: "Welcome back!",
         description: "You have been successfully logged in.",
@@ -46,6 +50,9 @@ export default function Login() {
       
       setLocation("/");
     } catch (error) {
+      // Play error sound for failed login
+      playSound.error();
+      
       toast({
         title: "Login failed",
         description: error instanceof Error ? error.message : "Invalid credentials",

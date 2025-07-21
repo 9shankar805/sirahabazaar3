@@ -20,6 +20,7 @@ import { DeliveryCalculator } from "@/components/DeliveryCalculator";
 import { calculateDistance, getCoordinatesFromAddress, geocodeAddressWithValidation, getCurrentUserLocation, formatDistance } from "@/lib/distance";
 import { useQuery } from "@tanstack/react-query";
 import { useRef } from "react";
+import { useAppSounds } from "@/hooks/useSoundEffects";
 
 const checkoutSchema = z.object({
   customerName: z.string().min(1, "Name is required"),
@@ -53,6 +54,7 @@ export default function Checkout() {
   const { cartItems, totalAmount, clearCart, clearSelectedItems, getSelectedCartItems, getSelectedTotals } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
+  const appSounds = useAppSounds();
 
   // Use selected items for checkout
   const selectedCartItems = getSelectedCartItems();
@@ -471,6 +473,9 @@ export default function Checkout() {
 
       await clearSelectedItems();
       
+      // Play payment success sound
+      appSounds.onPaymentSuccess();
+      
       toast({
         title: "Order placed successfully!",
         description: "You will receive a confirmation email shortly.",
@@ -480,6 +485,9 @@ export default function Checkout() {
       const orderParam = response.order?.id ? `?orderId=${response.order.id}` : '';
       setLocation(`/order-confirmation${orderParam}`);
     } catch (error) {
+      // Play error sound for failed orders
+      appSounds.onError();
+      
       toast({
         title: "Error",
         description: "Failed to place order. Please try again.",

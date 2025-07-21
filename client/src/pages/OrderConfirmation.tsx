@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
+import { playSound } from "@/lib/soundEffects";
 
 export default function OrderConfirmation() {
   const { user } = useAuth();
@@ -21,6 +22,11 @@ export default function OrderConfirmation() {
     const orderIdFromStorage = localStorage.getItem('lastOrderId');
     
     setOrderId(orderIdFromUrl || orderIdFromStorage);
+    
+    // Play order placed success sound with delay for better UX
+    setTimeout(() => {
+      playSound.orderPlaced();
+    }, 500);
   }, [location]);
 
   const currentDate = new Date().toLocaleDateString('en-US', {

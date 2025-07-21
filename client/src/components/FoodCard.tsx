@@ -6,6 +6,7 @@ import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
+import { useAppSounds } from "@/hooks/useSoundEffects";
 import type { Product } from "@shared/schema";
 
 interface FoodCardProps {
@@ -16,6 +17,7 @@ export default function FoodCard({ food }: FoodCardProps) {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { user } = useAuth();
+  const appSounds = useAppSounds();
   
   const inWishlist = user ? isInWishlist(food.id) : false;
   const discountedPrice = (food.isOnOffer && food.offerPercentage)
@@ -27,6 +29,7 @@ export default function FoodCard({ food }: FoodCardProps) {
     e.stopPropagation();
     if (user) {
       addToCart(food.id, 1);
+      appSounds.onCartAdd();
     }
   };
 
@@ -36,8 +39,10 @@ export default function FoodCard({ food }: FoodCardProps) {
     if (user) {
       if (inWishlist) {
         removeFromWishlist(food.id);
+        appSounds.onCartRemove();
       } else {
         addToWishlist(food.id);
+        appSounds.onProductLike();
       }
     }
   };

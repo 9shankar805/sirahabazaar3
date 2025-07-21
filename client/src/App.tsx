@@ -7,6 +7,7 @@ import { AuthProvider } from "./hooks/useAuth";
 import { CartProvider } from "./hooks/useCart";
 import { WishlistProvider } from "./hooks/useWishlist";
 import { AppModeProvider, useAppMode } from "./hooks/useAppMode";
+import { SoundProvider } from "./hooks/useSoundEffects";
 import NotFound from "@/pages/not-found";
 import NavbarWrapper from "@/components/NavbarWrapper";
 import BottomNavbar from "@/components/BottomNavbar";
@@ -74,6 +75,7 @@ import NotificationTest from "@/pages/NotificationTest";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import PWATest from "@/pages/PWATest";
 import SoundSettingsPage from "@/pages/SoundSettingsPage";
+import SoundEffectsTest from "@/pages/SoundEffectsTest";
 import FileHandler from "@/pages/FileHandler";
 import ProtocolHandler from "@/pages/ProtocolHandler";
 import ShareTarget from "@/pages/ShareTarget";
@@ -124,6 +126,7 @@ function AppRouter() {
         {/* PWA Advanced Features */}
         <Route path="/pwa-features" component={PWAFeaturesShowcase} />
         <Route path="/fcm-test" component={FCMTest} />
+        <Route path="/sound-test" component={SoundEffectsTest} />
         <Route path="/file-handler" component={FileHandler} />
         <Route path="/protocol-handler" component={ProtocolHandler} />
         <Route path="/share-target" component={ShareTarget} />
@@ -179,6 +182,7 @@ function App() {
           <CartProvider>
             <WishlistProvider>
               <AppModeProvider>
+                <SoundProvider>
                 <TooltipProvider>
                   <ErrorBoundary>
                     <div className="min-h-screen flex flex-col">
@@ -207,6 +211,7 @@ function App() {
                     <PWAInstallPrompt />
                   </ErrorBoundary>
                 </TooltipProvider>
+                </SoundProvider>
               </AppModeProvider>
             </WishlistProvider>
           </CartProvider>
