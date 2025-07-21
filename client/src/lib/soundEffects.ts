@@ -56,35 +56,35 @@ class SoundManager {
 
   private preloadSounds() {
     const soundFiles = {
-      // Cart actions
-      'cart-add': this.createAudioElement('/sounds/cart-add.mp3'),
-      'cart-remove': this.createAudioElement('/sounds/cart-remove.mp3', () => this.createBeepSound(400, 150)),
-      'cart-clear': this.createAudioElement('/sounds/cart-clear.mp3', () => this.createBeepSound(300, 200)),
+      // Cart actions - cart-add.mp3 exists, others use fallback
+      'cart-add': this.createAudioElement('/sounds/cart-add.mp3', () => this.createBeepSound(800, 100)),
+      'cart-remove': this.createBeepSound(400, 150), // Direct fallback since no MP3
+      'cart-clear': this.createBeepSound(300, 200), // Direct fallback since no MP3
       
-      // Order actions
-      'order-placed': this.createAudioElement('/sounds/order-placed.mp3', () => this.createSuccessSound()),
-      'order-confirmed': this.createAudioElement('/sounds/order-confirmed.mp3', () => this.createBeepSound(600, 100, 2)),
-      'order-ready': this.createAudioElement('/sounds/order-ready.mp3', () => this.createNotificationSound()),
+      // Order actions - using direct fallback sounds for now
+      'order-placed': this.createSuccessSound(),
+      'order-confirmed': this.createBeepSound(600, 100, 2),
+      'order-ready': this.createNotificationSound(),
       
-      // Notifications
-      'notification': this.createAudioElement('/sounds/notification.mp3', () => this.createNotificationSound()),
-      'message': this.createAudioElement('/sounds/message.mp3', () => this.createBeepSound(700, 80)),
-      'alert': this.createAudioElement('/sounds/alert.mp3', () => this.createAlertSound()),
-      'success': this.createAudioElement('/sounds/success.mp3', () => this.createSuccessSound()),
-      'error': this.createAudioElement('/sounds/error.mp3', () => this.createErrorSound()),
+      // Notifications - using direct fallback sounds
+      'notification': this.createNotificationSound(),
+      'message': this.createBeepSound(700, 80),
+      'alert': this.createAlertSound(),
+      'success': this.createSuccessSound(),
+      'error': this.createErrorSound(),
       
-      // UI interactions
-      'button-click': this.createAudioElement('/sounds/button-click.mp3', () => this.createBeepSound(500, 50)),
-      'toggle': this.createAudioElement('/sounds/toggle.mp3', () => this.createBeepSound(600, 40)),
-      'tab-switch': this.createAudioElement('/sounds/tab-switch.mp3', () => this.createBeepSound(450, 60)),
-      'modal-open': this.createAudioElement('/sounds/modal-open.mp3', () => this.createBeepSound(650, 80)),
-      'modal-close': this.createAudioElement('/sounds/modal-close.mp3', () => this.createBeepSound(350, 80)),
+      // UI interactions - using direct fallback sounds
+      'button-click': this.createBeepSound(500, 50),
+      'toggle': this.createBeepSound(600, 40),
+      'tab-switch': this.createBeepSound(450, 60),
+      'modal-open': this.createBeepSound(650, 80),
+      'modal-close': this.createBeepSound(350, 80),
       
-      // E-commerce specific
-      'product-like': this.createAudioElement('/sounds/product-like.mp3', () => this.createBeepSound(750, 70)),
-      'review-submit': this.createAudioElement('/sounds/review-submit.mp3', () => this.createSuccessSound()),
-      'payment-success': this.createAudioElement('/sounds/payment-success.mp3', () => this.createPaymentSuccessSound()),
-      'delivery-update': this.createAudioElement('/sounds/delivery-update.mp3', () => this.createNotificationSound()),
+      // E-commerce specific - using direct fallback sounds
+      'product-like': this.createBeepSound(750, 70),
+      'review-submit': this.createSuccessSound(),
+      'payment-success': this.createPaymentSuccessSound(),
+      'delivery-update': this.createNotificationSound(),
     };
 
     this.sounds = soundFiles;
@@ -98,18 +98,30 @@ class SoundManager {
     audio.preload = 'auto';
     audio.volume = this.config.volume;
     
-    // Add error handling with fallback
+    // Add load success handler
+    audio.addEventListener('canplaythrough', () => {
+      console.log(`✅ Successfully loaded ${src}`);
+    });
+
+    // Add error handling with immediate fallback
     audio.addEventListener('error', (e) => {
-      console.log(`Failed to load ${src}, using fallback`);
+      console.log(`❌ Failed to load ${src}, using fallback immediately`);
       if (fallbackFn) {
         try {
           const fallbackAudio = fallbackFn();
+          // Replace the current audio element's properties
           audio.src = fallbackAudio.src;
           audio.volume = this.config.volume;
+          console.log(`🔄 Fallback set for ${src.split('/').pop()}`);
         } catch (error) {
           console.error('Fallback sound generation failed:', error);
         }
       }
+    });
+
+    // Test if the file exists immediately
+    audio.addEventListener('loadstart', () => {
+      console.log(`⏳ Loading ${src}...`);
     });
 
     return audio;
@@ -152,8 +164,14 @@ class SoundManager {
       view.setInt16(44 + i * 2, sample * 32767, true);
     }
     
-    const blob = new Blob([buffer], { type: 'audio/wav' });
-    audio.src = URL.createObjectURL(blob);
+    // Convert to base64 data URL to avoid CSP blob issues
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    audio.src = `data:audio/wav;base64,${base64}`;
     audio.preload = 'auto';
     
     return audio;
@@ -227,8 +245,14 @@ class SoundManager {
       sampleOffset += samples;
     });
     
-    const blob = new Blob([buffer], { type: 'audio/wav' });
-    audio.src = URL.createObjectURL(blob);
+    // Convert to base64 data URL to avoid CSP blob issues
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    audio.src = `data:audio/wav;base64,${base64}`;
     audio.preload = 'auto';
     
     return audio;
