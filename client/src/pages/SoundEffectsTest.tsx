@@ -101,12 +101,38 @@ export default function SoundEffectsTest() {
   };
 
   const handleTestSound = (soundName: string, action: () => void) => {
+    console.log(`🎵 Testing sound: ${soundName}`);
     action();
     toast({
       title: 'Sound Test',
       description: `${soundName} sound effect played`,
       duration: 2000,
     });
+  };
+
+  // Test cart-add.mp3 specifically
+  const testCartAddMp3 = () => {
+    console.log('🎵 Testing cart-add.mp3 directly');
+    const audio = new Audio('/sounds/cart-add.mp3');
+    audio.volume = soundEffects.volume;
+    audio.play()
+      .then(() => {
+        console.log('✅ cart-add.mp3 played successfully');
+        toast({
+          title: 'Direct MP3 Test',
+          description: 'cart-add.mp3 played directly',
+          duration: 2000,
+        });
+      })
+      .catch(error => {
+        console.log('❌ cart-add.mp3 failed:', error);
+        toast({
+          title: 'Direct MP3 Test Failed',
+          description: error.message,
+          variant: 'destructive',
+          duration: 3000,
+        });
+      });
   };
 
   return (
@@ -175,8 +201,18 @@ export default function SoundEffectsTest() {
             />
           </div>
 
-          {/* Test All Button */}
-          <div className="pt-4 border-t">
+          {/* Test Buttons */}
+          <div className="pt-4 border-t space-y-3">
+            <Button
+              onClick={testCartAddMp3}
+              disabled={!soundEffects.isEnabled}
+              className="w-full bg-green-600 hover:bg-green-700"
+              size="lg"
+            >
+              <Play className="h-5 w-5 mr-2" />
+              Test cart-add.mp3 Directly
+            </Button>
+            
             <Button
               onClick={handleTestAllSounds}
               disabled={isTestingAll || !soundEffects.isEnabled}

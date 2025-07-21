@@ -13,10 +13,26 @@ class SoundManager {
   };
 
   private sounds: { [key: string]: HTMLAudioElement } = {};
+  private userHasInteracted = false;
 
   constructor() {
     this.loadSettings();
+    this.setupUserInteractionDetection();
     this.preloadSounds();
+  }
+
+  private setupUserInteractionDetection() {
+    const enableAudio = () => {
+      this.userHasInteracted = true;
+      console.log('✅ User interaction detected - audio enabled');
+      document.removeEventListener('click', enableAudio);
+      document.removeEventListener('touchstart', enableAudio);
+      document.removeEventListener('keydown', enableAudio);
+    };
+
+    document.addEventListener('click', enableAudio);
+    document.addEventListener('touchstart', enableAudio);
+    document.addEventListener('keydown', enableAudio);
   }
 
   private loadSettings() {
@@ -80,14 +96,19 @@ class SoundManager {
     // Try to load the MP3 file first
     audio.src = src;
     audio.preload = 'auto';
+    audio.volume = this.config.volume;
     
-    // If the MP3 fails to load, use fallback
-    audio.addEventListener('error', () => {
+    // Add error handling with fallback
+    audio.addEventListener('error', (e) => {
+      console.log(`Failed to load ${src}, using fallback`);
       if (fallbackFn) {
-        const fallbackAudio = fallbackFn();
-        // Copy the fallback audio properties
-        audio.src = fallbackAudio.src;
-        audio.preload = fallbackAudio.preload;
+        try {
+          const fallbackAudio = fallbackFn();
+          audio.src = fallbackAudio.src;
+          audio.volume = this.config.volume;
+        } catch (error) {
+          console.error('Fallback sound generation failed:', error);
+        }
       }
     });
 
@@ -215,23 +236,56 @@ class SoundManager {
 
   // Public methods
   play(soundName: string, options?: { force?: boolean }) {
-    if (!this.config.enabled && !options?.force) return;
+    if (!this.config.enabled && !options?.force) {
+      console.log(`🔇 Sound '${soundName}' disabled`);
+      return;
+    }
+    
+    if (!this.userHasInteracted) {
+      console.log(`⚠️  Cannot play sound '${soundName}' - waiting for user interaction`);
+      return;
+    }
     
     const sound = this.sounds[soundName];
     if (!sound) {
-      console.log(`Sound '${soundName}' not found`);
+      console.log(`❌ Sound '${soundName}' not found`);
       return;
     }
 
     try {
       sound.volume = this.config.volume;
       sound.currentTime = 0; // Reset to beginning
-      sound.play().catch(error => {
-        // Ignore play errors (usually due to user interaction policy)
-        console.log(`Could not play sound '${soundName}':`, error.message);
-      });
+      
+      console.log(`🔊 Playing sound '${soundName}' (src: ${sound.src})`);
+      
+      const playPromise = sound.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log(`✅ Successfully played '${soundName}'`);
+          })
+          .catch(error => {
+            console.log(`❌ Failed to play sound '${soundName}':`, error.message);
+            // If MP3 failed, try to use fallback
+            this.tryFallbackSound(soundName);
+          });
+      }
     } catch (error) {
-      console.log(`Error playing sound '${soundName}':`, error);
+      console.log(`❌ Error playing sound '${soundName}':`, error);
+    }
+  }
+
+  private tryFallbackSound(soundName: string) {
+    // For cart-add, create a simple beep fallback
+    if (soundName === 'cart-add') {
+      try {
+        const fallbackSound = this.createBeepSound(800, 100);
+        fallbackSound.volume = this.config.volume;
+        fallbackSound.play().catch(e => console.log('Fallback sound also failed:', e.message));
+        console.log('🔄 Using fallback beep for cart-add');
+      } catch (error) {
+        console.log('❌ Fallback sound creation failed:', error);
+      }
     }
   }
 
