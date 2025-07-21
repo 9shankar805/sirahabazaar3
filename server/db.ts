@@ -6,9 +6,13 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
-// PostgreSQL database URL - Neon database (ap-southeast-1)
+// PostgreSQL database URL - supports both DigitalOcean and Neon
 const DATABASE_URL = process.env.DATABASE_URL || 
   "postgresql://neondb_owner:npg_B14cMjkFUhuw@ep-wispy-paper-a1eejnp5-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+
+// Check if we're in development and handle SSL accordingly
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isDigitalOcean = DATABASE_URL.includes('ondigitalocean.com');
 
 // Ensure proper SSL mode for production
 const finalDatabaseUrl = DATABASE_URL.includes('sslmode=') 
@@ -16,6 +20,9 @@ const finalDatabaseUrl = DATABASE_URL.includes('sslmode=')
   : `${DATABASE_URL}${DATABASE_URL.includes('?') ? '&' : '?'}sslmode=require`;
 
 console.log(`🔌 Using PostgreSQL database: ${DATABASE_URL ? 'Connected' : 'No URL found'}`);
+if (isDigitalOcean) {
+  console.log(`🌊 DigitalOcean database detected - SSL configured for managed database`);
+}
 
 // Enhanced pool configuration for Neon PostgreSQL
 export const pool = new Pool({
@@ -31,9 +38,17 @@ export const pool = new Pool({
   statement_timeout: 45000,
   query_timeout: 40000,
 
-  // SSL configuration - required for Neon
-  ssl: {
-    rejectUnauthorized: false
+  // SSL configuration - handles DigitalOcean, Neon, and development
+  ssl: isDigitalOcean ? {
+    rejectUnauthorized: false, // DigitalOcean requires this for managed databases
+    checkServerIdentity: () => undefined, // Bypass hostname verification
+    secureProtocol: 'TLSv1_2_method' // Force TLS 1.2
+  } : isDevelopment ? {
+    rejectUnauthorized: false,
+    checkServerIdentity: () => undefined
+  } : {
+    rejectUnauthorized: true,
+    ca: undefined // Use system CA bundle for other providers
   },
 
   // Optimized reconnection settings for Neon
