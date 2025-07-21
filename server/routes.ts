@@ -69,6 +69,27 @@ async function checkAndUpdateSpecialOffer(productData: any): Promise<void> {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // CRITICAL FIX: Force JSON response for API routes to prevent Vite HTML override
+  app.use('/api/*', (req, res, next) => {
+    console.log(`🔧 API route intercepted: ${req.method} ${req.path}`);
+    
+    // Override res.end to ensure JSON is sent
+    const originalEnd = res.end;
+    res.end = function(chunk?: any, encoding?: any) {
+      if (chunk && typeof chunk === 'string' && chunk.includes('<!doctype html>')) {
+        console.log(`⚠️  Blocked HTML response for API route ${req.path}`);
+        res.status(500);
+        res.setHeader('Content-Type', 'application/json');
+        return originalEnd.call(this, JSON.stringify({ 
+          error: 'API route served HTML instead of JSON' 
+        }));
+      }
+      return originalEnd.call(this, chunk, encoding);
+    };
+    
+    next();
+  });
+
   // Global error handling middleware
   app.use((err: any, req: any, res: any, next: any) => {
     console.error('Unhandled error:', err);
@@ -98,6 +119,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // This is expected during initial setup before migrations run
     }
     next();
+  });
+
+  // Debug route to test API routing - MUST BE BEFORE OTHER ROUTES
+  app.get("/api/debug-test", (req, res) => {
+    console.log("🔥 DEBUG: API route hit successfully!");
+    res.json({ 
+      success: true, 
+      message: "API routing is working!", 
+      timestamp: new Date().toISOString() 
+    });
   });
 
   // Authentication routes
@@ -986,6 +1017,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Cart fetch error:", error);
       res.status(500).json({ error: "Failed to fetch cart" });
+    }
+  });
+
+  // Add to cart endpoint (both routes for compatibility)
+  app.post("/api/cart/add", async (req, res) => {
+    try {
+      console.log("Cart ADD received:", req.body);
+      
+      let userId = req.body.userId;
+
+      if (!userId) {
+        console.log("No userId provided in request");
+        return res.status(401).json({ error: "User authentication required" });
+      }
+
+      const cartItemData = {
+        userId: parseInt(userId),
+        productId: parseInt(req.body.productId),
+        quantity: parseInt(req.body.quantity) || 1
+      };
+
+      console.log("Adding to cart:", cartItemData);
+      
+      const cartItem = await storage.addToCart(cartItemData);
+      console.log("Cart item added successfully:", cartItem);
+      
+      res.json({ success: true, item: cartItem, message: "Added to cart successfully" });
+    } catch (error) {
+      console.error("Cart add error:", error);
+      res.status(500).json({ error: "Failed to add item to cart" });
     }
   });
 
