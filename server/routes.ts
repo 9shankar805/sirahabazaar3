@@ -17,6 +17,8 @@ import { pixabayImageService } from "./pixabayImageService";
 import { EmailService } from "./emailService";
 import { AndroidNotificationService } from "./androidNotificationService";
 import crypto from 'crypto';
+import webpush from 'web-push';
+import admin from 'firebase-admin';
 
 import { 
   insertUserSchema, insertStoreSchema, insertProductSchema, insertOrderSchema, insertCartItemSchema,
@@ -7811,7 +7813,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Send notification using Firebase Admin SDK
-      const admin = require("firebase-admin");
       let result;
       
       try {
@@ -8203,10 +8204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If FCM token is provided, send actual push notification
       if (fcmToken) {
         try {
-          // Use web-push library to send notification (ES6 compatible)
-          const webpush = require('web-push');
-          
-          // Set VAPID details
+          // Set VAPID details using imported webpush module
           const vapidKeys = {
             publicKey: 'BBeY7MuZB7850MAibtxV4fJxcKYAF3oQxNBB60l1FzHK63IjkTSI9ZFDPW1hmHnKSJPckGFM5gu7JlaCGavnwqA',
             privateKey: 'kAXgMUCBn7sp_zA7lgCH0GD3_mbwA5BAKpWbhQ5STRM'
@@ -8241,24 +8239,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('✅ Web-push notification sent successfully:', notificationResult.statusCode);
           
         } catch (fcmError) {
-          console.error('❌ FCM sending failed:', fcmError);
-          
-          // Fallback to web-push if Firebase fails
-          try {
-            const webpush = require('web-push');
-            const vapidPublicKey = "BBeY7MuZB7850MAibtxV4fJxcKYAF3oQxNBB60l1FzHK63IjkTSI9ZFDPW1hmHnKSJPckGFM5gu7JlaCGavnwqA";
-            const vapidPrivateKey = "kAXgMUCBn7sp_zA7lgCH0GD3_mbwA5BAKpWbhQ5STRM";
-            
-            webpush.setVapidDetails('mailto:sirahabazzar@gmail.com', vapidPublicKey, vapidPrivateKey);
-            
-            // Convert FCM token to web-push subscription format if needed
-            console.log('🔄 Attempting web-push fallback...');
-            notificationResult = 'fallback-attempted';
-            
-          } catch (webPushError) {
-            console.error('❌ Web-push fallback also failed:', webPushError);
-            throw fcmError; // Throw original FCM error
-          }
+          console.error('❌ Web-push sending failed:', fcmError);
+          throw fcmError; // Throw the web-push error
         }
       }
       
