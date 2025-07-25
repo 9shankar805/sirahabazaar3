@@ -36,14 +36,27 @@ export const initializeFirebaseNotifications = async () => {
       await navigator.serviceWorker.register('/firebase-messaging-sw.js');
       console.log('✅ Firebase service worker registered');
       
-      // Automatically get token when FCM is initialized
-      try {
-        const token = await getToken(messaging, { vapidKey });
-        if (token) {
-          console.log('🎉 FCM Token automatically generated on initialization!');
+      // Check if we can get token immediately
+      console.log('🔍 Checking notification permission:', Notification.permission);
+      
+      if (Notification.permission === 'granted') {
+        try {
+          console.log('✅ Permission granted, generating FCM token...');
+          const token = await getToken(messaging, { vapidKey });
+          if (token) {
+            console.log('🎉 FCM Token automatically generated on initialization!');
+            console.log('🔥 Firebase Cloud Messaging Token:');
+            console.log('📱 FCM Token:', token);
+            console.log('🔗 Token Length:', token.length, 'characters');
+            console.log('📋 Copy this token for testing:', token);
+            console.log('📝 Token (abbreviated):', token.substring(0, 20) + '...' + token.substring(token.length - 20));
+          }
+        } catch (tokenError) {
+          console.error('❌ Error generating FCM token:', tokenError);
         }
-      } catch (tokenError) {
+      } else {
         console.log('⚠️ FCM Token will be generated when permission is granted');
+        console.log('💡 Call requestNotificationPermission() to get the token');
       }
     }
     

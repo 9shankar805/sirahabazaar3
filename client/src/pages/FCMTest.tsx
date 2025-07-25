@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Bell, CheckCircle, XCircle, Send, Smartphone } from 'lucide-react';
+import FCMTokenDisplay from '@/components/FCMTokenDisplay';
 
 export default function FCMTest() {
   const [fcmStatus, setFcmStatus] = useState<{
@@ -209,6 +210,11 @@ export default function FCMTest() {
           <h1 className="text-3xl font-bold">FCM Push Notifications Test</h1>
           <p className="text-gray-600">Test Firebase Cloud Messaging integration for Siraha Bazaar</p>
         </div>
+      </div>
+
+      {/* FCM Token Generator */}
+      <div className="mb-6">
+        <FCMTokenDisplay />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

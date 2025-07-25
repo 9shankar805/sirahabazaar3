@@ -189,13 +189,25 @@ function App() {
         if (Notification.permission === 'granted') {
           console.log('✅ Notification permission already granted - FCM ready!');
         } else if (Notification.permission === 'default') {
-          console.log('🔔 Requesting notification permission...');
+          console.log('🔔 Requesting notification permission for FCM token...');
           const granted = await requestNotificationPermission();
           if (granted) {
-            console.log('🎉 Notification permission granted!');
+            console.log('🎉 Notification permission granted! Getting FCM token...');
+            // Try to get the token now that permission is granted
+            try {
+              const { getFirebaseToken } = await import('@/lib/firebaseNotifications');
+              const token = await getFirebaseToken();
+              if (token) {
+                console.log('🎯 SUCCESS: FCM Token generated after permission grant!');
+              }
+            } catch (tokenError) {
+              console.error('❌ Failed to get FCM token after permission grant:', tokenError);
+            }
           } else {
-            console.log('❌ Notification permission denied');
+            console.log('❌ Notification permission denied - FCM token cannot be generated');
           }
+        } else {
+          console.log('🚫 Notification permission permanently denied');
         }
       } catch (error) {
         console.error('❌ FCM initialization failed:', error);
