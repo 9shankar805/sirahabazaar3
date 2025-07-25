@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, Key, Copy, RefreshCw } from 'lucide-react';
+import { Bell, Key, Copy, RefreshCw, Bug } from 'lucide-react';
 import { getFirebaseToken, requestNotificationPermission, initializeFirebaseNotifications } from '@/lib/firebaseNotifications';
+import { testFirebaseConfig, validateVapidKey, debugServiceWorker } from '@/utils/firebaseVapidFix';
 
 export default function FCMTokenDisplay() {
   const [fcmToken, setFcmToken] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDebugging, setIsDebugging] = useState(false);
   const [permission, setPermission] = useState(Notification.permission);
   const { toast } = useToast();
 
@@ -81,6 +83,47 @@ export default function FCMTokenDisplay() {
     }
   };
 
+  const runFirebaseDebug = async () => {
+    setIsDebugging(true);
+    console.log('🔧 Starting Firebase Configuration Debug...');
+    
+    try {
+      // Validate VAPID key first
+      const vapidKey = "BG5V1u2eNls8IInm93_F-ZBb2hXaEZIy4AjHBrIjDeClqi4wLVlVZ5x64WeMzFESgByQjeOtcL1UrGMGFQm0GlE";
+      validateVapidKey(vapidKey);
+      
+      // Debug service worker
+      await debugServiceWorker();
+      
+      // Test Firebase configuration
+      const result = await testFirebaseConfig();
+      
+      if (result.success && result.token) {
+        setFcmToken(result.token);
+        setPermission(Notification.permission);
+        toast({
+          title: "Debug Success!",
+          description: "FCM token generated using debug configuration",
+        });
+      } else {
+        toast({
+          title: "Debug Failed",
+          description: result.error || "Firebase configuration issues detected",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error('Debug failed:', error);
+      toast({
+        title: "Debug Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsDebugging(false);
+    }
+  };
+
   const getPermissionBadge = () => {
     const variant = permission === 'granted' ? 'default' : permission === 'denied' ? 'destructive' : 'secondary';
     return (
@@ -104,24 +147,46 @@ export default function FCMTokenDisplay() {
           {getPermissionBadge()}
         </div>
         
-        <Button 
-          onClick={generateFCMToken} 
-          disabled={isLoading}
-          className="w-full"
-          size="lg"
-        >
-          {isLoading ? (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Generating FCM Token...
-            </>
-          ) : (
-            <>
-              <Key className="h-4 w-4 mr-2" />
-              Generate FCM Token (Check Console)
-            </>
-          )}
-        </Button>
+        <div className="space-y-2">
+          <Button 
+            onClick={generateFCMToken} 
+            disabled={isLoading || isDebugging}
+            className="w-full"
+            size="lg"
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Generating FCM Token...
+              </>
+            ) : (
+              <>
+                <Key className="h-4 w-4 mr-2" />
+                Generate FCM Token (Check Console)
+              </>
+            )}
+          </Button>
+
+          <Button 
+            onClick={runFirebaseDebug} 
+            disabled={isLoading || isDebugging}
+            variant="outline"
+            className="w-full"
+            size="lg"
+          >
+            {isDebugging ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Running Firebase Debug...
+              </>
+            ) : (
+              <>
+                <Bug className="h-4 w-4 mr-2" />
+                🔧 Debug Firebase Config (Fix 401 Error)
+              </>
+            )}
+          </Button>
+        </div>
 
         {fcmToken && (
           <div className="space-y-2">
