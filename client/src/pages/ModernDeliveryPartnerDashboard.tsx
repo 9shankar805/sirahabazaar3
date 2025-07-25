@@ -1335,7 +1335,7 @@ function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[]
             <div key={delivery.id}>
               {/* Store Marker */}
               <Marker
-                position={[26.6586, 86.2003]} // Sample store coordinates
+                position={[(delivery as any).storeLatitude || 26.6586, (delivery as any).storeLongitude || 86.2003]} // Actual store coordinates
                 icon={createStoreIcon({ 
                   logo: delivery.storeLogo || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=100&h=100&fit=crop&crop=center',
                   storeLogo: delivery.storeLogo || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=100&h=100&fit=crop&crop=center',
@@ -1389,7 +1389,7 @@ function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[]
               
               {/* Customer Marker */}
               <Marker
-                position={[26.6600, 86.2100]} // Sample customer coordinates
+                position={[(delivery as any).customerLatitude || 26.6600, (delivery as any).customerLongitude || 86.2100]} // Actual customer coordinates
                 icon={createCustomerIcon({ 
                   fullName: delivery.customerName,
                   customerAvatar: delivery.customerAvatar 

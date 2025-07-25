@@ -5300,8 +5300,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   
                   // Extract store coordinates if available
                   if (store.latitude && store.longitude) {
-                    storeLatitude = parseFloat(store.latitude);
-                    storeLongitude = parseFloat(store.longitude);
+                    storeLatitude = parseFloat(String(store.latitude));
+                    storeLongitude = parseFloat(String(store.longitude));
                   }
                 }
                 
@@ -5336,9 +5336,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 );
               }
 
-              // Calculate distance using Haversine formula
-              const customerLatitude = 26.6600; // Default customer coordinates (should be from order)
-              const customerLongitude = 86.2100;
+              // Calculate distance using Haversine formula - get customer coordinates from order if available
+              let customerLatitude = 26.6600; // Default customer coordinates
+              let customerLongitude = 86.2100;
+              
+              // Try to extract customer coordinates from order data
+              if (order.customerLatitude && order.customerLongitude) {
+                customerLatitude = parseFloat(String(order.customerLatitude));
+                customerLongitude = parseFloat(String(order.customerLongitude));
+              } else if (order.shippingAddress) {
+                // If coordinates aren't available but address is, we still use defaults
+                // In a real implementation, you'd geocode the address here
+                console.log(`No coordinates found for order ${delivery.orderId}, using default location for distance calculation`);
+              }
               
               function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
                 const R = 6371; // Earth's radius in kilometers
@@ -5353,6 +5363,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               const calculatedDistance = calculateDistance(storeLatitude, storeLongitude, customerLatitude, customerLongitude);
               const distanceKm = Math.round(calculatedDistance * 100) / 100; // Round to 2 decimal places
+
+              // Debug logging for coordinates
+              console.log(`🗺️ Distance Calculation for Order ${delivery.orderId}:`);
+              console.log(`  Store: ${storeDetails?.name || 'Unknown'} at (${storeLatitude}, ${storeLongitude})`);
+              console.log(`  Customer: ${order.customerName} at (${customerLatitude}, ${customerLongitude})`);
+              console.log(`  Calculated Distance: ${distanceKm} km`);
 
               return {
                 ...delivery,
@@ -5370,7 +5386,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 items,
                 distance: `${distanceKm} km`,
                 paymentMethod: order.paymentMethod || 'COD',
-                specialInstructions: order.specialInstructions || order.notes
+                specialInstructions: order.specialInstructions || order.notes,
+                // Add actual coordinates for map markers
+                storeLatitude,
+                storeLongitude,
+                customerLatitude,
+                customerLongitude
               };
             }
             return delivery;
