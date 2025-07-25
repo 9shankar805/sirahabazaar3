@@ -120,6 +120,16 @@ Siraha Bazaar is a comprehensive multi-vendor e-commerce marketplace built with 
 
 ## Recent Changes
 
+### July 25, 2025 - Delivery Partner Navigation Fixed to Use Coordinates
+- ✓ **Fixed coordinate-based navigation**: All delivery partner dashboard navigation buttons now use exact same format as store page
+- ✓ **Removed address-based navigation**: Eliminated all `api=1&destination=${address}` references that caused incorrect locations
+- ✓ **Updated navigation format**: Changed to `https://www.google.com/maps/dir//${latitude},${longitude}` format for consistency
+- ✓ **Fixed Shiv jewellery navigation**: Now correctly points to Lahan (26.7073903, 86.4808379) instead of Bihar address
+- ✓ **Applied to all navigation buttons**: Orders tab, Map tab popups, and all marker navigation buttons use coordinates
+- ✓ **Maintained distance calculations**: Real coordinates used for both navigation and distance calculations
+- ✓ **Console verification**: Debug logs show "Store: Shiv jewellery at (26.7073903, 86.4808379)" with accurate navigation
+- → Delivery partner navigation now matches store page accuracy with precise GPS coordinates for all locations
+
 ### July 21, 2025 - Cart and Wishlist API Issues Fixed
 - ✓ **Fixed critical cart API issues**: Resolved cart add/remove functionality for user "yadav" (ID: 11)
 - ✓ **Enhanced cart error handling**: Added comprehensive logging and validation for cart operations

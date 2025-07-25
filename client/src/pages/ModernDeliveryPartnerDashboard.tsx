@@ -816,8 +816,9 @@ function ModernOrdersTab({
                           size="sm" 
                           variant="outline"
                           onClick={() => {
-                            const address = encodeURIComponent(delivery.storeAddress || delivery.pickupAddress);
-                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
+                            const storeLatitude = (delivery as any).storeLatitude || 26.6586;
+                            const storeLongitude = (delivery as any).storeLongitude || 86.2003;
+                            window.open(`https://www.google.com/maps/dir//${storeLatitude},${storeLongitude}`, '_blank');
                           }}
                           className="flex-1 text-xs"
                         >
@@ -828,8 +829,9 @@ function ModernOrdersTab({
                           size="sm" 
                           variant="outline"
                           onClick={() => {
-                            const address = encodeURIComponent(delivery.deliveryAddress);
-                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
+                            const customerLatitude = (delivery as any).customerLatitude || 26.6600;
+                            const customerLongitude = (delivery as any).customerLongitude || 86.2100;
+                            window.open(`https://www.google.com/maps/dir//${customerLatitude},${customerLongitude}`, '_blank');
                           }}
                           className="flex-1 text-xs"
                         >
@@ -854,7 +856,8 @@ function ModernOrdersTab({
                           onClick={() => {
                             const storeLatitude = (delivery as any).storeLatitude || 26.6586;
                             const storeLongitude = (delivery as any).storeLongitude || 86.2003;
-                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${storeLatitude},${storeLongitude}`, '_blank');
+                            // Use exact same format as StoreMap.tsx for consistency
+                            window.open(`https://www.google.com/maps/dir//${storeLatitude},${storeLongitude}`, '_blank');
                           }}
                           className="text-xs"
                         >
@@ -876,7 +879,8 @@ function ModernOrdersTab({
                           onClick={() => {
                             const customerLatitude = (delivery as any).customerLatitude || 26.6600;
                             const customerLongitude = (delivery as any).customerLongitude || 86.2100;
-                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${customerLatitude},${customerLongitude}`, '_blank');
+                            // Use coordinate-based navigation like store page
+                            window.open(`https://www.google.com/maps/dir//${customerLatitude},${customerLongitude}`, '_blank');
                           }}
                           className="text-xs"
                         >
@@ -1119,7 +1123,7 @@ function OrdersMapComponent({
                               onClick={() => {
                                 const storeLatitude = (delivery as any).storeLatitude || 26.6586;
                                 const storeLongitude = (delivery as any).storeLongitude || 86.2003;
-                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${storeLatitude},${storeLongitude}`, '_blank');
+                                window.open(`https://www.google.com/maps/dir//${storeLatitude},${storeLongitude}`, '_blank');
                               }}
                             >
                               <Navigation className="h-3 w-3 mr-1" />
@@ -1187,7 +1191,7 @@ function OrdersMapComponent({
                               onClick={() => {
                                 const customerLatitude = (delivery as any).customerLatitude || 26.6600;
                                 const customerLongitude = (delivery as any).customerLongitude || 86.2100;
-                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${customerLatitude},${customerLongitude}`, '_blank');
+                                window.open(`https://www.google.com/maps/dir//${customerLatitude},${customerLongitude}`, '_blank');
                               }}
                             >
                               <Navigation className="h-3 w-3 mr-1" />
@@ -1383,7 +1387,7 @@ function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[]
                         onClick={() => {
                           const storeLatitude = (delivery as any).storeLatitude || 26.6586;
                           const storeLongitude = (delivery as any).storeLongitude || 86.2003;
-                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${storeLatitude},${storeLongitude}`, '_blank');
+                          window.open(`https://www.google.com/maps/dir//${storeLatitude},${storeLongitude}`, '_blank');
                         }}
                         className="text-xs px-2 py-1"
                       >
