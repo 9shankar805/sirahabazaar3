@@ -1247,22 +1247,19 @@ function MapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
   }, []);
 
   return (
-    <div className="relative h-screen bg-gray-100">
+    <div className="relative h-screen">
       {userLocation ? (
-        <div style={{ height: '100%', width: '100%' }}>
-          <MapContainer
-            center={[userLocation.lat, userLocation.lng]}
-            zoom={13}
-            style={{ height: '100%', width: '100%', minHeight: '100vh' }}
-            className="leaflet-container"
-            scrollWheelZoom={true}
-            doubleClickZoom={true}
-            touchZoom={true}
-            zoomControl={false}
-            whenCreated={(mapInstance) => {
-              mapRef.current = mapInstance;
-            }}
-          >
+        <MapContainer
+          center={[userLocation.lat, userLocation.lng]}
+          zoom={13}
+          style={{ height: '100%', width: '100%' }}
+          className="z-0"
+          scrollWheelZoom={true}
+          doubleClickZoom={true}
+          touchZoom={true}
+          zoomControl={false}
+          ref={mapRef}
+        >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -1284,79 +1281,66 @@ function MapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
           {/* Active Delivery Markers */}
           {activeDeliveries.map((delivery) => (
             <div key={delivery.id}>
-              {/* Store/Pickup Location */}
-              {delivery.pickupLat && delivery.pickupLng && (
-                <Marker
-                  position={[parseFloat(delivery.pickupLat), parseFloat(delivery.pickupLng)]}
-                  icon={createStoreIcon({ 
-                    logo: delivery.storeLogo,
-                    name: delivery.storeName 
-                  })}
-                >
-                  <Popup>
-                    <div className="text-center max-w-xs p-2">
-                      <div className="flex items-center justify-center mb-2">
-                        <img 
-                          src={delivery.storeLogo || '/default-store-logo.png'} 
-                          alt={delivery.storeName}
-                          className="w-8 h-8 rounded-full object-cover border-2 border-red-500"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjZGMyNjI2Ii8+Cjwvc3ZnPg==';
-                          }}
-                        />
-                      </div>
-                      <h3 className="font-semibold text-sm">{delivery.storeName}</h3>
-                      <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
-                      <p className="text-xs text-gray-500 mb-2">{delivery.pickupAddress}</p>
-                      <div className="flex items-center justify-center gap-1 mb-2">
-                        <Phone className="h-3 w-3 text-blue-500" />
-                        <span className="text-xs">{delivery.storePhone || 'N/A'}</span>
-                      </div>
-                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
-                        📍 Pickup Location
-                      </Badge>
+              {/* Store Marker with Sample Location */}
+              <Marker
+                position={[26.6586, 86.2003]} // Sample store coordinates
+                icon={createStoreIcon({ 
+                  logo: '/default-store-logo.png',
+                  name: 'Store Location'
+                })}
+              >
+                <Popup>
+                  <div className="text-center max-w-xs p-2">
+                    <div className="flex items-center justify-center mb-2">
+                      <img 
+                        src='/default-store-logo.png'
+                        alt="Store"
+                        className="w-8 h-8 rounded-full object-cover border-2 border-red-500"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjZGMyNjI2Ii8+Cjwvc3ZnPg==';
+                        }}
+                      />
                     </div>
-                  </Popup>
-                </Marker>
-              )}
+                    <h3 className="font-semibold text-sm">Store Location</h3>
+                    <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                    <p className="text-xs text-gray-500 mb-2">Pickup Address</p>
+                    <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                      📍 Pickup Location
+                    </Badge>
+                  </div>
+                </Popup>
+              </Marker>
               
-              {/* Customer/Delivery Location */}
-              {delivery.deliveryLat && delivery.deliveryLng && (
-                <Marker
-                  position={[parseFloat(delivery.deliveryLat), parseFloat(delivery.deliveryLng)]}
-                  icon={createCustomerIcon({ 
-                    fullName: delivery.customerName 
-                  })}
-                >
-                  <Popup>
-                    <div className="text-center max-w-xs p-2">
-                      <div className="flex items-center justify-center mb-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-green-400">
-                          {delivery.customerName?.split(' ').map((n: string) => n[0]).join('') || 'C'}
-                        </div>
+              {/* Customer Marker */}
+              <Marker
+                position={[26.6600, 86.2100]} // Sample customer coordinates
+                icon={createCustomerIcon({ 
+                  fullName: delivery.customerName 
+                })}
+              >
+                <Popup>
+                  <div className="text-center max-w-xs p-2">
+                    <div className="flex items-center justify-center mb-2">
+                      <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-green-400">
+                        {delivery.customerName?.split(' ').map((n: string) => n[0]).join('') || 'C'}
                       </div>
-                      <h3 className="font-semibold text-sm">{delivery.customerName}</h3>
-                      <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
-                      <p className="text-xs text-gray-500 mb-2">{delivery.deliveryAddress}</p>
-                      <div className="flex items-center justify-center gap-1 mb-2">
-                        <Phone className="h-3 w-3 text-green-500" />
-                        <span className="text-xs">{delivery.customerPhone || 'N/A'}</span>
-                      </div>
-                      <div className="flex items-center justify-center gap-1 mb-2">
-                        <DollarSign className="h-3 w-3 text-orange-500" />
-                        <span className="text-xs font-medium">₹{delivery.totalAmount}</span>
-                      </div>
-                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                        🏠 Delivery Location
-                      </Badge>
                     </div>
-                  </Popup>
-                </Marker>
-              )}
+                    <h3 className="font-semibold text-sm">{delivery.customerName}</h3>
+                    <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                    <p className="text-xs text-gray-500 mb-2">Delivery Address</p>
+                    <div className="flex items-center justify-center gap-1 mb-2">
+                      <DollarSign className="h-3 w-3 text-orange-500" />
+                      <span className="text-xs font-medium">₹{delivery.totalAmount}</span>
+                    </div>
+                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                      🏠 Delivery Location
+                    </Badge>
+                  </div>
+                </Popup>
+              </Marker>
             </div>
           ))}
-          </MapContainer>
-        </div>
+        </MapContainer>
       ) : (
         <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
           <div className="text-center p-8">
