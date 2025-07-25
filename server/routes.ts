@@ -5282,28 +5282,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const order = await storage.getOrder(delivery.orderId);
             if (order) {
-              // Get order items to find store
+              // Get order items to find store and product details
               const orderItems = await storage.getOrderItems(delivery.orderId);
               let storeDetails = null;
               let pickupAddress = delivery.pickupAddress || 'Store Location';
+              let items = [];
+              let storeLogo = null;
+              let storeLatitude = 26.6586; // Default Siraha coordinates
+              let storeLongitude = 86.2003;
               
               if (orderItems.length > 0) {
                 const store = await storage.getStore(orderItems[0].storeId);
                 if (store) {
                   storeDetails = store;
+                  storeLogo = store.logo || store.logoUrl;
                   pickupAddress = `${store.name}, ${store.address || store.location || 'Store Location'}`;
+                  
+                  // Extract store coordinates if available
+                  if (store.latitude && store.longitude) {
+                    storeLatitude = parseFloat(store.latitude);
+                    storeLongitude = parseFloat(store.longitude);
+                  }
                 }
+                
+                // Get product details for each order item
+                items = await Promise.all(
+                  orderItems.map(async (item) => {
+                    const product = await storage.getProduct(item.productId);
+                    if (product) {
+                      let productImage = null;
+                      if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+                        productImage = product.images[0];
+                      } else if (product.imageUrl) {
+                        productImage = product.imageUrl;
+                      }
+                      
+                      return {
+                        name: product.name,
+                        quantity: item.quantity,
+                        price: item.price || product.price,
+                        image: productImage,
+                        description: product.description
+                      };
+                    }
+                    return {
+                      name: 'Unknown Product',
+                      quantity: item.quantity,
+                      price: item.price || 0,
+                      image: null,
+                      description: ''
+                    };
+                  })
+                );
               }
+
+              // Calculate distance using Haversine formula
+              const customerLatitude = 26.6600; // Default customer coordinates (should be from order)
+              const customerLongitude = 86.2100;
+              
+              function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+                const R = 6371; // Earth's radius in kilometers
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                          Math.sin(dLon/2) * Math.sin(dLon/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                return R * c;
+              }
+              
+              const calculatedDistance = calculateDistance(storeLatitude, storeLongitude, customerLatitude, customerLongitude);
+              const distanceKm = Math.round(calculatedDistance * 100) / 100; // Round to 2 decimal places
 
               return {
                 ...delivery,
                 customerName: order.customerName,
                 customerPhone: order.phone || order.customerPhone,
+                customerEmail: order.customerEmail,
+                customerAvatar: order.customerAvatar,
                 totalAmount: order.totalAmount,
                 deliveryFee: order.deliveryFee || delivery.deliveryFee || '35',
                 pickupAddress,
                 deliveryAddress: order.shippingAddress,
-                storeDetails
+                storeDetails,
+                storeLogo,
+                storeName: storeDetails?.name || 'Unknown Store',
+                items,
+                distance: `${distanceKm} km`,
+                paymentMethod: order.paymentMethod || 'COD',
+                specialInstructions: order.specialInstructions || order.notes
               };
             }
             return delivery;
