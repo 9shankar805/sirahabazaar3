@@ -188,6 +188,8 @@ export default function ModernDeliveryPartnerDashboard() {
   const [showSplash, setShowSplash] = useState(true);
   const [language, setLanguage] = useState("English");
   const [currentWorkflow, setCurrentWorkflow] = useState<'idle' | 'accepted' | 'started' | 'enroute' | 'delivered'>('idle');
+  const [activeDeliveryId, setActiveDeliveryId] = useState<number | null>(null);
+  const [currentNavStep, setCurrentNavStep] = useState<'to_store' | 'to_customer' | 'completed'>('to_store');
 
   // Fetch delivery partner stats
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -237,6 +239,14 @@ export default function ModernDeliveryPartnerDashboard() {
 
   const handleStatusUpdate = (deliveryId: number, status: string) => {
     updateStatusMutation.mutate({ deliveryId, status });
+  };
+
+  const handleStartDelivery = (deliveryId: number) => {
+    setActiveDeliveryId(deliveryId);
+    setCurrentWorkflow('started');
+    setCurrentNavStep('to_store');
+    handleStatusUpdate(deliveryId, 'started');
+    toast({ title: "Delivery started! Navigate to store first." });
   };
 
   const toggleOnlineStatus = () => {
@@ -320,6 +330,11 @@ export default function ModernDeliveryPartnerDashboard() {
               activeDeliveries={activeDeliveries} 
               deliveriesLoading={deliveriesLoading}
               onStatusUpdate={handleStatusUpdate}
+              onStartDelivery={handleStartDelivery}
+              activeDeliveryId={activeDeliveryId}
+              setActiveDeliveryId={setActiveDeliveryId}
+              currentNavStep={currentNavStep}
+              setCurrentNavStep={setCurrentNavStep}
             />
           </TabsContent>
           
@@ -559,11 +574,21 @@ function ModernDashboardTab({ stats, statsLoading }: { stats: DeliveryStats; sta
 function ModernOrdersTab({ 
   activeDeliveries, 
   deliveriesLoading, 
-  onStatusUpdate 
+  onStatusUpdate,
+  onStartDelivery,
+  activeDeliveryId,
+  setActiveDeliveryId,
+  currentNavStep,
+  setCurrentNavStep
 }: { 
   activeDeliveries: ActiveDelivery[]; 
   deliveriesLoading: boolean;
   onStatusUpdate: (deliveryId: number, status: string) => void;
+  onStartDelivery: (deliveryId: number) => void;
+  activeDeliveryId: number | null;
+  setActiveDeliveryId: (id: number | null) => void;
+  currentNavStep: 'to_store' | 'to_customer' | 'completed';
+  setCurrentNavStep: (step: 'to_store' | 'to_customer' | 'completed') => void;
 }) {
   if (deliveriesLoading) {
     return (
@@ -591,7 +616,13 @@ function ModernOrdersTab({
       <div className="mx-4 mb-4">
         <Card className="bg-white/10 backdrop-blur-sm border-white/20">
           <CardContent className="p-2">
-            <OrdersMapComponent activeDeliveries={activeDeliveries} />
+            <OrdersMapComponent 
+              activeDeliveries={activeDeliveries} 
+              activeDeliveryId={activeDeliveryId}
+              setActiveDeliveryId={setActiveDeliveryId}
+              currentNavStep={currentNavStep}
+              setCurrentNavStep={setCurrentNavStep}
+            />
           </CardContent>
         </Card>
       </div>
@@ -610,69 +641,217 @@ function ModernOrdersTab({
             </CardContent>
           </Card>
         ) : (
-          activeDeliveries.map((delivery) => (
-            <Card key={delivery.id} className="bg-white/95 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-800">Order #{delivery.orderId}</h3>
-                    <p className="text-sm text-gray-600">{delivery.customerName}</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mb-1">
-                      <span className="text-white font-bold">1</span>
+          activeDeliveries.map((delivery) => {
+            const isActiveDelivery = activeDeliveryId === delivery.id;
+            
+            return (
+              <Card key={delivery.id} className={`${isActiveDelivery ? 'bg-blue-50 border-blue-200' : 'bg-white/95'} backdrop-blur-sm`}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-bold text-lg text-gray-800">Order #{delivery.orderId}</h3>
+                      <p className="text-sm text-gray-600">{delivery.customerName}</p>
+                      {isActiveDelivery && (
+                        <Badge className="mt-1 bg-blue-500 text-white">
+                          <Timer className="h-3 w-3 mr-1" />
+                          Active Delivery
+                        </Badge>
+                      )}
                     </div>
-                    <p className="text-xs text-gray-600">13 min</p>
+                    <div className="text-center">
+                      <div className={`w-12 h-12 ${isActiveDelivery ? 'bg-blue-500' : 'bg-red-500'} rounded-full flex items-center justify-center mb-1`}>
+                        <span className="text-white font-bold">1</span>
+                      </div>
+                      <p className="text-xs text-gray-600">13 min</p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800">Pickup</p>
-                      <p className="text-xs text-gray-600">{delivery.pickupAddress}</p>
+                  {/* Enhanced Order Details for Active Delivery */}
+                  {isActiveDelivery && (
+                    <div className="bg-white rounded-lg p-3 mb-4 border">
+                      <h4 className="font-semibold text-sm mb-2 text-gray-800">Order Details</h4>
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Total Amount:</span>
+                          <span className="font-medium">₹{delivery.totalAmount}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Delivery Fee:</span>
+                          <span className="font-medium">₹{delivery.deliveryFee}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Distance:</span>
+                          <span className="font-medium">{delivery.distance}</span>
+                        </div>
+                        <div className="border-t pt-2 mt-2">
+                          <p className="font-medium mb-1">Items ({delivery.items?.length || 0}):</p>
+                          {delivery.items?.slice(0, 3).map((item, idx) => (
+                            <div key={idx} className="flex justify-between">
+                              <span>{item.quantity}x {item.name}</span>
+                              <span>₹{item.price}</span>
+                            </div>
+                          ))}
+                          {(delivery.items?.length || 0) > 3 && (
+                            <p className="text-gray-500 mt-1">+{(delivery.items?.length || 0) - 3} more items</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="ml-1.5 w-0.5 h-4 bg-gray-300"></div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800">Delivery</p>
-                      <p className="text-xs text-gray-600">{delivery.deliveryAddress}</p>
-                    </div>
-                  </div>
-                </div>
+                  )}
 
-                <div className="flex space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => window.open(`tel:${delivery.customerPhone}`)}
-                  >
-                    <Phone className="h-4 w-4 mr-1" />
-                    Call
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="flex-1 bg-green-500 hover:bg-green-600"
-                    onClick={() => onStatusUpdate(delivery.id, 'delivered')}
-                  >
-                    START DELIVERY
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-3 h-3 ${currentNavStep === 'to_store' && isActiveDelivery ? 'bg-orange-500 animate-pulse' : 'bg-red-500'} rounded-full`}></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-800">Pickup</p>
+                        <p className="text-xs text-gray-600">{delivery.pickupAddress}</p>
+                      </div>
+                      {isActiveDelivery && currentNavStep === 'to_store' && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=26.6586,86.2003`, '_blank')}
+                          className="text-xs"
+                        >
+                          <Navigation className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="ml-1.5 w-0.5 h-4 bg-gray-300"></div>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-3 h-3 ${currentNavStep === 'to_customer' && isActiveDelivery ? 'bg-blue-500 animate-pulse' : 'bg-green-500'} rounded-full`}></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-800">Delivery</p>
+                        <p className="text-xs text-gray-600">{delivery.deliveryAddress}</p>
+                      </div>
+                      {isActiveDelivery && currentNavStep === 'to_customer' && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=26.6600,86.2100`, '_blank')}
+                          className="text-xs"
+                        >
+                          <Navigation className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => window.open(`tel:${delivery.customerPhone}`)}
+                    >
+                      <Phone className="h-4 w-4 mr-1" />
+                      Call
+                    </Button>
+                    {!isActiveDelivery ? (
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-green-500 hover:bg-green-600"
+                        onClick={() => onStartDelivery(delivery.id)}
+                      >
+                        START DELIVERY
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                          setActiveDeliveryId(null);
+                          setCurrentNavStep('to_store');
+                        }}
+                      >
+                        Stop Tracking
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
     </div>
   );
 }
 
+// Create simplified markers without logos for delivery mode
+const createSimpleStoreMarker = () => {
+  return new L.DivIcon({
+    html: `
+      <div style="
+        width: 32px; 
+        height: 32px; 
+        background: #dc2626; 
+        border: 3px solid white; 
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+      ">
+        <div style="
+          width: 16px; 
+          height: 16px; 
+          background: white; 
+          border-radius: 50%;
+        "></div>
+      </div>
+    `,
+    className: 'simple-store-marker',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16]
+  });
+};
+
+const createSimpleCustomerMarker = () => {
+  return new L.DivIcon({
+    html: `
+      <div style="
+        width: 32px; 
+        height: 32px; 
+        background: #10b981; 
+        border: 3px solid white; 
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+      ">
+        <div style="
+          width: 16px; 
+          height: 16px; 
+          background: white; 
+          border-radius: 50%;
+        "></div>
+      </div>
+    `,
+    className: 'simple-customer-marker',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16]
+  });
+};
+
 // Orders Map Component - Compact version for Orders tab
-function OrdersMapComponent({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
+function OrdersMapComponent({ 
+  activeDeliveries, 
+  activeDeliveryId, 
+  setActiveDeliveryId,
+  currentNavStep, 
+  setCurrentNavStep 
+}: { 
+  activeDeliveries: ActiveDelivery[]; 
+  activeDeliveryId: number | null;
+  setActiveDeliveryId: (id: number | null) => void;
+  currentNavStep: 'to_store' | 'to_customer' | 'completed';
+  setCurrentNavStep: (step: 'to_store' | 'to_customer' | 'completed') => void;
+}) {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   // Center coordinates for the map (Siraha, Nepal)
@@ -733,46 +912,99 @@ function OrdersMapComponent({ activeDeliveries }: { activeDeliveries: ActiveDeli
           </Marker>
 
           {/* Active Delivery Markers */}
-          {activeDeliveries.map((delivery) => (
-            <div key={delivery.id}>
-              {/* Store Marker */}
-              <Marker
-                position={[26.6586, 86.2003]} // Sample store coordinates
-                icon={createStoreIcon({ 
-                  logo: '/default-store-logo.png',
-                  name: 'Store Location'
-                })}
-              >
-                <Popup>
-                  <div className="text-center max-w-xs p-2">
-                    <h3 className="font-semibold text-sm">Store Location</h3>
-                    <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
-                    <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
-                      📍 Pickup Location
-                    </Badge>
-                  </div>
-                </Popup>
-              </Marker>
-              
-              {/* Customer Marker */}
-              <Marker
-                position={[26.6600, 86.2100]} // Sample customer coordinates
-                icon={createCustomerIcon({ 
-                  fullName: delivery.customerName 
-                })}
-              >
-                <Popup>
-                  <div className="text-center max-w-xs p-2">
-                    <h3 className="font-semibold text-sm">{delivery.customerName}</h3>
-                    <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
-                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                      🏠 Delivery Location
-                    </Badge>
-                  </div>
-                </Popup>
-              </Marker>
-            </div>
-          ))}
+          {activeDeliveries.map((delivery) => {
+            const isActiveDelivery = activeDeliveryId === delivery.id;
+            const useSimpleMarkers = isActiveDelivery;
+            
+            return (
+              <div key={delivery.id}>
+                {/* Store Marker */}
+                <Marker
+                  position={[26.6586, 86.2003]} // Sample store coordinates
+                  icon={useSimpleMarkers ? createSimpleStoreMarker() : createStoreIcon({ 
+                    logo: '/default-store-logo.png',
+                    name: 'Store Location'
+                  })}
+                >
+                  <Popup>
+                    <div className="text-center max-w-xs p-2">
+                      <h3 className="font-semibold text-sm">Store Location</h3>
+                      <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                      {isActiveDelivery && (
+                        <div className="space-y-2 mt-2">
+                          <div className="text-xs text-gray-700">
+                            <p className="font-medium mb-1">Order Items:</p>
+                            {delivery.items?.slice(0, 2).map((item, idx) => (
+                              <p key={idx} className="mb-1">
+                                {item.quantity}x {item.name} - ₹{item.price}
+                              </p>
+                            ))}
+                          </div>
+                          {currentNavStep === 'to_store' && (
+                            <Button 
+                              size="sm" 
+                              className="w-full bg-blue-500 hover:bg-blue-600 text-xs"
+                              onClick={() => {
+                                window.open(`https://www.google.com/maps/dir/?api=1&destination=26.6586,86.2003`, '_blank');
+                              }}
+                            >
+                              <Navigation className="h-3 w-3 mr-1" />
+                              Navigate to Store
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                      {!isActiveDelivery && (
+                        <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                          📍 Pickup Location
+                        </Badge>
+                      )}
+                    </div>
+                  </Popup>
+                </Marker>
+                
+                {/* Customer Marker */}
+                <Marker
+                  position={[26.6600, 86.2100]} // Sample customer coordinates
+                  icon={useSimpleMarkers ? createSimpleCustomerMarker() : createCustomerIcon({ 
+                    fullName: delivery.customerName 
+                  })}
+                >
+                  <Popup>
+                    <div className="text-center max-w-xs p-2">
+                      <h3 className="font-semibold text-sm">{delivery.customerName}</h3>
+                      <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                      {isActiveDelivery && (
+                        <div className="space-y-2 mt-2">
+                          <div className="text-xs text-gray-700">
+                            <p className="font-medium">Total: ₹{delivery.totalAmount}</p>
+                            <p>Phone: {delivery.customerPhone}</p>
+                          </div>
+                          {currentNavStep === 'to_customer' && (
+                            <Button 
+                              size="sm" 
+                              className="w-full bg-green-500 hover:bg-green-600 text-xs"
+                              onClick={() => {
+                                window.open(`https://www.google.com/maps/dir/?api=1&destination=26.6600,86.2100`, '_blank');
+                              }}
+                            >
+                              <Navigation className="h-3 w-3 mr-1" />
+                              Navigate to Customer
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                      {!isActiveDelivery && (
+                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                          🏠 Delivery Location
+                        </Badge>
+                      )}
+                    </div>
+                  </Popup>
+                </Marker>
+              </div>
+            );
+          })}
         </MapContainer>
       ) : (
         <div className="h-full flex items-center justify-center bg-gray-100 rounded-lg">
@@ -783,8 +1015,52 @@ function OrdersMapComponent({ activeDeliveries }: { activeDeliveries: ActiveDeli
         </div>
       )}
 
+      {/* Navigation Controls for Active Delivery */}
+      {activeDeliveryId && (
+        <div className="absolute bottom-2 left-2 right-2 z-[1000]">
+          <Card className="bg-white/95 backdrop-blur-sm">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="text-xs">
+                  <p className="font-medium text-gray-800">
+                    {currentNavStep === 'to_store' ? 'Navigate to Store' : 
+                     currentNavStep === 'to_customer' ? 'Navigate to Customer' : 'Delivery Complete'}
+                  </p>
+                  <p className="text-gray-600">
+                    {currentNavStep === 'to_store' ? 'Pick up the order' : 
+                     currentNavStep === 'to_customer' ? 'Deliver to customer' : 'Order delivered'}
+                  </p>
+                </div>
+                <div className="flex space-x-2">
+                  {currentNavStep === 'to_store' && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => setCurrentNavStep('to_customer')}
+                      className="bg-orange-500 hover:bg-orange-600 text-xs"
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Picked Up
+                    </Button>
+                  )}
+                  {currentNavStep === 'to_customer' && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => setCurrentNavStep('completed')}
+                      className="bg-green-500 hover:bg-green-600 text-xs"
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Delivered
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Compact distance indicator */}
-      <div className="absolute bottom-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-medium text-gray-800">
+      <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-medium text-gray-800">
         {activeDeliveries.length > 0 ? '1.3 km' : 'No active deliveries'}
       </div>
     </div>
