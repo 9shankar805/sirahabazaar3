@@ -1915,7 +1915,12 @@ function OrdersTab({
                   size="sm"
                   className="flex-1 bg-blue-500 hover:bg-blue-600"
                   onClick={() => {
-                    const mapsUrl = `https://www.google.com/maps/dir/${delivery.pickupAddress}/${delivery.deliveryAddress}`;
+                    const storeLatitude = (delivery as any).storeLatitude || 26.6586;
+                    const storeLongitude = (delivery as any).storeLongitude || 86.2003;
+                    const customerLatitude = (delivery as any).customerLatitude || 26.6600;
+                    const customerLongitude = (delivery as any).customerLongitude || 86.2100;
+                    // Use coordinates for both pickup and delivery
+                    const mapsUrl = `https://www.google.com/maps/dir/${storeLatitude},${storeLongitude}/${customerLatitude},${customerLongitude}`;
                     window.open(mapsUrl, '_blank');
                   }}
                 >
@@ -2792,7 +2797,8 @@ function NotificationsTab({ notifications }: { notifications: any[] }) {
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        const mapsUrl = `https://www.google.com/maps/search/Siraha+Electronics+Hub+Siraha+Nepal`;
+                        // Use coordinates for Siraha Electronics Hub
+                        const mapsUrl = `https://www.google.com/maps/dir//26.6603,86.2064`;
                         window.open(mapsUrl, '_blank');
                       }}
                     >
