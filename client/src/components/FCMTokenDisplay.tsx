@@ -88,8 +88,8 @@ export default function FCMTokenDisplay() {
     console.log('🔧 Starting Firebase Configuration Debug...');
     
     try {
-      // Validate VAPID key first
-      const vapidKey = "BG5V1u2eNls8IInm93_F-ZBb2hXaEZIy4AjHBrIjDeClqi4wLVlVZ5x64WeMzFESgByQjeOtcL1UrGMGFQm0GlE";
+      // Validate VAPID key first - using correct key
+      const vapidKey = "BBeY7MuZB7850MAibtxV4fJxcKYAF3oQxNBB60l1FzHK63IjkTSI9ZFDPW1hmHnKSJPckGFM5gu7JlaCGavnwqA";
       validateVapidKey(vapidKey);
       
       // Debug service worker

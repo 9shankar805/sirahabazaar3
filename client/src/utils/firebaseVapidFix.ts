@@ -17,8 +17,15 @@ export const testFirebaseConfig = async () => {
       appId: "1:774950702828:web:09c2dfc1198d45244a9fc9"
     };
 
-    // Test with alternative VAPID key (user might need to regenerate)
-    const testVapidKey = "BG5V1u2eNls8IInm93_F-ZBb2hXaEZIy4AjHBrIjDeClqi4wLVlVZ5x64WeMzFESgByQjeOtcL1UrGMGFQm0GlE";
+    // Use the correct VAPID key pair provided by user
+    const testVapidKey = "BBeY7MuZB7850MAibtxV4fJxcKYAF3oQxNBB60l1FzHK63IjkTSI9ZFDPW1hmHnKSJPckGFM5gu7JlaCGavnwqA";
+    const vapidPrivateKey = "kAXgMUCBn7sp_zA7lgCH0GD3_mbwA5BAKpWbhQ5STRM";
+    
+    console.log('🔐 Using VAPID key pair:', {
+      publicKey: testVapidKey.substring(0, 20) + '...',
+      privateKey: vapidPrivateKey.substring(0, 10) + '...',
+      keyPairMatch: 'Validating pair'
+    });
 
     console.log('🔧 Firebase Config Test:', {
       projectId: firebaseConfig.projectId,

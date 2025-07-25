@@ -16,8 +16,8 @@ export const getFirebaseConfig = () => {
 };
 
 export const getVapidKey = () => {
-  // VAPID key for web push notifications
-  return "BG5V1u2eNls8IInm93_F-ZBb2hXaEZIy4AjHBrIjDeClqi4wLVlVZ5x64WeMzFESgByQjeOtcL1UrGMGFQm0GlE";
+  // VAPID key for web push notifications - Updated with correct key
+  return "BBeY7MuZB7850MAibtxV4fJxcKYAF3oQxNBB60l1FzHK63IjkTSI9ZFDPW1hmHnKSJPckGFM5gu7JlaCGavnwqA";
 };
 
 // Validate Firebase configuration
