@@ -80,7 +80,7 @@ export default function ModernDeliveryPartnerDashboard() {
 
   // Get delivery partner ID first
   const { data: partnerData } = useQuery({
-    queryKey: [`/api/delivery-partners/user`, user?.id],
+    queryKey: [`/api/delivery-partners/user?userId=${user?.id}`],
     enabled: !!user?.id,
   });
 
