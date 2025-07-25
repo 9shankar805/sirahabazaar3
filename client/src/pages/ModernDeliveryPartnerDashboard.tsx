@@ -703,67 +703,206 @@ function ModernOrdersTab({
   );
 }
 
-// Modern Map Tab Component
+// Modern Map Tab Component with Real Leaflet Map
 function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
+  const mapRef = useRef<any>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // Center coordinates for the map (Siraha, Nepal)
+  const defaultCenter: [number, number] = [26.6586, 86.2003];
+
+  // Get user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          // Use default location if GPS fails
+          setUserLocation({ lat: 26.6586, lng: 86.2003 });
+        }
+      );
+    } else {
+      // Use default location if geolocation not supported
+      setUserLocation({ lat: 26.6586, lng: 86.2003 });
+    }
+  }, []);
+
   return (
-    <div className="relative h-screen bg-gradient-to-b from-red-500 to-orange-500">
-      {/* Map Container */}
-      <div className="absolute inset-0">
-        <div className="h-full bg-green-100 relative overflow-hidden">
-          {/* Map simulation with roads */}
-          <div className="absolute inset-0 bg-gradient-to-br from-green-200 to-green-300">
-            {/* Major roads */}
-            <div className="absolute top-1/3 left-0 right-0 h-2 bg-gray-400"></div>
-            <div className="absolute top-2/3 left-0 right-0 h-2 bg-gray-400"></div>
-            <div className="absolute top-0 bottom-0 left-1/3 w-2 bg-gray-400"></div>
-            <div className="absolute top-0 bottom-0 right-1/3 w-2 bg-gray-400"></div>
-            
-            {/* Delivery locations */}
-            <div className="absolute top-1/4 left-1/4 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center border-3 border-white shadow-lg animate-pulse">
-              <MapPin className="h-4 w-4 text-white" />
-            </div>
-            
-            <div className="absolute top-3/4 right-1/4 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-3 border-white shadow-lg">
-              <Target className="h-4 w-4 text-white" />
-            </div>
-          </div>
+    <div className="relative h-screen">
+      {userLocation ? (
+        <MapContainer
+          center={[userLocation.lat, userLocation.lng]}
+          zoom={13}
+          style={{ height: '100%', width: '100%' }}
+          className="z-0"
+          scrollWheelZoom={true}
+          doubleClickZoom={true}
+          touchZoom={true}
+          zoomControl={false}
+          ref={mapRef}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
           
-          {/* Time indicator */}
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
-            <div className="flex items-center space-x-2">
-              <Timer className="h-4 w-4 text-red-500" />
-              <span className="text-sm font-medium text-gray-800">13 min</span>
+          {/* Delivery Partner Location */}
+          <Marker
+            position={[userLocation.lat, userLocation.lng]}
+            icon={deliveryPartnerIcon}
+          >
+            <Popup>
+              <div className="text-center">
+                <h3 className="font-semibold">Your Location</h3>
+                <p className="text-sm text-gray-600">Delivery Partner</p>
+              </div>
+            </Popup>
+          </Marker>
+
+          {/* Active Delivery Markers */}
+          {activeDeliveries.map((delivery) => (
+            <div key={delivery.id}>
+              {/* Store Marker */}
+              <Marker
+                position={[26.6586, 86.2003]} // Sample store coordinates
+                icon={createStoreIcon({ 
+                  logo: '/default-store-logo.png',
+                  name: 'Store Location'
+                })}
+              >
+                <Popup>
+                  <div className="text-center max-w-xs p-2">
+                    <div className="flex items-center justify-center mb-2">
+                      <img 
+                        src='/default-store-logo.png'
+                        alt="Store"
+                        className="w-8 h-8 rounded-full object-cover border-2 border-red-500"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjZGMyNjI2Ii8+Cjwvc3ZnPg==';
+                        }}
+                      />
+                    </div>
+                    <h3 className="font-semibold text-sm">Store Location</h3>
+                    <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                    <p className="text-xs text-gray-500 mb-2">Pickup Address</p>
+                    <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                      📍 Pickup Location
+                    </Badge>
+                  </div>
+                </Popup>
+              </Marker>
+              
+              {/* Customer Marker */}
+              <Marker
+                position={[26.6600, 86.2100]} // Sample customer coordinates
+                icon={createCustomerIcon({ 
+                  fullName: delivery.customerName 
+                })}
+              >
+                <Popup>
+                  <div className="text-center max-w-xs p-2">
+                    <div className="flex items-center justify-center mb-2">
+                      <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-green-400">
+                        {delivery.customerName?.split(' ').map((n: string) => n[0]).join('') || 'C'}
+                      </div>
+                    </div>
+                    <h3 className="font-semibold text-sm">{delivery.customerName}</h3>
+                    <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                    <p className="text-xs text-gray-500 mb-2">Delivery Address</p>
+                    <div className="flex items-center justify-center gap-1 mb-2">
+                      <DollarSign className="h-3 w-3 text-orange-500" />
+                      <span className="text-xs font-medium">₹{delivery.totalAmount}</span>
+                    </div>
+                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                      🏠 Delivery Location
+                    </Badge>
+                  </div>
+                </Popup>
+              </Marker>
             </div>
-          </div>
-          
-          {/* Bottom action panel */}
-          <div className="absolute bottom-4 left-4 right-4">
-            <Card className="bg-white/95 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="font-bold text-gray-800">Active Route</h3>
-                    <p className="text-sm text-gray-600">Siraha Electronics Hub</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-gray-800">1.3 km</div>
-                    <div className="text-sm text-gray-600">Distance</div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <Button className="bg-green-500 hover:bg-green-600" size="sm">
-                    START DELIVERY
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    DIRECTIONS
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          ))}
+        </MapContainer>
+      ) : (
+        <div className="h-full flex items-center justify-center bg-gray-100">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading map...</p>
           </div>
         </div>
+      )}
+
+      {/* Map Controls */}
+      <div className="absolute top-4 right-4 z-[999] flex flex-col space-y-2">
+        {/* Zoom Controls */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (mapRef.current) {
+                mapRef.current.zoomIn();
+              }
+            }}
+            className="w-10 h-10 p-0 rounded-none hover:bg-red-50"
+            title="Zoom In"
+          >
+            <span className="text-lg font-bold text-red-600">+</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (mapRef.current) {
+                mapRef.current.zoomOut();
+              }
+            }}
+            className="w-10 h-10 p-0 rounded-none hover:bg-red-50"
+            title="Zoom Out"
+          >
+            <span className="text-lg font-bold text-red-600">−</span>
+          </Button>
+        </div>
+
+        {/* Center on User Location */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            if (userLocation && mapRef.current) {
+              mapRef.current.setView([userLocation.lat, userLocation.lng], 15);
+            }
+          }}
+          className="bg-white shadow-lg hover:bg-red-50"
+          title="Center on My Location"
+        >
+          <Target className="h-4 w-4 text-red-600" />
+        </Button>
       </div>
+
+      {/* Active Deliveries Counter */}
+      {activeDeliveries.length > 0 && (
+        <div className="absolute top-4 left-4 z-[999]">
+          <Card className="bg-white/90 backdrop-blur-sm">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <div className="bg-red-500 rounded-full p-2">
+                  <Route className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{activeDeliveries.length} Active Deliveries</p>
+                  <p className="text-xs text-gray-600">Tap markers for details</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
