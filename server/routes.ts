@@ -8203,46 +8203,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If FCM token is provided, send actual push notification
       if (fcmToken) {
         try {
-          // Use Firebase Admin SDK or web-push to send notification
-          const admin = require('firebase-admin');
+          // Use web-push library to send notification (ES6 compatible)
+          const webpush = require('web-push');
           
-          // Check if Firebase Admin is initialized
-          if (!admin.apps.length) {
-            // Initialize with service account if available
-            try {
-              const serviceAccount = require('../firebase-service-account.json');
-              admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount)
-              });
-              console.log('🔥 Firebase Admin initialized successfully');
-            } catch (initError) {
-              console.log('⚠️ Firebase service account not found, using default initialization');
-              admin.initializeApp();
-            }
-          }
-
-          // Send notification using Firebase Admin
-          const message = {
-            token: fcmToken,
-            notification: testMessage.notification,
-            data: testMessage.data,
-            webpush: {
-              notification: {
-                icon: '/icon-192x192.png',
-                badge: '/icon-192x192.png',
-                requireInteraction: true,
-                actions: [
-                  {
-                    action: 'view',
-                    title: 'View App'
-                  }
-                ]
-              }
-            }
+          // Set VAPID details
+          const vapidKeys = {
+            publicKey: 'BBeY7MuZB7850MAibtxV4fJxcKYAF3oQxNBB60l1FzHK63IjkTSI9ZFDPW1hmHnKSJPckGFM5gu7JlaCGavnwqA',
+            privateKey: 'kAXgMUCBn7sp_zA7lgCH0GD3_mbwA5BAKpWbhQ5STRM'
           };
+          
+          webpush.setVapidDetails(
+            'mailto:sirahabazzar@gmail.com',
+            vapidKeys.publicKey,
+            vapidKeys.privateKey
+          );
+          
+          console.log('🔧 Web-push VAPID configured successfully');
 
-          notificationResult = await admin.messaging().send(message);
-          console.log('✅ FCM notification sent successfully:', notificationResult);
+          // Create notification payload for web-push
+          const payload = JSON.stringify({
+            title: testMessage.notification.title,
+            body: testMessage.notification.body,
+            icon: '/icon-192x192.png',
+            badge: '/icon-192x192.png',
+            data: testMessage.data,
+            requireInteraction: true,
+            actions: [
+              {
+                action: 'view',
+                title: 'View App'
+              }
+            ]
+          });
+
+          // Send notification using web-push
+          notificationResult = await webpush.sendNotification(fcmToken, payload);
+          console.log('✅ Web-push notification sent successfully:', notificationResult.statusCode);
           
         } catch (fcmError) {
           console.error('❌ FCM sending failed:', fcmError);
