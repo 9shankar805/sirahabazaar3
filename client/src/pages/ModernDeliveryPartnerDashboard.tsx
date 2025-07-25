@@ -1322,7 +1322,16 @@ function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[]
           </Marker>
 
           {/* Active Delivery Markers */}
-          {activeDeliveries.map((delivery) => (
+          {activeDeliveries.map((delivery) => {
+            console.log('🗺️ Map Delivery Data:', {
+              id: delivery.id,
+              storeName: delivery.storeName,
+              storeLogo: delivery.storeLogo,
+              customerName: delivery.customerName,
+              customerAvatar: delivery.customerAvatar
+            });
+            
+            return (
             <div key={delivery.id}>
               {/* Store Marker */}
               <Marker
@@ -1407,7 +1416,8 @@ function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[]
                 </Popup>
               </Marker>
             </div>
-          ))}
+          );
+          })}
         </MapContainer>
       ) : (
         <div className="h-full flex items-center justify-center bg-gray-100">
