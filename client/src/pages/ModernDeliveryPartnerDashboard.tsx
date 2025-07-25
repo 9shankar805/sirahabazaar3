@@ -385,6 +385,10 @@ export default function ModernDeliveryPartnerDashboard() {
           <TabsContent value="profile" className="m-0">
             <ModernProfileTab />
           </TabsContent>
+          
+          <TabsContent value="notifications" className="m-0">
+            <NotificationsTab notifications={notifications} />
+          </TabsContent>
         </div>
 
         {/* Bottom Navigation */}
@@ -443,47 +447,44 @@ function SplashScreen({
   onSkip: () => void; 
 }) {
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8">
-      {/* Logo Section */}
-      <div className="text-center mb-8">
-        <div className="w-24 h-24 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+    <div className="min-h-screen bg-white flex flex-col justify-center items-center px-6">
+      {/* Logo Section - Matches the design exactly */}
+      <div className="text-center mb-16">
+        <div className="w-20 h-20 bg-red-500 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
           <div className="flex space-x-1">
-            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-            <div className="w-3 h-3 bg-white rounded-full animate-pulse delay-75"></div>
-            <div className="w-3 h-3 bg-white rounded-full animate-pulse delay-150"></div>
+            <div className="w-3 h-3 bg-white rounded-full"></div>
+            <div className="w-3 h-3 bg-white rounded-full"></div>
+            <div className="w-3 h-3 bg-white rounded-full"></div>
           </div>
         </div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Your Logo</h1>
-        <p className="text-gray-600">Delivery Partner App</p>
+        <h1 className="text-3xl font-light text-red-500 mb-2">Your Logo</h1>
       </div>
 
-      {/* Language Selection */}
-      <div className="w-full max-w-xs space-y-4">
+      {/* Language Selection - Styled like the mockup */}
+      <div className="w-full max-w-sm space-y-3 mb-12">
         <div 
           onClick={() => setLanguage("English")}
-          className={`w-full p-4 rounded-xl border-2 cursor-pointer transition-all ${
+          className={`w-full p-4 rounded-xl cursor-pointer transition-all ${
             language === "English" 
-              ? "border-red-500 bg-red-50" 
-              : "border-gray-200 bg-white"
+              ? "bg-red-500 text-white" 
+              : "bg-gray-100 text-gray-800"
           }`}
         >
-          <div className="flex items-center space-x-3">
-            <Globe className="h-5 w-5 text-gray-600" />
-            <span className="font-medium text-gray-800">English</span>
+          <div className="text-center">
+            <span className="font-medium">English</span>
           </div>
         </div>
 
         <div 
           onClick={() => setLanguage("Français")}
-          className={`w-full p-4 rounded-xl border-2 cursor-pointer transition-all ${
+          className={`w-full p-4 rounded-xl cursor-pointer transition-all ${
             language === "Français" 
-              ? "border-red-500 bg-red-50" 
-              : "border-gray-200 bg-white"
+              ? "bg-red-500 text-white" 
+              : "bg-gray-100 text-gray-800"
           }`}
         >
-          <div className="flex items-center space-x-3">
-            <Globe className="h-5 w-5 text-gray-600" />
-            <span className="font-medium text-gray-800">Français</span>
+          <div className="text-center">
+            <span className="font-medium">Français</span>
           </div>
         </div>
       </div>
@@ -491,7 +492,7 @@ function SplashScreen({
       {/* Continue Button */}
       <Button 
         onClick={onSkip}
-        className="w-full max-w-xs mt-8 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl"
+        className="w-full max-w-sm bg-red-500 hover:bg-red-600 text-white py-4 rounded-xl text-lg font-medium"
       >
         Continue
       </Button>
@@ -506,9 +507,9 @@ function SplashScreen({
 function ModernDashboardTab({ stats, statsLoading }: { stats: DeliveryStats; statsLoading: boolean }) {
   const currentDate = new Date();
   const currentDay = currentDate.getDate();
-  const currentMonth = currentDate.toLocaleDateString('en-US', { month: 'long' });
+  const currentMonth = currentDate.toLocaleDateString('en-US', { month: 'short' });
   const currentYear = currentDate.getFullYear();
-  const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+  const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
 
   if (statsLoading) {
     return (
@@ -524,83 +525,95 @@ function ModernDashboardTab({ stats, statsLoading }: { stats: DeliveryStats; sta
   }
 
   return (
-    <div className="bg-gradient-to-b from-red-500 to-orange-500 min-h-screen text-white">
-      {/* Date Header */}
-      <div className="text-center py-8">
-        <div className="text-6xl font-bold mb-2">{currentDay}</div>
-        <div className="text-xl opacity-90">{dayName}</div>
-        <div className="text-sm opacity-75">{currentMonth} {currentYear}</div>
+    <div className="bg-gradient-to-b from-red-500 to-red-600 min-h-screen text-white">
+      {/* Date Header - Matches mockup exactly */}
+      <div className="text-center py-12 px-4">
+        <div className="text-8xl font-light mb-2">{currentDay}</div>
+        <div className="text-xl font-light opacity-90">{dayName}</div>
+        <div className="text-base opacity-75">{currentMonth} • {currentYear}</div>
       </div>
 
-      {/* Schedule Section */}
-      <div className="px-4 pb-4">
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3 mb-4">
-              <Clock className="h-5 w-5" />
-              <span className="font-medium">Today's Schedule</span>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-sm">9:30 AM - 10:00 AM</span>
-                </div>
-                <span className="text-sm font-medium">Work Started Today</span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                  <span className="text-sm">10:30 AM - 12:00 PM</span>
-                </div>
-                <span className="text-sm font-medium">Active Delivery Time</span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <span className="text-sm">2:00 PM - 6:00 PM</span>
-                </div>
-                <span className="text-sm font-medium">Peak Hours Available</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Daily Progress Number */}
+      <div className="text-center mb-8">
+        <div className="text-4xl font-light">12</div>
+        <div className="text-sm opacity-75 mt-1">Today's Progress</div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="px-4 space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold mb-1">₹{stats?.todayEarnings || 0}</div>
-              <div className="text-sm opacity-75">Today Earnings</div>
-              <div className="text-xs opacity-60">{stats?.todayDeliveries || 0} deliveries</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold mb-1">{stats?.rating || 0}</div>
-              <div className="text-sm opacity-75">Average Rating</div>
-              <div className="text-xs opacity-60">{stats?.totalDeliveries || 0} total deliveries</div>
-            </CardContent>
-          </Card>
+      {/* Schedule Section - Enhanced to match mockup */}
+      <div className="px-6 pb-6">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+          <div className="space-y-5">
+            {/* Morning Schedule */}
+            <div className="flex items-start space-x-4">
+              <div className="w-3 h-3 bg-green-400 rounded-full mt-2"></div>
+              <div className="flex-1">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-white font-medium">Morning Schedule</div>
+                    <div className="text-white/70 text-sm mt-1">8:30 AM - 11:00 AM</div>
+                  </div>
+                  <div className="text-white/60 text-xs">3 hours</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Afternoon Schedule */}
+            <div className="flex items-start space-x-4">
+              <div className="w-3 h-3 bg-yellow-400 rounded-full mt-2"></div>
+              <div className="flex-1">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-white font-medium">Afternoon Schedule</div>
+                    <div className="text-white/70 text-sm mt-1">1:00 PM - 5:00 PM</div>
+                  </div>
+                  <div className="text-white/60 text-xs">4 hours</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Evening Schedule */}
+            <div className="flex items-start space-x-4">
+              <div className="w-3 h-3 bg-blue-400 rounded-full mt-2"></div>
+              <div className="flex-1">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-white font-medium">Evening Schedule</div>
+                    <div className="text-white/70 text-sm mt-1">6:00 PM - 9:00 PM</div>
+                  </div>
+                  <div className="text-white/60 text-xs">3 hours</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xl font-bold">₹{stats?.weeklyEarnings || 0}</div>
-                <div className="text-sm opacity-75">This Week's Earnings</div>
-              </div>
-              <TrendingUp className="h-8 w-8 opacity-60" />
+      </div>
+
+      {/* Stats Section - Compact design like mockup */}
+      <div className="px-6 space-y-4">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="text-3xl font-light">₹{stats?.todayEarnings || 78}</div>
+              <div className="text-white/70 text-sm">Today's Cash</div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="text-right">
+              <div className="text-white/60 text-xs">+12% from yesterday</div>
+              <div className="text-white/60 text-xs">{stats?.todayDeliveries || 0} deliveries completed</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 text-center">
+            <div className="text-2xl font-light">{stats?.rating || 4.9}</div>
+            <div className="text-white/70 text-xs mt-1">Weekly Rating</div>
+          </div>
+          
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 text-center">
+            <div className="text-2xl font-light">{stats?.totalDeliveries || 156}</div>
+            <div className="text-white/70 text-xs mt-1">Total Deliveries</div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1697,7 +1710,7 @@ function ModernMapTab({ activeDeliveries, onStatusUpdate }: { activeDeliveries: 
   );
 }
 
-// Modern Schedule Tab Component  
+// Modern Schedule Tab Component - Matches mockup design exactly
 function ModernScheduleTab() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const currentDate = new Date();
@@ -1707,7 +1720,7 @@ function ModernScheduleTab() {
   // Calendar data
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const daysOfWeek = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
   
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
   const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
@@ -1727,86 +1740,108 @@ function ModernScheduleTab() {
   }
 
   return (
-    <div className="bg-gradient-to-b from-red-500 to-orange-500 min-h-screen text-white">
-      {/* Header */}
-      <div className="text-center py-6">
-        <h2 className="text-2xl font-bold">{monthNames[currentMonth]}</h2>
-        <p className="text-sm opacity-75">{currentYear}</p>
+    <div className="bg-gradient-to-b from-red-500 to-red-600 min-h-screen text-white">
+      {/* Header - September style from mockup */}
+      <div className="text-center py-8 px-4">
+        <h2 className="text-3xl font-light mb-2">{monthNames[currentMonth]}</h2>
+        <div className="text-sm opacity-75">{currentYear}</div>
       </div>
 
-      {/* Calendar */}
-      <div className="px-4">
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-          <CardContent className="p-4">
-            {/* Days of week header */}
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {daysOfWeek.map(day => (
-                <div key={day} className="text-center text-sm font-medium py-2 text-white/70">
-                  {day}
-                </div>
-              ))}
-            </div>
-            
-            {/* Calendar grid */}
-            <div className="grid grid-cols-7 gap-1">
-              {calendarDays.map((day, index) => (
-                <div key={index} className="aspect-square">
-                  {day && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={`w-full h-full text-sm hover:bg-white/20 ${
-                        day === currentDate.getDate() 
-                          ? "bg-white text-red-500 font-bold hover:bg-white/90" 
-                          : "text-white"
-                      } ${
-                        day === selectedDate.getDate() && day !== currentDate.getDate()
-                          ? "bg-white/30 border border-white/50" 
-                          : ""
-                      }`}
-                      onClick={() => setSelectedDate(new Date(currentYear, currentMonth, day))}
-                    >
-                      {day}
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Calendar - White background like mockup */}
+      <div className="mx-4 mb-6">
+        <div className="bg-white rounded-2xl p-6 text-gray-800">
+          {/* Days of week header */}
+          <div className="grid grid-cols-7 gap-1 mb-4">
+            {daysOfWeek.map(day => (
+              <div key={day} className="text-center text-sm font-medium py-2 text-gray-600">
+                {day}
+              </div>
+            ))}
+          </div>
+          
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {calendarDays.map((day, index) => (
+              <div key={index} className="aspect-square flex items-center justify-center">
+                {day && (
+                  <button
+                    className={`w-10 h-10 rounded-full text-sm font-medium transition-all ${
+                      day === currentDate.getDate() 
+                        ? "bg-red-500 text-white shadow-lg" 
+                        : "text-gray-700 hover:bg-gray-100"
+                    } ${
+                      day === selectedDate.getDate() && day !== currentDate.getDate()
+                        ? "bg-red-100 text-red-600" 
+                        : ""
+                    }`}
+                    onClick={() => setSelectedDate(new Date(currentYear, currentMonth, day))}
+                  >
+                    {day}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Schedule items */}
-      <div className="px-4 mt-4 space-y-3">
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                <div>
-                  <p className="font-medium">Morning Shift</p>
-                  <p className="text-sm opacity-75">9:00 AM - 1:00 PM</p>
-                </div>
+      {/* Schedule items with time slots - matches mockup */}
+      <div className="px-4 space-y-3">
+        {/* Morning Schedule */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-4 h-4 bg-green-400 rounded-full"></div>
+              <div>
+                <div className="text-white font-medium">Morning Schedule</div>
+                <div className="text-white/70 text-sm">8:30 AM - 12:00 PM</div>
               </div>
-              <CheckCircle className="h-5 w-5 text-green-400" />
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                <div>
-                  <p className="font-medium">Afternoon Shift</p>
-                  <p className="text-sm opacity-75">2:00 PM - 6:00 PM</p>
-                </div>
+            <div className="text-white/60 text-sm">Active</div>
+          </div>
+        </div>
+
+        {/* Afternoon Schedule */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-4 h-4 bg-yellow-400 rounded-full"></div>
+              <div>
+                <div className="text-white font-medium">Afternoon Schedule</div>
+                <div className="text-white/70 text-sm">1:00 PM - 5:00 PM</div>
               </div>
-              <Clock className="h-5 w-5 text-yellow-400" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="text-white/60 text-sm">Pending</div>
+          </div>
+        </div>
+
+        {/* Evening Schedule */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-4 h-4 bg-blue-400 rounded-full"></div>
+              <div>
+                <div className="text-white font-medium">Evening Schedule</div>
+                <div className="text-white/70 text-sm">6:00 PM - 9:00 PM</div>
+              </div>
+            </div>
+            <div className="text-white/60 text-sm">Available</div>
+          </div>
+        </div>
+
+        {/* Weekend Schedule */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-4 h-4 bg-purple-400 rounded-full"></div>
+              <div>
+                <div className="text-white font-medium">Weekend Schedule</div>
+                <div className="text-white/70 text-sm">10:00 AM - 8:00 PM</div>
+              </div>
+            </div>
+            <div className="text-white/60 text-sm">Extended</div>
+          </div>
+        </div>
       </div>
     </div>
   );
