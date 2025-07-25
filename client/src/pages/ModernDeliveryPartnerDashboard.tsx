@@ -22,7 +22,9 @@ import {
   Home,
   Route,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  MessageCircle,
+  Map
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -184,12 +186,19 @@ export default function ModernDeliveryPartnerDashboard() {
               {isOnline ? 'Go Offline' : 'Go Online'}
             </Button>
             <div className="relative">
-              <Bell className="h-5 w-5 text-gray-600" />
-              {unreadNotifications > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs bg-red-500">
-                  {unreadNotifications}
-                </Badge>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative p-1"
+                onClick={() => setActiveTab("notifications")}
+              >
+                <Bell className="h-5 w-5 text-gray-600" />
+                {unreadNotifications > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-red-500 animate-pulse">
+                    {unreadNotifications}
+                  </Badge>
+                )}
+              </Button>
             </div>
           </div>
         </div>
@@ -226,6 +235,10 @@ export default function ModernDeliveryPartnerDashboard() {
             <ContactTab />
           </TabsContent>
           
+          <TabsContent value="notifications" className="m-0">
+            <NotificationsTab notifications={notifications} />
+          </TabsContent>
+          
           <TabsContent value="profile" className="m-0">
             <ProfileTab />
           </TabsContent>
@@ -237,7 +250,7 @@ export default function ModernDeliveryPartnerDashboard() {
 
         {/* Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
-          <TabsList className="grid w-full grid-cols-4 bg-transparent h-16">
+          <TabsList className="grid w-full grid-cols-6 bg-transparent h-16">
             <TabsTrigger 
               value="dashboard" 
               className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
@@ -265,6 +278,20 @@ export default function ModernDeliveryPartnerDashboard() {
             >
               <DollarSign className="h-4 w-4" />
               <span className="text-xs">Earnings</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="schedule" 
+              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
+            >
+              <Calendar className="h-4 w-4" />
+              <span className="text-xs">Schedule</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="contact" 
+              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span className="text-xs">Support</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -458,24 +485,59 @@ function OrdersTab({
               </div>
             </div>
 
-            <div className="flex space-x-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1"
-                onClick={() => window.open(`tel:${delivery.customerPhone}`)}
-              >
-                <Phone className="h-4 w-4 mr-1" />
-                Call
-              </Button>
-              <Button
-                size="sm"
-                className="flex-1 bg-red-500 hover:bg-red-600"
-                onClick={() => onStatusUpdate(delivery.id, 'delivered')}
-              >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Complete
-              </Button>
+            <div className="space-y-2">
+              <div className="flex space-x-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => window.open(`tel:${delivery.customerPhone}`)}
+                >
+                  <Phone className="h-4 w-4 mr-1" />
+                  Call
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1 bg-blue-500 hover:bg-blue-600"
+                  onClick={() => {
+                    const mapsUrl = `https://www.google.com/maps/dir/${delivery.pickupAddress}/${delivery.deliveryAddress}`;
+                    window.open(mapsUrl, '_blank');
+                  }}
+                >
+                  <Navigation className="h-4 w-4 mr-1" />
+                  Navigate
+                </Button>
+              </div>
+              
+              <div className="flex space-x-2">
+                {delivery.status === 'pending' && (
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-green-500 hover:bg-green-600"
+                    onClick={() => onStatusUpdate(delivery.id, 'in_progress')}
+                  >
+                    ✓ Accept Order
+                  </Button>
+                )}
+                {delivery.status === 'in_progress' && (
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-orange-500 hover:bg-orange-600"
+                    onClick={() => onStatusUpdate(delivery.id, 'picked_up')}
+                  >
+                    📦 Picked Up
+                  </Button>
+                )}
+                {delivery.status === 'picked_up' && (
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-red-500 hover:bg-red-600"
+                    onClick={() => onStatusUpdate(delivery.id, 'delivered')}
+                  >
+                    ✅ Complete
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1058,6 +1120,93 @@ function HistoryTab() {
           <p className="text-gray-600">No deliveries match your filter criteria.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// Notifications Tab Component  
+function NotificationsTab({ notifications }: { notifications: any[] }) {
+  return (
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold text-lg">Delivery Alerts</h2>
+        <Badge variant="secondary">{notifications.filter(n => !n.isRead).length} unread</Badge>
+      </div>
+
+      <div className="space-y-3">
+        {notifications.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="bg-gray-100 rounded-full p-6 w-fit mx-auto mb-4">
+              <Bell className="h-12 w-12 text-gray-400" />
+            </div>
+            <h3 className="font-bold text-lg mb-2">No Notifications</h3>
+            <p className="text-gray-600">You're all caught up! New alerts will appear here.</p>
+          </div>
+        ) : (
+          notifications.map((notification) => (
+            <Card key={notification.id} className={`border-l-4 ${
+              notification.type === 'delivery' ? 'border-l-blue-500' : 
+              notification.type === 'earnings' ? 'border-l-green-500' : 
+              'border-l-orange-500'
+            } ${!notification.isRead ? 'bg-blue-50' : ''}`}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center space-x-3">
+                    <div className={`rounded-full p-2 ${
+                      notification.type === 'delivery' ? 'bg-blue-100' : 
+                      notification.type === 'earnings' ? 'bg-green-100' : 
+                      'bg-orange-100'
+                    }`}>
+                      {notification.type === 'delivery' ? (
+                        <Package className="h-4 w-4 text-blue-600" />
+                      ) : notification.type === 'earnings' ? (
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Route className="h-4 w-4 text-orange-600" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm">{notification.title}</h3>
+                      <p className="text-sm text-gray-600">{notification.message}</p>
+                    </div>
+                  </div>
+                  {!notification.isRead && (
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  )}
+                </div>
+                
+                {notification.type === 'delivery' && notification.orderId && (
+                  <div className="flex space-x-2 mt-3">
+                    <Button
+                      size="sm"
+                      className="bg-green-500 hover:bg-green-600"
+                      onClick={() => {
+                        window.location.hash = 'orders';
+                      }}
+                    >
+                      ✓ Accept Order
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const mapsUrl = `https://www.google.com/maps/search/Siraha+Electronics+Hub+Siraha+Nepal`;
+                        window.open(mapsUrl, '_blank');
+                      }}
+                    >
+                      📍 Navigate
+                    </Button>
+                  </div>
+                )}
+
+                <div className="text-xs text-gray-500 mt-2">
+                  {new Date(notification.createdAt).toLocaleString()}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 }
