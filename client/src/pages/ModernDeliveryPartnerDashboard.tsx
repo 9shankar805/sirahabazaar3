@@ -375,7 +375,7 @@ export default function ModernDeliveryPartnerDashboard() {
           </TabsContent>
           
           <TabsContent value="map" className="m-0">
-            <ModernMapTab activeDeliveries={activeDeliveries} />
+            <ModernMapTab activeDeliveries={activeDeliveries} onStatusUpdate={handleStatusUpdate} />
           </TabsContent>
           
           <TabsContent value="schedule" className="m-0">
@@ -1274,7 +1274,7 @@ function OrdersMapComponent({
 }
 
 // Modern Map Tab Component with Real Leaflet Map
-function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
+function ModernMapTab({ activeDeliveries, onStatusUpdate }: { activeDeliveries: ActiveDelivery[]; onStatusUpdate: (deliveryId: number, status: string) => void }) {
   const mapRef = useRef<any>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   
@@ -1443,8 +1443,192 @@ function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[]
         </div>
       )}
 
+      {/* Active Delivery Bottom Panel - Modern Design */}
+      {activeDeliveries.length > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 z-[1000] bg-white shadow-2xl">
+          {activeDeliveries.map((delivery) => (
+            <div key={delivery.id} className="p-4 border-b border-gray-100 last:border-b-0">
+              {/* Delivery Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                    <div className="absolute inset-0 w-3 h-3 bg-red-500 rounded-full animate-ping opacity-75"></div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Active Delivery</h3>
+                    <p className="text-sm text-gray-500">Order #{delivery.orderId} • ₹{delivery.totalAmount}</p>
+                  </div>
+                </div>
+                <Badge className="bg-green-500 text-white">
+                  {delivery.status === 'picked_up' ? 'En Route' : 'Ready for Pickup'}
+                </Badge>
+              </div>
+
+              {/* Pickup/Delivery Info */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {/* Pickup */}
+                <div className="bg-red-50 rounded-lg p-3">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">P</span>
+                    </div>
+                    <span className="font-medium text-sm">Pickup</span>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-900">{delivery.storeName}</p>
+                  <p className="text-xs text-gray-600 mb-2">{delivery.pickupAddress}</p>
+                  <div className="flex space-x-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(`tel:${delivery.storePhone || '1234567890'}`)}
+                      className="flex-1 h-8 text-xs"
+                    >
+                      <Phone className="h-3 w-3 mr-1" />
+                      Call
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 h-8 text-xs bg-red-500 hover:bg-red-600"
+                      onClick={() => {
+                        const storeLatitude = (delivery as any).storeLatitude || 26.6586;
+                        const storeLongitude = (delivery as any).storeLongitude || 86.2003;
+                        window.open(`https://www.google.com/maps/dir//${storeLatitude},${storeLongitude}`, '_blank');
+                      }}
+                    >
+                      <Navigation className="h-3 w-3 mr-1" />
+                      Go
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Delivery */}
+                <div className="bg-green-50 rounded-lg p-3">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">D</span>
+                    </div>
+                    <span className="font-medium text-sm">Delivery</span>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-900">{delivery.customerName}</p>
+                  <p className="text-xs text-gray-600 mb-2">{delivery.deliveryAddress}</p>
+                  <div className="flex space-x-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(`tel:${delivery.customerPhone || '1234567890'}`)}
+                      className="flex-1 h-8 text-xs"
+                    >
+                      <Phone className="h-3 w-3 mr-1" />
+                      Call
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 h-8 text-xs bg-green-500 hover:bg-green-600"
+                      onClick={() => {
+                        const customerLatitude = (delivery as any).customerLatitude || 26.6600;
+                        const customerLongitude = (delivery as any).customerLongitude || 86.2100;
+                        window.open(`https://www.google.com/maps/dir//${customerLatitude},${customerLongitude}`, '_blank');
+                      }}
+                    >
+                      <Navigation className="h-3 w-3 mr-1" />
+                      Go
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
+                {delivery.status !== 'picked_up' ? (
+                  <Button
+                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold"
+                    onClick={() => {
+                      onStatusUpdate(delivery.id, 'picked_up');
+                    }}
+                  >
+                    <Package className="h-4 w-4 mr-2" />
+                    CONFIRM PICKUP
+                  </Button>
+                ) : (
+                  <Button
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold"
+                    onClick={() => {
+                      onStatusUpdate(delivery.id, 'delivered');
+                    }}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    MARK DELIVERED
+                  </Button>
+                )}
+                
+                <Button
+                  variant="outline"
+                  className="px-6 border-red-500 text-red-500 hover:bg-red-50"
+                  onClick={() => {
+                    const storeLatitude = (delivery as any).storeLatitude || 26.6586;
+                    const storeLongitude = (delivery as any).storeLongitude || 86.2003;
+                    const customerLatitude = (delivery as any).customerLatitude || 26.6600;
+                    const customerLongitude = (delivery as any).customerLongitude || 86.2100;
+                    // Full route from pickup to delivery
+                    const mapsUrl = `https://www.google.com/maps/dir/${storeLatitude},${storeLongitude}/${customerLatitude},${customerLongitude}`;
+                    window.open(mapsUrl, '_blank');
+                  }}
+                >
+                  <MapPin className="h-4 w-4 mr-2" />
+                  ROUTE
+                </Button>
+              </div>
+
+              {/* Live Tracking Stats */}
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="flex justify-between text-sm">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-1">
+                      <Clock className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600">ETA: {delivery.estimatedTime || '15 min'}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600">{delivery.distance || '2.5 km'}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <DollarSign className="h-4 w-4 text-green-500" />
+                    <span className="font-semibold text-green-600">₹{delivery.deliveryFee || '30'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Map Controls */}
       <div className="absolute top-4 right-4 z-[999] flex flex-col space-y-2">
+        {/* Live Location Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition((position) => {
+                setUserLocation({
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude
+                });
+                if (mapRef.current) {
+                  mapRef.current.setView([position.coords.latitude, position.coords.longitude], 15);
+                }
+              });
+            }
+          }}
+          className="w-10 h-10 p-0 bg-white hover:bg-red-50 border-red-200"
+          title="My Location"
+        >
+          <MapPin className="h-4 w-4 text-red-600" />
+        </Button>
+
         {/* Zoom Controls */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <Button
