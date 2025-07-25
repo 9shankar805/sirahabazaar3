@@ -594,3 +594,498 @@ function EarningsTab({ stats }: { stats: DeliveryStats }) {
     </div>
   );
 }
+
+// Schedule Tab Component
+function ScheduleTab() {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [workingHours, setWorkingHours] = useState({
+    start: "09:00",
+    end: "18:00",
+    isAvailable: true
+  });
+
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+
+  // Generate calendar days
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+  const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+  const daysInMonth = lastDayOfMonth.getDate();
+  const startingDayOfWeek = firstDayOfMonth.getDay();
+
+  const calendarDays = [];
+  
+  // Empty cells for days before month starts
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    calendarDays.push(null);
+  }
+  
+  // Days of the month
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarDays.push(day);
+  }
+
+  return (
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold text-lg">Work Schedule</h2>
+        <Badge variant={workingHours.isAvailable ? "default" : "secondary"}>
+          {workingHours.isAvailable ? "Available" : "Unavailable"}
+        </Badge>
+      </div>
+
+      {/* Working Hours */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Today's Hours</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">Working Hours</span>
+            <span className="font-medium">{workingHours.start} - {workingHours.end}</span>
+          </div>
+          <Button 
+            variant={workingHours.isAvailable ? "destructive" : "default"} 
+            className="w-full"
+            onClick={() => setWorkingHours(prev => ({ ...prev, isAvailable: !prev.isAvailable }))}
+          >
+            {workingHours.isAvailable ? "Mark Unavailable" : "Mark Available"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Calendar */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {daysOfWeek.map(day => (
+              <div key={day} className="text-center text-sm font-medium text-gray-600 p-2">
+                {day}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {calendarDays.map((day, index) => (
+              <div key={index} className="aspect-square">
+                {day && (
+                  <Button
+                    variant={day === currentDate.getDate() ? "default" : "ghost"}
+                    size="sm"
+                    className={`w-full h-full text-sm ${
+                      day === selectedDate.getDate() ? "bg-red-500 text-white" : ""
+                    }`}
+                    onClick={() => setSelectedDate(new Date(currentYear, currentMonth, day))}
+                  >
+                    {day}
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions */}
+      <div className="space-y-2">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Break Time</p>
+                <p className="text-sm text-gray-600">Take a 30-minute break</p>
+              </div>
+              <Button size="sm" variant="outline">Start Break</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// Contact Tab Component
+function ContactTab() {
+  const contactInfo = {
+    support: "+977-9805916598",
+    emergency: "+977-9805916598", 
+    email: "sirahabazzar@gmail.com",
+    address: "Siraha Bazaar, Siraha, Nepal"
+  };
+
+  return (
+    <div className="p-4 space-y-4">
+      <div className="text-center mb-6">
+        <img 
+          src="/icon2.png" 
+          alt="Siraha Bazaar"
+          className="w-20 h-20 rounded-full mx-auto mb-4 object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23ef4444'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='0.3em' fill='white' font-size='24' font-weight='bold'%3ESB%3C/text%3E%3C/svg%3E";
+          }}
+        />
+        <h2 className="font-bold text-xl">Siraha Bazaar</h2>
+        <p className="text-gray-600">Delivery Support</p>
+      </div>
+
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="bg-green-100 rounded-full p-2">
+                <Phone className="h-5 w-5 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Support Hotline</p>
+                <p className="text-sm text-gray-600">{contactInfo.support}</p>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={() => window.open(`tel:${contactInfo.support}`)}
+              >
+                Call
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="bg-red-100 rounded-full p-2">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Emergency Contact</p>
+                <p className="text-sm text-gray-600">{contactInfo.emergency}</p>
+              </div>
+              <Button 
+                size="sm" 
+                variant="destructive"
+                onClick={() => window.open(`tel:${contactInfo.emergency}`)}
+              >
+                Call
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="bg-blue-100 rounded-full p-2">
+                <Info className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Email Support</p>
+                <p className="text-sm text-gray-600">{contactInfo.email}</p>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => window.open(`mailto:${contactInfo.email}`)}
+              >
+                Email
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className="bg-purple-100 rounded-full p-2">
+                <MapPin className="h-5 w-5 text-purple-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Office Address</p>
+                <p className="text-sm text-gray-600">{contactInfo.address}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="space-y-3 mt-8">
+        <h3 className="font-semibold text-lg">Quick Help</h3>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Report Issue</p>
+                <p className="text-sm text-gray-600">Technical problems or complaints</p>
+              </div>
+              <Button size="sm" variant="outline">Report</Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Payment Help</p>
+                <p className="text-sm text-gray-600">Issues with earnings or payments</p>
+              </div>
+              <Button size="sm" variant="outline">Get Help</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// Profile Tab Component
+function ProfileTab() {
+  const { user } = useAuth();
+  
+  const profileData = {
+    name: user?.name || "Delivery Partner",
+    phone: user?.phone || "+977-98XXXXXXXX",
+    email: user?.email || "partner@sirahabazaar.com",
+    rating: 4.8,
+    totalDeliveries: 156,
+    joinDate: "January 2024",
+    vehicleType: "Motorcycle",
+    licenseNumber: "BA 12 PA 3456"
+  };
+
+  return (
+    <div className="p-4 space-y-4">
+      {/* Profile Header */}
+      <Card>
+        <CardContent className="p-6 text-center">
+          <Avatar className="w-20 h-20 mx-auto mb-4">
+            <AvatarImage src="" />
+            <AvatarFallback className="bg-red-500 text-white text-2xl">
+              {profileData.name.split(' ').map(n => n[0]).join('')}
+            </AvatarFallback>
+          </Avatar>
+          <h2 className="font-bold text-xl mb-1">{profileData.name}</h2>
+          <p className="text-gray-600 mb-2">Delivery Partner</p>
+          <div className="flex items-center justify-center space-x-1">
+            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            <span className="font-medium">{profileData.rating}</span>
+            <span className="text-gray-600">({profileData.totalDeliveries} deliveries)</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Personal Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Personal Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">Phone</span>
+            <span className="font-medium">{profileData.phone}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">Email</span>
+            <span className="font-medium">{profileData.email}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">Joined</span>
+            <span className="font-medium">{profileData.joinDate}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Vehicle Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Vehicle Details</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">Vehicle Type</span>
+            <span className="font-medium">{profileData.vehicleType}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">License Number</span>
+            <span className="font-medium">{profileData.licenseNumber}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Performance Stats */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Performance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">Total Deliveries</span>
+            <Badge variant="secondary">{profileData.totalDeliveries}</Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">Success Rate</span>
+            <Badge className="bg-green-100 text-green-800">98.5%</Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">Average Rating</span>
+            <Badge className="bg-yellow-100 text-yellow-800">{profileData.rating}/5.0</Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Button className="w-full">Edit Profile</Button>
+    </div>
+  );
+}
+
+// History Tab Component
+function HistoryTab() {
+  const [filter, setFilter] = useState("all");
+  
+  const deliveryHistory = [
+    {
+      id: 1,
+      orderId: "SB000123",
+      date: "2025-07-25",
+      time: "14:30",
+      customer: "Ram Bahadur",
+      amount: "₹45",
+      status: "completed",
+      rating: 5
+    },
+    {
+      id: 2,
+      orderId: "SB000122",
+      date: "2025-07-25",
+      time: "12:15",
+      customer: "Sita Devi",
+      amount: "₹30",
+      status: "completed",
+      rating: 4
+    },
+    {
+      id: 3,
+      orderId: "SB000121",
+      date: "2025-07-24",
+      time: "16:45",
+      customer: "Hari Sharma",
+      amount: "₹55",
+      status: "completed",
+      rating: 5
+    },
+    {
+      id: 4,
+      orderId: "SB000120",
+      date: "2025-07-24",
+      time: "11:20",
+      customer: "Maya Gurung",
+      amount: "₹40",
+      status: "cancelled",
+      rating: null
+    }
+  ];
+
+  const filteredHistory = deliveryHistory.filter(delivery => 
+    filter === "all" || delivery.status === filter
+  );
+
+  return (
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold text-lg">Delivery History</h2>
+        <select 
+          value={filter} 
+          onChange={(e) => setFilter(e.target.value)}
+          className="px-3 py-1 border rounded-md text-sm"
+        >
+          <option value="all">All</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <Card>
+          <CardContent className="p-3 text-center">
+            <h3 className="font-bold text-lg text-green-600">
+              {deliveryHistory.filter(d => d.status === 'completed').length}
+            </h3>
+            <p className="text-xs text-gray-600">Completed</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <h3 className="font-bold text-lg text-red-600">
+              {deliveryHistory.filter(d => d.status === 'cancelled').length}
+            </h3>
+            <p className="text-xs text-gray-600">Cancelled</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <h3 className="font-bold text-lg text-blue-600">
+              ₹{deliveryHistory.filter(d => d.status === 'completed')
+                .reduce((sum, d) => sum + parseInt(d.amount.replace('₹', '')), 0)}
+            </h3>
+            <p className="text-xs text-gray-600">Total Earned</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* History List */}
+      <div className="space-y-3">
+        {filteredHistory.map(delivery => (
+          <Card key={delivery.id}>
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <h3 className="font-semibold">Order {delivery.orderId}</h3>
+                  <p className="text-sm text-gray-600">{delivery.customer}</p>
+                </div>
+                <Badge 
+                  variant={delivery.status === 'completed' ? 'default' : 'destructive'}
+                  className={delivery.status === 'completed' ? 'bg-green-100 text-green-800' : ''}
+                >
+                  {delivery.status.toUpperCase()}
+                </Badge>
+              </div>
+              
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <Clock className="h-4 w-4" />
+                  <span>{delivery.date} at {delivery.time}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {delivery.rating && (
+                    <div className="flex items-center space-x-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span>{delivery.rating}</span>
+                    </div>
+                  )}
+                  <span className="font-bold">{delivery.amount}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredHistory.length === 0 && (
+        <div className="text-center py-8">
+          <div className="bg-gray-100 rounded-full p-6 w-fit mx-auto mb-4">
+            <Clock className="h-12 w-12 text-gray-400" />
+          </div>
+          <h3 className="font-bold text-lg mb-2">No History Found</h3>
+          <p className="text-gray-600">No deliveries match your filter criteria.</p>
+        </div>
+      )}
+    </div>
+  );
+}
