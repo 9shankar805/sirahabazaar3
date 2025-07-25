@@ -16,6 +16,7 @@ import ModeSwiper from "@/components/ModeSwiper";
 import MobileNotificationBar from "@/components/MobileNotificationBar";
 import { AndroidBridge } from "@/lib/androidBridge";
 import { useEffect } from "react";
+import { initializeFirebaseNotifications, requestNotificationPermission } from "@/lib/firebaseNotifications";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Homepage from "@/pages/Homepage";
@@ -173,6 +174,36 @@ function App() {
   useEffect(() => {
     AndroidBridge.initialize();
     console.log('React app mounted successfully');
+  }, []);
+
+  // Initialize FCM when app loads (like in YouTube tutorials)
+  useEffect(() => {
+    const initializeFCMOnLoad = async () => {
+      console.log('🎬 Starting FCM initialization (like YouTube tutorial)...');
+      
+      try {
+        // First initialize Firebase
+        await initializeFirebaseNotifications();
+        
+        // Check if notification permission is already granted
+        if (Notification.permission === 'granted') {
+          console.log('✅ Notification permission already granted - FCM ready!');
+        } else if (Notification.permission === 'default') {
+          console.log('🔔 Requesting notification permission...');
+          const granted = await requestNotificationPermission();
+          if (granted) {
+            console.log('🎉 Notification permission granted!');
+          } else {
+            console.log('❌ Notification permission denied');
+          }
+        }
+      } catch (error) {
+        console.error('❌ FCM initialization failed:', error);
+      }
+    };
+
+    // Delay initialization slightly to ensure DOM is ready
+    setTimeout(initializeFCMOnLoad, 2000);
   }, []);
 
   return (

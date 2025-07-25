@@ -21,21 +21,35 @@ let messaging: any = null;
 
 export const initializeFirebaseNotifications = async () => {
   try {
+    console.log('🚀 Initializing Firebase Cloud Messaging...');
+    
     if (!app) {
       app = initializeApp(firebaseConfig);
+      console.log('✅ Firebase App initialized');
     }
     
     if (!messaging && 'serviceWorker' in navigator) {
       messaging = getMessaging(app);
+      console.log('✅ Firebase Messaging initialized');
       
       // Register service worker
       await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      console.log('Firebase service worker registered');
+      console.log('✅ Firebase service worker registered');
+      
+      // Automatically get token when FCM is initialized
+      try {
+        const token = await getToken(messaging, { vapidKey });
+        if (token) {
+          console.log('🎉 FCM Token automatically generated on initialization!');
+        }
+      } catch (tokenError) {
+        console.log('⚠️ FCM Token will be generated when permission is granted');
+      }
     }
     
     return { app, messaging };
   } catch (error) {
-    console.error('Error initializing Firebase:', error);
+    console.error('❌ Error initializing Firebase:', error);
     throw error;
   }
 };
@@ -63,10 +77,21 @@ export const getFirebaseToken = async () => {
     }
     
     const token = await getToken(messaging, { vapidKey });
-    console.log('Firebase token obtained:', token);
+    
+    // Enhanced logging like in YouTube tutorials
+    console.log('🔥 Firebase Cloud Messaging Token:');
+    console.log('📱 FCM Token:', token);
+    console.log('🔗 Token Length:', token ? token.length : 0, 'characters');
+    console.log('📋 Copy this token for testing:', token);
+    
+    // Also show abbreviated version for visibility
+    if (token) {
+      console.log('📝 Token (abbreviated):', token.substring(0, 20) + '...' + token.substring(token.length - 20));
+    }
+    
     return token;
   } catch (error) {
-    console.error('Error getting Firebase token:', error);
+    console.error('❌ Error getting Firebase token:', error);
     throw error;
   }
 };
@@ -225,9 +250,10 @@ export const showManualNotification = (title: string, body: string, options: any
     body,
     icon: '/favicon.ico',
     badge: '/favicon.ico',
-    vibrate: isMobileDevice() ? [200, 100, 200] : undefined,
+    // Vibrate is not in TypeScript types but works on mobile
+    ...(isMobileDevice() && { vibrate: [200, 100, 200] }),
     ...options,
-  });
+  } as NotificationOptions);
   
   // Auto close after 5 seconds
   setTimeout(() => notification.close(), 5000);

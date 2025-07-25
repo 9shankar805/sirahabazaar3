@@ -9,12 +9,12 @@ export default function FCMTest() {
   const [fcmStatus, setFcmStatus] = useState<{
     serviceWorker: boolean;
     permission: string;
-    token: string | null;
+    token: string;
     vapidSupport: boolean;
   }>({
     serviceWorker: false,
     permission: 'default',
-    token: null,
+    token: '',
     vapidSupport: false
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +45,7 @@ export default function FCMTest() {
         if (Notification.permission === 'granted') {
           try {
             const token = await getFirebaseToken();
-            status.token = token ? token.substring(0, 20) + '...' : null;
+            status.token = token ? token.substring(0, 20) + '...' : '';
             console.log('FCM token obtained successfully');
           } catch (tokenError) {
             console.log('FCM token not available yet:', tokenError);
