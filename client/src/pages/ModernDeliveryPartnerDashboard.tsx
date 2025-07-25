@@ -72,6 +72,7 @@ export default function ModernDeliveryPartnerDashboard() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isOnline, setIsOnline] = useState(true);
+  const [currentWorkflow, setCurrentWorkflow] = useState<'idle' | 'accepted' | 'started' | 'enroute' | 'delivered'>('idle');
 
   // Fetch delivery partner stats
   const { data: stats, isLoading: statsLoading } = useQuery({
