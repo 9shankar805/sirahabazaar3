@@ -1069,9 +1069,22 @@ function OrdersMapComponent({
                   })}
                 >
                   <Popup>
-                    <div className="text-center max-w-xs p-2">
-                      <h3 className="font-semibold text-sm">Store Location</h3>
+                    <div className="text-center max-w-xs p-3">
+                      <div className="flex items-center justify-center mb-3">
+                        <img 
+                          src={delivery.storeLogo || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=100&h=100&fit=crop&crop=center'}
+                          alt={delivery.storeName || 'Store'}
+                          className="w-12 h-12 rounded-full object-cover border-3 border-red-500 shadow-lg"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=100&h=100&fit=crop&crop=center';
+                          }}
+                        />
+                      </div>
+                      <h3 className="font-semibold text-sm mb-1">{delivery.storeName || 'Store Location'}</h3>
                       <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                      <p className="text-xs text-gray-500 mb-2">{delivery.storeAddress || delivery.pickupAddress}</p>
+                      
+                      {/* Always show store information for active deliveries */}
                       {isActiveDelivery && (
                         <div className="space-y-2 mt-2">
                           <div className="text-xs text-gray-700">
@@ -1082,18 +1095,28 @@ function OrdersMapComponent({
                               </p>
                             ))}
                           </div>
-                          {currentNavStep === 'to_store' && (
+                          <div className="flex items-center justify-center gap-2 mb-2">
                             <Button 
                               size="sm" 
-                              className="w-full bg-blue-500 hover:bg-blue-600 text-xs"
+                              variant="outline"
+                              onClick={() => window.open(`tel:${delivery.storePhone || '1234567890'}`)}
+                              className="text-xs px-2 py-1"
+                            >
+                              <Phone className="h-3 w-3 mr-1" />
+                              Call
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="text-xs px-2 py-1 bg-blue-500 hover:bg-blue-600"
                               onClick={() => {
-                                window.open(`https://www.google.com/maps/dir/?api=1&destination=26.6586,86.2003`, '_blank');
+                                const address = encodeURIComponent(delivery.storeAddress || delivery.pickupAddress || '26.6586,86.2003');
+                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
                               }}
                             >
                               <Navigation className="h-3 w-3 mr-1" />
-                              Navigate to Store
+                              Navigate
                             </Button>
-                          )}
+                          </div>
                         </div>
                       )}
                       {!isActiveDelivery && (
@@ -1114,27 +1137,53 @@ function OrdersMapComponent({
                   })}
                 >
                   <Popup>
-                    <div className="text-center max-w-xs p-2">
-                      <h3 className="font-semibold text-sm">{delivery.customerName}</h3>
+                    <div className="text-center max-w-xs p-3">
+                      <div className="flex items-center justify-center mb-3">
+                        <img 
+                          src={delivery.customerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(delivery.customerName)}&background=10b981&color=fff&size=48`}
+                          alt={delivery.customerName}
+                          className="w-12 h-12 rounded-full object-cover border-3 border-green-500 shadow-lg"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(delivery.customerName)}&background=10b981&color=fff&size=48`;
+                          }}
+                        />
+                      </div>
+                      <h3 className="font-semibold text-sm mb-1">{delivery.customerName}</h3>
                       <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                      <p className="text-xs text-gray-500 mb-2">{delivery.deliveryAddress}</p>
+                      
+                      {/* Always show customer information for active deliveries */}
                       {isActiveDelivery && (
                         <div className="space-y-2 mt-2">
                           <div className="text-xs text-gray-700">
-                            <p className="font-medium">Total: ₹{delivery.totalAmount}</p>
-                            <p>Phone: {delivery.customerPhone}</p>
+                            <p className="font-medium mb-1">Total: ₹{delivery.totalAmount}</p>
+                            <p className="mb-1">Phone: {delivery.customerPhone}</p>
+                            {delivery.paymentMethod && (
+                              <p className="mb-1">Payment: {delivery.paymentMethod}</p>
+                            )}
                           </div>
-                          {currentNavStep === 'to_customer' && (
+                          <div className="flex items-center justify-center gap-2 mb-2">
                             <Button 
                               size="sm" 
-                              className="w-full bg-green-500 hover:bg-green-600 text-xs"
+                              variant="outline"
+                              onClick={() => window.open(`tel:${delivery.customerPhone || '1234567890'}`)}
+                              className="text-xs px-2 py-1"
+                            >
+                              <Phone className="h-3 w-3 mr-1" />
+                              Call
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="text-xs px-2 py-1 bg-green-500 hover:bg-green-600"
                               onClick={() => {
-                                window.open(`https://www.google.com/maps/dir/?api=1&destination=26.6600,86.2100`, '_blank');
+                                const address = encodeURIComponent(delivery.deliveryAddress || '26.6600,86.2100');
+                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
                               }}
                             >
                               <Navigation className="h-3 w-3 mr-1" />
-                              Navigate to Customer
+                              Navigate
                             </Button>
-                          )}
+                          </div>
                         </div>
                       )}
                       {!isActiveDelivery && (
