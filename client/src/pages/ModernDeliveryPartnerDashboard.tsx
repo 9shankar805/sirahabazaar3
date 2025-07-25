@@ -73,61 +73,73 @@ const deliveryPartnerIcon = new L.DivIcon({
   popupAnchor: [0, -16]
 });
 
-// Custom store icon
-const storeIcon = new L.DivIcon({
-  html: `
-    <div style="
-      width: 28px; 
-      height: 28px; 
-      background: #3b82f6; 
-      border: 2px solid white; 
-      border-radius: 50%; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center;
-      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-    ">
+// Custom store icon with logo support (like StoreMaps.tsx)
+const createStoreIcon = (store: any) => {
+  const logoUrl = store.logo || '/default-store-logo.png';
+  return new L.DivIcon({
+    html: `
       <div style="
-        width: 12px; 
-        height: 12px; 
+        width: 40px; 
+        height: 40px; 
         background: white; 
-        border-radius: 50%;
-      "></div>
-    </div>
-  `,
-  className: 'custom-store-marker',
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
-  popupAnchor: [0, -14]
-});
+        border: 3px solid #dc2626; 
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        position: relative;
+      ">
+        <img src="${logoUrl}" 
+             style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" 
+             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgiIGhlaWdodD0iMjgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjZGMyNjI2Ii8+Cjwvc3ZnPg=='" />
+        <div style="
+          position: absolute; 
+          bottom: -2px; 
+          right: -2px; 
+          width: 12px; 
+          height: 12px; 
+          background: #10b981; 
+          border: 2px solid white; 
+          border-radius: 50%;
+        "></div>
+      </div>
+    `,
+    className: 'custom-store-marker',
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -40]
+  });
+};
 
-// Custom customer icon
-const customerIcon = new L.DivIcon({
-  html: `
-    <div style="
-      width: 24px; 
-      height: 24px; 
-      background: #10b981; 
-      border: 2px solid white; 
-      border-radius: 50%; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center;
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-    ">
+// Custom customer icon with modern avatar
+const createCustomerIcon = (customer: any) => {
+  const avatarInitials = customer?.fullName?.split(' ').map((n: string) => n[0]).join('') || 'C';
+  return new L.DivIcon({
+    html: `
       <div style="
-        width: 8px; 
-        height: 8px; 
-        background: white; 
-        border-radius: 50%;
-      "></div>
-    </div>
-  `,
-  className: 'custom-customer-marker',
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-  popupAnchor: [0, -12]
-});
+        width: 32px; 
+        height: 32px; 
+        background: linear-gradient(135deg, #10b981, #059669); 
+        border: 3px solid white; 
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        color: white;
+        font-weight: bold;
+        font-size: 12px;
+      ">
+        ${avatarInitials}
+      </div>
+    `,
+    className: 'custom-customer-marker',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16]
+  });
+};
 
 interface DeliveryStats {
   todayEarnings: number;
@@ -1235,19 +1247,22 @@ function MapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
   }, []);
 
   return (
-    <div className="relative h-screen">
+    <div className="relative h-screen bg-gray-100">
       {userLocation ? (
-        <MapContainer
-          center={[userLocation.lat, userLocation.lng]}
-          zoom={13}
-          style={{ height: '100%', width: '100%' }}
-          className="z-0"
-          scrollWheelZoom={true}
-          doubleClickZoom={true}
-          touchZoom={true}
-          zoomControl={false}
-          ref={mapRef}
-        >
+        <div style={{ height: '100%', width: '100%' }}>
+          <MapContainer
+            center={[userLocation.lat, userLocation.lng]}
+            zoom={13}
+            style={{ height: '100%', width: '100%', minHeight: '100vh' }}
+            className="leaflet-container"
+            scrollWheelZoom={true}
+            doubleClickZoom={true}
+            touchZoom={true}
+            zoomControl={false}
+            whenCreated={(mapInstance) => {
+              mapRef.current = mapInstance;
+            }}
+          >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -1273,15 +1288,32 @@ function MapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
               {delivery.pickupLat && delivery.pickupLng && (
                 <Marker
                   position={[parseFloat(delivery.pickupLat), parseFloat(delivery.pickupLng)]}
-                  icon={storeIcon}
+                  icon={createStoreIcon({ 
+                    logo: delivery.storeLogo,
+                    name: delivery.storeName 
+                  })}
                 >
                   <Popup>
-                    <div className="text-center max-w-xs">
-                      <h3 className="font-semibold">Pickup Location</h3>
-                      <p className="text-sm text-gray-600 mb-1">Order #{delivery.orderId}</p>
-                      <p className="text-xs text-gray-500">{delivery.pickupAddress}</p>
-                      <Badge variant="outline" className="text-xs mt-1">
-                        Store
+                    <div className="text-center max-w-xs p-2">
+                      <div className="flex items-center justify-center mb-2">
+                        <img 
+                          src={delivery.storeLogo || '/default-store-logo.png'} 
+                          alt={delivery.storeName}
+                          className="w-8 h-8 rounded-full object-cover border-2 border-red-500"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjZGMyNjI2Ii8+Cjwvc3ZnPg==';
+                          }}
+                        />
+                      </div>
+                      <h3 className="font-semibold text-sm">{delivery.storeName}</h3>
+                      <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                      <p className="text-xs text-gray-500 mb-2">{delivery.pickupAddress}</p>
+                      <div className="flex items-center justify-center gap-1 mb-2">
+                        <Phone className="h-3 w-3 text-blue-500" />
+                        <span className="text-xs">{delivery.storePhone || 'N/A'}</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                        📍 Pickup Location
                       </Badge>
                     </div>
                   </Popup>
@@ -1292,15 +1324,30 @@ function MapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
               {delivery.deliveryLat && delivery.deliveryLng && (
                 <Marker
                   position={[parseFloat(delivery.deliveryLat), parseFloat(delivery.deliveryLng)]}
-                  icon={customerIcon}
+                  icon={createCustomerIcon({ 
+                    fullName: delivery.customerName 
+                  })}
                 >
                   <Popup>
-                    <div className="text-center max-w-xs">
-                      <h3 className="font-semibold">Delivery Location</h3>
-                      <p className="text-sm text-gray-600 mb-1">{delivery.customerName}</p>
-                      <p className="text-xs text-gray-500">{delivery.deliveryAddress}</p>
-                      <Badge variant="outline" className="text-xs mt-1">
-                        Customer
+                    <div className="text-center max-w-xs p-2">
+                      <div className="flex items-center justify-center mb-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-green-400">
+                          {delivery.customerName?.split(' ').map((n: string) => n[0]).join('') || 'C'}
+                        </div>
+                      </div>
+                      <h3 className="font-semibold text-sm">{delivery.customerName}</h3>
+                      <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                      <p className="text-xs text-gray-500 mb-2">{delivery.deliveryAddress}</p>
+                      <div className="flex items-center justify-center gap-1 mb-2">
+                        <Phone className="h-3 w-3 text-green-500" />
+                        <span className="text-xs">{delivery.customerPhone || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-1 mb-2">
+                        <DollarSign className="h-3 w-3 text-orange-500" />
+                        <span className="text-xs font-medium">₹{delivery.totalAmount}</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                        🏠 Delivery Location
                       </Badge>
                     </div>
                   </Popup>
@@ -1308,7 +1355,8 @@ function MapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
               )}
             </div>
           ))}
-        </MapContainer>
+          </MapContainer>
+        </div>
       ) : (
         <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
           <div className="text-center p-8">

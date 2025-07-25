@@ -480,3 +480,48 @@ body::-webkit-scrollbar {
     margin-right: 0.5rem;
   }
 }
+
+/* Modern delivery partner dashboard animations */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.custom-delivery-marker {
+  animation: pulse 2s infinite;
+}
+
+/* Leaflet map container fixes */
+.leaflet-container {
+  font-family: inherit !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-popup-tip {
+  background: white !important;
+}
+
+.leaflet-popup-content {
+  margin: 8px !important;
+}
+
+/* Fix map rendering issues */
+.leaflet-map-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-control-container {
+  z-index: 999 !important;
+}
