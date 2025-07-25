@@ -587,43 +587,11 @@ function ModernOrdersTab({
         <p className="text-sm opacity-75">Track your active deliveries</p>
       </div>
 
-      {/* Delivery Route Map Placeholder */}
+      {/* Real Delivery Route Map */}
       <div className="mx-4 mb-4">
         <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-          <CardContent className="p-4">
-            <div className="h-40 bg-green-100 rounded-lg relative overflow-hidden">
-              {/* Map simulation */}
-              <div className="absolute inset-0 bg-gradient-to-br from-green-200 to-green-300">
-                {/* Road lines */}
-                <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-300 transform -translate-y-1/2"></div>
-                <div className="absolute top-0 bottom-0 left-1/2 w-1 bg-gray-300 transform -translate-x-1/2"></div>
-                
-                {/* Delivery markers */}
-                <div className="absolute top-1/4 left-1/4 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center border-2 border-white">
-                  <span className="text-white text-xs font-bold">A</span>
-                </div>
-                <div className="absolute bottom-1/4 right-1/4 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-                  <span className="text-white text-xs font-bold">B</span>
-                </div>
-                
-                {/* Delivery path */}
-                <svg className="absolute inset-0 w-full h-full">
-                  <path
-                    d="M 25% 25% Q 50% 50% 75% 75%"
-                    stroke="#ef4444"
-                    strokeWidth="3"
-                    fill="none"
-                    strokeDasharray="5,5"
-                    className="animate-pulse"
-                  />
-                </svg>
-              </div>
-              
-              {/* Distance indicator */}
-              <div className="absolute bottom-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-medium text-gray-800">
-                1.3 km
-              </div>
-            </div>
+          <CardContent className="p-2">
+            <OrdersMapComponent activeDeliveries={activeDeliveries} />
           </CardContent>
         </Card>
       </div>
@@ -698,6 +666,126 @@ function ModernOrdersTab({
             </Card>
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+// Orders Map Component - Compact version for Orders tab
+function OrdersMapComponent({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // Center coordinates for the map (Siraha, Nepal)
+  const defaultCenter: [number, number] = [26.6586, 86.2003];
+
+  // Get user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          // Use default location if GPS fails
+          setUserLocation({ lat: 26.6586, lng: 86.2003 });
+        }
+      );
+    } else {
+      // Use default location if geolocation not supported
+      setUserLocation({ lat: 26.6586, lng: 86.2003 });
+    }
+  }, []);
+
+  return (
+    <div className="relative h-48 rounded-lg overflow-hidden">
+      {userLocation ? (
+        <MapContainer
+          center={[userLocation.lat, userLocation.lng]}
+          zoom={13}
+          style={{ height: '100%', width: '100%' }}
+          className="z-0"
+          scrollWheelZoom={false}
+          doubleClickZoom={false}
+          touchZoom={false}
+          zoomControl={false}
+          dragging={false}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          
+          {/* Delivery Partner Location */}
+          <Marker
+            position={[userLocation.lat, userLocation.lng]}
+            icon={deliveryPartnerIcon}
+          >
+            <Popup>
+              <div className="text-center">
+                <h3 className="font-semibold">Your Location</h3>
+                <p className="text-sm text-gray-600">Delivery Partner</p>
+              </div>
+            </Popup>
+          </Marker>
+
+          {/* Active Delivery Markers */}
+          {activeDeliveries.map((delivery) => (
+            <div key={delivery.id}>
+              {/* Store Marker */}
+              <Marker
+                position={[26.6586, 86.2003]} // Sample store coordinates
+                icon={createStoreIcon({ 
+                  logo: '/default-store-logo.png',
+                  name: 'Store Location'
+                })}
+              >
+                <Popup>
+                  <div className="text-center max-w-xs p-2">
+                    <h3 className="font-semibold text-sm">Store Location</h3>
+                    <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                    <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                      📍 Pickup Location
+                    </Badge>
+                  </div>
+                </Popup>
+              </Marker>
+              
+              {/* Customer Marker */}
+              <Marker
+                position={[26.6600, 86.2100]} // Sample customer coordinates
+                icon={createCustomerIcon({ 
+                  fullName: delivery.customerName 
+                })}
+              >
+                <Popup>
+                  <div className="text-center max-w-xs p-2">
+                    <h3 className="font-semibold text-sm">{delivery.customerName}</h3>
+                    <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                      🏠 Delivery Location
+                    </Badge>
+                  </div>
+                </Popup>
+              </Marker>
+            </div>
+          ))}
+        </MapContainer>
+      ) : (
+        <div className="h-full flex items-center justify-center bg-gray-100 rounded-lg">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-2"></div>
+            <p className="text-xs text-gray-600">Loading map...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Compact distance indicator */}
+      <div className="absolute bottom-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-medium text-gray-800">
+        {activeDeliveries.length > 0 ? '1.3 km' : 'No active deliveries'}
       </div>
     </div>
   );
