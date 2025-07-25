@@ -75,10 +75,10 @@ export default function NotificationBanner() {
         console.log('Error playing notification banner sound:', error);
       }
 
-      // Auto-hide notification after 8 seconds
+      // Auto-hide notification after 3 seconds
       setTimeout(() => {
         setVisibleNotifications(prev => prev.filter(n => n.id !== latestNotification.id));
-      }, 8000);
+      }, 3000);
     }
   }, [notifications, lastNotificationId]);
 
