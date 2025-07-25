@@ -115,29 +115,55 @@ const createStoreIcon = (store: any) => {
 // Custom customer icon with modern avatar
 const createCustomerIcon = (customer: any) => {
   const avatarInitials = customer?.fullName?.split(' ').map((n: string) => n[0]).join('') || 'C';
+  const avatarUrl = customer?.customerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(customer?.fullName || 'Customer')}&background=10b981&color=fff&size=32`;
+  
   return new L.DivIcon({
     html: `
       <div style="
-        width: 32px; 
-        height: 32px; 
-        background: linear-gradient(135deg, #10b981, #059669); 
-        border: 3px solid white; 
+        width: 40px; 
+        height: 40px; 
+        background: white; 
+        border: 3px solid #10b981; 
         border-radius: 50%; 
         display: flex; 
         align-items: center; 
         justify-content: center;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-        color: white;
-        font-weight: bold;
-        font-size: 12px;
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        position: relative;
       ">
-        ${avatarInitials}
+        <img src="${avatarUrl}" 
+             style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" 
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+        <div style="
+          width: 32px; 
+          height: 32px; 
+          background: linear-gradient(135deg, #10b981, #059669); 
+          border-radius: 50%; 
+          display: none; 
+          align-items: center; 
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          font-size: 12px;
+        ">
+          ${avatarInitials}
+        </div>
+        <div style="
+          position: absolute; 
+          bottom: -2px; 
+          right: -2px; 
+          width: 14px; 
+          height: 14px; 
+          background: #10b981; 
+          border: 2px solid white; 
+          border-radius: 50%;
+        "></div>
       </div>
     `,
     className: 'custom-customer-marker',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -16]
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -40]
   });
 };
 
@@ -1037,8 +1063,9 @@ function OrdersMapComponent({
                 <Marker
                   position={[26.6586, 86.2003]} // Sample store coordinates
                   icon={useSimpleMarkers ? createSimpleStoreMarker() : createStoreIcon({ 
-                    logo: '/default-store-logo.png',
-                    name: 'Store Location'
+                    logo: delivery.storeLogo || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=100&h=100&fit=crop&crop=center',
+                    storeLogo: delivery.storeLogo,
+                    name: delivery.storeName || 'Store Location'
                   })}
                 >
                   <Popup>
@@ -1082,7 +1109,8 @@ function OrdersMapComponent({
                 <Marker
                   position={[26.6600, 86.2100]} // Sample customer coordinates
                   icon={useSimpleMarkers ? createSimpleCustomerMarker() : createCustomerIcon({ 
-                    fullName: delivery.customerName 
+                    fullName: delivery.customerName,
+                    customerAvatar: delivery.customerAvatar
                   })}
                 >
                   <Popup>
@@ -1251,25 +1279,49 @@ function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[]
               <Marker
                 position={[26.6586, 86.2003]} // Sample store coordinates
                 icon={createStoreIcon({ 
-                  logo: '/default-store-logo.png',
-                  name: 'Store Location'
+                  logo: delivery.storeLogo || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=100&h=100&fit=crop&crop=center',
+                  storeLogo: delivery.storeLogo,
+                  name: delivery.storeName || 'Store Location'
                 })}
               >
                 <Popup>
-                  <div className="text-center max-w-xs p-2">
-                    <div className="flex items-center justify-center mb-2">
+                  <div className="text-center max-w-xs p-3">
+                    <div className="flex items-center justify-center mb-3">
                       <img 
-                        src='/default-store-logo.png'
-                        alt="Store"
-                        className="w-8 h-8 rounded-full object-cover border-2 border-red-500"
+                        src={delivery.storeLogo || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=100&h=100&fit=crop&crop=center'}
+                        alt={delivery.storeName || 'Store'}
+                        className="w-12 h-12 rounded-full object-cover border-3 border-red-500 shadow-lg"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjZGMyNjI2Ii8+Cjwvc3ZnPg==';
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=100&h=100&fit=crop&crop=center';
                         }}
                       />
                     </div>
-                    <h3 className="font-semibold text-sm">Store Location</h3>
+                    <h3 className="font-semibold text-sm mb-1">{delivery.storeName || 'Store Location'}</h3>
                     <p className="text-xs text-gray-600 mb-1">Order #{delivery.orderId}</p>
-                    <p className="text-xs text-gray-500 mb-2">Pickup Address</p>
+                    <p className="text-xs text-gray-500 mb-2">{delivery.storeAddress || delivery.pickupAddress}</p>
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => window.open(`tel:${delivery.storePhone || '1234567890'}`)}
+                        className="text-xs px-2 py-1"
+                      >
+                        <Phone className="h-3 w-3 mr-1" />
+                        Call
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          const address = encodeURIComponent(delivery.storeAddress || delivery.pickupAddress);
+                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
+                        }}
+                        className="text-xs px-2 py-1"
+                      >
+                        <Navigation className="h-3 w-3 mr-1" />
+                        Navigate
+                      </Button>
+                    </div>
                     <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
                       📍 Pickup Location
                     </Badge>
