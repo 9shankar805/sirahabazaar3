@@ -899,6 +899,43 @@ export default function EnhancedDeliveryPartnerDashboard() {
                           >
                             {acceptDelivery.isPending ? 'Accepting...' : 'Accept Delivery'}
                           </Button>
+                          
+                          {/* Navigation Buttons */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-xs"
+                              onClick={() => {
+                                if (delivery.pickupLatitude && delivery.pickupLongitude) {
+                                  window.open(`https://www.google.com/maps/dir/?api=1&destination=${delivery.pickupLatitude},${delivery.pickupLongitude}`);
+                                } else {
+                                  const address = encodeURIComponent(delivery.pickupAddress);
+                                  window.open(`https://www.google.com/maps/search/${address}`, '_blank');
+                                }
+                              }}
+                            >
+                              <Navigation className="h-3 w-3 mr-1" />
+                              Store
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-xs"
+                              onClick={() => {
+                                if (delivery.deliveryLatitude && delivery.deliveryLongitude) {
+                                  window.open(`https://www.google.com/maps/dir/?api=1&destination=${delivery.deliveryLatitude},${delivery.deliveryLongitude}`);
+                                } else {
+                                  const address = encodeURIComponent(delivery.deliveryAddress);
+                                  window.open(`https://www.google.com/maps/search/${address}`, '_blank');
+                                }
+                              }}
+                            >
+                              <Navigation className="h-3 w-3 mr-1" />
+                              Customer
+                            </Button>
+                          </div>
+                          
                           <Button 
                             variant="outline" 
                             size="sm" 
@@ -1075,6 +1112,41 @@ export default function EnhancedDeliveryPartnerDashboard() {
                               Mark Delivered
                             </Button>
                           )}
+                          {/* Navigation Buttons for Active Deliveries */}
+                          <div className="grid grid-cols-2 gap-1">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-[8px] xs:text-[9px] sm:text-[10px] px-1 xs:px-2 py-0.5 h-auto"
+                              onClick={() => {
+                                if (delivery.storeLatitude && delivery.storeLongitude) {
+                                  window.open(`https://www.google.com/maps/dir/?api=1&destination=${delivery.storeLatitude},${delivery.storeLongitude}`);
+                                } else if (delivery.pickupAddress) {
+                                  const address = encodeURIComponent(delivery.pickupAddress);
+                                  window.open(`https://www.google.com/maps/search/${address}`, '_blank');
+                                }
+                              }}
+                            >
+                              <Navigation className="h-2 w-2 xs:h-3 xs:w-3 mr-0.5" />
+                              Store
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-[8px] xs:text-[9px] sm:text-[10px] px-1 xs:px-2 py-0.5 h-auto"
+                              onClick={() => {
+                                if (delivery.deliveryLatitude && delivery.deliveryLongitude) {
+                                  window.open(`https://www.google.com/maps/dir/?api=1&destination=${delivery.deliveryLatitude},${delivery.deliveryLongitude}`);
+                                } else if (delivery.deliveryAddress) {
+                                  const address = encodeURIComponent(delivery.deliveryAddress);
+                                  window.open(`https://www.google.com/maps/search/${address}`, '_blank');
+                                }
+                              }}
+                            >
+                              <Navigation className="h-2 w-2 xs:h-3 xs:w-3 mr-0.5" />
+                              Customer
+                            </Button>
+                          </div>
                           <Button 
                             variant="outline" 
                             size="sm" 
@@ -1351,10 +1423,10 @@ export default function EnhancedDeliveryPartnerDashboard() {
                           </div>
                           
                           {notification.type === 'delivery_assignment' && notification.orderId && (
-                            <div className="flex gap-1 xs:gap-2 mt-2 xs:mt-3">
+                            <div className="space-y-1 xs:space-y-2 mt-2 xs:mt-3">
+                              {/* Primary Action Button */}
                               <Button 
-                                size="sm" 
-                                className="text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
+                                className="w-full text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
                                 onClick={() => {
                                   const orderId = notification.orderId;
                                   console.log('Notification structure:', notification);
@@ -1366,13 +1438,74 @@ export default function EnhancedDeliveryPartnerDashboard() {
                               >
                                 {acceptDelivery.isPending ? 'Accepting...' : 'Accept Order'}
                               </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
-                              >
-                                View Details
-                              </Button>
+                              
+                              {/* Navigation Buttons */}
+                              {notification.data && (() => {
+                                try {
+                                  const data = JSON.parse(notification.data);
+                                  if (data.pickupLocation || data.deliveryLocation) {
+                                    return (
+                                      <div className="grid grid-cols-2 gap-1">
+                                        {data.pickupLocation && (
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="text-[8px] xs:text-[9px] sm:text-[10px] px-1 xs:px-2 py-0.5 h-auto"
+                                            onClick={() => {
+                                              if (data.pickupLocation.googleMapsLink) {
+                                                window.open(data.pickupLocation.googleMapsLink, '_blank');
+                                              } else if (data.pickupLocation.address) {
+                                                const address = encodeURIComponent(data.pickupLocation.address);
+                                                window.open(`https://www.google.com/maps/search/${address}`, '_blank');
+                                              }
+                                            }}
+                                          >
+                                            <Navigation className="h-2 w-2 xs:h-2.5 xs:w-2.5 mr-0.5" />
+                                            Store
+                                          </Button>
+                                        )}
+                                        {data.deliveryLocation && (
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="text-[8px] xs:text-[9px] sm:text-[10px] px-1 xs:px-2 py-0.5 h-auto"
+                                            onClick={() => {
+                                              if (data.deliveryLocation.googleMapsLink) {
+                                                window.open(data.deliveryLocation.googleMapsLink, '_blank');
+                                              } else if (data.deliveryLocation.address) {
+                                                const address = encodeURIComponent(data.deliveryLocation.address);
+                                                window.open(`https://www.google.com/maps/search/${address}`, '_blank');
+                                              }
+                                            }}
+                                          >
+                                            <Navigation className="h-2 w-2 xs:h-2.5 xs:w-2.5 mr-0.5" />
+                                            Customer
+                                          </Button>
+                                        )}
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="w-full text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
+                                    >
+                                      View Details
+                                    </Button>
+                                  );
+                                } catch (e) {
+                                  return (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="w-full text-[9px] xs:text-[10px] sm:text-xs px-2 xs:px-3 py-1 h-auto"
+                                    >
+                                      View Details
+                                    </Button>
+                                  );
+                                }
+                              })()}
                             </div>
                           )}
                         </div>
