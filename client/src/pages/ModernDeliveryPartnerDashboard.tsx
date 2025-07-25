@@ -189,9 +189,9 @@ export default function ModernDeliveryPartnerDashboard() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="pb-32">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Main Content */}
+        <div className="pb-32">
           <TabsContent value="dashboard" className="m-0">
             <DashboardTab stats={stats} statsLoading={statsLoading} />
           </TabsContent>
@@ -227,12 +227,10 @@ export default function ModernDeliveryPartnerDashboard() {
           <TabsContent value="history" className="m-0">
             <HistoryTab />
           </TabsContent>
-        </Tabs>
-      </div>
+        </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
-        <div className="grid grid-cols-4 gap-0">
+        {/* Bottom Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
           <TabsList className="grid w-full grid-cols-4 bg-transparent h-16">
             <TabsTrigger 
               value="dashboard" 
@@ -264,39 +262,7 @@ export default function ModernDeliveryPartnerDashboard() {
             </TabsTrigger>
           </TabsList>
         </div>
-        <div className="grid grid-cols-4 gap-0 border-t bg-gray-50">
-          <TabsList className="grid w-full grid-cols-4 bg-transparent h-16">
-            <TabsTrigger 
-              value="schedule" 
-              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
-            >
-              <Calendar className="h-4 w-4" />
-              <span className="text-xs">Schedule</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="contact" 
-              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
-            >
-              <Info className="h-4 w-4" />
-              <span className="text-xs">Contact</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="profile" 
-              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
-            >
-              <Star className="h-4 w-4" />
-              <span className="text-xs">Profile</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="history" 
-              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
-            >
-              <Clock className="h-4 w-4" />
-              <span className="text-xs">History</span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
-      </div>
+      </Tabs>
     </div>
   );
 }
@@ -849,7 +815,7 @@ function ProfileTab() {
   const { user } = useAuth();
   
   const profileData = {
-    name: user?.name || "Delivery Partner",
+    name: user?.fullName || "Delivery Partner",
     phone: user?.phone || "+977-98XXXXXXXX",
     email: user?.email || "partner@sirahabazaar.com",
     rating: 4.8,
@@ -867,7 +833,7 @@ function ProfileTab() {
           <Avatar className="w-20 h-20 mx-auto mb-4">
             <AvatarImage src="" />
             <AvatarFallback className="bg-red-500 text-white text-2xl">
-              {profileData.name.split(' ').map(n => n[0]).join('')}
+              {profileData.name.split(' ').map((n: string) => n[0]).join('')}
             </AvatarFallback>
           </Avatar>
           <h2 className="font-bold text-xl mb-1">{profileData.name}</h2>
