@@ -12,7 +12,7 @@ import {
   TrendingUp, 
   Navigation, 
   Phone, 
-  MessageCircle,
+  Info,
   Calendar,
   DollarSign,
   Package,
@@ -145,11 +145,22 @@ export default function ModernDeliveryPartnerDashboard() {
       <div className="bg-white shadow-sm border-b sticky top-0 z-40">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+            <img 
+              src="/icon2.png" 
+              alt="Siraha Bazaar"
+              className="w-10 h-10 rounded-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const fallback = target.nextElementSibling as HTMLDivElement;
+                if (fallback) fallback.style.display = 'flex';
+              }}
+            />
+            <div className="w-10 h-10 bg-red-500 rounded-full items-center justify-center hidden">
               <Package className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-lg">Siraha Delivery</h1>
+              <h1 className="font-bold text-lg">Siraha Bazaar</h1>
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
                 <span className="text-sm text-gray-600">
@@ -179,7 +190,7 @@ export default function ModernDeliveryPartnerDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="pb-20">
+      <div className="pb-32">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="dashboard" className="m-0">
             <DashboardTab stats={stats} statsLoading={statsLoading} />
@@ -200,41 +211,91 @@ export default function ModernDeliveryPartnerDashboard() {
           <TabsContent value="earnings" className="m-0">
             <EarningsTab stats={stats} />
           </TabsContent>
+          
+          <TabsContent value="schedule" className="m-0">
+            <ScheduleTab />
+          </TabsContent>
+          
+          <TabsContent value="contact" className="m-0">
+            <ContactTab />
+          </TabsContent>
+          
+          <TabsContent value="profile" className="m-0">
+            <ProfileTab />
+          </TabsContent>
+          
+          <TabsContent value="history" className="m-0">
+            <HistoryTab />
+          </TabsContent>
         </Tabs>
       </div>
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
-        <TabsList className="grid w-full grid-cols-4 bg-transparent h-16">
-          <TabsTrigger 
-            value="dashboard" 
-            className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
-          >
-            <Home className="h-5 w-5" />
-            <span className="text-xs">Home</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="orders" 
-            className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
-          >
-            <Package className="h-5 w-5" />
-            <span className="text-xs">Orders</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="map" 
-            className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
-          >
-            <MapPin className="h-5 w-5" />
-            <span className="text-xs">Map</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="earnings" 
-            className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
-          >
-            <DollarSign className="h-5 w-5" />
-            <span className="text-xs">Earnings</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="grid grid-cols-4 gap-0">
+          <TabsList className="grid w-full grid-cols-4 bg-transparent h-16">
+            <TabsTrigger 
+              value="dashboard" 
+              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
+            >
+              <Home className="h-4 w-4" />
+              <span className="text-xs">Home</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="orders" 
+              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
+            >
+              <Package className="h-4 w-4" />
+              <span className="text-xs">Orders</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="map" 
+              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
+            >
+              <MapPin className="h-4 w-4" />
+              <span className="text-xs">Map</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="earnings" 
+              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
+            >
+              <DollarSign className="h-4 w-4" />
+              <span className="text-xs">Earnings</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        <div className="grid grid-cols-4 gap-0 border-t bg-gray-50">
+          <TabsList className="grid w-full grid-cols-4 bg-transparent h-16">
+            <TabsTrigger 
+              value="schedule" 
+              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
+            >
+              <Calendar className="h-4 w-4" />
+              <span className="text-xs">Schedule</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="contact" 
+              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
+            >
+              <Info className="h-4 w-4" />
+              <span className="text-xs">Contact</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="profile" 
+              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
+            >
+              <Star className="h-4 w-4" />
+              <span className="text-xs">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="history" 
+              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
+            >
+              <Clock className="h-4 w-4" />
+              <span className="text-xs">History</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
       </div>
     </div>
   );

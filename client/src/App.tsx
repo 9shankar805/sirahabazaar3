@@ -57,6 +57,7 @@ import AddProduct from "@/pages/AddProduct";
 import RestaurantDashboard from "@/pages/RestaurantDashboard";
 import DashboardRouter from "@/components/DashboardRouter";
 import EnhancedDeliveryPartnerDashboard from "./pages/EnhancedDeliveryPartnerDashboard";
+import ModernDeliveryPartnerDashboard from "./pages/ModernDeliveryPartnerDashboard";
 import DeliveryPartnerTest from "./pages/DeliveryPartnerTest";
 import DeliveryPartnerNotifications from "./pages/DeliveryPartnerNotifications";
 import DeliveryTrackingMap from "@/pages/DeliveryTrackingMap";
@@ -141,8 +142,9 @@ function AppRouter() {
         <Route path="/seller/products/add" component={AddProduct} />
 
         {/* Delivery Partner Routes */}
-        <Route path="/delivery-partner-dashboard" component={EnhancedDeliveryPartnerDashboard} />
-        <Route path="/delivery-partner/dashboard" component={EnhancedDeliveryPartnerDashboard} />
+        <Route path="/delivery-partner-dashboard" component={ModernDeliveryPartnerDashboard} />
+        <Route path="/delivery-partner/dashboard" component={ModernDeliveryPartnerDashboard} />
+        <Route path="/delivery-partner/modern" component={ModernDeliveryPartnerDashboard} />
         <Route path="/delivery-partner/enhanced" component={EnhancedDeliveryPartnerDashboard} />
         <Route path="/delivery-partner/test" component={DeliveryPartnerTest} />
         <Route path="/delivery-partner/notifications" component={DeliveryPartnerNotifications} />

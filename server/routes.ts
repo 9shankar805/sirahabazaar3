@@ -3188,6 +3188,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Modern delivery partner statistics endpoint
+  app.get("/api/delivery-partners/:id/modern-stats", async (req, res) => {
+    try {
+      const partnerId = parseInt(req.params.id);
+      
+      // Get delivery partner data
+      const partner = await storage.getDeliveryPartnerByUserId(partnerId);
+      if (!partner) {
+        return res.status(404).json({ error: "Delivery partner not found" });
+      }
+
+      // Get all deliveries for this partner
+      const deliveries = await storage.getDeliveriesByPartnerId(partner.id);
+      const completedDeliveries = deliveries.filter(d => d.status === 'delivered');
+      
+      // Calculate date ranges
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay());
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      // Today's metrics
+      const todayDeliveries = completedDeliveries.filter(d => 
+        d.deliveredAt && new Date(d.deliveredAt) >= today
+      );
+      const todayEarnings = todayDeliveries.reduce((sum, d) => sum + parseFloat(d.deliveryFee || '0'), 0);
+      
+      // Week metrics
+      const weekDeliveries = completedDeliveries.filter(d => 
+        d.deliveredAt && new Date(d.deliveredAt) >= weekStart
+      );
+      const weekEarnings = weekDeliveries.reduce((sum, d) => sum + parseFloat(d.deliveryFee || '0'), 0);
+      
+      // Month metrics
+      const monthDeliveries = completedDeliveries.filter(d => 
+        d.deliveredAt && new Date(d.deliveredAt) >= monthStart
+      );
+      const monthEarnings = monthDeliveries.reduce((sum, d) => sum + parseFloat(d.deliveryFee || '0'), 0);
+      
+      // Calculate rating
+      const deliveriesWithRating = completedDeliveries.filter(d => d.customerRating);
+      const averageRating = deliveriesWithRating.length > 0 
+        ? deliveriesWithRating.reduce((sum, d) => sum + (d.customerRating || 0), 0) / deliveriesWithRating.length
+        : 4.5;
+      
+      // Active deliveries count
+      const activeDeliveries = deliveries.filter(d => 
+        ['assigned', 'picked_up', 'in_transit'].includes(d.status)
+      ).length;
+
+      const stats = {
+        todayEarnings: Math.round(todayEarnings * 100) / 100,
+        todayDeliveries: todayDeliveries.length,
+        weeklyEarnings: Math.round(weekEarnings * 100) / 100,
+        monthlyEarnings: Math.round(monthEarnings * 100) / 100,
+        totalDeliveries: completedDeliveries.length,
+        rating: Math.round(averageRating * 10) / 10,
+        activeOrders: activeDeliveries
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching modern delivery partner stats:", error);
+      res.status(500).json({ error: "Failed to fetch delivery partner stats" });
+    }
+  });
+
   // Enhanced delivery partner statistics endpoint for comprehensive dashboard
   app.get("/api/delivery-partners/:id/enhanced-stats", async (req, res) => {
     try {
