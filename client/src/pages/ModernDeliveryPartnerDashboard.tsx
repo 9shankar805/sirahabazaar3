@@ -851,7 +851,11 @@ function ModernOrdersTab({
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=26.6586,86.2003`, '_blank')}
+                          onClick={() => {
+                            const storeLatitude = (delivery as any).storeLatitude || 26.6586;
+                            const storeLongitude = (delivery as any).storeLongitude || 86.2003;
+                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${storeLatitude},${storeLongitude}`, '_blank');
+                          }}
                           className="text-xs"
                         >
                           <Navigation className="h-3 w-3" />
@@ -869,7 +873,11 @@ function ModernOrdersTab({
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=26.6600,86.2100`, '_blank')}
+                          onClick={() => {
+                            const customerLatitude = (delivery as any).customerLatitude || 26.6600;
+                            const customerLongitude = (delivery as any).customerLongitude || 86.2100;
+                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${customerLatitude},${customerLongitude}`, '_blank');
+                          }}
                           className="text-xs"
                         >
                           <Navigation className="h-3 w-3" />
@@ -1061,7 +1069,7 @@ function OrdersMapComponent({
               <div key={delivery.id}>
                 {/* Store Marker */}
                 <Marker
-                  position={[26.6586, 86.2003]} // Sample store coordinates
+                  position={[(delivery as any).storeLatitude || 26.6586, (delivery as any).storeLongitude || 86.2003]} // Actual store coordinates
                   icon={useSimpleMarkers ? createSimpleStoreMarker() : createStoreIcon({ 
                     logo: delivery.storeLogo || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=100&h=100&fit=crop&crop=center',
                     storeLogo: delivery.storeLogo,
@@ -1109,8 +1117,9 @@ function OrdersMapComponent({
                               size="sm" 
                               className="text-xs px-2 py-1 bg-blue-500 hover:bg-blue-600"
                               onClick={() => {
-                                const address = encodeURIComponent(delivery.storeAddress || delivery.pickupAddress || '26.6586,86.2003');
-                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
+                                const storeLatitude = (delivery as any).storeLatitude || 26.6586;
+                                const storeLongitude = (delivery as any).storeLongitude || 86.2003;
+                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${storeLatitude},${storeLongitude}`, '_blank');
                               }}
                             >
                               <Navigation className="h-3 w-3 mr-1" />
@@ -1130,7 +1139,7 @@ function OrdersMapComponent({
                 
                 {/* Customer Marker */}
                 <Marker
-                  position={[26.6600, 86.2100]} // Sample customer coordinates
+                  position={[(delivery as any).customerLatitude || 26.6600, (delivery as any).customerLongitude || 86.2100]} // Actual customer coordinates
                   icon={useSimpleMarkers ? createSimpleCustomerMarker() : createCustomerIcon({ 
                     fullName: delivery.customerName,
                     customerAvatar: delivery.customerAvatar
@@ -1176,8 +1185,9 @@ function OrdersMapComponent({
                               size="sm" 
                               className="text-xs px-2 py-1 bg-green-500 hover:bg-green-600"
                               onClick={() => {
-                                const address = encodeURIComponent(delivery.deliveryAddress || '26.6600,86.2100');
-                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
+                                const customerLatitude = (delivery as any).customerLatitude || 26.6600;
+                                const customerLongitude = (delivery as any).customerLongitude || 86.2100;
+                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${customerLatitude},${customerLongitude}`, '_blank');
                               }}
                             >
                               <Navigation className="h-3 w-3 mr-1" />
@@ -1371,8 +1381,9 @@ function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[]
                         size="sm" 
                         variant="outline"
                         onClick={() => {
-                          const address = encodeURIComponent(delivery.storeAddress || delivery.pickupAddress);
-                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
+                          const storeLatitude = (delivery as any).storeLatitude || 26.6586;
+                          const storeLongitude = (delivery as any).storeLongitude || 86.2003;
+                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${storeLatitude},${storeLongitude}`, '_blank');
                         }}
                         className="text-xs px-2 py-1"
                       >
@@ -2013,7 +2024,7 @@ function MapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
             <div key={delivery.id}>
               {/* Store Marker with Sample Location */}
               <Marker
-                position={[26.6586, 86.2003]} // Sample store coordinates
+                position={[(delivery as any).storeLatitude || 26.6586, (delivery as any).storeLongitude || 86.2003]} // Actual store coordinates
                 icon={createStoreIcon({ 
                   logo: '/default-store-logo.png',
                   name: 'Store Location'
@@ -2043,7 +2054,7 @@ function MapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
               
               {/* Customer Marker */}
               <Marker
-                position={[26.6600, 86.2100]} // Sample customer coordinates
+                position={[(delivery as any).customerLatitude || 26.6600, (delivery as any).customerLongitude || 86.2100]} // Actual customer coordinates
                 icon={createCustomerIcon({ 
                   fullName: delivery.customerName 
                 })}
