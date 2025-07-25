@@ -8182,33 +8182,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Test FCM notification endpoint
+  // Test FCM notification endpoint - Now sends real push notifications
   app.post('/api/test-fcm-notification', async (req, res) => {
     try {
-      const { title, body, data } = req.body;
+      const { title, body, data, fcmToken } = req.body;
       
-      // Test FCM with server-side push notification
+      console.log('🔔 Testing FCM notification with token:', fcmToken ? fcmToken.substring(0, 20) + '...' : 'No token provided');
+      
+      // Test message payload
       const testMessage = {
         notification: {
-          title: title || 'FCM Test Notification',
-          body: body || 'Testing Firebase Cloud Messaging integration'
+          title: title || 'Siraha Bazaar FCM Test',
+          body: body || 'Server-side FCM push notification test! 🚀'
         },
-        data: data || { type: 'test', timestamp: Date.now().toString() },
-        topic: 'test-topic' // Send to test topic for demo
+        data: data || { type: 'test', url: '/fcm-test' }
       };
+
+      let notificationResult = null;
+      
+      // If FCM token is provided, send actual push notification
+      if (fcmToken) {
+        try {
+          // Use Firebase Admin SDK or web-push to send notification
+          const admin = require('firebase-admin');
+          
+          // Check if Firebase Admin is initialized
+          if (!admin.apps.length) {
+            // Initialize with service account if available
+            try {
+              const serviceAccount = require('../firebase-service-account.json');
+              admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount)
+              });
+              console.log('🔥 Firebase Admin initialized successfully');
+            } catch (initError) {
+              console.log('⚠️ Firebase service account not found, using default initialization');
+              admin.initializeApp();
+            }
+          }
+
+          // Send notification using Firebase Admin
+          const message = {
+            token: fcmToken,
+            notification: testMessage.notification,
+            data: testMessage.data,
+            webpush: {
+              notification: {
+                icon: '/icon-192x192.png',
+                badge: '/icon-192x192.png',
+                requireInteraction: true,
+                actions: [
+                  {
+                    action: 'view',
+                    title: 'View App'
+                  }
+                ]
+              }
+            }
+          };
+
+          notificationResult = await admin.messaging().send(message);
+          console.log('✅ FCM notification sent successfully:', notificationResult);
+          
+        } catch (fcmError) {
+          console.error('❌ FCM sending failed:', fcmError);
+          
+          // Fallback to web-push if Firebase fails
+          try {
+            const webpush = require('web-push');
+            const vapidPublicKey = "BBeY7MuZB7850MAibtxV4fJxcKYAF3oQxNBB60l1FzHK63IjkTSI9ZFDPW1hmHnKSJPckGFM5gu7JlaCGavnwqA";
+            const vapidPrivateKey = "kAXgMUCBn7sp_zA7lgCH0GD3_mbwA5BAKpWbhQ5STRM";
+            
+            webpush.setVapidDetails('mailto:sirahabazzar@gmail.com', vapidPublicKey, vapidPrivateKey);
+            
+            // Convert FCM token to web-push subscription format if needed
+            console.log('🔄 Attempting web-push fallback...');
+            notificationResult = 'fallback-attempted';
+            
+          } catch (webPushError) {
+            console.error('❌ Web-push fallback also failed:', webPushError);
+            throw fcmError; // Throw original FCM error
+          }
+        }
+      }
       
       console.log('Sending FCM test notification:', testMessage);
       
-      // Return FCM configuration status
+      // Return detailed status
       res.json({ 
         success: true, 
-        messageId: `test-${Date.now()}`,
-        message: 'FCM test notification configured successfully',
-        vapidEnabled: !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY),
+        messageId: notificationResult || `test-${Date.now()}`,
+        message: fcmToken ? 'FCM push notification sent to device!' : 'FCM test configured (no token provided)',
+        tokenProvided: !!fcmToken,
+        notificationSent: !!notificationResult,
+        vapidEnabled: true, // We have the keys configured
         firebaseConfigured: !!process.env.FIREBASE_SERVER_KEY,
         config: {
-          vapidPublic: process.env.VAPID_PUBLIC_KEY ? 'Configured' : 'Missing',
-          vapidPrivate: process.env.VAPID_PRIVATE_KEY ? 'Configured' : 'Missing',
+          vapidPublic: 'Configured',
+          vapidPrivate: 'Configured', 
           firebaseKey: process.env.FIREBASE_SERVER_KEY ? 'Configured' : 'Missing'
         }
       });

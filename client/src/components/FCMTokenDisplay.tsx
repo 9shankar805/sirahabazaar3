@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, Key, Copy, RefreshCw, Bug } from 'lucide-react';
+import { Bell, Key, Copy, RefreshCw, Bug, Send } from 'lucide-react';
 import { getFirebaseToken, requestNotificationPermission, initializeFirebaseNotifications } from '@/lib/firebaseNotifications';
 import { testFirebaseConfig, validateVapidKey, debugServiceWorker } from '@/utils/firebaseVapidFix';
 
@@ -80,6 +80,56 @@ export default function FCMTokenDisplay() {
         title: "Token Copied",
         description: "FCM token copied to clipboard"
       });
+    }
+  };
+
+  const testPushNotification = async () => {
+    if (!fcmToken) {
+      toast({
+        title: "No FCM Token",
+        description: "Please generate an FCM token first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    console.log('🚀 Testing FCM push notification with token:', fcmToken.substring(0, 20) + '...');
+
+    try {
+      const response = await fetch('/api/test-fcm-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: 'Siraha Bazaar FCM Test',
+          body: 'Push notification is working! 🎉',
+          data: { type: 'test', url: '/fcm-test' },
+          fcmToken: fcmToken
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log('✅ FCM test notification sent:', result);
+        toast({
+          title: "Push Notification Sent!",
+          description: result.notificationSent ? "Check your browser/device for the notification" : "Server configured successfully",
+        });
+      } else {
+        throw new Error(result.error || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('❌ FCM test failed:', error);
+      toast({
+        title: "Test Failed",
+        description: error instanceof Error ? error.message : "Failed to send test notification",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -186,6 +236,19 @@ export default function FCMTokenDisplay() {
               </>
             )}
           </Button>
+
+          {fcmToken && (
+            <Button 
+              onClick={testPushNotification} 
+              disabled={isLoading || isDebugging}
+              variant="default"
+              className="w-full bg-green-600 hover:bg-green-700"
+              size="lg"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              🚀 Test FCM Push Notification
+            </Button>
+          )}
         </div>
 
         {fcmToken && (

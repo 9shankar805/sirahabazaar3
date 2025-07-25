@@ -1,8 +1,8 @@
 // Server-side VAPID token service for FCM authentication
 import webpush from 'web-push';
 
-// VAPID key pair from environment
-const vapidPublicKey = "BG5V1u2eNls8IInm93_F-ZBb2hXaEZIy4AjHBrIjDeClqi4wLVlVZ5x64WeMzFESgByQjeOtcL1UrGMGFQm0GlE";
+// VAPID key pair - Updated with correct keys
+const vapidPublicKey = "BBeY7MuZB7850MAibtxV4fJxcKYAF3oQxNBB60l1FzHK63IjkTSI9ZFDPW1hmHnKSJPckGFM5gu7JlaCGavnwqA";
 const vapidPrivateKey = "kAXgMUCBn7sp_zA7lgCH0GD3_mbwA5BAKpWbhQ5STRM";
 const vapidEmail = "mailto:sirahabazzar@gmail.com";
 
