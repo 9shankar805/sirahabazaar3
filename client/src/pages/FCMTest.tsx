@@ -29,7 +29,7 @@ export default function FCMTest() {
     const status = {
       serviceWorker: 'serviceWorker' in navigator,
       permission: Notification.permission,
-      token: null,
+      token: '',
       vapidSupport: 'PushManager' in window
     };
 
