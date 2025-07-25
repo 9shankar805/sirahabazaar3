@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
 import { 
   MapPin, 
   Clock, 
@@ -32,6 +34,100 @@ import {
   Timer
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import "leaflet/dist/leaflet.css";
+
+// Fix Leaflet default icons
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Custom delivery partner icon
+const deliveryPartnerIcon = new L.DivIcon({
+  html: `
+    <div style="
+      width: 32px; 
+      height: 32px; 
+      background: linear-gradient(135deg, #f59e0b, #dc2626); 
+      border: 3px solid white; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+      animation: pulse 2s infinite;
+    ">
+      <div style="
+        width: 16px; 
+        height: 16px; 
+        background: white; 
+        border-radius: 50%;
+      "></div>
+    </div>
+  `,
+  className: 'custom-delivery-marker',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16]
+});
+
+// Custom store icon
+const storeIcon = new L.DivIcon({
+  html: `
+    <div style="
+      width: 28px; 
+      height: 28px; 
+      background: #3b82f6; 
+      border: 2px solid white; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+    ">
+      <div style="
+        width: 12px; 
+        height: 12px; 
+        background: white; 
+        border-radius: 50%;
+      "></div>
+    </div>
+  `,
+  className: 'custom-store-marker',
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -14]
+});
+
+// Custom customer icon
+const customerIcon = new L.DivIcon({
+  html: `
+    <div style="
+      width: 24px; 
+      height: 24px; 
+      background: #10b981; 
+      border: 2px solid white; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+    ">
+      <div style="
+        width: 8px; 
+        height: 8px; 
+        background: white; 
+        border-radius: 50%;
+      "></div>
+    </div>
+  `,
+  className: 'custom-customer-marker',
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+  popupAnchor: [0, -12]
+});
 
 interface DeliveryStats {
   todayEarnings: number;
@@ -1110,20 +1206,187 @@ function OrdersTab({
 
 // Map Tab Component
 function MapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
+  const mapRef = useRef<any>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // Center coordinates for the map (Siraha, Nepal)
+  const defaultCenter: [number, number] = [26.6586, 86.2003];
+
+  // Get user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          // Use default location if GPS fails
+          setUserLocation({ lat: 26.6586, lng: 86.2003 });
+        }
+      );
+    } else {
+      // Use default location if geolocation not supported
+      setUserLocation({ lat: 26.6586, lng: 86.2003 });
+    }
+  }, []);
+
   return (
     <div className="relative h-screen">
-      <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
-        <div className="text-center p-8">
-          <div className="bg-white rounded-full p-6 w-fit mx-auto mb-4 shadow-lg">
-            <MapPin className="h-12 w-12 text-red-500" />
+      {userLocation ? (
+        <MapContainer
+          center={[userLocation.lat, userLocation.lng]}
+          zoom={13}
+          style={{ height: '100%', width: '100%' }}
+          className="z-0"
+          scrollWheelZoom={true}
+          doubleClickZoom={true}
+          touchZoom={true}
+          zoomControl={false}
+          ref={mapRef}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          
+          {/* Delivery Partner Location */}
+          <Marker
+            position={[userLocation.lat, userLocation.lng]}
+            icon={deliveryPartnerIcon}
+          >
+            <Popup>
+              <div className="text-center">
+                <h3 className="font-semibold">Your Location</h3>
+                <p className="text-sm text-gray-600">Delivery Partner</p>
+              </div>
+            </Popup>
+          </Marker>
+
+          {/* Active Delivery Markers */}
+          {activeDeliveries.map((delivery) => (
+            <div key={delivery.id}>
+              {/* Store/Pickup Location */}
+              {delivery.pickupLat && delivery.pickupLng && (
+                <Marker
+                  position={[parseFloat(delivery.pickupLat), parseFloat(delivery.pickupLng)]}
+                  icon={storeIcon}
+                >
+                  <Popup>
+                    <div className="text-center max-w-xs">
+                      <h3 className="font-semibold">Pickup Location</h3>
+                      <p className="text-sm text-gray-600 mb-1">Order #{delivery.orderId}</p>
+                      <p className="text-xs text-gray-500">{delivery.pickupAddress}</p>
+                      <Badge variant="outline" className="text-xs mt-1">
+                        Store
+                      </Badge>
+                    </div>
+                  </Popup>
+                </Marker>
+              )}
+              
+              {/* Customer/Delivery Location */}
+              {delivery.deliveryLat && delivery.deliveryLng && (
+                <Marker
+                  position={[parseFloat(delivery.deliveryLat), parseFloat(delivery.deliveryLng)]}
+                  icon={customerIcon}
+                >
+                  <Popup>
+                    <div className="text-center max-w-xs">
+                      <h3 className="font-semibold">Delivery Location</h3>
+                      <p className="text-sm text-gray-600 mb-1">{delivery.customerName}</p>
+                      <p className="text-xs text-gray-500">{delivery.deliveryAddress}</p>
+                      <Badge variant="outline" className="text-xs mt-1">
+                        Customer
+                      </Badge>
+                    </div>
+                  </Popup>
+                </Marker>
+              )}
+            </div>
+          ))}
+        </MapContainer>
+      ) : (
+        <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+          <div className="text-center p-8">
+            <div className="bg-white rounded-full p-6 w-fit mx-auto mb-4 shadow-lg">
+              <MapPin className="h-12 w-12 text-red-500 animate-pulse" />
+            </div>
+            <h3 className="font-bold text-lg mb-2">Loading Map...</h3>
+            <p className="text-gray-600 mb-4">Getting your location</p>
           </div>
-          <h3 className="font-bold text-lg mb-2">Map View</h3>
-          <p className="text-gray-600 mb-4">Interactive delivery route map</p>
-          {activeDeliveries.length > 0 && (
-            <Badge className="bg-red-500">{activeDeliveries.length} active routes</Badge>
-          )}
         </div>
+      )}
+
+      {/* Map Controls */}
+      <div className="absolute top-4 right-4 z-[999] flex flex-col gap-2">
+        {/* Zoom Controls */}
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (mapRef.current) {
+                mapRef.current.zoomIn();
+              }
+            }}
+            className="w-10 h-10 p-0 rounded-none border-b border-gray-200 hover:bg-red-50"
+            title="Zoom In"
+          >
+            <span className="text-lg font-bold text-red-600">+</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (mapRef.current) {
+                mapRef.current.zoomOut();
+              }
+            }}
+            className="w-10 h-10 p-0 rounded-none hover:bg-red-50"
+            title="Zoom Out"
+          >
+            <span className="text-lg font-bold text-red-600">−</span>
+          </Button>
+        </div>
+
+        {/* Center on User Location */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            if (userLocation && mapRef.current) {
+              mapRef.current.setView([userLocation.lat, userLocation.lng], 15);
+            }
+          }}
+          className="bg-white shadow-lg hover:bg-red-50"
+          title="Center on My Location"
+        >
+          <Target className="h-4 w-4 text-red-600" />
+        </Button>
       </div>
+
+      {/* Active Deliveries Counter */}
+      {activeDeliveries.length > 0 && (
+        <div className="absolute top-4 left-4 z-[999]">
+          <Card className="bg-white/90 backdrop-blur-sm">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <div className="bg-red-500 rounded-full p-2">
+                  <Route className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{activeDeliveries.length} Active Deliveries</p>
+                  <p className="text-xs text-gray-600">Tap markers for details</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
