@@ -56,7 +56,6 @@ import SellerStore from "@/pages/SellerStore";
 import AddProduct from "@/pages/AddProduct";
 import RestaurantDashboard from "@/pages/RestaurantDashboard";
 import DashboardRouter from "@/components/DashboardRouter";
-import DeliveryPartnerDashboard from "./pages/DeliveryPartnerDashboard";
 import EnhancedDeliveryPartnerDashboard from "./pages/EnhancedDeliveryPartnerDashboard";
 import DeliveryPartnerTest from "./pages/DeliveryPartnerTest";
 import DeliveryPartnerNotifications from "./pages/DeliveryPartnerNotifications";

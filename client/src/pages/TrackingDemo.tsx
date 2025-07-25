@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MapPin, Package, Truck, Users, Clock, Navigation } from 'lucide-react';
 import { DeliveryTrackingMap } from '../components/tracking/DeliveryTrackingMap';
-import { DeliveryPartnerDashboard } from '../components/tracking/DeliveryPartnerDashboard';
+import { DeliveryTrackingDashboard } from '../components/tracking/DeliveryTrackingDashboard';
 
 interface DeliveryData {
   id: number;
@@ -456,7 +456,7 @@ export default function TrackingDemo() {
 
         <TabsContent value="partner" className="space-y-6">
           {demoData.deliveryPartners.length > 0 ? (
-            <DeliveryPartnerDashboard partnerId={demoData.deliveryPartners[0].id} />
+            <DeliveryTrackingDashboard partnerId={demoData.deliveryPartners[0].id} />
           ) : (
             <Card>
               <CardContent className="p-12 text-center">

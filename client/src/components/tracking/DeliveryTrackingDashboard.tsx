@@ -27,11 +27,11 @@ interface Delivery {
   routeGoogleMapsLink?: string;
 }
 
-interface DeliveryPartnerDashboardProps {
+interface DeliveryTrackingDashboardProps {
   partnerId: number;
 }
 
-export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboardProps) {
+export function DeliveryTrackingDashboard({ partnerId }: DeliveryTrackingDashboardProps) {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -390,7 +390,7 @@ export function DeliveryPartnerDashboard({ partnerId }: DeliveryPartnerDashboard
               deliveryId={selectedDelivery.id}
               deliveryPartnerId={1} // This should come from user context
               isActive={selectedDelivery.status === 'assigned' || selectedDelivery.status === 'en_route_pickup' || selectedDelivery.status === 'picked_up' || selectedDelivery.status === 'en_route_delivery'}
-              onToggleTracking={(active) => {
+              onToggleTracking={(active: boolean) => {
                 console.log('Location tracking:', active ? 'started' : 'stopped');
               }}
             />
