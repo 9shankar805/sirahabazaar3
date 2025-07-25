@@ -73,32 +73,32 @@ const deliveryPartnerIcon = new L.DivIcon({
   popupAnchor: [0, -16]
 });
 
-// Custom store icon with logo support (like StoreMaps.tsx)
+// Enhanced store icon with logo support
 const createStoreIcon = (store: any) => {
-  const logoUrl = store.logo || '/default-store-logo.png';
+  const logoUrl = store.logo || store.storeLogo || '/default-store-logo.png';
   return new L.DivIcon({
     html: `
       <div style="
-        width: 40px; 
-        height: 40px; 
+        width: 44px; 
+        height: 44px; 
         background: white; 
         border: 3px solid #dc2626; 
         border-radius: 50%; 
         display: flex; 
         align-items: center; 
         justify-content: center;
-        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
         position: relative;
       ">
         <img src="${logoUrl}" 
-             style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" 
-             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgiIGhlaWdodD0iMjgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjZGMyNjI2Ii8+Cjwvc3ZnPg=='" />
+             style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" 
+             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjZGMyNjI2Ii8+Cjwvc3ZnPg=='" />
         <div style="
           position: absolute; 
           bottom: -2px; 
           right: -2px; 
-          width: 12px; 
-          height: 12px; 
+          width: 14px; 
+          height: 14px; 
           background: #10b981; 
           border: 2px solid white; 
           border-radius: 50%;
@@ -106,9 +106,9 @@ const createStoreIcon = (store: any) => {
       </div>
     `,
     className: 'custom-store-marker',
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -40]
+    iconSize: [44, 44],
+    iconAnchor: [22, 44],
+    popupAnchor: [0, -44]
   });
 };
 
@@ -156,18 +156,28 @@ interface ActiveDelivery {
   orderId: number;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
+  customerAvatar?: string;
   pickupAddress: string;
   deliveryAddress: string;
+  storeName: string;
+  storePhone: string;
+  storeLogo: string;
+  storeAddress: string;
   items: Array<{
     name: string;
     quantity: number;
     price: string;
+    image: string;
+    description?: string;
   }>;
   totalAmount: string;
   deliveryFee: string;
   status: string;
   estimatedTime: string;
   distance: string;
+  specialInstructions?: string;
+  paymentMethod?: string;
 }
 
 interface Notification {
@@ -668,33 +678,138 @@ function ModernOrdersTab({
 
                   {/* Enhanced Order Details for Active Delivery */}
                   {isActiveDelivery && (
-                    <div className="bg-white rounded-lg p-3 mb-4 border">
-                      <h4 className="font-semibold text-sm mb-2 text-gray-800">Order Details</h4>
-                      <div className="space-y-2 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Total Amount:</span>
-                          <span className="font-medium">₹{delivery.totalAmount}</span>
+                    <div className="bg-white rounded-lg p-3 mb-4 border space-y-3">
+                      {/* Store Information */}
+                      <div className="border-b pb-3">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <img 
+                            src={delivery.storeLogo || '/default-store-logo.png'} 
+                            alt={delivery.storeName || 'Store'} 
+                            className="w-10 h-10 rounded-full object-cover border-2 border-red-200"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjZGMyNjI2Ii8+Cjwvc3ZnPg==';
+                            }}
+                          />
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-sm text-gray-800">{delivery.storeName || 'Store Name'}</h4>
+                            <p className="text-xs text-gray-600">{delivery.storeAddress || delivery.pickupAddress}</p>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => window.open(`tel:${delivery.storePhone || '1234567890'}`)}
+                            className="text-xs px-2 py-1"
+                          >
+                            <Phone className="h-3 w-3" />
+                          </Button>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Delivery Fee:</span>
-                          <span className="font-medium">₹{delivery.deliveryFee}</span>
+                      </div>
+
+                      {/* Customer Information */}
+                      <div className="border-b pb-3">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                            {delivery.customerName?.split(' ').map((n: string) => n[0]).join('') || 'C'}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-sm text-gray-800">{delivery.customerName}</h4>
+                            <p className="text-xs text-gray-600">{delivery.deliveryAddress}</p>
+                            {delivery.customerEmail && (
+                              <p className="text-xs text-gray-500">{delivery.customerEmail}</p>
+                            )}
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => window.open(`tel:${delivery.customerPhone}`)}
+                            className="text-xs px-2 py-1"
+                          >
+                            <Phone className="h-3 w-3" />
+                          </Button>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Distance:</span>
-                          <span className="font-medium">{delivery.distance}</span>
-                        </div>
-                        <div className="border-t pt-2 mt-2">
-                          <p className="font-medium mb-1">Items ({delivery.items?.length || 0}):</p>
-                          {delivery.items?.slice(0, 3).map((item, idx) => (
-                            <div key={idx} className="flex justify-between">
-                              <span>{item.quantity}x {item.name}</span>
-                              <span>₹{item.price}</span>
+                      </div>
+
+                      {/* Order Items with Images */}
+                      <div>
+                        <p className="font-medium mb-2 text-sm text-gray-800">Order Items ({delivery.items?.length || 0})</p>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {delivery.items?.map((item, idx) => (
+                            <div key={idx} className="flex items-center space-x-2 bg-gray-50 rounded p-2">
+                              <img 
+                                src={item.image || '/default-product.png'} 
+                                alt={item.name} 
+                                className="w-8 h-8 rounded object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjNjM2MzYzIi8+Cjwvc3ZnPg==';
+                                }}
+                              />
+                              <div className="flex-1">
+                                <p className="text-xs font-medium text-gray-800">{item.quantity}x {item.name}</p>
+                                {item.description && (
+                                  <p className="text-xs text-gray-500 truncate">{item.description}</p>
+                                )}
+                              </div>
+                              <span className="text-xs font-medium text-gray-800">₹{item.price}</span>
                             </div>
                           ))}
-                          {(delivery.items?.length || 0) > 3 && (
-                            <p className="text-gray-500 mt-1">+{(delivery.items?.length || 0) - 3} more items</p>
-                          )}
                         </div>
+                      </div>
+
+                      {/* Payment & Instructions */}
+                      <div className="border-t pt-3">
+                        <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Total Amount:</span>
+                            <span className="font-medium">₹{delivery.totalAmount}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Delivery Fee:</span>
+                            <span className="font-medium">₹{delivery.deliveryFee}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Distance:</span>
+                            <span className="font-medium">{delivery.distance}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Payment:</span>
+                            <span className="font-medium">{delivery.paymentMethod || 'COD'}</span>
+                          </div>
+                        </div>
+                        {delivery.specialInstructions && (
+                          <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-2">
+                            <p className="text-xs text-yellow-800">
+                              <strong>Special Instructions:</strong> {delivery.specialInstructions}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Navigation Buttons */}
+                      <div className="flex space-x-2 pt-2 border-t">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            const address = encodeURIComponent(delivery.storeAddress || delivery.pickupAddress);
+                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
+                          }}
+                          className="flex-1 text-xs"
+                        >
+                          <Navigation className="h-3 w-3 mr-1" />
+                          To Store
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            const address = encodeURIComponent(delivery.deliveryAddress);
+                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
+                          }}
+                          className="flex-1 text-xs"
+                        >
+                          <MapPin className="h-3 w-3 mr-1" />
+                          To Customer
+                        </Button>
                       </div>
                     </div>
                   )}
