@@ -1,20 +1,10 @@
 // Firebase notification helper for mobile browsers
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getFirebaseConfig, getVapidKey, validateFirebaseConfig } from '@/config/firebase';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBbHSV2EJZ9BPE1C1ZC4_ZNYwFYJIR9VSo",
-  authDomain: "myweb-1c1f37b3.firebaseapp.com",
-  projectId: "myweb-1c1f37b3",
-  storageBucket: "myweb-1c1f37b3.firebasestorage.app",
-  messagingSenderId: "774950702828",
-  appId: "1:774950702828:web:09c2dfc1198d45244a9fc9",
-  measurementId: "G-XH9SP47FYT"
-};
-
-// Note: You'll need to generate a new VAPID key for your Firebase project
-// Go to Firebase Console > Project Settings > Cloud Messaging > Web configuration
-const vapidKey = "BG5V1u2eNls8IInm93_F-ZBb2hXaEZIy4AjHBrIjDeClqi4wLVlVZ5x64WeMzFESgByQjeOtcL1UrGMGFQm0GlE"; // VAPID public key from environment
+const firebaseConfig = getFirebaseConfig();
+const vapidKey = getVapidKey();
 
 let app: any = null;
 let messaging: any = null;
@@ -22,6 +12,21 @@ let messaging: any = null;
 export const initializeFirebaseNotifications = async () => {
   try {
     console.log('🚀 Initializing Firebase Cloud Messaging...');
+    console.log('🔧 Firebase Config:', {
+      apiKey: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.substring(0, 20)}...` : 'missing',
+      projectId: firebaseConfig.projectId,
+      messagingSenderId: firebaseConfig.messagingSenderId
+    });
+    console.log('🔑 VAPID Key:', vapidKey ? `${vapidKey.substring(0, 20)}...` : 'missing');
+    
+    // Validate configuration
+    if (!validateFirebaseConfig(firebaseConfig)) {
+      throw new Error('Invalid Firebase configuration');
+    }
+    
+    if (!vapidKey) {
+      throw new Error('VAPID key is missing');
+    }
     
     if (!app) {
       app = initializeApp(firebaseConfig);
@@ -32,9 +37,20 @@ export const initializeFirebaseNotifications = async () => {
       messaging = getMessaging(app);
       console.log('✅ Firebase Messaging initialized');
       
-      // Register service worker
-      await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      console.log('✅ Firebase service worker registered');
+      // Check if service worker already exists
+      const existingRegistration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+      if (!existingRegistration) {
+        console.log('📝 Registering Firebase service worker...');
+        try {
+          const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+          console.log('✅ Firebase service worker registered:', registration.scope);
+        } catch (swError: any) {
+          console.error('❌ Service worker registration failed:', swError);
+          throw new Error(`Service worker registration failed: ${swError?.message || 'Unknown error'}`);
+        }
+      } else {
+        console.log('✅ Firebase service worker already registered');
+      }
       
       // Check if we can get token immediately
       console.log('🔍 Checking notification permission:', Notification.permission);
@@ -83,28 +99,47 @@ export const requestNotificationPermission = async () => {
 
 export const getFirebaseToken = async () => {
   try {
+    console.log('🔄 Starting FCM token generation process...');
+    
+    // Check notification permission first
+    if (Notification.permission !== 'granted') {
+      console.log('⚠️ Notification permission not granted. Current status:', Notification.permission);
+      throw new Error('Notification permission is required to generate FCM token. Please grant permission first.');
+    }
+    
     await initializeFirebaseNotifications();
     
     if (!messaging) {
-      throw new Error('Firebase messaging not initialized');
+      throw new Error('Firebase messaging not initialized properly');
     }
     
+    console.log('🎯 Attempting to get FCM token with VAPID key...');
     const token = await getToken(messaging, { vapidKey });
+    
+    if (!token) {
+      throw new Error('Failed to generate FCM token. This may be due to blocked notifications or browser restrictions.');
+    }
     
     // Enhanced logging like in YouTube tutorials
     console.log('🔥 Firebase Cloud Messaging Token:');
     console.log('📱 FCM Token:', token);
-    console.log('🔗 Token Length:', token ? token.length : 0, 'characters');
+    console.log('🔗 Token Length:', token.length, 'characters');
     console.log('📋 Copy this token for testing:', token);
-    
-    // Also show abbreviated version for visibility
-    if (token) {
-      console.log('📝 Token (abbreviated):', token.substring(0, 20) + '...' + token.substring(token.length - 20));
-    }
+    console.log('📝 Token (abbreviated):', token.substring(0, 20) + '...' + token.substring(token.length - 20));
     
     return token;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error getting Firebase token:', error);
+    
+    // Provide more specific error messages
+    if (error?.code === 'messaging/permission-blocked') {
+      throw new Error('Push notifications are blocked in your browser. Please enable notifications and try again.');
+    } else if (error?.code === 'messaging/token-subscribe-failed') {
+      throw new Error('Failed to subscribe to FCM. This may be due to network issues or Firebase configuration problems.');
+    } else if (error?.code === 'messaging/invalid-vapid-key') {
+      throw new Error('Invalid VAPID key configuration. Please check Firebase project settings.');
+    }
+    
     throw error;
   }
 };
@@ -160,7 +195,7 @@ export const setupForegroundMessageListener = (callback?: (payload: any) => void
           tag: payload.data?.type || 'general',
           requireInteraction: false,
           silent: false,
-          vibrate: [200, 100, 200],
+          vibrate: [200, 100, 200] as any,
         }
       );
       
@@ -264,9 +299,9 @@ export const showManualNotification = (title: string, body: string, options: any
     icon: '/favicon.ico',
     badge: '/favicon.ico',
     // Vibrate is not in TypeScript types but works on mobile
-    ...(isMobileDevice() && { vibrate: [200, 100, 200] }),
+    ...(isMobileDevice() && { vibrate: [200, 100, 200] as any }),
     ...options,
-  } as NotificationOptions);
+  });
   
   // Auto close after 5 seconds
   setTimeout(() => notification.close(), 5000);

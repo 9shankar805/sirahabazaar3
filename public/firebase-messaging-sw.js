@@ -2,7 +2,8 @@
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
-// Firebase configuration
+// Firebase configuration - Note: Service workers cannot access import.meta.env
+// So we'll use the values directly from .env for now
 const firebaseConfig = {
   apiKey: "AIzaSyBbHSV2EJZ9BPE1C1ZC4_ZNYwFYJIR9VSo",
   authDomain: "myweb-1c1f37b3.firebaseapp.com",
