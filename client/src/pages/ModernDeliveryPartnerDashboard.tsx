@@ -1329,7 +1329,7 @@ function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[]
                 position={[26.6586, 86.2003]} // Sample store coordinates
                 icon={createStoreIcon({ 
                   logo: delivery.storeLogo || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=100&h=100&fit=crop&crop=center',
-                  storeLogo: delivery.storeLogo,
+                  storeLogo: delivery.storeLogo || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=100&h=100&fit=crop&crop=center',
                   name: delivery.storeName || 'Store Location'
                 })}
               >
@@ -1382,7 +1382,8 @@ function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[]
               <Marker
                 position={[26.6600, 86.2100]} // Sample customer coordinates
                 icon={createCustomerIcon({ 
-                  fullName: delivery.customerName 
+                  fullName: delivery.customerName,
+                  customerAvatar: delivery.customerAvatar 
                 })}
               >
                 <Popup>
