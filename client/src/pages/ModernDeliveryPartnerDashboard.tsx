@@ -24,7 +24,12 @@ import {
   CheckCircle,
   AlertCircle,
   MessageCircle,
-  Map
+  Map,
+  ChevronLeft,
+  Settings,
+  Globe,
+  Target,
+  Timer
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -72,6 +77,8 @@ export default function ModernDeliveryPartnerDashboard() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isOnline, setIsOnline] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const [language, setLanguage] = useState("English");
   const [currentWorkflow, setCurrentWorkflow] = useState<'idle' | 'accepted' | 'started' | 'enroute' | 'delivered'>('idle');
 
   // Fetch delivery partner stats
@@ -89,8 +96,8 @@ export default function ModernDeliveryPartnerDashboard() {
 
   // Fetch active deliveries using partner ID
   const { data: activeDeliveries = [], isLoading: deliveriesLoading } = useQuery({
-    queryKey: [`/api/deliveries/partner/${partnerData?.id}`],
-    enabled: !!partnerData?.id,
+    queryKey: [`/api/deliveries/partner/${(partnerData as any)?.id}`],
+    enabled: !!(partnerData as any)?.id,
     refetchInterval: 10000,
   }) as { data: ActiveDelivery[]; isLoading: boolean };
 
@@ -115,7 +122,7 @@ export default function ModernDeliveryPartnerDashboard() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/deliveries/partner/${partnerData?.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/deliveries/partner/${(partnerData as any)?.id}`] });
       toast({ title: "Status updated successfully!" });
     },
   });
@@ -132,88 +139,76 @@ export default function ModernDeliveryPartnerDashboard() {
     });
   };
 
+  // Auto-hide splash screen after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50">
-        <Card className="w-full max-w-md mx-4">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Package className="h-8 w-8 text-white" />
-            </div>
-            <h2 className="text-xl font-bold mb-2">Please Login</h2>
-            <p className="text-gray-600">Access your delivery dashboard</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <SplashScreen language={language} setLanguage={setLanguage} onSkip={() => setShowSplash(false)} />;
+  }
+
+  if (showSplash) {
+    return <SplashScreen language={language} setLanguage={setLanguage} onSkip={() => setShowSplash(false)} />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-40">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center space-x-3">
-            <img 
-              src="/icon2.png" 
-              alt="Siraha Bazaar"
-              className="w-10 h-10 rounded-full object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                const fallback = target.nextElementSibling as HTMLDivElement;
-                if (fallback) fallback.style.display = 'flex';
-              }}
-            />
-            <div className="w-10 h-10 bg-red-500 rounded-full items-center justify-center hidden">
-              <Package className="h-5 w-5 text-white" />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white sticky top-0 z-40">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center space-x-3">
+              <MapPin className="h-6 w-6" />
+              <div>
+                <h1 className="font-bold text-lg">Siraha Bazaar</h1>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-400' : 'bg-gray-300'}`} />
+                  <span className="text-sm opacity-90">
+                    {isOnline ? 'Online' : 'Offline'}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div>
-              <h1 className="font-bold text-lg">Siraha Bazaar</h1>
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
-                <span className="text-sm text-gray-600">
-                  {isOnline ? 'Online' : 'Offline'}
-                </span>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={isOnline ? "secondary" : "default"}
+                size="sm"
+                onClick={toggleOnlineStatus}
+                className="bg-white/20 text-white border-white/30 hover:bg-white/30"
+              >
+                {isOnline ? 'Go Offline' : 'Go Online'}
+              </Button>
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="relative p-2 hover:bg-white/20"
+                  onClick={() => setActiveTab("notifications")}
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadNotifications > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-yellow-400 text-black animate-pulse">
+                      {unreadNotifications}
+                    </Badge>
+                  )}
+                </Button>
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={isOnline ? "destructive" : "default"}
-              size="sm"
-              onClick={toggleOnlineStatus}
-            >
-              {isOnline ? 'Go Offline' : 'Go Online'}
-            </Button>
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="relative p-1"
-                onClick={() => setActiveTab("notifications")}
-              >
-                <Bell className="h-5 w-5 text-gray-600" />
-                {unreadNotifications > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-red-500 animate-pulse">
-                    {unreadNotifications}
-                  </Badge>
-                )}
-              </Button>
-            </div>
-          </div>
         </div>
-      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Main Content */}
-        <div className="pb-32">
+        <div className="pb-20">
           <TabsContent value="dashboard" className="m-0">
-            <DashboardTab stats={stats} statsLoading={statsLoading} />
+            <ModernDashboardTab stats={stats} statsLoading={statsLoading} />
           </TabsContent>
           
           <TabsContent value="orders" className="m-0">
-            <OrdersTab 
+            <ModernOrdersTab 
               activeDeliveries={activeDeliveries} 
               deliveriesLoading={deliveriesLoading}
               onStatusUpdate={handleStatusUpdate}
@@ -221,82 +216,648 @@ export default function ModernDeliveryPartnerDashboard() {
           </TabsContent>
           
           <TabsContent value="map" className="m-0">
-            <MapTab activeDeliveries={activeDeliveries} />
-          </TabsContent>
-          
-          <TabsContent value="earnings" className="m-0">
-            <EarningsTab stats={stats} />
+            <ModernMapTab activeDeliveries={activeDeliveries} />
           </TabsContent>
           
           <TabsContent value="schedule" className="m-0">
-            <ScheduleTab />
-          </TabsContent>
-          
-          <TabsContent value="contact" className="m-0">
-            <ContactTab />
-          </TabsContent>
-          
-          <TabsContent value="notifications" className="m-0">
-            <NotificationsTab notifications={notifications} />
+            <ModernScheduleTab />
           </TabsContent>
           
           <TabsContent value="profile" className="m-0">
-            <ProfileTab />
-          </TabsContent>
-          
-          <TabsContent value="history" className="m-0">
-            <HistoryTab />
+            <ModernProfileTab />
           </TabsContent>
         </div>
 
         {/* Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
-          <TabsList className="grid w-full grid-cols-6 bg-transparent h-16">
+          <TabsList className="grid w-full grid-cols-5 bg-transparent h-16">
             <TabsTrigger 
               value="dashboard" 
               className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
             >
-              <Home className="h-4 w-4" />
+              <Home className="h-5 w-5" />
               <span className="text-xs">Home</span>
             </TabsTrigger>
             <TabsTrigger 
               value="orders" 
               className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
             >
-              <Package className="h-4 w-4" />
+              <Package className="h-5 w-5" />
               <span className="text-xs">Orders</span>
             </TabsTrigger>
             <TabsTrigger 
               value="map" 
               className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
             >
-              <MapPin className="h-4 w-4" />
+              <MapPin className="h-5 w-5" />
               <span className="text-xs">Map</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="earnings" 
-              className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
-            >
-              <DollarSign className="h-4 w-4" />
-              <span className="text-xs">Earnings</span>
             </TabsTrigger>
             <TabsTrigger 
               value="schedule" 
               className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
             >
-              <Calendar className="h-4 w-4" />
+              <Calendar className="h-5 w-5" />
               <span className="text-xs">Schedule</span>
             </TabsTrigger>
             <TabsTrigger 
-              value="contact" 
+              value="profile" 
               className="flex flex-col space-y-1 data-[state=active]:bg-red-50 data-[state=active]:text-red-600"
             >
-              <MessageCircle className="h-4 w-4" />
-              <span className="text-xs">Support</span>
+              <Settings className="h-5 w-5" />
+              <span className="text-xs">Profile</span>
             </TabsTrigger>
           </TabsList>
         </div>
       </Tabs>
+    </div>
+  );
+}
+
+// Splash Screen Component
+function SplashScreen({ 
+  language, 
+  setLanguage, 
+  onSkip 
+}: { 
+  language: string; 
+  setLanguage: (lang: string) => void; 
+  onSkip: () => void; 
+}) {
+  return (
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8">
+      {/* Logo Section */}
+      <div className="text-center mb-8">
+        <div className="w-24 h-24 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+          <div className="flex space-x-1">
+            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+            <div className="w-3 h-3 bg-white rounded-full animate-pulse delay-75"></div>
+            <div className="w-3 h-3 bg-white rounded-full animate-pulse delay-150"></div>
+          </div>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Your Logo</h1>
+        <p className="text-gray-600">Delivery Partner App</p>
+      </div>
+
+      {/* Language Selection */}
+      <div className="w-full max-w-xs space-y-4">
+        <div 
+          onClick={() => setLanguage("English")}
+          className={`w-full p-4 rounded-xl border-2 cursor-pointer transition-all ${
+            language === "English" 
+              ? "border-red-500 bg-red-50" 
+              : "border-gray-200 bg-white"
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <Globe className="h-5 w-5 text-gray-600" />
+            <span className="font-medium text-gray-800">English</span>
+          </div>
+        </div>
+
+        <div 
+          onClick={() => setLanguage("Français")}
+          className={`w-full p-4 rounded-xl border-2 cursor-pointer transition-all ${
+            language === "Français" 
+              ? "border-red-500 bg-red-50" 
+              : "border-gray-200 bg-white"
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <Globe className="h-5 w-5 text-gray-600" />
+            <span className="font-medium text-gray-800">Français</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Continue Button */}
+      <Button 
+        onClick={onSkip}
+        className="w-full max-w-xs mt-8 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl"
+      >
+        Continue
+      </Button>
+
+      {/* Footer */}
+      <p className="text-gray-400 text-sm mt-8">Powered by Siraha</p>
+    </div>
+  );
+}
+
+// Modern Dashboard Tab Component
+function ModernDashboardTab({ stats, statsLoading }: { stats: DeliveryStats; statsLoading: boolean }) {
+  const currentDate = new Date();
+  const currentDay = currentDate.getDate();
+  const currentMonth = currentDate.toLocaleDateString('en-US', { month: 'long' });
+  const currentYear = currentDate.getFullYear();
+  const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+
+  if (statsLoading) {
+    return (
+      <div className="p-4 space-y-4">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="bg-white rounded-lg p-4 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+            <div className="h-8 bg-gray-200 rounded w-1/2" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gradient-to-b from-red-500 to-orange-500 min-h-screen text-white">
+      {/* Date Header */}
+      <div className="text-center py-8">
+        <div className="text-6xl font-bold mb-2">{currentDay}</div>
+        <div className="text-xl opacity-90">{dayName}</div>
+        <div className="text-sm opacity-75">{currentMonth} {currentYear}</div>
+      </div>
+
+      {/* Schedule Section */}
+      <div className="px-4 pb-4">
+        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3 mb-4">
+              <Clock className="h-5 w-5" />
+              <span className="font-medium">Today's Schedule</span>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-sm">9:30 AM - 10:00 AM</span>
+                </div>
+                <span className="text-sm font-medium">Work Started Today</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                  <span className="text-sm">10:30 AM - 12:00 PM</span>
+                </div>
+                <span className="text-sm font-medium">Active Delivery Time</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                  <span className="text-sm">2:00 PM - 6:00 PM</span>
+                </div>
+                <span className="text-sm font-medium">Peak Hours Available</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="px-4 space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold mb-1">₹{stats?.todayEarnings || 0}</div>
+              <div className="text-sm opacity-75">Today Earnings</div>
+              <div className="text-xs opacity-60">{stats?.todayDeliveries || 0} deliveries</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold mb-1">{stats?.rating || 0}</div>
+              <div className="text-sm opacity-75">Average Rating</div>
+              <div className="text-xs opacity-60">{stats?.totalDeliveries || 0} total deliveries</div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xl font-bold">₹{stats?.weeklyEarnings || 0}</div>
+                <div className="text-sm opacity-75">This Week's Earnings</div>
+              </div>
+              <TrendingUp className="h-8 w-8 opacity-60" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// Modern Orders Tab Component
+function ModernOrdersTab({ 
+  activeDeliveries, 
+  deliveriesLoading, 
+  onStatusUpdate 
+}: { 
+  activeDeliveries: ActiveDelivery[]; 
+  deliveriesLoading: boolean;
+  onStatusUpdate: (deliveryId: number, status: string) => void;
+}) {
+  if (deliveriesLoading) {
+    return (
+      <div className="p-4 space-y-4">
+        {[1, 2].map(i => (
+          <div key={i} className="bg-white rounded-lg p-4 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+            <div className="h-4 bg-gray-200 rounded w-1/2 mb-2" />
+            <div className="h-8 bg-gray-200 rounded w-full" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gradient-to-b from-red-500 to-orange-500 min-h-screen">
+      {/* Header */}
+      <div className="text-white text-center py-6">
+        <h2 className="text-xl font-bold">Real-Time Delivery Status</h2>
+        <p className="text-sm opacity-75">Track your active deliveries</p>
+      </div>
+
+      {/* Delivery Route Map Placeholder */}
+      <div className="mx-4 mb-4">
+        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+          <CardContent className="p-4">
+            <div className="h-40 bg-green-100 rounded-lg relative overflow-hidden">
+              {/* Map simulation */}
+              <div className="absolute inset-0 bg-gradient-to-br from-green-200 to-green-300">
+                {/* Road lines */}
+                <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-300 transform -translate-y-1/2"></div>
+                <div className="absolute top-0 bottom-0 left-1/2 w-1 bg-gray-300 transform -translate-x-1/2"></div>
+                
+                {/* Delivery markers */}
+                <div className="absolute top-1/4 left-1/4 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center border-2 border-white">
+                  <span className="text-white text-xs font-bold">A</span>
+                </div>
+                <div className="absolute bottom-1/4 right-1/4 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+                  <span className="text-white text-xs font-bold">B</span>
+                </div>
+                
+                {/* Delivery path */}
+                <svg className="absolute inset-0 w-full h-full">
+                  <path
+                    d="M 25% 25% Q 50% 50% 75% 75%"
+                    stroke="#ef4444"
+                    strokeWidth="3"
+                    fill="none"
+                    strokeDasharray="5,5"
+                    className="animate-pulse"
+                  />
+                </svg>
+              </div>
+              
+              {/* Distance indicator */}
+              <div className="absolute bottom-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-medium text-gray-800">
+                1.3 km
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Active Deliveries */}
+      <div className="px-4 space-y-3">
+        {activeDeliveries.length === 0 ? (
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+            <CardContent className="p-6 text-center text-white">
+              <Package className="h-12 w-12 mx-auto mb-3 opacity-60" />
+              <h3 className="font-bold mb-2">No Active Deliveries</h3>
+              <p className="text-sm opacity-75">You're ready for new orders!</p>
+              <Button className="mt-4 bg-green-500 hover:bg-green-600">
+                START DELIVERY
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          activeDeliveries.map((delivery) => (
+            <Card key={delivery.id} className="bg-white/95 backdrop-blur-sm">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-800">Order #{delivery.orderId}</h3>
+                    <p className="text-sm text-gray-600">{delivery.customerName}</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mb-1">
+                      <span className="text-white font-bold">1</span>
+                    </div>
+                    <p className="text-xs text-gray-600">13 min</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-800">Pickup</p>
+                      <p className="text-xs text-gray-600">{delivery.pickupAddress}</p>
+                    </div>
+                  </div>
+                  <div className="ml-1.5 w-0.5 h-4 bg-gray-300"></div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-800">Delivery</p>
+                      <p className="text-xs text-gray-600">{delivery.deliveryAddress}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => window.open(`tel:${delivery.customerPhone}`)}
+                  >
+                    <Phone className="h-4 w-4 mr-1" />
+                    Call
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-green-500 hover:bg-green-600"
+                    onClick={() => onStatusUpdate(delivery.id, 'delivered')}
+                  >
+                    START DELIVERY
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Modern Map Tab Component
+function ModernMapTab({ activeDeliveries }: { activeDeliveries: ActiveDelivery[] }) {
+  return (
+    <div className="relative h-screen bg-gradient-to-b from-red-500 to-orange-500">
+      {/* Map Container */}
+      <div className="absolute inset-0">
+        <div className="h-full bg-green-100 relative overflow-hidden">
+          {/* Map simulation with roads */}
+          <div className="absolute inset-0 bg-gradient-to-br from-green-200 to-green-300">
+            {/* Major roads */}
+            <div className="absolute top-1/3 left-0 right-0 h-2 bg-gray-400"></div>
+            <div className="absolute top-2/3 left-0 right-0 h-2 bg-gray-400"></div>
+            <div className="absolute top-0 bottom-0 left-1/3 w-2 bg-gray-400"></div>
+            <div className="absolute top-0 bottom-0 right-1/3 w-2 bg-gray-400"></div>
+            
+            {/* Delivery locations */}
+            <div className="absolute top-1/4 left-1/4 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center border-3 border-white shadow-lg animate-pulse">
+              <MapPin className="h-4 w-4 text-white" />
+            </div>
+            
+            <div className="absolute top-3/4 right-1/4 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-3 border-white shadow-lg">
+              <Target className="h-4 w-4 text-white" />
+            </div>
+          </div>
+          
+          {/* Time indicator */}
+          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
+            <div className="flex items-center space-x-2">
+              <Timer className="h-4 w-4 text-red-500" />
+              <span className="text-sm font-medium text-gray-800">13 min</span>
+            </div>
+          </div>
+          
+          {/* Bottom action panel */}
+          <div className="absolute bottom-4 left-4 right-4">
+            <Card className="bg-white/95 backdrop-blur-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="font-bold text-gray-800">Active Route</h3>
+                    <p className="text-sm text-gray-600">Siraha Electronics Hub</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-gray-800">1.3 km</div>
+                    <div className="text-sm text-gray-600">Distance</div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button className="bg-green-500 hover:bg-green-600" size="sm">
+                    START DELIVERY
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    DIRECTIONS
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Modern Schedule Tab Component  
+function ModernScheduleTab() {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  
+  // Calendar data
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+  const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+  const daysInMonth = lastDayOfMonth.getDate();
+  const startingDayOfWeek = firstDayOfMonth.getDay();
+
+  const calendarDays = [];
+  
+  // Empty cells for days before month starts
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    calendarDays.push(null);
+  }
+  
+  // Days of the month
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarDays.push(day);
+  }
+
+  return (
+    <div className="bg-gradient-to-b from-red-500 to-orange-500 min-h-screen text-white">
+      {/* Header */}
+      <div className="text-center py-6">
+        <h2 className="text-2xl font-bold">{monthNames[currentMonth]}</h2>
+        <p className="text-sm opacity-75">{currentYear}</p>
+      </div>
+
+      {/* Calendar */}
+      <div className="px-4">
+        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+          <CardContent className="p-4">
+            {/* Days of week header */}
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {daysOfWeek.map(day => (
+                <div key={day} className="text-center text-sm font-medium py-2 text-white/70">
+                  {day}
+                </div>
+              ))}
+            </div>
+            
+            {/* Calendar grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((day, index) => (
+                <div key={index} className="aspect-square">
+                  {day && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`w-full h-full text-sm hover:bg-white/20 ${
+                        day === currentDate.getDate() 
+                          ? "bg-white text-red-500 font-bold hover:bg-white/90" 
+                          : "text-white"
+                      } ${
+                        day === selectedDate.getDate() && day !== currentDate.getDate()
+                          ? "bg-white/30 border border-white/50" 
+                          : ""
+                      }`}
+                      onClick={() => setSelectedDate(new Date(currentYear, currentMonth, day))}
+                    >
+                      {day}
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Schedule items */}
+      <div className="px-4 mt-4 space-y-3">
+        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                <div>
+                  <p className="font-medium">Morning Shift</p>
+                  <p className="text-sm opacity-75">9:00 AM - 1:00 PM</p>
+                </div>
+              </div>
+              <CheckCircle className="h-5 w-5 text-green-400" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                <div>
+                  <p className="font-medium">Afternoon Shift</p>
+                  <p className="text-sm opacity-75">2:00 PM - 6:00 PM</p>
+                </div>
+              </div>
+              <Clock className="h-5 w-5 text-yellow-400" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// Modern Profile Tab Component
+function ModernProfileTab() {
+  const { user } = useAuth();
+  
+  return (
+    <div className="bg-gradient-to-b from-red-500 to-orange-500 min-h-screen text-white">
+      {/* Profile Header */}
+      <div className="text-center py-8">
+        <Avatar className="w-20 h-20 mx-auto mb-4 border-3 border-white/30">
+          <AvatarFallback className="bg-white/20 text-white text-2xl font-bold">
+            {user?.fullName?.split(' ').map((n: string) => n[0]).join('') || 'DP'}
+          </AvatarFallback>
+        </Avatar>
+        <h2 className="text-xl font-bold mb-1">{user?.fullName || 'Delivery Partner'}</h2>
+        <p className="text-sm opacity-75">Professional Delivery Partner</p>
+        <div className="flex items-center justify-center space-x-1 mt-2">
+          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+          <span className="font-medium">4.8</span>
+          <span className="opacity-75">(156 reviews)</span>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="px-4 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold mb-1">156</div>
+              <div className="text-sm opacity-75">Total Deliveries</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold mb-1">98.5%</div>
+              <div className="text-sm opacity-75">Success Rate</div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold">Vehicle Information</h3>
+              <Settings className="h-5 w-5 opacity-60" />
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="opacity-75">Vehicle Type</span>
+                <span>Motorcycle</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="opacity-75">License</span>
+                <span>BA 12 PA 3456</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="opacity-75">Status</span>
+                <Badge className="bg-green-500/20 text-green-300 border-green-500/30">Active</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+          <CardContent className="p-4">
+            <h3 className="font-bold mb-4">Quick Actions</h3>
+            <div className="space-y-2">
+              <Button variant="ghost" className="w-full justify-start hover:bg-white/20">
+                <Phone className="h-4 w-4 mr-3" />
+                Contact Support
+              </Button>
+              <Button variant="ghost" className="w-full justify-start hover:bg-white/20">
+                <Settings className="h-4 w-4 mr-3" />
+                Account Settings
+              </Button>
+              <Button variant="ghost" className="w-full justify-start hover:bg-white/20">
+                <AlertCircle className="h-4 w-4 mr-3" />
+                Report Issue
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
