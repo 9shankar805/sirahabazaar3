@@ -78,10 +78,16 @@ export default function ModernDeliveryPartnerDashboard() {
     refetchInterval: 30000,
   }) as { data: DeliveryStats; isLoading: boolean };
 
-  // Fetch active deliveries
-  const { data: activeDeliveries = [], isLoading: deliveriesLoading } = useQuery({
-    queryKey: [`/api/deliveries/active/${user?.id}`],
+  // Get delivery partner ID first
+  const { data: partnerData } = useQuery({
+    queryKey: [`/api/delivery-partners/user`, user?.id],
     enabled: !!user?.id,
+  });
+
+  // Fetch active deliveries using partner ID
+  const { data: activeDeliveries = [], isLoading: deliveriesLoading } = useQuery({
+    queryKey: [`/api/deliveries/partner/${partnerData?.id}`],
+    enabled: !!partnerData?.id,
     refetchInterval: 10000,
   }) as { data: ActiveDelivery[]; isLoading: boolean };
 
@@ -106,7 +112,7 @@ export default function ModernDeliveryPartnerDashboard() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/deliveries/active/${user?.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/deliveries/partner/${partnerData?.id}`] });
       toast({ title: "Status updated successfully!" });
     },
   });
