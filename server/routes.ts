@@ -3569,8 +3569,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const store = await storage.getStore(order.storeId);
             if (!store) return null;
             
-            // Get order items
+            // Get order items with complete product details
             const orderItems = await storage.getOrderItems(order.id);
+            const orderItemsWithProducts = await Promise.all(
+              orderItems.map(async (item: any) => {
+                console.log(`🔍 Looking up product ID ${item.productId} for order ${order.id}`);
+                const product = await storage.getProduct(item.productId);
+                console.log(`📦 Product lookup result:`, product ? `Found: ${product.name}` : 'Not found');
+                
+                if (product) {
+                  // Get proper product image - prefer images array over single imageUrl
+                  let productImage = '/images/placeholder.jpg';
+                  if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+                    productImage = product.images[0];
+                    console.log(`🖼️ Using images array: ${productImage}`);
+                  } else if (product.imageUrl) {
+                    productImage = product.imageUrl;
+                    console.log(`🖼️ Using imageUrl: ${productImage}`);
+                  } else {
+                    console.log(`⚠️ No image found for product ${product.name}, using placeholder`);
+                  }
+                  
+                  return {
+                    name: product.name,
+                    quantity: item.quantity,
+                    price: parseFloat(item.price),
+                    image: productImage,
+                    description: product.description
+                  };
+                }
+                console.log(`❌ Product ${item.productId} not found, using fallback`);
+                return {
+                  name: 'Unknown Product',
+                  quantity: item.quantity,
+                  price: parseFloat(item.price),
+                  image: '/images/placeholder.jpg'
+                };
+              })
+            );
             
             // Calculate correct delivery fee based on distance using actual coordinates
             const storeCoords = {
@@ -3640,12 +3676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Order details
               orderValue: parseFloat(order.totalAmount),
-              orderItems: orderItems.map((item: any) => ({
-                name: item.productName || 'Product',
-                quantity: item.quantity,
-                price: parseFloat(item.price),
-                image: '/images/placeholder.jpg'
-              })),
+              orderItems: orderItemsWithProducts,
               
               // Time and distance (using calculated values)
               estimatedDistance: Math.round(distance * 100) / 100,
