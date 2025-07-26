@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
-// Fast image compression utility targeting 200KB
+// Enhanced image compression utility targeting 200KB
 const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
@@ -16,7 +16,7 @@ const compressImage = (file: File): Promise<string> => {
     // Set timeout to prevent hanging
     const timeout = setTimeout(() => {
       reject(new Error('Image compression timeout'));
-    }, 10000);
+    }, 15000);
     
     img.onload = () => {
       try {
@@ -24,26 +24,34 @@ const compressImage = (file: File): Promise<string> => {
         
         let { width, height } = img;
         
-        // Aggressive resize for 200KB target
+        // Target 200KB with better handling for very large images
         const targetSizeKB = 200;
         const targetSizeBytes = targetSizeKB * 1024;
+        const base64Overhead = 1.37; // Base64 encoding overhead
         
-        // Start with smaller dimensions for 200KB target
-        let maxDimension = 600;
-        if (file.size > targetSizeBytes * 2) {
-          maxDimension = 400;
-        }
-        if (file.size > targetSizeBytes * 5) {
-          maxDimension = 300;
+        // More aggressive scaling for very large images
+        let maxDimension = 800;
+        
+        // Scale down more aggressively based on original file size
+        if (file.size > 10 * 1024 * 1024) {
+          maxDimension = 250; // Very large files (>10MB)
+        } else if (file.size > 5 * 1024 * 1024) {
+          maxDimension = 350; // Large files (>5MB)
+        } else if (file.size > 2 * 1024 * 1024) {
+          maxDimension = 450; // Medium files (>2MB)
+        } else if (file.size > 1 * 1024 * 1024) {
+          maxDimension = 600; // Smaller files (>1MB)
         }
         
+        // Calculate proper aspect ratio
         if (width > maxDimension || height > maxDimension) {
+          const aspectRatio = width / height;
           if (width > height) {
-            height = (height * maxDimension) / width;
             width = maxDimension;
+            height = Math.round(maxDimension / aspectRatio);
           } else {
-            width = (width * maxDimension) / height;
             height = maxDimension;
+            width = Math.round(maxDimension * aspectRatio);
           }
         }
         
@@ -55,27 +63,57 @@ const compressImage = (file: File): Promise<string> => {
           return;
         }
         
+        // Use better image rendering
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Aggressive compression for 200KB target
-        let quality = 0.6;
+        // Start with lower quality for very large files
+        let quality = file.size > 5 * 1024 * 1024 ? 0.3 : 0.7;
         let compressedData = canvas.toDataURL('image/jpeg', quality);
+        let attempts = 0;
+        const maxAttempts = 10;
         
-        // Reduce quality if still too large
-        while (compressedData.length > targetSizeBytes * 1.37 && quality > 0.1) { // 1.37 accounts for base64 overhead
-          quality -= 0.1;
+        // Iteratively reduce quality to reach target size
+        while (compressedData.length > targetSizeBytes * base64Overhead && quality > 0.05 && attempts < maxAttempts) {
+          quality = Math.max(0.05, quality - 0.1);
           compressedData = canvas.toDataURL('image/jpeg', quality);
+          attempts++;
         }
+        
+        // If still too large, reduce dimensions further
+        if (compressedData.length > targetSizeBytes * base64Overhead && width > 200) {
+          const reductionFactor = 0.8;
+          canvas.width = Math.round(width * reductionFactor);
+          canvas.height = Math.round(height * reductionFactor);
+          
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          quality = 0.6;
+          compressedData = canvas.toDataURL('image/jpeg', quality);
+          
+          // Final quality reduction if needed
+          while (compressedData.length > targetSizeBytes * base64Overhead && quality > 0.05) {
+            quality = Math.max(0.05, quality - 0.1);
+            compressedData = canvas.toDataURL('image/jpeg', quality);
+          }
+        }
+        
+        // Clean up object URL
+        URL.revokeObjectURL(img.src);
         
         resolve(compressedData);
       } catch (error) {
         clearTimeout(timeout);
+        URL.revokeObjectURL(img.src);
         reject(error);
       }
     };
     
     img.onerror = () => {
       clearTimeout(timeout);
+      URL.revokeObjectURL(img.src);
       reject(new Error('Failed to load image'));
     };
     
@@ -140,11 +178,11 @@ export default function ImageUpload({
           continue;
         }
 
-        // Validate file size (5MB limit for faster processing)
-        if (file.size > 5 * 1024 * 1024) {
+        // Validate file size (increased to 20MB for better compression handling)
+        if (file.size > 20 * 1024 * 1024) {
           toast({
             title: "File too large",
-            description: "Please select images smaller than 5MB",
+            description: "Please select images smaller than 20MB. Very large images will be compressed to 200KB automatically.",
             variant: "destructive"
           });
           continue;
@@ -154,11 +192,17 @@ export default function ImageUpload({
           // Try compression first
           const compressedImage = await compressImage(file);
           newImages.push(compressedImage);
+          
+          // Calculate compression ratio for user feedback
+          const originalSizeKB = Math.round(file.size / 1024);
+          const compressedSizeKB = Math.round((compressedImage.length * 0.75) / 1024); // Approximate size after base64
+          
+          console.log(`Compressed ${file.name}: ${originalSizeKB}KB → ${compressedSizeKB}KB`);
         } catch (compressionError) {
           console.error('Compression failed for file:', file.name, compressionError);
           
-          // Fallback: use original file as data URL if it's small enough (< 1MB)
-          if (file.size < 1024 * 1024) {
+          // Enhanced fallback for smaller files
+          if (file.size < 2 * 1024 * 1024) { // Increased fallback limit to 2MB
             try {
               const reader = new FileReader();
               const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -170,21 +214,21 @@ export default function ImageUpload({
               
               toast({
                 title: "Image added",
-                description: `${file.name} added without compression`,
+                description: `${file.name} added (compression failed, using original)`,
                 variant: "default"
               });
             } catch (readerError) {
               console.error('FileReader failed:', readerError);
               toast({
                 title: "Upload failed",
-                description: `Failed to process ${file.name}. Try a different image.`,
+                description: `Failed to process ${file.name}. Please try a different image format.`,
                 variant: "destructive"
               });
             }
           } else {
             toast({
-              title: "File too large",
-              description: `${file.name} is too large and compression failed. Try a smaller image.`,
+              title: "Compression failed",
+              description: `Unable to compress ${file.name}. Please try a smaller image or different format.`,
               variant: "destructive"
             });
           }
@@ -299,7 +343,7 @@ export default function ImageUpload({
                   Click to select images from your device
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Auto-compressed to 200KB for fast loading
+                  Images up to 20MB automatically compressed to 200KB
                 </p>
               </div>
               <input
@@ -403,7 +447,7 @@ export default function ImageUpload({
             <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
             <div>
               <p className="text-sm font-medium text-blue-900">Processing images...</p>
-              <p className="text-xs text-blue-700">Compressing and optimizing for better performance</p>
+              <p className="text-xs text-blue-700">Compressing large images to 200KB for fast loading</p>
             </div>
           </div>
         </div>
