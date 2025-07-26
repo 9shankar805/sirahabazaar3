@@ -145,6 +145,7 @@ function AppRouter() {
         <Route path="/delivery-partner-dashboard" component={ModernDeliveryPartnerDashboard} />
         <Route path="/delivery-partner/dashboard" component={ModernDeliveryPartnerDashboard} />
         <Route path="/delivery-partner/modern" component={ModernDeliveryPartnerDashboard} />
+        <Route path="/delivery-partner" component={ModernDeliveryPartnerDashboard} />
         <Route path="/delivery-partner/enhanced" component={EnhancedDeliveryPartnerDashboard} />
         <Route path="/delivery-partner/test" component={DeliveryPartnerTest} />
         <Route path="/delivery-partner/notifications" component={DeliveryPartnerNotifications} />
