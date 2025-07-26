@@ -89,7 +89,7 @@ function AppRouter() {
   return (
     <div className="relative">
       <Switch>
-        <Route path="/" component={ModernDeliveryPartnerDashboard} />
+        <Route path="/" component={EnhancedDeliveryPartnerDashboard} />
         <Route path="/home" component={mode === 'shopping' ? Homepage : FoodHomepage} />
         <Route path="/categories" component={Categories} />
         <Route path="/food-categories" component={Categories} />
@@ -143,10 +143,10 @@ function AppRouter() {
         <Route path="/seller/products/add" component={AddProduct} />
 
         {/* Delivery Partner Routes */}
-        <Route path="/delivery-partner-dashboard" component={ModernDeliveryPartnerDashboard} />
-        <Route path="/delivery-partner/dashboard" component={ModernDeliveryPartnerDashboard} />
+        <Route path="/delivery-partner-dashboard" component={EnhancedDeliveryPartnerDashboard} />
+        <Route path="/delivery-partner/dashboard" component={EnhancedDeliveryPartnerDashboard} />
         <Route path="/delivery-partner/modern" component={ModernDeliveryPartnerDashboard} />
-        <Route path="/delivery-partner" component={ModernDeliveryPartnerDashboard} />
+        <Route path="/delivery-partner" component={EnhancedDeliveryPartnerDashboard} />
         <Route path="/delivery-partner/enhanced" component={EnhancedDeliveryPartnerDashboard} />
         <Route path="/delivery-partner/test" component={DeliveryPartnerTest} />
         <Route path="/delivery-partner/notifications" component={DeliveryPartnerNotifications} />

@@ -532,7 +532,7 @@ export default function EnhancedDeliveryPartnerDashboard() {
       <div className="w-full max-w-none px-1 xs:px-2 sm:px-3 lg:px-6 py-2 xs:py-3 sm:py-4 lg:py-6">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
           {/* Mobile-First Icon-Only Tabs - Ultra Compact */}
-          <TabsList className="grid grid-cols-6 mb-2 xs:mb-3 sm:mb-6 bg-white shadow-sm h-auto p-0.5 w-full rounded-xl">
+          <TabsList className="grid grid-cols-7 mb-2 xs:mb-3 sm:mb-6 bg-white shadow-sm h-auto p-0.5 w-full rounded-xl">
             <TabsTrigger value="dashboard" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 rounded-lg" title="Dashboard">
               <Home className="h-5 w-5 xs:h-6 xs:w-6" />
             </TabsTrigger>
@@ -541,6 +541,9 @@ export default function EnhancedDeliveryPartnerDashboard() {
             </TabsTrigger>
             <TabsTrigger value="active" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-green-50 data-[state=active]:text-green-600 rounded-lg" title="Active Deliveries">
               <Activity className="h-5 w-5 xs:h-6 xs:w-6" />
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600 rounded-lg" title="Calendar">
+              <Calendar className="h-5 w-5 xs:h-6 xs:w-6" />
             </TabsTrigger>
             <TabsTrigger value="earnings" className="flex items-center justify-center py-2 xs:py-2.5 px-1 h-auto min-h-[45px] xs:min-h-[50px] data-[state=active]:bg-green-50 data-[state=active]:text-green-600 rounded-lg" title="Earnings">
               <Wallet className="h-5 w-5 xs:h-6 xs:w-6" />
@@ -558,6 +561,23 @@ export default function EnhancedDeliveryPartnerDashboard() {
 
           {/* Dashboard Overview */}
           <TabsContent value="dashboard" className="space-y-2 xs:space-y-3 sm:space-y-4 lg:space-y-6">
+            {/* Mobile Date Display - Like Your Screenshot */}
+            <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0 shadow-lg">
+              <CardContent className="p-3 xs:p-4 sm:p-6">
+                <div className="text-center">
+                  <div className="text-3xl xs:text-4xl sm:text-5xl font-bold">
+                    {new Date().getDate()}
+                  </div>
+                  <div className="text-sm xs:text-base sm:text-lg font-medium opacity-90">
+                    {new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase()}
+                  </div>
+                  <div className="text-xs xs:text-sm opacity-75 mt-1">
+                    {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Mobile-First Stats Cards - Full Width Coverage */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 xs:gap-2 sm:gap-3 lg:gap-4 w-full">
               {/* Today's Performance */}
@@ -1200,6 +1220,94 @@ export default function EnhancedDeliveryPartnerDashboard() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Calendar View - Like Your Screenshot */}
+          <TabsContent value="calendar" className="space-y-6">
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-purple-600">
+                  <Calendar className="h-5 w-5" />
+                  Delivery Calendar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Calendar Header */}
+                  <div className="text-center">
+                    <h3 className="text-2xl font-bold text-gray-800">
+                      {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </h3>
+                  </div>
+
+                  {/* Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-2">
+                    {/* Day headers */}
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      <div key={day} className="text-center font-medium text-gray-600 py-2">
+                        {day}
+                      </div>
+                    ))}
+                    
+                    {/* Calendar days */}
+                    {Array.from({length: 35}, (_, i) => {
+                      const date = new Date();
+                      const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+                      const startDate = new Date(firstDay);
+                      startDate.setDate(startDate.getDate() - firstDay.getDay() + i);
+                      
+                      const isCurrentMonth = startDate.getMonth() === date.getMonth();
+                      const isToday = startDate.toDateString() === date.toDateString();
+                      const hasDeliveries = Math.random() > 0.7; // Sample data for demo
+                      
+                      return (
+                        <div 
+                          key={i}
+                          className={`
+                            aspect-square flex flex-col items-center justify-center p-1 rounded-lg relative
+                            ${isCurrentMonth ? 'text-gray-800' : 'text-gray-400'}
+                            ${isToday ? 'bg-red-500 text-white font-bold' : 'hover:bg-gray-100'}
+                            ${hasDeliveries && isCurrentMonth ? 'border-2 border-green-300' : ''}
+                          `}
+                        >
+                          <span className="text-xs">{startDate.getDate()}</span>
+                          {hasDeliveries && isCurrentMonth && (
+                            <div className="absolute bottom-1 w-1 h-1 bg-green-500 rounded-full"></div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Today's Schedule */}
+                  <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-0">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Today's Schedule</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <div className="flex-1">
+                            <p className="font-medium">Morning Shift</p>
+                            <p className="text-sm text-gray-600">9:00 AM - 2:00 PM</p>
+                          </div>
+                          <Badge variant="outline" className="bg-green-100 text-green-800">Active</Badge>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                          <div className="flex-1">
+                            <p className="font-medium">Evening Shift</p>
+                            <p className="text-sm text-gray-600">6:00 PM - 11:00 PM</p>
+                          </div>
+                          <Badge variant="outline" className="bg-orange-100 text-orange-800">Scheduled</Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Profile Tab */}
