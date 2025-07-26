@@ -3636,6 +3636,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quick fix endpoint to update orders status and create sample orders
+  app.post("/api/orders/fix-status", async (req, res) => {
+    try {
+      console.log('🔧 Fixing orders status and creating sample orders...');
+      
+      // Update existing orders to ready_for_pickup status using db directly
+      await db.update(orders)
+        .set({ status: 'ready_for_pickup' })
+        .where(
+          and(
+            inArray(orders.status, ['pending', 'processing', 'confirmed']),
+            inArray(orders.id, 
+              db.select({ id: orders.id })
+                .from(orders)
+                .where(inArray(orders.status, ['pending', 'processing', 'confirmed']))
+                .orderBy(desc(orders.createdAt))
+                .limit(3)
+            )
+          )
+        );
+      
+      // Create sample orders directly using storage interface
+      const sampleOrders = [
+        {
+          userId: 66,
+          storeId: 1,
+          customerId: 66,
+          customerName: 'Ram Sharma',
+          customerPhone: '+9779805916598',
+          shippingAddress: 'Siraha Bazaar, Ward 2, Near Central Market, Siraha 56500',
+          totalAmount: '850',
+          deliveryFee: '30',
+          paymentMethod: 'COD',
+          status: 'ready_for_pickup',
+          specialInstructions: 'Please call before delivery. 2nd floor, blue gate.',
+          latitude: '26.66',
+          longitude: '86.21'
+        },
+        {
+          userId: 67,
+          storeId: 2,
+          customerId: 67,
+          customerName: 'Sita Devi',
+          customerPhone: '+9779805916599',
+          shippingAddress: 'Mahendranagar, Ward 5, Near Hospital, Siraha',
+          totalAmount: '1200',
+          deliveryFee: '50',
+          paymentMethod: 'prepaid',
+          status: 'ready_for_pickup',
+          specialInstructions: 'Leave at door if not home. Contact security guard.',
+          latitude: '26.65',
+          longitude: '86.20'
+        }
+      ];
+      
+      for (const order of sampleOrders) {
+        const newOrder = await storage.createOrder(order);
+        
+        // Add sample order items
+        await storage.createOrderItem({
+          orderId: newOrder.id,
+          productId: 1,
+          quantity: 2,
+          price: '400',
+          totalPrice: '800',
+          storeId: order.storeId
+        });
+      }
+      
+      res.json({ success: true, message: 'Orders status fixed and sample orders created' });
+    } catch (error) {
+      console.error('❌ Error fixing orders:', error);
+      res.status(500).json({ error: 'Failed to fix orders status' });
+    }
+  });
+
+  // Simple endpoint to create sample orders directly
+  app.post("/api/orders/direct-create", async (req, res) => {
+    try {
+      console.log('🔧 Creating sample orders directly...');
+      
+      // Create orders using direct SQL with db object
+      const result1 = await db.insert(orders).values({
+        userId: 66,
+        storeId: 1,
+        customerId: 66,
+        customerName: 'Ram Sharma',
+        customerPhone: '+9779805916598',
+        shippingAddress: 'Siraha Bazaar, Ward 2, Near Central Market, Siraha 56500',
+        totalAmount: '850',
+        deliveryFee: '30',
+        paymentMethod: 'COD',
+        status: 'ready_for_pickup',
+        specialInstructions: 'Please call before delivery. 2nd floor, blue gate.',
+        latitude: '26.66',
+        longitude: '86.21'
+      }).returning();
+      
+      const result2 = await db.insert(orders).values({
+        userId: 67,
+        storeId: 2,
+        customerId: 67,
+        customerName: 'Sita Devi',
+        customerPhone: '+9779805916599',
+        shippingAddress: 'Mahendranagar, Ward 5, Near Hospital, Siraha',
+        totalAmount: '1200',
+        deliveryFee: '50',
+        paymentMethod: 'prepaid',
+        status: 'ready_for_pickup',
+        specialInstructions: 'Leave at door if not home. Contact security guard.',
+        latitude: '26.65',
+        longitude: '86.20'
+      }).returning();
+      
+      console.log('✅ Sample orders created:', result1.length + result2.length);
+      res.json({ success: true, message: `Created ${result1.length + result2.length} sample orders`, orders: [...result1, ...result2] });
+    } catch (error) {
+      console.error('❌ Error creating sample orders:', error);
+      res.status(500).json({ error: 'Failed to create sample orders', details: error.message });
+    }
+  });
+
   app.get("/api/admin/analytics/revenue", async (req, res) => {
     try {
       const days = parseInt(req.query.days as string) || 30;

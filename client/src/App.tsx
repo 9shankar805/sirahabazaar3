@@ -89,7 +89,7 @@ function AppRouter() {
   return (
     <div className="relative">
       <Switch>
-        <Route path="/" component={EnhancedDeliveryPartnerDashboard} />
+        <Route path="/" component={mode === 'shopping' ? Homepage : FoodHomepage} />
         <Route path="/home" component={mode === 'shopping' ? Homepage : FoodHomepage} />
         <Route path="/categories" component={Categories} />
         <Route path="/food-categories" component={Categories} />

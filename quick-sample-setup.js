@@ -1,226 +1,60 @@
-#!/usr/bin/env node
+// Quick script to create sample orders using direct database manipulation
+import pkg from 'pg';
+const { Pool } = pkg;
 
-// Quick sample data setup for testing push notifications
-import fetch from 'node-fetch';
+async function createSampleOrders() {
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/siraha_bazaar'
+  });
 
-const API_BASE = 'http://localhost:5000/api';
-
-// Sample data for complete system testing
-const SAMPLE_DATA = {
-  users: [
-    { email: 'john@test.com', name: 'John Customer', role: 'customer', phone: '+977-9801111111' },
-    { email: 'shop@test.com', name: 'Shop Owner', role: 'shopkeeper', phone: '+977-9801222222' },
-    { email: 'delivery@test.com', name: 'Delivery Partner', role: 'delivery_partner', phone: '+977-9801333333' }
-  ],
-  deviceTokens: [
-    'eBH8i8SLNT:APA91bE8wR7JqWpQx4YQ0v5tVzNkNt5rA9nGl6XO2K8YjFyPsWz3oXkLMQrSvNpT7uGh4iWbVe3cHj9k',
-    'fKL9j9TMOU:APA91bF9xS8KrXqRy5ZR1w6uWaOlOu6sB0oHm7YP3L9ZkGzQtXa4pYlNNRsVwOqU8vHi5jXcWf4dIk0l',
-    'gLM0k0UNPV:APA91bG0yT9LsYrSz6aS2x7vXbPmPv7tC1pIn8ZQ4M0alHaRuYb5qZmOORtWxPrV9wIj6kYdXg5eJl1m'
-  ]
-};
-
-async function setupQuickSampleData() {
-  console.log('🚀 Setting up quick sample data for push notifications...');
-  
   try {
-    // Wait for server to be available
-    console.log('⏳ Waiting for server...');
-    let serverReady = false;
-    for (let i = 0; i < 30; i++) {
-      try {
-        const healthCheck = await fetch(`${API_BASE}/health`, { 
-          timeout: 2000,
-          signal: AbortSignal.timeout(2000)
-        });
-        if (healthCheck.ok) {
-          serverReady = true;
-          break;
-        }
-      } catch (e) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
+    console.log('🚀 Creating sample orders with direct database access...');
     
-    if (!serverReady) {
-      console.log('⚠️ Server not ready, please start the application first');
-      return;
-    }
-    
-    console.log('✅ Server is ready');
-
-    // Create device tokens with realistic FCM tokens
-    console.log('📱 Creating realistic device tokens...');
-    for (let i = 0; i < SAMPLE_DATA.deviceTokens.length; i++) {
-      const tokenData = {
-        userId: i + 1, // Assuming users 1, 2, 3 exist
-        token: SAMPLE_DATA.deviceTokens[i],
-        platform: 'android'
-      };
-      
-      try {
-        const response = await fetch(`${API_BASE}/device-token`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(tokenData)
-        });
-        
-        const result = await response.text();
-        console.log(`✅ Device token registered for user ${tokenData.userId}: ${result.includes('success') ? 'Success' : 'Already exists'}`);
-      } catch (error) {
-        console.log(`⚠️ Error registering token for user ${tokenData.userId}`);
-      }
-    }
-
-    // Create test notifications
-    console.log('🔔 Creating test notifications...');
-    const notifications = [
+    // Create sample orders
+    const orderQueries = [
       {
-        userId: 1,
-        title: 'Welcome to Siraha Bazaar!',
-        message: 'Your account is ready. Start exploring amazing products!',
-        type: 'welcome'
+        text: `INSERT INTO orders (user_id, store_id, customer_id, customer_name, customer_phone, shipping_address, total_amount, delivery_fee, payment_method, status, special_instructions, latitude, longitude, created_at) 
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()) RETURNING id`,
+        values: [66, 1, 66, 'Ram Sharma', '+9779805916598', 'Siraha Bazaar, Ward 2, Near Central Market, Siraha 56500', '850', '30', 'COD', 'ready_for_pickup', 'Please call before delivery. 2nd floor, blue gate.', '26.66', '86.21']
       },
       {
-        userId: 2,
-        title: 'Store Setup Complete',
-        message: 'Your store is now active and ready to receive orders.',
-        type: 'store_activation'
+        text: `INSERT INTO orders (user_id, store_id, customer_id, customer_name, customer_phone, shipping_address, total_amount, delivery_fee, payment_method, status, special_instructions, latitude, longitude, created_at) 
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()) RETURNING id`,
+        values: [67, 2, 67, 'Sita Devi', '+9779805916599', 'Mahendranagar, Ward 5, Near Hospital, Siraha', '1200', '50', 'prepaid', 'ready_for_pickup', 'Leave at door if not home. Contact security guard.', '26.65', '86.20']
       },
       {
-        userId: 3,
-        title: 'Delivery Partner Approved',
-        message: 'Congratulations! You can now start accepting delivery assignments.',
-        type: 'approval'
-      },
-      {
-        userId: 1,
-        title: 'Flash Sale Alert',
-        message: 'Get 40% off on electronics. Limited time offer!',
-        type: 'promotion'
+        text: `INSERT INTO orders (user_id, store_id, customer_id, customer_name, customer_phone, shipping_address, total_amount, delivery_fee, payment_method, status, special_instructions, latitude, longitude, created_at) 
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()) RETURNING id`,
+        values: [68, 1, 68, 'Krishna Yadav', '+9779805916600', 'Lahan Bazar, Ward 3, Near School', '650', '40', 'COD', 'ready_for_pickup', 'Ring bell twice. Ground floor.', '26.67', '86.22']
       }
     ];
 
-    for (const notification of notifications) {
-      try {
-        const response = await fetch(`${API_BASE}/test-notification`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(notification)
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log(`✅ Notification sent to user ${notification.userId}: "${notification.title}"`);
-          console.log(`   Android push: ${result.androidNotificationSent ? 'Sent' : 'Failed'}`);
-        } else {
-          console.log(`⚠️ Failed to send notification: ${notification.title}`);
-        }
-      } catch (error) {
-        console.log(`⚠️ Error sending notification: ${notification.title}`);
-      }
+    const orderIds = [];
+    for (const query of orderQueries) {
+      const result = await pool.query(query.text, query.values);
+      orderIds.push(result.rows[0].id);
+      console.log(`✅ Created order ${result.rows[0].id}`);
     }
 
-    // Test production notification endpoint
-    console.log('🧪 Testing production notification system...');
-    try {
-      const productionTest = {
-        fcmToken: SAMPLE_DATA.deviceTokens[0],
-        userId: 1,
-        notificationType: 'production_test'
-      };
-      
-      const response = await fetch(`${API_BASE}/notification/production-test`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(productionTest)
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log(`✅ Production test: ${result.success ? 'Success' : 'Failed'}`);
-      }
-    } catch (error) {
-      console.log('⚠️ Production test failed');
+    // Add order items for each order
+    for (let i = 0; i < orderIds.length; i++) {
+      const orderId = orderIds[i];
+      await pool.query(
+        `INSERT INTO order_items (order_id, product_id, quantity, price, total_price, store_id, created_at) 
+         VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+        [orderId, 1 + i, 2, '400', '800', i % 2 + 1]
+      );
+      console.log(`✅ Created order items for order ${orderId}`);
     }
 
-    // Create sample order and delivery notifications
-    console.log('📦 Creating order and delivery sample notifications...');
-    const orderNotifications = [
-      {
-        userId: 1,
-        title: 'Order Placed Successfully',
-        message: 'Your order #1001 has been received and is being processed.',
-        type: 'order_placed'
-      },
-      {
-        userId: 2,
-        title: 'New Order Alert',
-        message: 'You have received a new order for Samsung Galaxy A54.',
-        type: 'new_order'
-      },
-      {
-        userId: 3,
-        title: 'Delivery Assignment',
-        message: 'New delivery: Electronics Market → Siraha Main Road (5.2 km)',
-        type: 'delivery_assignment'
-      },
-      {
-        userId: 1,
-        title: 'Order Out for Delivery',
-        message: 'Your order is on the way! Estimated arrival: 25 minutes',
-        type: 'order_delivery'
-      }
-    ];
-
-    for (const notification of orderNotifications) {
-      try {
-        const response = await fetch(`${API_BASE}/test-notification`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(notification)
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log(`✅ Order notification: "${notification.title}" → User ${notification.userId}`);
-        }
-      } catch (error) {
-        console.log(`⚠️ Error sending order notification: ${notification.title}`);
-      }
-    }
-
-    console.log(`
-🎉 Sample Data Setup Complete!
-
-📊 Created:
-- 📱 3 realistic FCM device tokens (Android format)
-- 🔔 7 test notifications across all user types
-- 📦 4 order/delivery workflow notifications
-- 🧪 Production notification system tested
-
-🎯 Push Notification System Status:
-- ✅ Device tokens registered for users 1, 2, 3
-- ✅ FCM tokens use proper Android format
-- ✅ Notifications sent to all user roles
-- ✅ Order and delivery workflow covered
-- ✅ Production endpoints tested
-
-🧪 Test Your System:
-1. Visit: http://localhost:5000/android-test
-2. API Test: POST /api/test-notification
-3. Check notifications: GET /api/notifications/stream/1
-4. Production test: POST /api/notification/production-test
-
-💡 Next Steps:
-- Replace FCM tokens with real device tokens from Android app
-- Test with actual Firebase project credentials
-- Monitor notification delivery in production
-    `);
-
+    console.log('🎉 Sample orders created successfully!');
+    console.log('📋 Order IDs:', orderIds);
+    
   } catch (error) {
-    console.error('❌ Setup failed:', error.message);
+    console.error('❌ Error creating sample orders:', error);
+  } finally {
+    await pool.end();
   }
 }
 
-// Run setup
-setupQuickSampleData();
+createSampleOrders();
