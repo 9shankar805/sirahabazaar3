@@ -13,6 +13,62 @@ import { useUser } from '@/hooks/use-user';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+// Simple fallback image utility for delivery dashboard
+const getDeliveryItemImage = (imagePath: string | null | undefined, itemName: string): string => {
+  // If we have a valid image path and it's not a placeholder
+  if (imagePath && imagePath.trim() !== '' && !imagePath.includes('placeholder')) {
+    return imagePath;
+  }
+  
+  // Generate fallback based on item name
+  const name = itemName.toLowerCase();
+  
+  // Food items
+  if (name.includes('dal') || name.includes('bhat') || name.includes('rice')) {
+    return 'https://images.unsplash.com/photo-1563379091339-03246963d96c?w=400&h=300&fit=crop&auto=format';
+  }
+  if (name.includes('curry') || name.includes('chicken') || name.includes('meat')) {
+    return 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop&auto=format';
+  }
+  if (name.includes('burger') || name.includes('sandwich')) {
+    return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop&auto=format';
+  }
+  if (name.includes('pizza')) {
+    return 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop&auto=format';
+  }
+  if (name.includes('pasta') || name.includes('noodle')) {
+    return 'https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?w=400&h=300&fit=crop&auto=format';
+  }
+  if (name.includes('dessert') || name.includes('sweet') || name.includes('cake')) {
+    return 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=400&h=300&fit=crop&auto=format';
+  }
+  if (name.includes('drink') || name.includes('juice') || name.includes('coffee') || name.includes('tea')) {
+    return 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=300&fit=crop&auto=format';
+  }
+  
+  // Electronics
+  if (name.includes('phone') || name.includes('mobile') || name.includes('smartphone')) {
+    return 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=300&fit=crop&auto=format';
+  }
+  if (name.includes('laptop') || name.includes('computer')) {
+    return 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=300&fit=crop&auto=format';
+  }
+  if (name.includes('headphone') || name.includes('earphone')) {
+    return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop&auto=format';
+  }
+  
+  // Clothing
+  if (name.includes('shirt') || name.includes('top') || name.includes('cloth')) {
+    return 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&h=300&fit=crop&auto=format';
+  }
+  
+  // Default fallback for unknown items
+  if (name.includes('food') || name.includes('restaurant') || name.includes('meal')) {
+    return 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop&auto=format';
+  }
+  
+  return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&auto=format';
+};
 
 interface DeliveryPartnerData {
   id: number;
@@ -881,11 +937,15 @@ export default function EnhancedDeliveryPartnerDashboard() {
                           {delivery.orderItems.map((item, index) => (
                             <div key={index} className="flex-shrink-0 bg-gray-50 rounded-lg p-2 min-w-[120px]">
                               <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg mb-2 flex items-center justify-center">
-                                {item.image ? (
-                                  <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-lg" />
-                                ) : (
-                                  <Package className="h-6 w-6 text-gray-500" />
-                                )}
+                                <img 
+                                  src={getDeliveryItemImage(item.image, item.name)} 
+                                  alt={item.name} 
+                                  className="w-full h-full object-cover rounded-lg"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = getDeliveryItemImage(null, item.name);
+                                  }}
+                                />
                               </div>
                               <p className="text-xs font-medium truncate">{item.name}</p>
                               <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
