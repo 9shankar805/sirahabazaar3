@@ -8,6 +8,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import type { Product } from "@shared/schema";
+import { getProductImage, getProductFallbackImage } from "@/utils/imageUtils";
 
 interface ProductCardProps {
   product: Product & {
@@ -66,13 +67,16 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className="product-card overflow-hidden">
         <div className="relative">
           <img
-            src={product.imageUrl || product.images?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300"}
+            src={getProductImage(product)}
             alt={product.name}
             className="w-full h-24 sm:h-32 md:h-40 object-cover"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
-              target.src = "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300";
+              if (!target.src.includes('unsplash')) {
+                target.src = getProductFallbackImage(product);
+              }
             }}
+            loading="lazy"
           />
           {discount > 0 && (
             <Badge className="absolute top-2 left-2 bg-red-500 text-white">

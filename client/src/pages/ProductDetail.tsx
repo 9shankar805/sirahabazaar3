@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppMode } from "@/hooks/useAppMode";
 import { getCurrentUserLocation } from "@/lib/distance";
 import type { Product, Store as StoreType } from "@shared/schema";
+import { getProductImages, getProductFallbackImage } from "@/utils/imageUtils";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -129,7 +130,7 @@ export default function ProductDetail() {
     ? Math.round(((Number(product.originalPrice) - Number(product.price)) / Number(product.originalPrice)) * 100)
     : 0;
 
-  const images = product.images || ["https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800"];
+  const images = getProductImages(product);
   const relatedProductsFiltered = relatedProducts.filter(p => p.id !== product.id).slice(0, 4);
 
   return (
@@ -144,6 +145,13 @@ export default function ProductDetail() {
                   src={images[selectedImage]}
                   alt={product.name}
                   className="w-full h-64 sm:h-80 lg:h-96 object-cover rounded-lg shadow-lg"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (!target.src.includes('unsplash')) {
+                      target.src = getProductFallbackImage(product);
+                    }
+                  }}
+                  loading="lazy"
                 />
               </div>
               {images.length > 1 && (
