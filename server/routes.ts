@@ -1206,6 +1206,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Order routes
+  // Get all orders (for admin and delivery partners)
+  app.get("/api/orders", async (req, res) => {
+    try {
+      const allOrders = await storage.getAllOrders();
+      res.json(allOrders);
+    } catch (error) {
+      console.error("Error fetching all orders:", error);
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
   app.get("/api/orders/customer/:customerId", async (req, res) => {
     try {
       const customerId = parseInt(req.params.customerId);
@@ -3450,61 +3461,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('⚠️ No pending deliveries found, checking ready for pickup orders');
       }
       
-      // Also get orders that are "ready for pickup" but don't have deliveries created yet
+      // Also get orders that are "ready for pickup" or "pending" orders older than 5 minutes
       try {
         const readyForPickupOrders = await storage.getOrdersByStatus('ready_for_pickup');
         console.log('🍔 Found ready for pickup orders:', readyForPickupOrders.length);
         
+        // Also include pending orders that are older than 1 minute (for better delivery partner experience)
+        const pendingOrders = await storage.getOrdersByStatus('pending');
+        const oneMinuteAgo = new Date(Date.now() - 1 * 60 * 1000);
+        const eligiblePendingOrders = pendingOrders.filter(order => 
+          new Date(order.createdAt) < oneMinuteAgo
+        );
+        console.log('⏰ Found eligible pending orders (>1min old):', eligiblePendingOrders.length);
+        
+        // Combine both ready and eligible pending orders
+        const allEligibleOrders = [...readyForPickupOrders, ...eligiblePendingOrders];
+        console.log('📦 Total eligible orders for delivery:', allEligibleOrders.length);
+        
         // Filter out orders that already have deliveries assigned
-        for (const order of readyForPickupOrders) {
-          const existingDeliveries = await storage.getDeliveriesByOrderId(order.id);
-          if (existingDeliveries.length === 0) {
-            // Get store for distance calculation
-            const store = await storage.getStore(order.storeId);
+        for (const order of allEligibleOrders) {
+          try {
+            const existingDeliveries = await storage.getDeliveriesByOrderId(order.id);
+            console.log(`Order ${order.id}: existing deliveries = ${existingDeliveries.length}`);
             
-            // Calculate correct delivery fee based on distance
-            let calculatedDeliveryFee = 30; // Default fee
-            if (store && store.latitude && store.longitude && order.latitude && order.longitude) {
-              // Calculate distance using Haversine formula
-              const R = 6371; // Earth's radius in km
-              const toRadians = (degrees: number) => degrees * (Math.PI / 180);
-              const storeCoords = {
-                latitude: parseFloat(store.latitude),
-                longitude: parseFloat(store.longitude)
-              };
-              const customerCoords = {
-                latitude: parseFloat(order.latitude),
-                longitude: parseFloat(order.longitude)
-              };
-              const dLat = toRadians(customerCoords.latitude - storeCoords.latitude);
-              const dLon = toRadians(customerCoords.longitude - storeCoords.longitude);
-              const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
-                        Math.cos(toRadians(storeCoords.latitude)) * Math.cos(toRadians(customerCoords.latitude)) * 
-                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-              const distance = R * c;
+            if (existingDeliveries.length === 0) {
+              // Get store for distance calculation
+              const store = await storage.getStore(order.storeId);
+              console.log(`Order ${order.id}: found store = ${store?.name || 'none'}`);
               
-              // Calculate delivery fee based on distance ranges
-              if (distance <= 5) {
-                calculatedDeliveryFee = 30;
-              } else if (distance <= 10) {
-                calculatedDeliveryFee = 50;
-              } else if (distance <= 20) {
-                calculatedDeliveryFee = 80;
-              } else if (distance <= 30) {
-                calculatedDeliveryFee = 100;
-              } else {
-                calculatedDeliveryFee = 100;
+              // Calculate correct delivery fee based on distance
+              let calculatedDeliveryFee = 50; // Increased default fee
+              if (store && store.latitude && store.longitude && order.latitude && order.longitude) {
+                // Calculate distance using Haversine formula
+                const R = 6371; // Earth's radius in km
+                const toRadians = (degrees: number) => degrees * (Math.PI / 180);
+                const storeCoords = {
+                  latitude: parseFloat(store.latitude),
+                  longitude: parseFloat(store.longitude)
+                };
+                const customerCoords = {
+                  latitude: parseFloat(order.latitude),
+                  longitude: parseFloat(order.longitude)
+                };
+                const dLat = toRadians(customerCoords.latitude - storeCoords.latitude);
+                const dLon = toRadians(customerCoords.longitude - storeCoords.longitude);
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
+                          Math.cos(toRadians(storeCoords.latitude)) * Math.cos(toRadians(customerCoords.latitude)) * 
+                          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const distance = R * c;
+                
+                // Calculate delivery fee based on distance ranges
+                if (distance <= 5) {
+                  calculatedDeliveryFee = 30;
+                } else if (distance <= 10) {
+                  calculatedDeliveryFee = 50;
+                } else if (distance <= 20) {
+                  calculatedDeliveryFee = 80;
+                } else if (distance <= 30) {
+                  calculatedDeliveryFee = 100;
+                } else {
+                  calculatedDeliveryFee = 120;
+                }
+                console.log(`Order ${order.id}: calculated distance = ${distance.toFixed(2)}km, fee = ₹${calculatedDeliveryFee}`);
               }
+              
+              // Convert order to delivery-like structure with calculated fee
+              const orderDelivery = {
+                id: `order_${order.id}`, // Temporary ID for orders without deliveries
+                orderId: order.id,
+                status: 'pending_acceptance',
+                deliveryFee: calculatedDeliveryFee.toString(),
+                pickupAddress: store?.address || store?.name || 'Store Location',
+                deliveryAddress: order.shippingAddress || 'Customer Location',
+                estimatedDistance: '3.5',
+                estimatedTime: 25
+              };
+              
+              availableOrders.push(orderDelivery);
+              console.log(`✅ Added order ${order.id} to available deliveries`);
+            } else {
+              console.log(`❌ Order ${order.id} already has delivery assigned`);
             }
-            
-            // Convert order to delivery-like structure with calculated fee
-            availableOrders.push({
-              id: `order_${order.id}`, // Temporary ID for orders without deliveries
-              orderId: order.id,
-              status: 'pending_acceptance',
-              deliveryFee: calculatedDeliveryFee.toString()
-            });
+          } catch (orderError) {
+            console.error(`Error processing order ${order.id}:`, orderError);
           }
         }
       } catch (error) {
